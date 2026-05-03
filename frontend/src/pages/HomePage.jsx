@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { showToast } from '../components/common/Toast';
 import PostCard from '../components/posts/PostCard';
@@ -9,7 +9,7 @@ import './HomePage.css';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
-  const [posts, setPosts] = useState(mockPosts);
+  const [posts] = useState(mockPosts);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -21,21 +21,19 @@ const HomePage = () => {
 
   const handleLike = (e) => {
     e.stopPropagation();
-    
     if (!isAuthenticated) {
       showToast('좋아요를 누르려면 로그인이 필요합니다.', 'warning');
       return;
     }
-
-    if (likedPosts.has(selectedPost.id)) {
-      likedPosts.delete(selectedPost.id);
+    const next = new Set(likedPosts);
+    if (next.has(selectedPost.id)) {
+      next.delete(selectedPost.id);
       showToast('좋아요를 취소했습니다.', 'info');
     } else {
-      likedPosts.add(selectedPost.id);
+      next.add(selectedPost.id);
       showToast('좋아요를 눌렀습니다.', 'success');
     }
-
-    setLikedPosts(new Set(likedPosts));
+    setLikedPosts(next);
   };
 
   const handleShare = () => {
@@ -44,18 +42,24 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
+      {/* Hero */}
       <div className="home-hero">
+        <div className="home-hero-bg" />
         <div className="home-hero-content">
-          <h1 className="home-title">PhotoShare</h1>
+          <h1 className="home-title">Cosmos Gallery</h1>
           <p className="home-subtitle">
-            세상의 아름다움을 사진으로 공유하세요
+            우주처럼 넓은 세계의 순간들을 함께 탐험하세요
           </p>
         </div>
       </div>
 
+      {/* Grid */}
       <div className="home-container">
-        <h2 className="home-section-title">인기 게시물</h2>
-        
+        <div className="home-section-header">
+          <h2 className="home-section-title">탐색</h2>
+          <span className="home-section-count">{posts.length}개의 작품</span>
+        </div>
+
         <div className="posts-grid">
           {posts.map((post) => (
             <PostCard
@@ -68,7 +72,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* 게시물 상세 모달 */}
+      {/* Detail Modal */}
       <Modal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
@@ -98,9 +102,7 @@ const HomePage = () => {
 
               <div className="detail-tags">
                 {selectedPost.tags.map((tag) => (
-                  <span key={tag} className="detail-tag">
-                    #{tag}
-                  </span>
+                  <span key={tag} className="detail-tag">#{tag}</span>
                 ))}
               </div>
 
@@ -120,36 +122,21 @@ const HomePage = () => {
               </div>
 
               <div className="detail-actions">
-                <Button
-                  variant="primary"
-                  onClick={handleLike}
-                  className="action-btn"
-                >
-                  {likedPosts.has(selectedPost.id) ? '❤️ 좋아요 취소' : '🤍 좋아요'}
+                <Button variant="primary" onClick={handleLike} className="action-btn">
+                  {likedPosts.has(selectedPost.id) ? '♥ 좋아요 취소' : '♡ 좋아요'}
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleShare}
-                  className="action-btn"
-                >
-                  🔗 공유
+                <Button variant="secondary" onClick={handleShare} className="action-btn">
+                  ↗ 공유
                 </Button>
               </div>
 
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <div className="detail-comment-section">
                   <h3 className="comment-title">댓글</h3>
-                  <textarea
-                    className="comment-input"
-                    placeholder="댓글을 입력하세요..."
-                  />
-                  <Button variant="primary" fullWidth>
-                    댓글 작성
-                  </Button>
+                  <textarea className="comment-input" placeholder="댓글을 입력하세요..." />
+                  <Button variant="primary" fullWidth>댓글 작성</Button>
                 </div>
-              )}
-
-              {!isAuthenticated && (
+              ) : (
                 <div className="detail-login-prompt">
                   <p>댓글을 작성하려면 로그인이 필요합니다.</p>
                 </div>

@@ -1,16 +1,21 @@
+/* Cosmos Header */
+
 .header {
-  background-color: var(--background);
-  border-bottom: 1px solid var(--border-light);
-  padding: var(--spacing-md) 0;
-  box-shadow: var(--shadow-sm);
-  sticky: top;
-  z-index: 100;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(6, 9, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
 }
 
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--spacing-xl);
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -18,19 +23,32 @@
 }
 
 .header-logo {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: var(--font-weight-bold);
-  color: var(--primary);
+  color: var(--text-primary);
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   white-space: nowrap;
-  transition: color var(--transition-fast);
+  letter-spacing: -0.01em;
+  transition: all var(--transition-fast);
+}
+
+.header-logo .logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--nebula-purple), var(--starlight-blue));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: var(--glow-sm);
 }
 
 .header-logo:hover {
-  color: var(--primary-dark);
+  color: var(--nebula-glow);
 }
 
 .header-nav {
@@ -43,28 +61,30 @@
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.02em;
   transition: color var(--transition-fast);
   position: relative;
+  padding-bottom: 4px;
 }
 
 .nav-link:hover {
-  color: var(--primary);
+  color: var(--text-primary);
 }
 
 .nav-link::after {
   content: '';
   position: absolute;
-  bottom: -8px;
+  bottom: -4px;
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--primary);
-  transition: width var(--transition-fast);
+  background: linear-gradient(90deg, var(--nebula-violet), var(--starlight-cyan));
+  border-radius: 1px;
+  transition: width var(--transition-base);
 }
 
-.nav-link:hover::after {
-  width: 100%;
-}
+.nav-link:hover::after { width: 100%; }
 
 .header-auth {
   display: flex;
@@ -79,17 +99,21 @@
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--nebula-violet);
+  box-shadow: var(--glow-sm);
 }
 
 .user-name {
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
 
+/* Login form inside modal */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -103,45 +127,42 @@
 }
 
 .form-group label {
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .form-group input {
-  padding: var(--spacing-md);
+  width: 100%;
+  background: var(--space-dark);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  color: var(--text-primary);
   font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  border-color: var(--nebula-violet);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
 }
 
 .login-hint {
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  background: var(--background-secondary);
+  color: var(--text-muted);
+  background: var(--space-mid);
+  border: 1px solid var(--border);
   padding: var(--spacing-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   margin: 0;
+  font-family: monospace;
 }
 
 @media (max-width: 768px) {
-  .header-nav {
-    display: none;
-  }
-
-  .user-name {
-    display: none;
-  }
-
-  .header-container {
-    flex-wrap: wrap;
-    gap: var(--spacing-md);
-  }
+  .header-nav  { display: none; }
+  .user-name   { display: none; }
+  .header-container { padding: 0 var(--spacing-lg); }
 }
