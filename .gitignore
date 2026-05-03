@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+build/
+*.class
+
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React build
+frontend/build/
+
+# Expo
+mobile/.expo/
+mobile/dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
