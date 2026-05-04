@@ -2,6 +2,7 @@ package com.happiness.app.member.controller;
 
 import com.happiness.app.member.dto.LoginRequest;
 import com.happiness.app.member.dto.MemberResponse;
+import com.happiness.app.member.dto.ProfileUpdateRequest;
 import com.happiness.app.member.dto.SignUpRequest;
 import com.happiness.app.member.service.KakaoOAuthService;
 import com.happiness.app.member.service.MemberService;
@@ -61,6 +62,31 @@ public class AuthController {
         result.put("available", memberService.isEmailAvailable(email));
         result.put("email", email);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/check-profile-name")
+    public ResponseEntity<?> checkProfileName(@RequestParam String name) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "success");
+        result.put("available", memberService.isProfileNameAvailable(name));
+        result.put("name", name);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/member/{id}/profile")
+    public ResponseEntity<?> updateProfile(@PathVariable Long id, @RequestBody ProfileUpdateRequest request) {
+        try {
+            MemberResponse response = memberService.updateProfile(id, request);
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "success");
+            result.put("message", "프로필이 수정되었습니다.");
+            result.put("data", response);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "프로필 수정 중 오류가 발생했습니다.");
+        }
     }
 
     @PostMapping("/oauth/kakao")

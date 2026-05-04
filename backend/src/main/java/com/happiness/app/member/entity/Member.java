@@ -45,6 +45,14 @@ public class Member {
     @Column(nullable = true)
     private String providerId;
 
+    /** 포트폴리오 서브도메인 슬러그 (소문자·숫자·하이픈, 3-30자, 고유값) */
+    @Column(nullable = true, unique = true, length = 30)
+    private String profileName;
+
+    /** 인스타그램 아이디 (@ 제외하여 저장) */
+    @Column(nullable = true, length = 50)
+    private String instagramId;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

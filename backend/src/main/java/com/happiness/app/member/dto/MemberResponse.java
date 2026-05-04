@@ -19,6 +19,8 @@ public class MemberResponse {
     private String email;
     private String name;
     private String tel;
+    private String profileName;
+    private String instagramId;
     private MemberStatus status;
     private Authority authority;
     private LocalDateTime createdAt;
@@ -30,6 +32,8 @@ public class MemberResponse {
                 .email(member.getEmail())
                 .name(member.getName())
                 .tel(member.getTel())
+                .profileName(member.getProfileName())
+                .instagramId(member.getInstagramId())
                 .status(member.getStatus())
                 .authority(member.getAuthority())
                 .createdAt(member.getCreatedAt())

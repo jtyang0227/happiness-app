@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -8,49 +9,66 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    restoreAuth();
-  }, []);
+  useEffect(() => { restoreAuth(); }, []);
 
   const login = async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const mockUser = {
-      id: '1',
-      email,
-      name: '테스트 사용자',
-      profileImage: 'https://i.pravatar.cc/150?img=1',
-    };
-    setUser(mockUser);
+    const json = await authApi.login({ email, password });
+    if (json.status !== 'success') {
+      throw new Error(json.message || '로그인에 실패했습니다.');
+    }
+    const userData = json.data;
+    setUser(userData);
     setIsAuthenticated(true);
-    await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-    await AsyncStorage.setItem('token', 'mock-token-' + Date.now());
-    return mockUser;
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
+    return userData;
+  };
+
+  const signup = async (data) => {
+    const json = await authApi.signup(data);
+    if (json.status !== 'success') {
+      throw new Error(json.message || '회원가입에 실패했습니다.');
+    }
+    const userData = json.data;
+    setUser(userData);
+    setIsAuthenticated(true);
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
+    return userData;
+  };
+
+  const updateProfile = async (data) => {
+    if (!user?.id) throw new Error('로그인이 필요합니다.');
+    const json = await authApi.updateProfile(user.id, data);
+    if (json.status !== 'success') {
+      throw new Error(json.message || '프로필 수정에 실패했습니다.');
+    }
+    const updated = json.data;
+    setUser(updated);
+    await AsyncStorage.setItem('user', JSON.stringify(updated));
+    return updated;
   };
 
   const logout = async () => {
     setUser(null);
     setIsAuthenticated(false);
-    await AsyncStorage.removeItem('user');
-    await AsyncStorage.removeItem('token');
+    await AsyncStorage.multiRemove(['user']);
   };
 
   const restoreAuth = async () => {
     try {
       const savedUser = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('token');
-      if (savedUser && token) {
+      if (savedUser) {
         setUser(JSON.parse(savedUser));
         setIsAuthenticated(true);
       }
     } catch {
-      // ignore restore errors
+      // ignore
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, signup, updateProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

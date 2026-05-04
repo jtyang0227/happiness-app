@@ -23,6 +23,10 @@ public class PhotoResponse {
     private String imageRatio;
     private Integer likesCount;
     private Integer sharesCount;
+    private Integer gridColSpan;
+    private String dominantColor;
+    private String colorMood;
+    private String colorPalette;
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
@@ -40,6 +44,10 @@ public class PhotoResponse {
                 .imageRatio(photo.getImageRatio())
                 .likesCount(photo.getLikesCount())
                 .sharesCount(photo.getSharesCount())
+                .gridColSpan(photo.getGridColSpan() != null ? photo.getGridColSpan() : 6)
+                .dominantColor(photo.getDominantColor())
+                .colorMood(photo.getColorMood())
+                .colorPalette(photo.getColorPalette())
                 .createdAt(photo.getCreatedAt())
                 .updatedAt(photo.getUpdatedAt())
                 .build();

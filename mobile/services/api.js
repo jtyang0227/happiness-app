@@ -21,3 +21,12 @@ export const photoApi = {
   like:     (id)       => request(`/photos/${id}/like`,     { method: 'POST' }),
   favorite: (id)       => request(`/photos/${id}/favorite`, { method: 'POST' }),
 };
+
+export const authApi = {
+  signup:           (data)     => request('/auth/signup',                    { method: 'POST', body: data }),
+  login:            (data)     => request('/auth/login',                     { method: 'POST', body: data }),
+  getProfile:       (id)       => request(`/auth/member/${id}`),
+  updateProfile:    (id, data) => request(`/auth/member/${id}/profile`,      { method: 'PUT',  body: data }),
+  checkEmail:       (email)    => request(`/auth/check-email?email=${encodeURIComponent(email)}`),
+  checkProfileName: (name)     => request(`/auth/check-profile-name?name=${encodeURIComponent(name)}`),
+};

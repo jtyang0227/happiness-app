@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { ActivityIndicator, SafeAreaView, StyleSheet, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 
 import Header from '../components/Header';
@@ -7,24 +7,33 @@ import TabBar from '../components/TabBar';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { usePhotos } from '../hooks/usePhotos';
+import { useAuth } from '../store/AuthContext';
 
+import LoginScreen from '../screens/LoginScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import GalleryScreen from '../screens/GalleryScreen';
 import ListScreen from '../screens/ListScreen';
 import PhotoDetailScreen from '../screens/PhotoDetailScreen';
 import PhotoFormScreen from '../screens/PhotoFormScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import { COLORS } from '../constants/colors';
 
-// screen: explore | postDetail | gallery | list | photoDetail | form
-export default function AppNavigator() {
-  const [screen, setScreen] = useState('explore');
+// ── 미인증 화면 ────────────────────────────────────────────────
+function AuthNavigator() {
+  const [authScreen, setAuthScreen] = useState('login');
+  if (authScreen === 'signup') {
+    return <SignUpScreen onGoLogin={() => setAuthScreen('login')} />;
+  }
+  return <LoginScreen onGoSignUp={() => setAuthScreen('signup')} />;
+}
 
-  // Explore state
+// ── 메인 앱 ────────────────────────────────────────────────────
+function MainNavigator() {
+  const [screen, setScreen] = useState('explore');
   const [selectedPost, setSelectedPost] = useState(null);
   const [likedPosts, setLikedPosts] = useState(new Set());
-
-  // Gallery/Photos state
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [formMode, setFormMode] = useState('new');
 
@@ -112,6 +121,8 @@ export default function AppNavigator() {
             showToast={showToast}
           />
         );
+      case 'profile':
+        return <ProfileScreen />;
       default:
         return (
           <ExploreScreen
@@ -136,6 +147,22 @@ export default function AppNavigator() {
   );
 }
 
+// ── 루트: 인증 상태에 따라 분기 ──────────────────────────────────
+export default function AppNavigator() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  return isAuthenticated ? <MainNavigator /> : <AuthNavigator />;
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container:   { flex: 1, backgroundColor: COLORS.bg },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a1a' },
 });

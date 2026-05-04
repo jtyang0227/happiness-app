@@ -13,4 +13,5 @@ public class PhotoRequest {
     private String imageUrl;
     private String description;
     private String imageRatio;
+    private Integer gridColSpan;
 }

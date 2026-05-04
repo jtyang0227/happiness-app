@@ -4,10 +4,11 @@ import { COLORS } from '../constants/colors';
 import { FONT } from '../constants/layout';
 
 const TABS = [
-  { key: 'explore', label: '탐색' },
+  { key: 'explore', label: '탐색'   },
   { key: 'gallery', label: '갤러리' },
-  { key: 'list',    label: '목록' },
-  { key: 'add',     label: '등록' },
+  { key: 'list',    label: '목록'   },
+  { key: 'add',     label: '등록'   },
+  { key: 'profile', label: '프로필' },
 ];
 
 export default function TabBar({ active, onTabPress }) {

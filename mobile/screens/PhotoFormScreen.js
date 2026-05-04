@@ -6,13 +6,14 @@ import {
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
+import GridSpanPicker from '../components/GridSpanPicker';
 
-const EMPTY = { title: '', imageUrl: '', description: '' };
+const EMPTY = { title: '', imageUrl: '', description: '', gridColSpan: 6 };
 
 export default function PhotoFormScreen({ mode, photo, onSaved, onCancel, showToast }) {
   const [form, setForm] = useState(
     mode === 'edit' && photo
-      ? { title: photo.title, imageUrl: photo.imageUrl, description: photo.description || '' }
+      ? { title: photo.title, imageUrl: photo.imageUrl, description: photo.description || '', gridColSpan: photo.gridColSpan || 6 }
       : EMPTY
   );
 
@@ -74,6 +75,14 @@ export default function PhotoFormScreen({ mode, photo, onSaved, onCancel, showTo
             value={form.description}
             onChangeText={text => setForm({ ...form, description: text })}
             multiline
+          />
+        </View>
+
+        <View style={styles.group}>
+          <Text style={styles.label}>갤러리 표시 너비</Text>
+          <GridSpanPicker
+            value={form.gridColSpan}
+            onChange={v => setForm({ ...form, gridColSpan: v })}
           />
         </View>
 

@@ -5,6 +5,8 @@ import net.coobird.thumbnailator.geometry.Positions;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,9 +51,26 @@ public class ImageProcessingUtil {
             Path thumbPath = uploadPath.resolve(thumbName);
             resizeThumbnail(originalPath.toFile(), thumbPath.toFile());
 
-            return new ImageUploadResult("/uploads/" + fullName, "/uploads/" + thumbName);
+            ColorAnalysisUtil.ColorAnalysisResult color = analyzeColors(thumbPath.toFile());
+
+            return new ImageUploadResult(
+                "/uploads/" + fullName,
+                "/uploads/" + thumbName,
+                color.dominantColor(),
+                color.colorMood(),
+                color.colorPalette()
+            );
         } finally {
             Files.deleteIfExists(originalPath);
+        }
+    }
+
+    private ColorAnalysisUtil.ColorAnalysisResult analyzeColors(File file) {
+        try {
+            BufferedImage img = ImageIO.read(file);
+            return ColorAnalysisUtil.analyze(img);
+        } catch (Exception e) {
+            return new ColorAnalysisUtil.ColorAnalysisResult("#808080", "MUTED", "[\"#808080\"]");
         }
     }
 
@@ -119,5 +138,11 @@ public class ImageProcessingUtil {
         }
     }
 
-    public record ImageUploadResult(String imageUrl, String thumbnailUrl) {}
+    public record ImageUploadResult(
+        String imageUrl,
+        String thumbnailUrl,
+        String dominantColor,
+        String colorMood,
+        String colorPalette
+    ) {}
 }

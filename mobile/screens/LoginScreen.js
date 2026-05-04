@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../store/AuthContext';
 
-export default function LoginScreen() {
+export default function LoginScreen({ onGoSignUp }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,8 +19,8 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch {
-      Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
+    } catch (err) {
+      Alert.alert('로그인 실패', err.message || '이메일 또는 비밀번호를 확인해주세요.');
     } finally {
       setLoading(false);
     }
@@ -80,10 +80,11 @@ export default function LoginScreen() {
             <Text style={styles.btnKakaoText}>카카오로 로그인</Text>
           </TouchableOpacity>
 
-          <View style={styles.hint}>
-            <Text style={styles.hintLabel}>테스트 계정</Text>
-            <Text style={styles.hintCode}>test@example.com / password123</Text>
-          </View>
+          <TouchableOpacity style={styles.signupLink} onPress={onGoSignUp}>
+            <Text style={styles.signupLinkText}>
+              계정이 없으신가요? <Text style={styles.signupLinkBold}>회원가입</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -128,11 +129,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnKakaoText: { color: '#3C1E1E', fontWeight: '700', fontSize: 15 },
-  hint: { marginTop: 20, alignItems: 'center' },
-  hintLabel: { color: '#6b7280', fontSize: 12, marginBottom: 4 },
-  hintCode: {
-    color: '#a78bfa',
-    fontSize: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
+  signupLink:      { marginTop: 20, alignItems: 'center' },
+  signupLinkText:  { color: '#9ca3af', fontSize: 13 },
+  signupLinkBold:  { color: '#a78bfa', fontWeight: '700' },
 });

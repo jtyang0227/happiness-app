@@ -2,6 +2,7 @@ package com.happiness.app.member.service;
 
 import com.happiness.app.member.dto.LoginRequest;
 import com.happiness.app.member.dto.MemberResponse;
+import com.happiness.app.member.dto.ProfileUpdateRequest;
 import com.happiness.app.member.dto.SignUpRequest;
 import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -22,19 +24,46 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // RFC 5322 간략화 이메일 정규식
+    private static final Pattern EMAIL_PATTERN =
+        Pattern.compile("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$");
+
+    // 포트폴리오 서브도메인 슬러그: 소문자·숫자·하이픈, 3-30자, 하이픈으로 시작·끝 불가
+    private static final Pattern PROFILE_NAME_PATTERN =
+        Pattern.compile("^[a-z0-9][a-z0-9\\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$");
+
+    // 인스타그램 아이디: 영문·숫자·점·밑줄, 1-30자
+    private static final Pattern INSTAGRAM_PATTERN =
+        Pattern.compile("^[a-zA-Z0-9._]{1,30}$");
+
     public MemberResponse signUp(SignUpRequest request) {
+        validateEmail(request.getEmail());
+        validatePassword(request.getPassword());
+
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다: " + request.getEmail());
+            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
         }
         if (!request.isTermsAgreed()) {
-            throw new IllegalArgumentException("약관에 동의해야 합니다");
+            throw new IllegalArgumentException("이용약관에 동의해야 합니다.");
+        }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
         }
 
+        String profileName = normalizeProfileName(request.getProfileName());
+        if (profileName != null && memberRepository.existsByProfileName(profileName)) {
+            throw new IllegalArgumentException("이미 사용 중인 프로필 이름입니다.");
+        }
+
+        String instagramId = normalizeInstagramId(request.getInstagramId());
+
         Member member = Member.builder()
-                .email(request.getEmail())
+                .email(request.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
-                .tel(request.getTel())
+                .name(request.getName().trim())
+                .tel(request.getTel() != null ? request.getTel().trim() : "")
+                .profileName(profileName)
+                .instagramId(instagramId)
                 .status(MemberStatus.ACTIVE)
                 .authority(Authority.US)
                 .provider("local")
@@ -44,29 +73,59 @@ public class MemberService {
     }
 
     public MemberResponse login(LoginRequest request) {
-        Member member = memberRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다: " + request.getEmail()));
+        validateEmail(request.getEmail());
 
+        Member member = memberRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
+        if (member.getPassword() == null) {
+            throw new IllegalArgumentException("소셜 로그인 계정입니다. 카카오로 로그인해주세요.");
+        }
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
         if (member.getStatus() != MemberStatus.ACTIVE) {
-            throw new IllegalArgumentException("계정 상태가 활성화되지 않았습니다");
+            throw new IllegalArgumentException("계정이 비활성화 상태입니다. 고객센터에 문의해주세요.");
         }
 
         return MemberResponse.fromEntity(member);
     }
 
-    public MemberResponse findOrCreateOAuthMember(String provider, String providerId, String email, String name) {
-        Optional<Member> existing = memberRepository.findByProviderAndProviderId(provider, providerId);
-        if (existing.isPresent()) {
-            return MemberResponse.fromEntity(existing.get());
+    public MemberResponse updateProfile(Long memberId, ProfileUpdateRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            member.setName(request.getName().trim());
+        }
+        if (request.getTel() != null) {
+            member.setTel(request.getTel().trim());
         }
 
-        Optional<Member> byEmail = memberRepository.findByEmail(email);
-        if (byEmail.isPresent()) {
-            return MemberResponse.fromEntity(byEmail.get());
+        String profileName = normalizeProfileName(request.getProfileName());
+        if (profileName != null && !profileName.equals(member.getProfileName())) {
+            if (memberRepository.existsByProfileName(profileName)) {
+                throw new IllegalArgumentException("이미 사용 중인 프로필 이름입니다.");
+            }
+            member.setProfileName(profileName);
+        } else if (request.getProfileName() != null && request.getProfileName().isBlank()) {
+            member.setProfileName(null);
         }
+
+        String instagramId = normalizeInstagramId(request.getInstagramId());
+        if (request.getInstagramId() != null) {
+            member.setInstagramId(instagramId);
+        }
+
+        return MemberResponse.fromEntity(memberRepository.save(member));
+    }
+
+    public MemberResponse findOrCreateOAuthMember(String provider, String providerId, String email, String name) {
+        Optional<Member> existing = memberRepository.findByProviderAndProviderId(provider, providerId);
+        if (existing.isPresent()) return MemberResponse.fromEntity(existing.get());
+
+        Optional<Member> byEmail = memberRepository.findByEmail(email);
+        if (byEmail.isPresent()) return MemberResponse.fromEntity(byEmail.get());
 
         Member newMember = Member.builder()
                 .email(email)
@@ -84,20 +143,65 @@ public class MemberService {
 
     @Transactional(readOnly = true)
     public MemberResponse getMember(Long id) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다: " + id));
-        return MemberResponse.fromEntity(member);
+        return MemberResponse.fromEntity(memberRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다.")));
     }
 
     @Transactional(readOnly = true)
     public MemberResponse getMemberByEmail(String email) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다: " + email));
-        return MemberResponse.fromEntity(member);
+        return MemberResponse.fromEntity(memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다.")));
     }
 
     @Transactional(readOnly = true)
     public boolean isEmailAvailable(String email) {
-        return !memberRepository.existsByEmail(email);
+        if (!EMAIL_PATTERN.matcher(email.trim()).matches()) return false;
+        return !memberRepository.existsByEmail(email.trim().toLowerCase());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isProfileNameAvailable(String name) {
+        String normalized = normalizeProfileName(name);
+        if (normalized == null) return false;
+        return !memberRepository.existsByProfileName(normalized);
+    }
+
+    // ── 내부 검증 헬퍼 ───────────────────────────────────────
+
+    private void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+        if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            throw new IllegalArgumentException("올바른 이메일 형식이 아닙니다. (예: user@example.com)");
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+        }
+    }
+
+    /** profileName을 소문자로 정규화. null이면 null 반환. 형식 위반 시 예외. */
+    private String normalizeProfileName(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String name = raw.trim().toLowerCase();
+        if (!PROFILE_NAME_PATTERN.matcher(name).matches()) {
+            throw new IllegalArgumentException(
+                "프로필 이름은 소문자, 숫자, 하이픈만 사용 가능하며 3-30자이어야 합니다. (예: my-portfolio)");
+        }
+        return name;
+    }
+
+    /** instagramId에서 @ 제거 후 정규화. null이면 null 반환. */
+    private String normalizeInstagramId(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String id = raw.trim().replaceFirst("^@", "");
+        if (!INSTAGRAM_PATTERN.matcher(id).matches()) {
+            throw new IllegalArgumentException(
+                "인스타그램 아이디는 영문, 숫자, 점, 밑줄만 사용 가능하며 30자 이하이어야 합니다.");
+        }
+        return id;
     }
 }

@@ -82,6 +82,9 @@ public class PhotoController {
                     .thumbnailUrl(upload.thumbnailUrl())
                     .description(description)
                     .imageRatio(imageRatio != null ? imageRatio : "1:1")
+                    .dominantColor(upload.dominantColor())
+                    .colorMood(upload.colorMood())
+                    .colorPalette(upload.colorPalette())
                     .likesCount(0)
                     .sharesCount(0)
                     .build();
@@ -111,12 +114,18 @@ public class PhotoController {
             return errorResponse(HttpStatus.BAD_REQUEST, "이미지 URL은 필수입니다.");
         }
 
+        int colSpan = (request.getGridColSpan() != null &&
+                       request.getGridColSpan() >= 1 &&
+                       request.getGridColSpan() <= 12)
+                ? request.getGridColSpan() : 6;
+
         Photo photo = Photo.builder()
                 .memberId(request.getMemberId())
                 .title(request.getTitle())
                 .imageUrl(request.getImageUrl())
                 .description(request.getDescription())
                 .imageRatio(request.getImageRatio() != null ? request.getImageRatio() : "1:1")
+                .gridColSpan(colSpan)
                 .likesCount(0)
                 .sharesCount(0)
                 .build();
@@ -143,6 +152,11 @@ public class PhotoController {
                     }
                     if (request.getImageRatio() != null) {
                         photo.setImageRatio(request.getImageRatio());
+                    }
+                    if (request.getGridColSpan() != null &&
+                        request.getGridColSpan() >= 1 &&
+                        request.getGridColSpan() <= 12) {
+                        photo.setGridColSpan(request.getGridColSpan());
                     }
                     Photo updated = photoRepository.save(photo);
                     Map<String, Object> result = new HashMap<>();
