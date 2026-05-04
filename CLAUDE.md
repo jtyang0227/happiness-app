@@ -67,9 +67,30 @@ Dev uses H2 in-memory (schema auto-created/dropped on restart). Production confi
 
 Routing via React Router DOM v6. No Redux — state managed through Context + local state.
 
-### Mobile (`App.js`)
+### Mobile (`mobile/`)
 
-Single-file architecture: `App.js` owns all state and renders one of three views (gallery list, photo detail, create/edit form) using conditional rendering and modals. API calls go directly to the Spring Boot backend; Android emulator uses `10.0.2.2:8080` while iOS uses `localhost:8080`.
+**폴더 구조 규칙:**
+```
+mobile/
+├── assets/       # 이미지, 폰트 등 정적 리소스
+├── components/   # 재사용 가능한 공통 UI 컴포넌트 (Toast, Header, TabBar, PostCard, PhotoCard)
+├── constants/    # 색상·여백·폰트 상수 (colors.js, layout.js)
+├── hooks/        # 커스텀 훅 (usePhotos, useToast)
+├── navigation/   # 라우팅 설정 (AppNavigator)
+├── screens/      # 페이지 단위 컴포넌트 (Login, Explore, Gallery, List, Detail, Form)
+├── services/     # API 호출·외부 연동 (api.js, mockData.js)
+├── store/        # 상태 관리 (AuthContext)
+└── utils/        # 유틸 함수
+```
+
+**규칙:**
+- 화면(페이지) 단위 컴포넌트 → `screens/`
+- 여러 화면에서 쓰는 UI 조각 → `components/`
+- API 호출은 반드시 `services/api.js`의 `photoApi`를 경유
+- 색상·간격 하드코딩 금지 → `constants/colors.js`, `constants/layout.js` 상수 사용
+- 상태 로직 재사용 → `hooks/`에 커스텀 훅으로 분리
+
+`AppNavigator`가 화면 전환 상태를 소유하고 각 Screen에 콜백을 props로 전달합니다. API calls go directly to the Spring Boot backend; Android emulator uses `10.0.2.2:8080` while iOS uses `localhost:8080`.
 
 ### Docker
 
