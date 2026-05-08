@@ -72,7 +72,7 @@ export default function ProfileScreen() {
         </View>
         {user?.profileName && (
           <View style={styles.subdomainBadge}>
-            <Text style={styles.subdomainText}>✦ {user.profileName}.cosmos.app</Text>
+            <Text style={styles.subdomainText}>✦ {user.profileName}.happiness.app</Text>
           </View>
         )}
       </View>
@@ -121,13 +121,13 @@ export default function ProfileScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                <Text style={styles.domainSuffix}>.cosmos.app</Text>
+                <Text style={styles.domainSuffix}>.happiness.app</Text>
               </View>
             </View>
           ) : (
             <Text style={styles.fieldValue}>
               {user?.profileName
-                ? `${user.profileName}.cosmos.app`
+                ? `${user.profileName}.happiness.app`
                 : <Text style={styles.fieldEmpty}>미설정</Text>}
             </Text>
           )}

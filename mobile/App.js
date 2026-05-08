@@ -22,7 +22,7 @@ function AppContent() {
       <SafeAreaView style={styles.splash}>
         <ExpoStatusBar style="light" />
         <Text style={styles.splashIcon}>✦</Text>
-        <Text style={styles.splashLogo}>Cosmos</Text>
+        <Text style={styles.splashLogo}>Happiness</Text>
       </SafeAreaView>
     );
   }

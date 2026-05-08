@@ -11,9 +11,11 @@ const request = async (path, opts = {}) => {
 
 export const photoApi = {
   getAll: ()         => request('/photos'),
-  create: (data)     => request('/photos',       { method: 'POST', body: data }),
-  update: (id, data) => request(`/photos/${id}`, { method: 'PUT',  body: data }),
-  remove: (id)       => request(`/photos/${id}`, { method: 'DELETE' }),
+  create: (data)     => request('/photos',                { method: 'POST', body: data }),
+  update: (id, data) => request(`/photos/${id}`,          { method: 'PUT',  body: data }),
+  remove: (id)       => request(`/photos/${id}`,          { method: 'DELETE' }),
+  like:   (id)       => request(`/photos/${id}/like`,     { method: 'POST' }),
+  save:   (id)       => request(`/photos/${id}/save`,     { method: 'POST' }),
 };
 
 export const authApi = {

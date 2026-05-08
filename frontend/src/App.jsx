@@ -28,8 +28,11 @@ function AppShell() {
   const location = useLocation();
   const isStandalone = STANDALONE_PATHS.includes(location.pathname);
 
+  const isGallery = location.pathname === '/';
+  const bg = isStandalone ? '#0a0a1a' : isGallery ? '#111111' : '#f7f7fb';
+
   return (
-    <div style={{ minHeight: '100vh', background: isStandalone ? '#0a0a1a' : '#f7f7fb' }}>
+    <div style={{ minHeight: '100vh', background: bg }}>
       {!isStandalone && <Header />}
       <main style={{ paddingBottom: 40 }}>
         <Routes>

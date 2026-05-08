@@ -69,7 +69,7 @@ export default function SignUpScreen({ onGoLogin }) {
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         <View style={styles.logoWrap}>
           <Text style={styles.logoIcon}>✦</Text>
-          <Text style={styles.logoText}>Cosmos</Text>
+          <Text style={styles.logoText}>Happiness</Text>
         </View>
 
         <Text style={styles.title}>새 계정 만들기</Text>

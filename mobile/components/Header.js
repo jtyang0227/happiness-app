@@ -11,7 +11,7 @@ export default function Header({ onLogoPress }) {
     <View style={styles.container}>
       <TouchableOpacity onPress={onLogoPress}>
         <Text style={styles.logo}>
-          <Text style={styles.logoAccent}>✦ </Text>Cosmos
+          <Text style={styles.logoAccent}>✦ </Text>Happiness
         </Text>
       </TouchableOpacity>
       <View style={styles.right}>
