@@ -1,11 +1,15 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePhotos } from '../hooks/usePhotos';
+import { COLORS } from '../constants/colors';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 
-// 색상 정렬 순서: 따뜻한 색 → 자연 → 차가운 색 → 무채색
-const COLOR_ORDER = ['WARM', 'ENERGETIC', 'VIBRANT', 'ROMANTIC', 'NATURAL', 'COOL', 'SERENE', 'MUTED', 'DRAMATIC', 'CLEAN', 'MONOCHROME'];
+const COLOR_ORDER = [
+  'WARM', 'ENERGETIC', 'VIBRANT', 'ROMANTIC',
+  'NATURAL', 'COOL', 'SERENE',
+  'MUTED', 'DRAMATIC', 'CLEAN', 'MONOCHROME',
+];
 
 function sortByColor(photos) {
   return [...photos].sort((a, b) => {
@@ -23,21 +27,27 @@ export default function GalleryPage() {
   const sorted = useMemo(() => sortByColor(photos), [photos]);
 
   const handleUpdated = useCallback((updated) => {
-    setSelected(prev => prev?.id === updated.id ? updated : prev);
+    setSelected(prev => (prev?.id === updated.id ? updated : prev));
   }, []);
 
   if (loading) {
     return (
       <div style={centerStyle}>
-        <div style={{ color: '#9ca3af', fontSize: 16 }}>갤러리 불러오는 중...</div>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          border: `3px solid ${COLORS.galleryBorder}`,
+          borderTopColor: COLORS.primary,
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ ...centerStyle, flexDirection: 'column', gap: 12 }}>
-        <div style={{ color: '#e53e3e', fontSize: 15 }}>{error}</div>
+      <div style={{ ...centerStyle, flexDirection: 'column', gap: 14 }}>
+        <div style={{ color: '#ff8080', fontSize: 15 }}>{error}</div>
         <button onClick={refetch} style={primaryBtn}>다시 시도</button>
       </div>
     );
@@ -46,40 +56,44 @@ export default function GalleryPage() {
   if (photos.length === 0) {
     return (
       <div style={{ ...centerStyle, flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 48 }}>✦</div>
-        <div style={{ color: '#9ca3af', fontSize: 16 }}>아직 사진이 없습니다.</div>
+        <span style={{ fontSize: 40, opacity: 0.3 }}>✦</span>
+        <div style={{ color: '#555', fontSize: 15 }}>아직 등록된 사진이 없습니다.</div>
         <button onClick={() => navigate('/photo/new')} style={primaryBtn}>첫 사진 등록하기</button>
       </div>
     );
   }
 
   return (
-    <div style={{ background: '#111111', minHeight: '100vh' }}>
-      {/* 헤더 바 */}
+    <div style={{ background: COLORS.galleryBg, minHeight: '100vh' }}>
+
+      {/* Toolbar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 20px', borderBottom: '1px solid #1f1f1f',
+        padding: '16px 20px',
+        borderBottom: `1px solid ${COLORS.galleryBorder}`,
       }}>
-        <span style={{ fontSize: 13, color: '#4b5563', fontWeight: 600 }}>
-          {sorted.length}개 · 색상순 정렬
+        <span style={{ fontSize: 12, color: '#444', fontWeight: 600, letterSpacing: '0.05em' }}>
+          {sorted.length}장 · 색상 순
         </span>
-        <button onClick={() => navigate('/photo/new')} style={primaryBtn}>+ 사진 등록</button>
+        <button onClick={() => navigate('/photo/new')} style={primaryBtn}>
+          + 등록
+        </button>
       </div>
 
-      {/* 마소늬 그리드 — CSS columns */}
+      {/* Masonry grid */}
       <div style={{
-        columns: '4 220px',
-        columnGap: 4,
-        padding: 4,
+        columns: '4 200px',
+        columnGap: 3,
+        padding: 3,
       }}>
         {sorted.map(photo => (
-          <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 4 }}>
+          <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
             <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
           </div>
         ))}
       </div>
 
-      {/* 상세 모달 */}
+      {/* Detail modal */}
       {selected && (
         <PhotoModal
           photo={selected}
@@ -93,16 +107,15 @@ export default function GalleryPage() {
 
 const centerStyle = {
   display: 'flex', justifyContent: 'center', alignItems: 'center',
-  height: '60vh', background: '#111111', minHeight: '100vh',
+  minHeight: '100vh', background: COLORS.galleryBg,
 };
 
 const primaryBtn = {
-  padding: '9px 18px',
-  background: '#5b6ef5',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 8,
-  cursor: 'pointer',
-  fontWeight: 700,
-  fontSize: 14,
+  padding: '8px 18px',
+  background: COLORS.primary,
+  color: '#fff', border: 'none',
+  borderRadius: 10, cursor: 'pointer',
+  fontWeight: 700, fontSize: 13,
+  boxShadow: '0 2px 10px rgba(91,110,245,0.3)',
+  transition: 'opacity 0.15s',
 };
