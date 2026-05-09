@@ -194,3 +194,91 @@ expo build:android  # deprecated → eas build 사용 권장
 1. App Store Connect → 앱 정보 → 개인정보처리방침 URL
 2. Google Play Console → 스토어 등록정보 → 개인정보처리방침
 3. 앱 내 로그인 화면 하단 + 프로필 화면
+
+---
+
+## 기능 구현 테스트 규칙
+
+**모든 기능 구현은 아래 테스트를 통과한 후 커밋한다.**
+
+### 백엔드 테스트
+
+```bash
+cd backend
+
+# 1. 빌드 (필수)
+./gradlew clean build -x test          # BUILD SUCCESSFUL 확인
+
+# 2. 단위 테스트
+./gradlew test                         # BUILD SUCCESSFUL 확인
+
+# 3. API 스모크 테스트 (서버 실행 후)
+./gradlew bootRun &
+curl -s http://localhost:8080/api/photos | python3 -m json.tool   # {"status":"success",...}
+curl -s http://localhost:8080/actuator/health 2>/dev/null || echo "actuator 미설정"
+```
+
+### 프론트엔드 테스트
+
+```bash
+cd frontend
+
+# 1. 빌드 (필수) — 컴파일 에러 없어야 함
+npm run build    # "Compiled successfully." 확인
+
+# 2. 단위 테스트
+npm test -- --watchAll=false
+
+# 3. 개발 서버 기동 후 수동 테스트 체크리스트:
+#    - 로그인/회원가입 정상 동작
+#    - 사진 등록 (파일 업로드 모드): 보정 패널 표시, 슬라이더 반응, 커브 편집
+#    - 사진 등록 (URL 모드): URL 입력 후 미리보기 표시
+#    - 갤러리: 사진 그리드 정상 렌더링
+```
+
+### 모바일 테스트
+
+```bash
+cd mobile
+
+# 패키지 설치 및 타입 체크
+npm install
+npx expo export --platform web 2>&1 | tail -5   # 에러 없음 확인
+```
+
+### 이미지 보정 기능 테스트 체크리스트
+
+| 항목 | 테스트 방법 | 통과 기준 |
+|------|------------|----------|
+| 파일 업로드 탭 표시 | PhotoFormPage 접속 | "📁 파일 업로드" / "🔗 URL 입력" 탭 표시 |
+| 이미지 선택 | 파일 업로드 탭 → 이미지 선택 | 캔버스 프리뷰 + 보정 패널 표시 |
+| 노출 슬라이더 | 슬라이더 조작 | 프리뷰 밝기 실시간 변경 |
+| 대비 슬라이더 | 슬라이더 조작 | 프리뷰 대비 실시간 변경 |
+| 밝은 영역 슬라이더 | 양수 조정 | 밝은 영역 밝아짐 |
+| 어두운 영역 슬라이더 | 음수 조정 | 어두운 영역 어두워짐 |
+| 흰색 계열 슬라이더 | 조작 | 화이트 포인트 변화 |
+| 검정 계열 슬라이더 | 조작 | 블랙 포인트 변화 |
+| 곡선 — 제어점 추가 | 캔버스 클릭 | 새 제어점 추가됨 |
+| 곡선 — 제어점 이동 | 제어점 드래그 | 커브 모양 변경됨 |
+| 곡선 — 제어점 제거 | 제어점 더블클릭 | 제어점 삭제됨 (양 끝점 제외) |
+| 초기화 버튼 | 보정 후 초기화 클릭 | 모든 값 기본값으로 리셋 |
+| 등록하기 | 보정 후 폼 제출 | 보정된 이미지로 업로드 성공 |
+
+### Java 25 연결 확인
+
+```bash
+# 프로젝트 루트에서
+cd backend
+java -version           # openjdk 25.x.x 확인
+./gradlew -version      # Gradle 9.5.0 확인
+./gradlew clean build -x test  # BUILD SUCCESSFUL (Java 25 툴체인으로 컴파일)
+```
+
+`build.gradle`의 툴체인 설정:
+```groovy
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+```

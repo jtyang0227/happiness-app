@@ -16,6 +16,12 @@ export const photoApi = {
   remove: (id)       => request(`/photos/${id}`,          { method: 'DELETE' }),
   like:   (id)       => request(`/photos/${id}/like`,     { method: 'POST' }),
   save:   (id)       => request(`/photos/${id}/save`,     { method: 'POST' }),
+
+  // 파일 업로드 (FormData — Content-Type 헤더는 브라우저가 자동 설정)
+  uploadFile: async (formData) => {
+    const res = await fetch(`${BASE}/photos/upload`, { method: 'POST', body: formData });
+    return res.json();
+  },
 };
 
 export const authApi = {

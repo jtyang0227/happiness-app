@@ -71,9 +71,14 @@ public class PhotoController {
             @RequestParam String title,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String imageRatio,
+            @RequestParam(required = false, defaultValue = "6") Integer gridColSpan,
+            @RequestParam(required = false) String colorMood,
             @RequestParam MultipartFile file) {
         try {
             ImageProcessingUtil.ImageUploadResult upload = imageProcessingUtil.uploadAndResizeImage(file, imageRatio);
+
+            int colSpan = (gridColSpan >= 1 && gridColSpan <= 12) ? gridColSpan : 6;
+            String mood = (colorMood != null && !colorMood.isBlank()) ? colorMood : upload.colorMood();
 
             Photo photo = Photo.builder()
                     .memberId(memberId)
@@ -82,8 +87,9 @@ public class PhotoController {
                     .thumbnailUrl(upload.thumbnailUrl())
                     .description(description)
                     .imageRatio(imageRatio != null ? imageRatio : "1:1")
+                    .gridColSpan(colSpan)
                     .dominantColor(upload.dominantColor())
-                    .colorMood(upload.colorMood())
+                    .colorMood(mood)
                     .colorPalette(upload.colorPalette())
                     .likesCount(0)
                     .sharesCount(0)
