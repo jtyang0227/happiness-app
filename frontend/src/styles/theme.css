@@ -1,0 +1,93 @@
+/*
+ * Design Tokens — Happiness App
+ *
+ * Stitch 디자인 적용 방법:
+ * 1. Stitch에서 export → 아래 :root 값을 교체
+ * 2. colors.js의 hex 값도 동일하게 업데이트
+ * 3. 폰트가 바뀐다면 --font-family + public/index.html <link> 태그 추가
+ */
+
+:root {
+  /* ── Brand ── */
+  --color-primary:       #5b6ef5;
+  --color-primary-dark:  #4a5ce0;
+  --color-accent:        #a78bfa;
+
+  /* ── Surface ── */
+  --color-bg:            #f7f7fb;
+  --color-surface:       #ffffff;
+  --color-border:        #e8e8f0;
+  --color-border-light:  #f0f0f8;
+
+  /* ── Text ── */
+  --color-text:           #1a1a2e;
+  --color-text-secondary: #6b6b8a;
+  --color-text-muted:     #9999bb;
+
+  /* ── Feedback ── */
+  --color-danger:  #e53e3e;
+  --color-success: #38a169;
+  --color-warning: #f59e0b;
+
+  /* ── Dark theme (Login / Signup) ── */
+  --color-dark-bg:             #0a0a1a;
+  --color-dark-surface:        #1a1a2e;
+  --color-dark-surface-alt:    #16163a;
+  --color-dark-border:         #2a2a4e;
+  --color-dark-text:           #e8e8ff;
+  --color-dark-text-secondary: #8888bb;
+
+  /* ── Typography ── */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 'Helvetica Neue', Arial, sans-serif;
+
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  28px;
+  --text-3xl:  36px;
+
+  --font-normal:    400;
+  --font-medium:    500;
+  --font-semibold:  600;
+  --font-bold:      700;
+  --font-extrabold: 800;
+
+  --line-height-tight:  1.2;
+  --line-height-snug:   1.4;
+  --line-height-normal: 1.6;
+
+  /* ── Spacing ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ── Border Radius ── */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* ── Shadow ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* ── Transition ── */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease-out;
+
+  /* ── Layout ── */
+  --max-width:     1200px;
+  --header-height: 60px;
+}

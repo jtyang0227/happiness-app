@@ -1,22 +1,60 @@
+/*
+ * Stitch 디자인 교체 방법:
+ * 1. src/styles/theme.css 의 :root 값 교체 (CSS 전역 영향)
+ * 2. 아래 COLORS 의 hex 값도 동일하게 업데이트 (JS inline style 영향)
+ */
 export const COLORS = {
-  primary: '#5b6ef5',
-  primaryDark: '#4a5ce0',
-  background: '#f7f7fb',
-  white: '#ffffff',
-  card: '#ffffff',
-  border: '#e8e8f0',
-  text: '#1a1a2e',
-  textSecondary: '#6b6b8a',
-  textMuted: '#9999bb',
-  danger: '#e53e3e',
-  success: '#38a169',
+  primary:       '#5b6ef5',
+  primaryDark:   '#4a5ce0',
+  accent:        '#a78bfa',
 
-  // Dark theme (Login/Signup)
-  darkBg: '#0a0a1a',
-  darkCard: '#1a1a2e',
-  darkBorder: '#2a2a4e',
-  darkText: '#e8e8ff',
-  darkTextSecondary: '#8888bb',
+  background:    '#f7f7fb',
+  white:         '#ffffff',
+  card:          '#ffffff',
+  border:        '#e8e8f0',
+  borderLight:   '#f0f0f8',
+
+  text:          '#1a1a2e',
+  textSecondary: '#6b6b8a',
+  textMuted:     '#9999bb',
+
+  danger:        '#e53e3e',
+  success:       '#38a169',
+  warning:       '#f59e0b',
+
+  // Dark theme (Login / Signup)
+  darkBg:              '#0a0a1a',
+  darkCard:            '#1a1a2e',
+  darkCardAlt:         '#16163a',
+  darkBorder:          '#2a2a4e',
+  darkText:            '#e8e8ff',
+  darkTextSecondary:   '#8888bb',
+};
+
+/*
+ * CSS 변수 이름 — 컴포넌트에서 var(CSS_VARS.primary) 형태로 사용 가능.
+ * Stitch 교체 후에도 theme.css 한 곳만 수정하면 반영됨.
+ */
+export const CSS_VARS = {
+  primary:       'var(--color-primary)',
+  primaryDark:   'var(--color-primary-dark)',
+  accent:        'var(--color-accent)',
+
+  bg:            'var(--color-bg)',
+  surface:       'var(--color-surface)',
+  border:        'var(--color-border)',
+
+  text:          'var(--color-text)',
+  textSecondary: 'var(--color-text-secondary)',
+  textMuted:     'var(--color-text-muted)',
+
+  danger:        'var(--color-danger)',
+  success:       'var(--color-success)',
+
+  darkBg:        'var(--color-dark-bg)',
+  darkSurface:   'var(--color-dark-surface)',
+  darkBorder:    'var(--color-dark-border)',
+  darkText:      'var(--color-dark-text)',
 };
 
 export const MOOD_COLORS = {
