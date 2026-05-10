@@ -47,6 +47,9 @@ dependencies {
     // Logstash encoder (JSON logs)
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

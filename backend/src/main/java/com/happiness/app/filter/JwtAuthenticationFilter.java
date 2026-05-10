@@ -3,6 +3,7 @@ package com.happiness.app.filter;
 import com.happiness.app.security.auth.CustomUserDetails;
 import com.happiness.app.security.auth.CustomUserDetailsService;
 import com.happiness.app.security.jwt.JwtTokenProvider;
+import com.happiness.app.security.token.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -27,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -38,7 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token)) {
             try {
                 Claims claims = jwtTokenProvider.parseToken(token);
-                if (jwtTokenProvider.isAccessToken(claims)) {
+
+                // 블랙리스트 확인
+                String jti = jwtTokenProvider.getJti(claims);
+                if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
+                    log.debug("[JWT] 블랙리스트 토큰 - jti={}", jti);
+                } else if (jwtTokenProvider.isAccessToken(claims)) {
                     String email = jwtTokenProvider.getEmail(claims);
                     CustomUserDetails userDetails =
                             (CustomUserDetails) userDetailsService.loadUserByUsername(email);

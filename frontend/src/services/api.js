@@ -1,33 +1,35 @@
-const BASE = 'http://localhost:8080/api';
-
-const request = async (path, opts = {}) => {
-  const res = await fetch(`${BASE}${path}`, {
-    ...opts,
-    headers: opts.body ? { 'Content-Type': 'application/json' } : {},
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  return res.json();
-};
+import apiClient from '../api/apiClient';
 
 export const photoApi = {
-  getAll: ()         => request('/photos'),
-  create: (data)     => request('/photos',                { method: 'POST', body: data }),
-  update: (id, data) => request(`/photos/${id}`,          { method: 'PUT',  body: data }),
-  remove: (id)       => request(`/photos/${id}`,          { method: 'DELETE' }),
-  like:   (id)       => request(`/photos/${id}/like`,     { method: 'POST' }),
-  save:   (id)       => request(`/photos/${id}/save`,     { method: 'POST' }),
+  getAll: ()         => apiClient.get('/photos').then(r => r.data),
+  getOne: (id)       => apiClient.get(`/photos/${id}`).then(r => r.data),
+  create: (data)     => apiClient.post('/photos', data).then(r => r.data),
+  update: (id, data) => apiClient.put(`/photos/${id}`, data).then(r => r.data),
+  remove: (id)       => apiClient.delete(`/photos/${id}`).then(r => r.data),
 
-  // 파일 업로드 (FormData — Content-Type 헤더는 브라우저가 자동 설정)
-  uploadFile: async (formData) => {
-    const res = await fetch(`${BASE}/photos/upload`, { method: 'POST', body: formData });
-    return res.json();
-  },
+  uploadFile: (formData) =>
+    apiClient.post('/photos/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data),
+
+  likePhoto:   (id, memberId) => apiClient.post(`/photos/${id}/likes`, null, { params: { memberId } }).then(r => r.data),
+  unlikePhoto: (id, memberId) => apiClient.delete(`/photos/${id}/likes`, { params: { memberId } }).then(r => r.data),
+  savePhoto:   (id, memberId) => apiClient.post(`/photos/${id}/saves`, null, { params: { memberId } }).then(r => r.data),
+  unsavePhoto: (id, memberId) => apiClient.delete(`/photos/${id}/saves`, { params: { memberId } }).then(r => r.data),
+  getSaved:    (memberId)     => apiClient.get(`/photos/saves/${memberId}`).then(r => r.data),
 };
 
 export const authApi = {
-  login:            (data)    => request('/auth/login',                  { method: 'POST', body: data }),
-  signup:           (data)    => request('/auth/signup',                 { method: 'POST', body: data }),
-  updateProfile:    (id, data) => request(`/auth/member/${id}/profile`,  { method: 'PUT',  body: data }),
-  checkEmail:       (email)   => request(`/auth/check-email?email=${encodeURIComponent(email)}`),
-  checkProfileName: (name)    => request(`/auth/check-profile-name?name=${encodeURIComponent(name)}`),
+  login:            (data)     => apiClient.post('/auth/login',                  data).then(r => r.data),
+  signup:           (data)     => apiClient.post('/auth/signup',                 data).then(r => r.data),
+  logout:           (data)     => apiClient.post('/auth/logout',                 data).then(r => r.data),
+  refresh:          (data)     => apiClient.post('/auth/refresh',                data).then(r => r.data),
+  updateProfile:    (id, data) => apiClient.put(`/auth/member/${id}/profile`,    data).then(r => r.data),
+  checkEmail:       (email)    => apiClient.get('/auth/check-email',    { params: { email } }).then(r => r.data),
+  checkProfileName: (name)     => apiClient.get('/auth/check-profile-name', { params: { name } }).then(r => r.data),
+
+  uploadFile: (formData) =>
+    apiClient.post('/photos/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data),
 };

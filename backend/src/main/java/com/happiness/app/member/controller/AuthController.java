@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -23,6 +24,8 @@ public class AuthController {
     private final MemberService memberService;
     private final AuthService authService;
     private final KakaoOAuthService kakaoOAuthService;
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<MemberResponse>> signup(@Valid @RequestBody SignUpRequest request) {
@@ -40,9 +43,21 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refresh(
-            @Valid @RequestBody RefreshTokenRequest request) {
-        TokenResponse token = authService.refresh(request);
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpRequest) {
+        TokenResponse token = authService.refresh(request, httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(token));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestBody(required = false) LogoutRequest request,
+            HttpServletRequest httpRequest) {
+        String bearer = httpRequest.getHeader("Authorization");
+        String rawToken = (StringUtils.hasText(bearer) && bearer.startsWith(BEARER_PREFIX))
+                ? bearer.substring(BEARER_PREFIX.length()) : null;
+        authService.logout(rawToken, request != null ? request : new LogoutRequest(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @GetMapping("/check-email")
@@ -73,8 +88,7 @@ public class AuthController {
 
     @PostMapping("/oauth/kakao")
     public ResponseEntity<ApiResponse<MemberResponse>> kakaoLogin(
-            @RequestBody Map<String, String> body,
-            HttpServletRequest httpRequest) {
+            @RequestBody Map<String, String> body) {
         String code = body.get("code");
         MemberResponse member = kakaoOAuthService.kakaoLogin(code);
         return ResponseEntity.ok(ApiResponse.ok(member));

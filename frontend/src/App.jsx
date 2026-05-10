@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import useAuthStore from './store/authStore';
 
 import LoginPage    from './pages/LoginPage';
 import SignUpPage   from './pages/SignUpPage';
@@ -11,18 +13,10 @@ import ListPage     from './pages/ListPage';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import PhotoFormPage   from './pages/PhotoFormPage';
 import ProfilePage  from './pages/ProfilePage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
 
 // Routes that show the Header (authenticated app shell)
 const STANDALONE_PATHS = ['/login', '/signup'];
-
-function ProtectedRoute({ children }) {
-  const { user } = useAuth();
-  const location = useLocation();
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return children;
-}
 
 function AppShell() {
   const location = useLocation();
@@ -63,6 +57,9 @@ function AppShell() {
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
 
+          {/* Unauthorized */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -72,6 +69,10 @@ function AppShell() {
 }
 
 export default function App() {
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
