@@ -56,6 +56,10 @@ const useAuthStore = create((set, get) => ({
     set({ accessToken });
   },
 
+  setUser(user) {
+    set({ user });
+  },
+
   async setTokens(accessToken, refreshToken) {
     await secureStorage.saveRefreshToken(refreshToken);
     set({ accessToken, refreshToken, isAuthenticated: true });
