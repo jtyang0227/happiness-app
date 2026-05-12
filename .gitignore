@@ -25,10 +25,14 @@ frontend/build/
 mobile/.expo/
 mobile/dist/
 
-# Environment
+# Environment — 시크릿 파일 절대 커밋 금지
 .env
 .env.local
 .env.*.local
+# 운영 환경변수 파일 (실제 값이 들어있는 경우)
+backend/src/main/resources/application-prod.properties
+# Docker 로컬 오버라이드
+docker-compose.override.yml
 
 # Logs
 *.log
