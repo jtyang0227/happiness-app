@@ -37,8 +37,8 @@ server:
   # Railway/Render는 PORT 환경변수 자동 주입
   port: ${PORT:8080}
   tomcat:
-    # 운영 커넥션 튜닝
-    max-threads: 200
+    threads:
+      max: 200        # Spring Boot 3.x: server.tomcat.threads.max
     accept-count: 100
   # HTTPS 리다이렉트는 Cloudflare에서 처리하므로 앱 레벨 불필요
   # forward-headers-strategy: NATIVE  # 프록시 헤더 신뢰
