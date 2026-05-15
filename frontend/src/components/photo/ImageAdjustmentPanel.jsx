@@ -2,6 +2,7 @@ import React from 'react';
 import { COLORS } from '../../constants/colors';
 import { DEFAULT_ADJUSTMENTS, DEFAULT_CHANNEL_CURVES, DEFAULT_EFFECTS } from '../../hooks/useImageAdjustments';
 import CurveEditor from './CurveEditor';
+import PresetManager from './PresetManager';
 
 const SLIDERS = [
   { key: 'exposure',   label: '노출',        icon: '☀',  min: -3,   max: 3,   step: 0.05 },
@@ -98,6 +99,7 @@ function isDefaultChannelCurves(cc) {
  *   channelCurves, onChannelCurveChange   — 채널별 커브
  *   effects, onEffect
  *   histogram                             — computeHistogram() 결과 or null
+ *   onApplyPreset                         — ({ adjustments, channelCurves, effects }) => void
  */
 export default function ImageAdjustmentPanel({
   adjustments,
@@ -107,6 +109,7 @@ export default function ImageAdjustmentPanel({
   effects,
   onEffect,
   histogram,
+  onApplyPreset,
 }) {
   const hasChanges =
     Object.keys(DEFAULT_ADJUSTMENTS).some(k => adjustments[k] !== 0) ||
@@ -174,6 +177,15 @@ export default function ImageAdjustmentPanel({
       {GRAIN_SLIDERS.map(def => (
         <SliderRow key={def.key} def={def} value={effects[def.key]} onChange={onEffect} />
       ))}
+
+      {/* 프리셋 */}
+      <SectionHeader title="프리셋" />
+      <PresetManager
+        adjustments={adjustments}
+        channelCurves={channelCurves}
+        effects={effects}
+        onApply={onApplyPreset}
+      />
     </div>
   );
 }

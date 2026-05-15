@@ -164,6 +164,17 @@ export default function PhotoFormPage() {
     setEffects(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleApplyPreset = useCallback(({ adjustments: adj, channelCurves: cc, effects: ef }) => {
+    setAdjustments({ ...adj });
+    setChannelCurves({
+      rgb: cc.rgb.map(p => ({ ...p })),
+      r:   cc.r.map(p => ({ ...p })),
+      g:   cc.g.map(p => ({ ...p })),
+      b:   cc.b.map(p => ({ ...p })),
+    });
+    setEffects({ ...ef });
+  }, []);
+
   // ── 폼 핸들러 ────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -340,6 +351,7 @@ export default function PhotoFormPage() {
                         effects={effects}
                         onEffect={handleEffect}
                         histogram={histogram}
+                        onApplyPreset={handleApplyPreset}
                       />
                     </div>
                   )}
