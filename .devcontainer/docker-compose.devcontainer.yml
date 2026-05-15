@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  # devcontainer 전용 서비스 (Java 25 + Node 20 개발 환경)
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/java:25
+    volumes:
+      - ..:/workspace:cached
+      - gradle-cache:/root/.gradle
+      - npm-cache:/root/.npm
+    command: sleep infinity
+    network_mode: service:backend
+    depends_on:
+      - backend
+      - redis
+
+volumes:
+  gradle-cache:
+  npm-cache:
