@@ -28,7 +28,12 @@ function AppShell() {
   return (
     <div style={{ minHeight: '100vh', background: bg }}>
       {!isStandalone && <Header />}
-      <main style={{ paddingBottom: 40 }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .happiness-main { padding-bottom: calc(60px + env(safe-area-inset-bottom) + 16px) !important; }
+        }
+      `}</style>
+      <main className="happiness-main" style={{ paddingBottom: 40 }}>
         <Routes>
           {/* Standalone (no header, dark theme) */}
           <Route path="/login"  element={<LoginPage />} />
