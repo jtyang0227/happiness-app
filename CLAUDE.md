@@ -219,15 +219,17 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 ### Frontend (`src/`)
 
 - **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile)
-- **components/layout/Header** — 상단 네비게이션 (탐색·갤러리·목록·등록·프로필 탭 + 로그아웃)
-- **components/common/** — Toast, GridSpanPicker (12-컬럼 너비 선택), **ImageUploader** (드래그&드롭 + 진행률 + 미리보기)
+- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응
+- **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
+- **components/common/GridSpanPicker** — 12-컬럼 너비 선택
+- **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **contexts/AuthContext** — 전역 인증 상태 (login/signup/updateProfile/logout + localStorage)
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
-- **hooks/useToast** — 토스트 알림 훅
+- **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi (fetch wrapper)
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
-- **services/mockData.js** — 탐색 화면용 목 데이터
+- **services/mockData.js** — 탐색 화면용 목 데이터 (ExplorePage는 실제 API 사용 중, 파일은 보존)
 
 Routing via React Router DOM v6. No Redux — state managed through Context + local state.
 
