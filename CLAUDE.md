@@ -10,6 +10,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 디자인 작업 규칙
+
+**UI/UX 관련 작업(신규 화면, 컴포넌트 개선, 레이아웃 변경)을 할 때는 반드시 아래를 수행한다:**
+
+1. 작업 전에 `DESIGN_PROMPT_<feature>.md` 파일을 생성한다
+2. 파일 안에 claude.ai에서 아티팩트로 요청할 수 있는 프롬프트를 작성한다
+3. 프롬프트에는 반드시 아래 시스템 컨텍스트를 포함한다:
+
+```
+[시스템 컨텍스트]
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
+아이콘: 이모지 또는 유니코드 기호 사용 (외부 아이콘 라이브러리 없음)
+
+현재 컬러 시스템:
+  primary:       '#5b6ef5'
+  primaryDark:   '#4458e0'
+  primaryLight:  '#eef0ff'
+  accent:        '#a78bfa'
+  bg:            '#f5f5fa'
+  surface:       '#ffffff'
+  border:        '#e2e2ee'
+  text:          '#1a1a2e'
+  textSecondary: '#5c5c7a'
+  textMuted:     '#9090b0'
+  danger:        '#e53e3e'
+  darkBg:        '#0a0a18'
+  darkSurface:   '#12122a'
+  galleryBg:     '#0e0e0e'
+
+규칙:
+- export default 함수형 컴포넌트 1개만 반환
+- style은 inline object 사용
+- 외부 라이브러리 import 없음 (react, react-router-dom만 허용)
+- 한국어 UI 텍스트
+```
+
+4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
+
+---
+
 ## Project Overview
 
 Full-stack photo-sharing app with three components:
