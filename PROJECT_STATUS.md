@@ -163,6 +163,52 @@
 - Supabase Storage 연동 (업로드/삭제, UUID 파일명)
 - CORS allowedOrigins 환경변수 제어
 
+#### 이메일 알림 설정 (선택적)
+
+문의 폼(Phase 2-3)에서 새 문의가 접수되면 작가에게 이메일을 발송하는 기능입니다.  
+**설정하지 않아도 앱은 정상 동작합니다** — 문의는 DB에 저장되고, 이메일 발송만 건너뜁니다.
+
+##### application.yml 설정 위치
+
+```yaml
+spring:
+  mail:
+    host: ${MAIL_HOST:}          # SMTP 서버 주소 (비어 있으면 발송 비활성화)
+    port: ${MAIL_PORT:587}       # SMTP 포트 (Gmail: 587, SSL: 465)
+    username: ${MAIL_USERNAME:}  # 발신 계정 이메일
+    password: ${MAIL_PASSWORD:}  # 앱 비밀번호 (Google: 2단계 인증 후 앱 비밀번호 발급)
+    from: ${MAIL_FROM:noreply@happiness.app}  # 메일 발신자 표시명
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+```
+
+##### 동작 방식
+
+| 상태 | 동작 |
+|------|------|
+| `MAIL_HOST` 미설정 (기본값) | DB 저장 후 이메일 발송 생략, 로그에 안내 메시지 출력 |
+| `MAIL_HOST` 설정됨 | DB 저장 + 작가 이메일로 HTML 알림 발송 |
+| 발송 실패 (연결 오류 등) | 예외 catch → 로그 경고만 출력, 앱 중단 없음 |
+
+##### 활성화 방법 (Gmail 기준)
+
+1. Google 계정 → **보안** → **2단계 인증** 활성화
+2. **앱 비밀번호** 발급 (앱: 메일, 기기: Windows)
+3. 아래 환경변수 설정:
+
+```bash
+# Railway Variables 또는 .env.local
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-gmail@gmail.com
+MAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx   # 앱 비밀번호 (16자리)
+MAIL_FROM=your-gmail@gmail.com
+```
+
+> **주의**: `MAIL_PASSWORD`에 Gmail 계정 비밀번호가 아닌 **앱 비밀번호**를 사용해야 합니다.  
+> SendGrid 등 다른 SMTP 서비스도 동일한 방식으로 연결 가능합니다.
+
 ---
 
 ### Mobile (React Native 0.72 + Expo 49)
@@ -278,5 +324,5 @@
 | PhotoController `@CrossOrigin("*")` | 제거 (WebConfig CORS로 통일) | 2026-06-11 |
 | PhotoDetailPage ternary 오류 | 모바일/데스크탑 레이아웃 분기 복구 | 2026-06-11 |
 | PhotoRequest colorMood 누락 | DTO에 필드 추가 (빌드 오류 수정) | 2026-06-11 |
-| application.yml 중복 spring 블록 | 단일 블록으로 병합 | 이전 |
-| Docker 빌드 Java 25 충돌 | Dockerfile.prod (pre-built JAR 방식) | 이전 |
+| application.yml 중복 spring 블록 | 단일 블록으로 병합, InquiryEmailService mailHost 가드 추가 | 2026-06-11 |
+| Docker 빌드 Java 25 충돌 | Dockerfile.prod (pre-built JAR 방식) | 2026-06-11 |
