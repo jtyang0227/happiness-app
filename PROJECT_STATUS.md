@@ -1,8 +1,8 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
 > 최종 업데이트: 2026-06-11  
-> 전체 완성도: **Backend 96% / Frontend 92% / Mobile 20%**
-> Phase 2-7 완료: pg_trgm 유사도 검색, 자동완성 드롭다운, 검색 히스토리, 결과 하이라이팅
+> 전체 완성도: **Backend 98% / Frontend 95% / Mobile 20%**
+> Phase 2-8 완료: 4탭 마이페이지, 아바타/커버 업로드, 통계 6종, 비밀번호 변경, 저장함/시리즈 탭
 
 ---
 
@@ -17,8 +17,8 @@
 | **Phase 2-4 — 통계 대시보드** | ⬜ 별도 앱 | happiness-admin 앱에 구현 예정 |
 | **Phase 2-5 — 사진 순서 정렬** | ✅ 완료 | HTML5 DnD 드래그 정렬, displayOrder 저장 |
 | **Phase 2-6 — 갤러리 정렬 강화** | ✅ 완료 | 6가지 정렬, 그리드/리스트 뷰, 비율 필터 |
-| **Phase 2-7 — 검색 고도화** | ✅ 완료 | pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅 |
-| **Phase 2-8 — 마이페이지 강화** | 📋 기획 완료 | 아바타 업로드, 비밀번호 변경, 저장함, 통계 |
+| **Phase 2-7 — 검색 고도화** | ✅ 완료 | pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅, 태그 검색 |
+| **Phase 2-8 — 마이페이지 강화** | ✅ 완료 | 4탭 구조, 아바타/커버 업로드, 통계 6종, 비밀번호 변경, 저장함/시리즈 |
 | **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
 
 ### 주요 완성 기능 (2026-06-11 기준)
@@ -38,6 +38,8 @@
 ✅ 촬영 문의 폼 (/inquiry/:profileName) — 공개 접근, 7가지 촬영 종류
 ✅ 문의 수신함 (/inbox) — 읽음/안읽음 필터, 삭제, 이메일 답장
 ✅ 사진 순서 정렬 (/gallery/sort) — 드래그&드롭, displayOrder API 저장
+✅ 검색 고도화 — pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅, 태그 검색
+✅ 마이페이지 4탭 — 내 작품·저장함·시리즈·설정, 아바타/커버 업로드, 통계 6종, 비밀번호 변경
 ✅ Rate Limiting, JWT 보안, Supabase Storage 연동
 ```
 
@@ -61,7 +63,7 @@
 | 촬영 문의 폼 | `/inquiry/:profileName` | ✅ 완성 | 공개 폼, 촬영 종류 7가지, 성공 화면 |
 | 문의 수신함 | `/inbox` | ✅ 완성 | 읽음/안읽음 필터, expandable 카드, 답장/삭제 |
 | 사진 순서 정렬 | `/gallery/sort` | ✅ 완성 | HTML5 DnD 드래그, 순서 번호 배지, API 저장 |
-| 프로필 | `/profile` | ⚠️ 기본 | 기본 정보 표시, SNS 스타일 미완성 |
+| 프로필 | `/profile` | ✅ 완성 | 4탭(내작품/저장함/시리즈/설정), 아바타/커버 업로드, 통계 6종, 비밀번호 변경 |
 | 로그인 | `/login` | ✅ 완성 | 다크 테마, 카카오 OAuth 버튼 |
 | 회원가입 | `/signup` | ✅ 완성 | 이메일/비밀번호/프로필명 검증 |
 | 카카오 콜백 | `/oauth/kakao/callback` | ✅ 완성 | 인가코드 처리, JWT 수신, 자동 로그인 |
@@ -425,7 +427,17 @@ GET /api/photos?tags=여행,풍경
 | `PhotoRepository.java` | `searchFuzzy()` native query (pg_trgm) + `findTitleSuggestions()` JPQL 추가 |
 | `PhotoController.java` | `GET /photos/suggestions` 자동완성 엔드포인트 + getAllPhotos에서 fuzzy/LIKE 자동 fallback |
 | `api.js` | `photoApi.getSuggestions(q)` 추가 |
-| `ExplorePage.jsx` | 자동완성 드롭다운(debounce 300ms), 검색 히스토리(localStorage, 최근 5개), 결과 하이라이팅, 이미지 비율 필터 |
+| `ExplorePage.jsx` | 자동완성 드롭다운(debounce 300ms), 검색 히스토리(localStorage, 최근 5개), 결과 하이라이팅, 이미지 비율 필터, 태그 검색 칩 |
+| `PhotoTagRepository.java` | `findPhotoIdsByMemberNamesIn()` JPQL — 콤마 구분 태그명으로 photoId 목록 조회 |
+| `PhotoController.java` | `tags` 쿼리 파라미터 처리, post-filter로 photoId Set 필터링 |
+| `api.js` | `photoApi.searchByTags(tags, {sortBy, order})` 추가 |
+
+### 한글·영문 양쪽 지원
+
+`searchFuzzy()` 쿼리에 `LOWER()` 래핑 + `word_similarity()` / `<<%` 연산자 추가:
+- 영문 대소문자 무관 검색 (`ILIKE`, `LOWER() % LOWER()`)
+- 영문 단어 경계 매칭 (예: "photo" → "photography")
+- 한글·영문 동시 trigram 인덱스 활용
 
 ### fallback 전략
 
@@ -444,11 +456,12 @@ CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (LOWER(desc
 
 ---
 
-## 📋 Phase 2-8 — 마이페이지 / 프로필 관리 강화 (기획)
+## ✅ Phase 2-8 — 마이페이지 / 프로필 관리 강화 (완료)
 
+> 완료일: 2026-06-11  
 > 목표: 작가가 자신의 계정을 완전히 관리할 수 있는 SNS 스타일 마이페이지
 
-### 현재 상태 (`ProfilePage.jsx`)
+### 기존 상태 (`ProfilePage.jsx`)
 - 이름, 전화번호, 포트폴리오 주소, 인스타그램 ID 편집만 가능
 - 아바타: 이름 첫 글자 텍스트 (이미지 업로드 불가)
 - 통계: 사진수·좋아요·저장 3가지
@@ -541,12 +554,28 @@ GET /api/auth/member/:id/stats
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `ProfilePage.jsx` | 전체 리팩토링 — 탭 구조, 아바타 업로드, 저장함, 통계 강화 |
-| `MemberController.java` | `GET /:id/stats`, `PUT /:id/password`, `PUT /:id/profile` 필드 확장 |
-| `MemberService.java` | 비밀번호 변경 로직 (`BCrypt` 현재→새 비밀번호 검증) |
-| `MemberUpdateRequest.java` | `bio`, `websiteUrl`, `location`, `specialties`, `coverUrl` 추가 |
-| `MemberResponse.java` | 신규 필드 포함 |
-| Supabase SQL | members 테이블 컬럼 추가 마이그레이션 |
+| `ProfilePage.jsx` | 전체 리팩토링 — 4탭(내 작품/저장함/시리즈/설정), 아바타/커버 업로드, 통계 6종, 비밀번호 변경 |
+| `Member.java` | `avatarUrl`, `coverUrl`, `bio`, `websiteUrl`, `location`, `specialties` 필드 추가 |
+| `AuthController.java` | `GET /member/:id/stats`, `PUT /member/:id/password` 엔드포인트 추가 |
+| `MemberService.java` | `getMemberStats()`, `changePassword()` 메서드 추가, `updateProfile()` 6개 필드 확장 |
+| `ProfileUpdateRequest.java` | 신규 6개 필드 추가 |
+| `MemberResponse.java` | 신규 필드 + `provider` 포함 |
+| `PasswordChangeRequest.java` | 신규 DTO (currentPassword, newPassword) |
+| `MemberStatsResponse.java` | 신규 DTO (photoCount, totalLikes, totalSaves, totalShares, inquiryCount, unreadInquiryCount) |
+| `PhotoRepository.java` | `countByMemberId()`, `sumLikesCountByMemberId()`, `sumSavesCountByMemberId()`, `sumSharesCountByMemberId()` 추가 |
+| `InquiryRepository.java` | `countByReceiverMemberId()` 추가 |
+| `api.js` | `authApi.getStats(id)`, `authApi.changePassword(id, data)` 추가 |
+
+### 운영 DB 마이그레이션 (신규 배포 시)
+
+```sql
+ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url   VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_url    VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS bio          TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS website_url  VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS location     VARCHAR(100);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS specialties  VARCHAR(300);
+```
 
 ---
 

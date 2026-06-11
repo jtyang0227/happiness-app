@@ -78,5 +78,19 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     @Query("SELECT p.title FROM Photo p WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY p.title")
     List<String> findTitleSuggestions(@Param("q") String q, Pageable pageable);
 
+    // ── 통계 집계 ────────────────────────────────────────────
+
+    @Query("SELECT COUNT(p) FROM Photo p WHERE p.memberId = :memberId")
+    long countByMemberId(@Param("memberId") Long memberId);
+
+    @Query("SELECT COALESCE(SUM(p.likesCount), 0) FROM Photo p WHERE p.memberId = :memberId")
+    long sumLikesCountByMemberId(@Param("memberId") Long memberId);
+
+    @Query("SELECT COALESCE(SUM(p.savesCount), 0) FROM Photo p WHERE p.memberId = :memberId")
+    long sumSavesCountByMemberId(@Param("memberId") Long memberId);
+
+    @Query("SELECT COALESCE(SUM(p.sharesCount), 0) FROM Photo p WHERE p.memberId = :memberId")
+    long sumSharesCountByMemberId(@Param("memberId") Long memberId);
+
     void deleteByMemberId(Long memberId);
 }

@@ -10,8 +10,13 @@ import lombok.NoArgsConstructor;
 public class ProfileUpdateRequest {
     private String name;
     private String tel;
-    /** 포트폴리오 서브도메인 슬러그 (소문자, 숫자, 하이픈, 3-30자) */
     private String profileName;
-    /** 인스타그램 아이디 (@ 제외) */
     private String instagramId;
+    private String avatarUrl;
+    private String coverUrl;
+    private String bio;
+    private String websiteUrl;
+    private String location;
+    /** 촬영 전문 분야 — 콤마 구분 (예: "결혼식,인물,풍경") */
+    private String specialties;
 }

@@ -86,6 +86,19 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    @GetMapping("/member/{id}/stats")
+    public ResponseEntity<ApiResponse<MemberStatsResponse>> getMemberStats(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(memberService.getMemberStats(id)));
+    }
+
+    @PutMapping("/member/{id}/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @PathVariable Long id,
+            @RequestBody PasswordChangeRequest request) {
+        memberService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
     @PostMapping("/oauth/kakao")
     public ResponseEntity<ApiResponse<MemberResponse>> kakaoLogin(
             @RequestBody Map<String, String> body) {

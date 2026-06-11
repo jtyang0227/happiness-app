@@ -154,7 +154,9 @@ export default function ExplorePage() {
   const [mood, setMood]             = useState('');
   const [imageRatio, setImageRatio] = useState('');
   const [sortIdx, setSortIdx]       = useState(0);
-  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', sortBy: 'createdAt', order: 'desc' });
+  const [tagInput, setTagInput]     = useState('');
+  const [activeTags, setActiveTags] = useState([]);
+  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', tags: '', sortBy: 'createdAt', order: 'desc' });
 
   // autocomplete + history
   const [suggestions, setSuggestions] = useState([]);
@@ -177,6 +179,23 @@ export default function ExplorePage() {
       setLoading(false);
     }
   }, [query]);
+
+  /* ── tag helpers ──────────────────────────────────── */
+  const addTag = (tag) => {
+    const t = tag.trim();
+    if (!t || activeTags.includes(t)) return;
+    const next = [...activeTags, t];
+    setActiveTags(next);
+    const s = SORT_OPTIONS[sortIdx];
+    setQuery(q => ({ ...q, tags: next.join(','), sortBy: s.sortBy, order: s.order }));
+    setTagInput('');
+  };
+
+  const removeTag = (tag) => {
+    const next = activeTags.filter(t => t !== tag);
+    setActiveTags(next);
+    setQuery(q => ({ ...q, tags: next.join(',') }));
+  };
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
@@ -210,13 +229,14 @@ export default function ExplorePage() {
   /* ── helpers ──────────────────────────────────────── */
   const applyFilters = useCallback((overrides = {}) => {
     const s = SORT_OPTIONS[overrides.sortIdx ?? sortIdx];
-    setQuery({
+    setQuery(q => ({
       keyword:    overrides.keyword    ?? search.trim(),
       colorMood:  overrides.colorMood  ?? mood,
       imageRatio: overrides.imageRatio ?? imageRatio,
+      tags:       q.tags,
       sortBy:     s.sortBy,
       order:      s.order,
-    });
+    }));
   }, [search, mood, imageRatio, sortIdx]);
 
   const commitSearch = useCallback((term) => {
@@ -225,7 +245,7 @@ export default function ExplorePage() {
     setShowDrop(false);
     if (t) { saveHistory(t); setHistory(loadHistory()); }
     const s = SORT_OPTIONS[sortIdx];
-    setQuery({ keyword: t, colorMood: mood, imageRatio, sortBy: s.sortBy, order: s.order });
+    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, tags: q.tags, sortBy: s.sortBy, order: s.order }));
   }, [sortIdx, mood, imageRatio]);
 
   const handleSearch = (e) => { e.preventDefault(); commitSearch(search); };
@@ -384,6 +404,37 @@ export default function ExplorePage() {
             </button>
           );
         })}
+      </div>
+
+      {/* Tag filter */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: 600, marginBottom: 6 }}>
+          태그 검색 (사진에 태그된 이름)
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {activeTags.map(tag => (
+            <span key={tag} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '4px 10px', borderRadius: 20,
+              background: COLORS.primary, color: '#fff', fontSize: 12, fontWeight: 700,
+            }}>
+              #{tag}
+              <span onClick={() => removeTag(tag)} style={{ cursor: 'pointer', opacity: 0.8, fontSize: 11 }}>✕</span>
+            </span>
+          ))}
+          <form onSubmit={e => { e.preventDefault(); addTag(tagInput); }} style={{ display: 'flex', gap: 4 }}>
+            <input
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              placeholder="태그 입력 후 Enter"
+              style={{
+                padding: '5px 10px', borderRadius: 20, fontSize: 12,
+                border: `1.5px solid ${COLORS.border}`, outline: 'none', color: COLORS.text,
+                width: 140,
+              }}
+            />
+          </form>
+        </div>
       </div>
 
       {/* Active keyword badge */}

@@ -1,13 +1,12 @@
 package com.happiness.app.member.service;
 
-import com.happiness.app.member.dto.LoginRequest;
-import com.happiness.app.member.dto.MemberResponse;
-import com.happiness.app.member.dto.ProfileUpdateRequest;
-import com.happiness.app.member.dto.SignUpRequest;
+import com.happiness.app.inquiry.repository.InquiryRepository;
+import com.happiness.app.member.dto.*;
 import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
+import com.happiness.app.photo.repository.PhotoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,8 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PhotoRepository photoRepository;
+    private final InquiryRepository inquiryRepository;
 
     // RFC 5322 간략화 이메일 정규식
     private static final Pattern EMAIL_PATTERN =
@@ -117,7 +118,37 @@ public class MemberService {
             member.setInstagramId(instagramId);
         }
 
+        if (request.getAvatarUrl() != null)   member.setAvatarUrl(request.getAvatarUrl().isBlank() ? null : request.getAvatarUrl().trim());
+        if (request.getCoverUrl() != null)    member.setCoverUrl(request.getCoverUrl().isBlank() ? null : request.getCoverUrl().trim());
+        if (request.getBio() != null)         member.setBio(request.getBio().isBlank() ? null : request.getBio().trim());
+        if (request.getWebsiteUrl() != null)  member.setWebsiteUrl(request.getWebsiteUrl().isBlank() ? null : request.getWebsiteUrl().trim());
+        if (request.getLocation() != null)    member.setLocation(request.getLocation().isBlank() ? null : request.getLocation().trim());
+        if (request.getSpecialties() != null) member.setSpecialties(request.getSpecialties().isBlank() ? null : request.getSpecialties().trim());
+
         return MemberResponse.fromEntity(memberRepository.save(member));
+    }
+
+    public void changePassword(Long memberId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        if (member.getPassword() == null || !passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        validatePassword(newPassword);
+        member.setPassword(passwordEncoder.encode(newPassword));
+        memberRepository.save(member);
+    }
+
+    @Transactional(readOnly = true)
+    public MemberStatsResponse getMemberStats(Long memberId) {
+        return MemberStatsResponse.builder()
+                .photoCount(photoRepository.countByMemberId(memberId))
+                .totalLikes(photoRepository.sumLikesCountByMemberId(memberId))
+                .totalSaves(photoRepository.sumSavesCountByMemberId(memberId))
+                .totalShares(photoRepository.sumSharesCountByMemberId(memberId))
+                .inquiryCount(inquiryRepository.countByReceiverMemberId(memberId))
+                .unreadInquiryCount(inquiryRepository.countByReceiverMemberIdAndIsReadFalse(memberId))
+                .build();
     }
 
     public MemberResponse findOrCreateOAuthMember(String provider, String providerId, String email, String name) {

@@ -41,6 +41,10 @@ export const photoApi = {
 
   getSuggestions: (q) =>
     apiClient.get('/photos/suggestions', { params: { q } }).then(r => r.data),
+
+  /** tags: 콤마 구분 태그 이름 문자열 */
+  searchByTags: (tags, { sortBy = 'createdAt', order = 'desc' } = {}) =>
+    apiClient.get('/photos', { params: { tags, sortBy, order } }).then(r => r.data),
 };
 
 export const inquiryApi = {
@@ -92,6 +96,8 @@ export const authApi = {
   checkEmail:       (email)    => apiClient.get('/auth/check-email',    { params: { email } }).then(r => r.data),
   checkProfileName: (name)     => apiClient.get('/auth/check-profile-name', { params: { name } }).then(r => r.data),
   kakaoLogin:       (code)     => apiClient.post('/auth/oauth/kakao', null, { params: { code } }).then(r => r.data),
+  getStats:         (id)       => apiClient.get(`/auth/member/${id}/stats`).then(r => r.data),
+  changePassword:   (id, data) => apiClient.put(`/auth/member/${id}/password`, data).then(r => r.data),
 
   uploadFile: (formData) =>
     apiClient.post('/photos/upload', formData, {

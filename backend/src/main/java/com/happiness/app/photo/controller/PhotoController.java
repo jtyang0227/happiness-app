@@ -46,7 +46,7 @@ public class PhotoController {
     );
 
     /**
-     * GET /api/photos?keyword=&colorMood=&memberId=&imageRatio=&sortBy=createdAt&order=desc
+     * GET /api/photos?keyword=&colorMood=&memberId=&imageRatio=&sortBy=createdAt&order=desc&tags=이름1,이름2
      * 모든 파라미터 선택적 — 없으면 전체 반환
      */
     @GetMapping
@@ -56,17 +56,28 @@ public class PhotoController {
             @RequestParam(required = false) Long memberId,
             @RequestParam(required = false) String imageRatio,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String order
+            @RequestParam(defaultValue = "desc") String order,
+            @RequestParam(required = false) String tags
     ) {
         String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(Sort.Order.by(field).with(direction).nullsLast());
 
+        // tags 파라미터: 콤마 구분 이름 목록 → 해당 태그가 있는 photoId 목록 선 추출
+        Set<Long> taggedPhotoIds = null;
+        if (tags != null && !tags.isBlank()) {
+            List<String> tagNames = Arrays.stream(tags.split(","))
+                    .map(String::trim).map(String::toLowerCase)
+                    .filter(s -> !s.isEmpty()).collect(Collectors.toList());
+            if (!tagNames.isEmpty()) {
+                taggedPhotoIds = new HashSet<>(photoTagRepository.findPhotoIdsByMemberNamesIn(tagNames));
+            }
+        }
+
         List<PhotoResponse> photos;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
         if (hasKeyword) {
-            // 키워드 있을 때: pg_trgm 유사도 검색 → H2/미설치 시 JPQL LIKE 로 fallback
             try {
                 String cm = colorMood != null ? colorMood : "";
                 String ir = imageRatio != null ? imageRatio : "";
@@ -79,6 +90,12 @@ public class PhotoController {
         } else {
             photos = photoRepository.search(null, colorMood, memberId, imageRatio, sort)
                     .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+        }
+
+        // tags 필터 적용
+        if (taggedPhotoIds != null) {
+            final Set<Long> ids = taggedPhotoIds;
+            photos = photos.stream().filter(p -> ids.contains(p.getId())).collect(Collectors.toList());
         }
 
         Map<String, Object> result = new HashMap<>();

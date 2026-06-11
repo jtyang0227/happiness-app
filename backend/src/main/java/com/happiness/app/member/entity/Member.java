@@ -53,6 +53,25 @@ public class Member {
     @Column(nullable = true, length = 50)
     private String instagramId;
 
+    @Column(nullable = true, length = 500)
+    private String avatarUrl;
+
+    @Column(nullable = true, length = 500)
+    private String coverUrl;
+
+    @Column(columnDefinition = "TEXT", nullable = true)
+    private String bio;
+
+    @Column(nullable = true, length = 300)
+    private String websiteUrl;
+
+    @Column(nullable = true, length = 100)
+    private String location;
+
+    /** 촬영 전문 분야 — 콤마 구분 문자열 (예: "결혼식,인물,풍경") */
+    @Column(nullable = true, length = 300)
+    private String specialties;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -11,6 +11,8 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
 
     List<Inquiry> findByReceiverMemberIdOrderByCreatedAtDesc(Long memberId);
 
+    long countByReceiverMemberId(Long memberId);
+
     long countByReceiverMemberIdAndIsReadFalse(Long memberId);
 
     void deleteByReceiverMemberId(Long memberId);

@@ -21,6 +21,13 @@ public class MemberResponse {
     private String tel;
     private String profileName;
     private String instagramId;
+    private String avatarUrl;
+    private String coverUrl;
+    private String bio;
+    private String websiteUrl;
+    private String location;
+    private String specialties;
+    private String provider;
     private MemberStatus status;
     private Authority authority;
     private LocalDateTime createdAt;
@@ -34,6 +41,13 @@ public class MemberResponse {
                 .tel(member.getTel())
                 .profileName(member.getProfileName())
                 .instagramId(member.getInstagramId())
+                .avatarUrl(member.getAvatarUrl())
+                .coverUrl(member.getCoverUrl())
+                .bio(member.getBio())
+                .websiteUrl(member.getWebsiteUrl())
+                .location(member.getLocation())
+                .specialties(member.getSpecialties())
+                .provider(member.getProvider())
                 .status(member.getStatus())
                 .authority(member.getAuthority())
                 .createdAt(member.getCreatedAt())
