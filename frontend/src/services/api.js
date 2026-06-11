@@ -33,6 +33,29 @@ export const photoApi = {
   getSaved:    (memberId)     => apiClient.get(`/photos/saves/${memberId}`).then(r => r.data),
 };
 
+export const seriesApi = {
+  getByMember: (memberId) =>
+    apiClient.get('/series', { params: { memberId } }).then(r => r.data),
+
+  getOne: (id) =>
+    apiClient.get(`/series/${id}`).then(r => r.data),
+
+  create: (data) =>
+    apiClient.post('/series', data).then(r => r.data),
+
+  update: (id, data) =>
+    apiClient.put(`/series/${id}`, data).then(r => r.data),
+
+  remove: (id) =>
+    apiClient.delete(`/series/${id}`).then(r => r.data),
+
+  addPhoto: (seriesId, photoId, displayOrder) =>
+    apiClient.post(`/series/${seriesId}/photos`, { photoId, displayOrder }).then(r => r.data),
+
+  removePhoto: (seriesId, photoId) =>
+    apiClient.delete(`/series/${seriesId}/photos/${photoId}`).then(r => r.data),
+};
+
 export const authApi = {
   login:            (data)     => apiClient.post('/auth/login',                  data).then(r => r.data),
   signup:           (data)     => apiClient.post('/auth/signup',                 data).then(r => r.data),

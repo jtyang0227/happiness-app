@@ -16,6 +16,7 @@ import ProfilePage  from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import PortfolioPage from './pages/PortfolioPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
+import SeriesPage from './pages/SeriesPage';
 
 // Routes that show the Header (authenticated app shell)
 const STANDALONE_PATHS = ['/login', '/signup', '/oauth/kakao/callback'];
@@ -66,6 +67,9 @@ function AppShell() {
           } />
           <Route path="/profile" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
+          } />
+          <Route path="/series" element={
+            <ProtectedRoute><SeriesPage /></ProtectedRoute>
           } />
 
           {/* Unauthorized */}

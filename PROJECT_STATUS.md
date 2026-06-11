@@ -1,10 +1,41 @@
-# Happiness App — 현재 기능 및 방향성 정리
+# Happiness App — 프로젝트 현황 & 기능 로드맵
 
-> 작성일: 2026-05-30
+> 최종 업데이트: 2026-06-11  
+> 전체 완성도: **Backend 88% / Frontend 80% / Mobile 20%**
 
 ---
 
-## 현재 구현된 기능 전체 목록
+## 📋 요약
+
+| 구분 | 상태 | 비고 |
+|------|------|------|
+| **Phase 1 — MVP** | ✅ 완료 | 공개 포트폴리오, 카카오 OAuth, 이미지 비율, 좋아요 API |
+| **Phase 2-1 — 시리즈/컬렉션** | ✅ 완료 | Series CRUD, 사진 추가/제거, 포트폴리오 탭 표시 |
+| **Phase 2-2 — 워터마크** | ⬜ 미착수 | |
+| **Phase 2-3 — 문의 폼** | ⬜ 미착수 | |
+| **Phase 2-4 — 통계 대시보드** | ⬜ 미착수 | |
+| **Phase 2-5 — 사진 순서 정렬** | ⬜ 미착수 | |
+| **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
+
+### 주요 완성 기능 (2026-06-11 기준)
+
+```
+✅ 회원가입 / 로그인 (JWT Access+Refresh)
+✅ 카카오 OAuth 로그인 (Frontend 버튼 + Callback 페이지)
+✅ 사진 업로드 (파일/URL, Canvas 보정, LUT 파이프라인)
+✅ 갤러리 12컬럼 masonry 그리드
+✅ 탐색 페이지 (키워드/무드 필터, 실제 API 연동)
+✅ 사진 상세 (좋아요/저장 API 연결, 보정값 요약)
+✅ 공개 포트폴리오 (/portfolio/:profileName) — 로그인 불필요
+✅ 시리즈/컬렉션 CRUD + 사진 추가/제거 관리 UI
+✅ 포트폴리오 페이지 — 작품/시리즈 탭 분리
+✅ 이미지 비율 선택 (16:9 / 4:3 / 1:1 / 3:4 / 2:3)
+✅ Rate Limiting, JWT 보안, Supabase Storage 연동
+```
+
+---
+
+## 현재 구현 현황
 
 ### Frontend (React 18 SPA)
 
@@ -12,31 +43,35 @@
 
 | 페이지 | 경로 | 구현 상태 | 주요 기능 |
 |--------|------|----------|----------|
-| 갤러리 | `/` | ✅ 완성 | 12컬럼 masonry 그리드, 무드별 정렬, 사진 카드 |
-| 탐색 | `/explore` | ⚠️ 목 데이터 | 카드 그리드, 실제 API 미연결 |
-| 목록 | `/list` | ✅ 완성 | 행 목록, 좋아요/저장/공유 카운트 표시 |
-| 사진 등록 | `/photo/new` | ✅ 완성 | 파일/URL 업로드, 12컬럼 그리드 너비 선택, Lightroom 보정 패널 전체 |
-| 사진 상세 | `/photo/:id` | ⚠️ 기본 | 메타정보, 보정값 요약 없음 |
-| 프로필 | `/profile` | ⚠️ 기본 | 기본 정보 표시, SNS 스타일 아님 |
-| 로그인 | `/login` | ✅ 완성 | 다크 테마, JWT 로그인 |
-| 회원가입 | `/signup` | ✅ 완성 | 이용약관 동의 포함 |
+| 갤러리 | `/` | ✅ 완성 | 12컬럼 masonry 그리드, 무드별 정렬 |
+| 탐색 | `/explore` | ✅ 완성 | 카드 그리드, 키워드+무드 필터, 실제 API 연동 |
+| 목록 | `/list` | ✅ 완성 | 행 목록, 좋아요/저장/공유 카운트 |
+| 사진 등록 | `/photo/new` | ✅ 완성 | 파일/URL, 이미지 비율 선택, Canvas 보정 패널 |
+| 사진 상세 | `/photo/:id` | ✅ 완성 | 좋아요/저장 API, 보정값 요약, 작성자 정보 |
+| 시리즈 | `/series` | ✅ 완성 | 시리즈 CRUD, 사진 추가/제거, 포트폴리오 링크 |
+| 공개 포트폴리오 | `/portfolio/:profileName` | ✅ 완성 | 작품/시리즈 탭, 프로필, 인스타그램 링크 |
+| 프로필 | `/profile` | ⚠️ 기본 | 기본 정보 표시, SNS 스타일 미완성 |
+| 로그인 | `/login` | ✅ 완성 | 다크 테마, 카카오 OAuth 버튼 |
+| 회원가입 | `/signup` | ✅ 완성 | 이메일/비밀번호/프로필명 검증 |
+| 카카오 콜백 | `/oauth/kakao/callback` | ✅ 완성 | 인가코드 처리, JWT 수신, 자동 로그인 |
 
 #### 핵심 컴포넌트
 
 | 컴포넌트 | 위치 | 상태 |
 |---------|------|------|
-| ImageAdjustmentPanel | `components/photo/` | ✅ 완성 — 노출/대비/밝은영역/어두운영역/흰색/검정 슬라이더 |
-| CurveEditor | `components/photo/` | ✅ 완성 — Lightroom 스타일 채널별(RGB/R/G/B) 톤 커브 |
-| PresetManager | `components/photo/` | ✅ 완성 — 최대 5개, 저장/불러오기/삭제/이름수정 |
+| ImageAdjustmentPanel | `components/photo/` | ✅ 완성 — 노출/대비/밝은영역/어두운영역 슬라이더 |
+| CurveEditor | `components/photo/` | ✅ 완성 — Lightroom 스타일 채널별 RGB 톤 커브 |
+| PresetManager | `components/photo/` | ✅ 완성 — 최대 5개, 저장/불러오기/삭제 |
 | ImageUploader | `components/common/` | ✅ 완성 — 드래그&드롭, 진행률, 미리보기 |
-| Header | `components/layout/` | ⚠️ 모바일 미대응 — 데스크톱 전용 |
+| GridSpanPicker | `components/common/` | ✅ 완성 — 12컬럼 너비 선택 |
+| Header | `components/layout/` | ✅ 완성 — PC 헤더 + 모바일 하단 탭바 |
 | PhotoCard | `components/photo/` | ✅ 완성 — 색체학 무드 뱃지 |
-| Toast | `components/common/` | ⚠️ 기본 — 타입별 스타일/스택 없음 |
+| Toast | `components/common/` | ✅ 완성 — 타입별 색상/아이콘/스택 (최대 3개) |
 
 #### 보정 엔진 (canvas 기반)
 - 노출, 대비, 밝은영역, 어두운영역, 흰색계열, 검정계열
 - 채널별 톤 커브 (RGB master + R/G/B 개별) — Catmull-Rom 보간 + LUT 파이프라인
-- 효과: 텍스처, 부분대비, 디헤이즈, 비네팅, 그레인(농도/크기/거칠기)
+- 효과: 텍스처, 부분대비(Clarity), 디헤이즈, 비네팅, 그레인(농도/크기/거칠기)
 - 히스토그램 실시간 표시 (로그 스케일)
 - 보정값 프리셋 localStorage 저장 (최대 5개)
 
@@ -44,27 +79,68 @@
 
 ### Backend (Spring Boot 3.4.5 + Java 25)
 
-#### API 엔드포인트
+#### API 엔드포인트 전체 목록
 
-| 도메인 | 엔드포인트 | 상태 |
-|--------|-----------|------|
-| 사진 | GET/POST/PUT/DELETE `/api/photos` | ✅ |
-| 사진 | POST `/api/photos/{id}/like` | ✅ |
-| 사진 | POST `/api/photos/{id}/save` | ✅ |
-| 사진 | POST `/api/photos/{id}/share` | ✅ |
-| 사진 | POST/DELETE `/api/photos/{id}/tags` | ✅ |
-| 인증 | POST `/api/auth/signup`, `/api/auth/login` | ✅ |
-| 인증 | POST `/api/auth/refresh`, `/api/auth/logout` | ✅ |
-| 스토리지 | POST `/api/upload/image` | ✅ |
-| 헬스 | GET `/actuator/health` | ✅ |
+##### 인증 (`/api/auth`)
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| POST | `/signup` | 회원가입 | — |
+| POST | `/login` | 로그인 | — |
+| POST | `/refresh` | 토큰 재발급 | — |
+| POST | `/logout` | 로그아웃 | ✅ |
+| POST | `/oauth/kakao` | 카카오 로그인 | — |
+| GET | `/check-email` | 이메일 중복 확인 | — |
+| GET | `/check-profile-name` | 프로필명 중복 확인 | — |
+| GET | `/member/:id` | 회원 정보 조회 | ✅ |
+| PUT | `/member/:id/profile` | 프로필 수정 | ✅ |
+
+##### 사진 (`/api/photos`)
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| GET | `/?keyword=&colorMood=&memberId=` | 사진 목록 (필터) | — |
+| GET | `/:id` | 사진 상세 | — |
+| POST | `/` | 사진 등록 (JSON/URL) | ✅ |
+| POST | `/upload` | 사진 업로드 (파일) | ✅ |
+| PUT | `/:id` | 사진 수정 | ✅ |
+| DELETE | `/:id` | 사진 삭제 (cascade) | ✅ |
+| POST | `/:id/likes` | 좋아요 | ✅ |
+| DELETE | `/:id/likes` | 좋아요 취소 | ✅ |
+| POST | `/:id/saves` | 북마크 | ✅ |
+| DELETE | `/:id/saves` | 북마크 취소 | ✅ |
+| GET | `/saves/:memberId` | 저장한 사진 목록 | ✅ |
+| POST | `/:id/shares` | 공유 기록 | ✅ |
+| POST | `/:id/tags` | 사용자 태그 추가 | ✅ |
+| GET | `/:id/tags` | 태그 목록 | — |
+| DELETE | `/:id/tags/:tagId` | 태그 삭제 | ✅ |
+
+##### 시리즈 (`/api/series`) — Phase 2-1 신규
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| GET | `/?memberId=` | 멤버별 시리즈 목록 | — |
+| GET | `/:id` | 시리즈 상세 (사진 포함) | — |
+| POST | `/` | 시리즈 생성 | ✅ |
+| PUT | `/:id` | 시리즈 수정 | ✅ |
+| DELETE | `/:id` | 시리즈 삭제 | ✅ |
+| POST | `/:id/photos` | 사진 추가 | ✅ |
+| DELETE | `/:id/photos/:photoId` | 사진 제거 | ✅ |
+
+##### 포트폴리오 (`/api/portfolio`)
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| GET | `/:profileName` | 공개 포트폴리오 (멤버+사진+시리즈) | — |
+
+##### 스토리지 (`/api/upload`)
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| POST | `/image?folder=photos` | Supabase 이미지 업로드 | ✅ |
 
 #### 보안 & 인프라
-- JWT Access Token (15분) + Refresh Token (7일, Redis 저장)
+- JWT Access Token (30분) + Refresh Token (7일, Redis 저장)
 - Bucket4j IP 기준 Rate Limiting (100req/60s)
 - XSS 보호 (Jsoup sanitize)
-- Kakao OAuth (구조 있음, 미완성)
+- Kakao OAuth 완성
 - Supabase Storage 연동 (업로드/삭제, UUID 파일명)
-- CORS allowedOrigins 명시
+- CORS allowedOrigins 환경변수 제어
 
 ---
 
@@ -79,67 +155,107 @@
 | PhotoDetail | ✅ |
 | PhotoForm | ✅ (보정 패널 일부) |
 | Profile | ⚠️ 기본 |
-
-- expo-secure-store 기반 토큰 저장
-- Zustand authStore (access token 메모리, refresh SecureStore)
-- expo-image-picker 업로드
+| Series | ❌ 미구현 |
 
 ---
 
-## 현재 미완성 / 약한 부분
+## Phase 별 로드맵
 
-| 항목 | 우선순위 | 이유 |
-|------|---------|------|
-| 탐색 페이지 실제 API 연결 | 높음 | 목 데이터라 실사용 불가 |
-| 모바일 반응형 헤더 + 하단 탭바 | 높음 | 모바일 UX 핵심 |
-| 프로필 페이지 리디자인 | 중간 | SNS 앱으로서 정체성 필요 |
-| 사진 상세 페이지 개선 | 중간 | 보정값 요약, 작성자 정보 등 |
-| Toast 업그레이드 | 중간 | 타입별 색상/아이콘/스택 |
-| 빈 화면 온보딩 | 낮음 | 첫 사용자 경험 |
-| Kakao OAuth 완성 | 낮음 | 소셜 로그인 편의성 |
-| 갤러리 검색/필터 | 낮음 | 사진 많아질 때 필요 |
+### ✅ Phase 1 — MVP 완성 (완료: 2026-06-11)
 
----
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| 공개 포트폴리오 `/portfolio/:profileName` | ✅ | 로그인 불필요, 다크 테마 |
+| 좋아요/저장 버튼 API 실제 연결 | ✅ | PhotoDetailPage |
+| 카카오 OAuth Frontend | ✅ | 로그인 버튼 + KakaoCallbackPage |
+| 이미지 비율 선택 UI | ✅ | 16:9/4:3/1:1/3:4/2:3 |
 
-## 방향성 추천
+### ✅ Phase 2-1 — 시리즈/컬렉션 (완료: 2026-06-11)
 
-### 단기 (지금 ~ 오픈 직전)
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| Series 엔티티 + SeriesPhoto 조인 테이블 | ✅ | |
+| SeriesController CRUD API | ✅ | `/api/series` |
+| 사진 추가/제거 API | ✅ | `/api/series/:id/photos` |
+| SeriesPage (관리 UI) | ✅ | 생성/수정/삭제/사진 피커 |
+| 포트폴리오 시리즈 탭 | ✅ | PortfolioPage 탭 분기 |
+| 포트폴리오 API에 series 포함 | ✅ | PortfolioController 업데이트 |
 
-**목표: "쓸 수 있는 앱" 완성**
+### ⬜ Phase 2-2 — 워터마크 / 저작권 보호
 
-1. **탐색 페이지 API 연결** — Explore가 목 데이터인 채로 오픈하면 신뢰도 하락
-2. **모바일 반응형** — 모바일에서 헤더가 없는 건 치명적. 하단 탭바 추가
-3. **LAUNCH.md 기반 배포 실행** — Supabase → Railway → Vercel 순서로 세팅
+- 이미지 다운로드 시 워터마크 자동 삽입 (서버 사이드 Java ImageIO)
+- 우클릭 / 드래그 방지 옵션 (Frontend CSS/JS)
+- Supabase Signed URL (만료 시간 설정)
 
-### 중기 (오픈 후 1~4주)
+### ⬜ Phase 2-3 — 문의 / 고객 연락 폼
 
-**목표: "계속 쓰고 싶은 앱" 만들기**
-
-4. **프로필 SNS 스타일 개선** — 사용자가 자신을 표현하는 공간
-5. **사진 상세 개선** — 보정값 공유, 작성자 팔로우 유도
-6. **Toast + 빈 화면** — 세부 UX 완성도
-
-### 장기 (사용자 생기면)
-
-**목표: 커뮤니티 + 발견 기능**
-
-7. **갤러리 검색/필터** — 무드, 제목, 작성자로 필터
-8. **팔로우/피드** — 팔로잉한 사람 사진만 보기
-9. **댓글** — 사진에 반응할 수 있는 방법 추가
-10. **Kakao OAuth** — 가입 마찰 줄이기
-
----
-
-## 다음 작업 추천 순서
+포트폴리오 페이지에서 잠재 고객이 작가에게 연락하는 기능.
 
 ```
-1. ExplorePage 실제 API 연결 (1~2시간)
-2. 모바일 반응형 헤더 + BottomNav (2~3시간)
-3. 배포 실행 (LAUNCH.md 따라, 1일)
-4. 프로필 페이지 리디자인 (2시간)
-5. 사진 상세 페이지 개선 (2시간)
+필드: 이름, 이메일, 촬영 종류, 날짜, 예산, 메시지
 ```
+
+- 이메일 발송 (Spring Mail + Gmail SMTP 또는 SendGrid)
+- 작가 대시보드에서 수신함 관리
+
+### ⬜ Phase 2-4 — 통계 대시보드
+
+| 지표 | 설명 |
+|------|------|
+| 조회수 | 페이지별 방문자 수 |
+| 좋아요 추이 | 최근 30일 그래프 |
+| 인기 작품 | 가장 많이 본 / 좋아요 받은 사진 |
+| 방문자 출처 | 직접 접속 / SNS / 검색 |
+
+### ⬜ Phase 2-5 — 사진 순서 드래그 정렬
+
+- Photo/Series에 `displayOrder` 필드 활용
+- 드래그&드롭 재정렬 (HTML5 DnD 또는 라이브러리 없이 구현)
+
+### ⬜ Phase 3 — 성장 기능 (향후)
+
+| 기능 | 설명 |
+|------|------|
+| 팔로우 / 팔로워 | `follows` 테이블, 피드 기능 |
+| 댓글 | `comments` 테이블, 대댓글 1단계 |
+| EXIF 데이터 표시 | 카메라/렌즈/조리개/셔터/ISO |
+| AI 자동 태그 | 업로드 시 주제/장소 자동 분류 |
+| 인쇄/굿즈 주문 | 파트너 API 연동 |
 
 ---
 
-*최종 업데이트: 2026-05-30*
+## 기술 개선 사항
+
+### 즉시 필요
+
+| 항목 | 현재 | 개선안 |
+|------|------|--------|
+| 페이지네이션 | 전체 로드 | Cursor-based pagination |
+| 이미지 지연 로딩 | 없음 | `loading="lazy"` + Intersection Observer |
+| SEO | SPA (크롤러 불가) | OG 메타태그 + SSR 검토 |
+| Token 저장 | sessionStorage | HttpOnly Cookie (보안 강화) |
+
+### 보안
+
+| 항목 | 현재 | 개선안 |
+|------|------|--------|
+| 업로드 크기 | 20MB | 환경별 제한 통일 |
+| Signed URL | 없음 | Private 사진용 Signed URL |
+| Admin API | 권한 체크만 | Admin Controller 구현 |
+
+---
+
+## 수정된 버그 이력
+
+| 버그 | 수정 내용 | 날짜 |
+|------|-----------|------|
+| 비밀번호 검증 불일치 | Frontend 6자 → 8자 (Backend와 통일) | 2026-06-11 |
+| PhotoDetail 비효율 API | `getAll()` + 클라이언트 필터 → `getOne(id)` | 2026-06-11 |
+| `likeCount` 필드명 오류 | `photo.likeCount` → `photo.likesCount` | 2026-06-11 |
+| Photo 삭제 고아 레코드 | 삭제 전 like/save/share/tag cascade 삭제 | 2026-06-11 |
+| ExplorePage Mock 데이터 | 실제 API 연동 + 무드 필터 칩 추가 | 2026-06-11 |
+| PhotoController `@CrossOrigin("*")` | 제거 (WebConfig CORS로 통일) | 2026-06-11 |
+| PhotoDetailPage ternary 오류 | 모바일/데스크탑 레이아웃 분기 복구 | 2026-06-11 |
+| PhotoRequest colorMood 누락 | DTO에 필드 추가 (빌드 오류 수정) | 2026-06-11 |
+| application.yml 중복 spring 블록 | 단일 블록으로 병합 | 이전 |
+| Docker 빌드 Java 25 충돌 | Dockerfile.prod (pre-built JAR 방식) | 이전 |

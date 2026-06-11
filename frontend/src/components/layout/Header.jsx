@@ -6,6 +6,7 @@ import { COLORS } from '../../constants/colors';
 const NAV_ITEMS = [
   { to: '/explore',   label: '탐색'  },
   { to: '/',          label: '갤러리', end: true },
+  { to: '/series',    label: '시리즈' },
   { to: '/list',      label: '목록'  },
   { to: '/photo/new', label: '등록'  },
   { to: '/profile',   label: '프로필' },

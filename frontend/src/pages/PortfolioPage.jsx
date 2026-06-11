@@ -66,6 +66,65 @@ function PhotoCard({ photo, onClick }) {
   );
 }
 
+function SeriesCard({ series, onClick }) {
+  return (
+    <div
+      onClick={() => onClick(series)}
+      style={{
+        background: '#1a1a2e', borderRadius: 14, overflow: 'hidden',
+        cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
+        boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-3px)';
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.6)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,0,0,0.4)';
+      }}
+    >
+      <div style={{ position: 'relative', aspectRatio: '16/9', background: '#0e0e0e', overflow: 'hidden' }}>
+        {series.coverImageUrl ? (
+          <img
+            src={series.coverImageUrl} alt={series.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 32, color: '#4040a0',
+          }}>
+            ✦
+          </div>
+        )}
+        <div style={{
+          position: 'absolute', bottom: 8, right: 8,
+          background: 'rgba(0,0,0,0.6)', borderRadius: 8,
+          padding: '3px 9px', fontSize: 11, fontWeight: 700, color: '#fff',
+        }}>
+          {series.photoCount ?? 0}장
+        </div>
+      </div>
+      <div style={{ padding: '12px 14px' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#e8e8f0', marginBottom: 4 }}>
+          {series.title}
+        </h3>
+        {series.description && (
+          <p style={{
+            fontSize: 12, color: '#6060a0', lineHeight: 1.5,
+            display: '-webkit-box', WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>
+            {series.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const { profileName } = useParams();
   const navigate = useNavigate();
@@ -128,7 +187,8 @@ export default function PortfolioPage() {
     );
   }
 
-  const { member, photos = [], photoCount = 0 } = data || {};
+  const { member, photos = [], photoCount = 0, series = [] } = data || {};
+  const [activeTab, setActiveTab] = useState('photos');
   const joinYear = member?.createdAt ? new Date(member.createdAt).getFullYear() : null;
 
   return (
@@ -160,10 +220,14 @@ export default function PortfolioPage() {
           {joinYear && <span style={{ marginLeft: 12 }}>Since {joinYear}</span>}
         </div>
 
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginBottom: 20 }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{photoCount}</div>
             <div style={{ fontSize: 12, color: '#6060a0' }}>작품</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{series.length}</div>
+            <div style={{ fontSize: 12, color: '#6060a0' }}>시리즈</div>
           </div>
         </div>
 
@@ -185,26 +249,69 @@ export default function PortfolioPage() {
         )}
       </div>
 
-      {/* Gallery */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 20px' }}>
-        {photos.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#6060a0', padding: '60px 0', fontSize: 15 }}>
-            아직 등록된 작품이 없습니다.
-          </div>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-          }}>
-            {photos.map(photo => (
-              <PhotoCard
-                key={photo.id}
-                photo={photo}
-                onClick={(id) => navigate(`/photo/${id}`)}
-              />
-            ))}
-          </div>
+      {/* 탭 */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #1e1e3a', marginBottom: 28 }}>
+          {[
+            { key: 'photos', label: `작품 ${photoCount}` },
+            { key: 'series', label: `시리즈 ${series.length}` },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '12px 20px', background: 'none', border: 'none',
+                cursor: 'pointer', fontSize: 14, fontWeight: 700,
+                color: activeTab === tab.key ? '#a0a0ff' : '#6060a0',
+                borderBottom: `2px solid ${activeTab === tab.key ? '#5b6ef5' : 'transparent'}`,
+                marginBottom: -1, transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 작품 탭 */}
+        {activeTab === 'photos' && (
+          photos.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#6060a0', padding: '60px 0', fontSize: 15 }}>
+              아직 등록된 작품이 없습니다.
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 16,
+            }}>
+              {photos.map(photo => (
+                <PhotoCard key={photo.id} photo={photo} onClick={(id) => navigate(`/photo/${id}`)} />
+              ))}
+            </div>
+          )
+        )}
+
+        {/* 시리즈 탭 */}
+        {activeTab === 'series' && (
+          series.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#6060a0', padding: '60px 0', fontSize: 15 }}>
+              아직 등록된 시리즈가 없습니다.
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 16,
+            }}>
+              {series.map(s => (
+                <SeriesCard
+                  key={s.id}
+                  series={s}
+                  onClick={() => {}}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
 
