@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/photos")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class PhotoController {
 
@@ -37,13 +36,32 @@ public class PhotoController {
     private final PhotoSaveRepository photoSaveRepository;
     private final ImageProcessingUtil imageProcessingUtil;
 
-    // ==================== 사진 조회 ====================
+    // ── 사진 조회 ─────────────────────────────────────────────────────
 
+    /**
+     * GET /api/photos?keyword=&colorMood=&memberId=
+     * 모든 파라미터 선택적 — 없으면 전체 반환
+     */
     @GetMapping
-    public ResponseEntity<?> getAllPhotos() {
-        List<PhotoResponse> photos = photoRepository.findAll().stream()
-                .map(PhotoResponse::fromEntity)
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getAllPhotos(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String colorMood,
+            @RequestParam(required = false) Long memberId
+    ) {
+        List<PhotoResponse> photos;
+
+        if ((keyword != null && !keyword.isBlank()) ||
+            (colorMood != null && !colorMood.isBlank()) ||
+            memberId != null) {
+            photos = photoRepository.search(keyword, colorMood, memberId)
+                    .stream()
+                    .map(PhotoResponse::fromEntity)
+                    .collect(Collectors.toList());
+        } else {
+            photos = photoRepository.findAll().stream()
+                    .map(PhotoResponse::fromEntity)
+                    .collect(Collectors.toList());
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
@@ -63,7 +81,7 @@ public class PhotoController {
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
     }
 
-    // ==================== 사진 생성 ====================
+    // ── 사진 생성 ─────────────────────────────────────────────────────
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadPhoto(
@@ -144,7 +162,7 @@ public class PhotoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    // ==================== 사진 수정 ====================
+    // ── 사진 수정 ─────────────────────────────────────────────────────
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePhoto(@PathVariable Long id, @RequestBody PhotoRequest request) {
@@ -164,6 +182,9 @@ public class PhotoController {
                         request.getGridColSpan() <= 12) {
                         photo.setGridColSpan(request.getGridColSpan());
                     }
+                    if (request.getColorMood() != null && !request.getColorMood().isBlank()) {
+                        photo.setColorMood(request.getColorMood());
+                    }
                     Photo updated = photoRepository.save(photo);
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");
@@ -174,14 +195,21 @@ public class PhotoController {
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
     }
 
-    // ==================== 사진 삭제 ====================
+    // ── 사진 삭제 ─────────────────────────────────────────────────────
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePhoto(@PathVariable Long id) {
         return photoRepository.findById(id)
                 .map(photo -> {
+                    // 연관 레코드 먼저 삭제 (cascade)
+                    photoLikeRepository.deleteByPhotoId(id);
+                    photoSaveRepository.deleteByPhotoId(id);
+                    photoShareRepository.deleteByPhotoId(id);
+                    photoTagRepository.deleteByPhotoId(id);
+
                     imageProcessingUtil.deleteImage(photo.getImageUrl());
                     photoRepository.delete(photo);
+
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");
                     result.put("message", "사진이 삭제되었습니다.");
@@ -190,7 +218,7 @@ public class PhotoController {
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
     }
 
-    // ==================== 태그 기능 ====================
+    // ── 태그 기능 ─────────────────────────────────────────────────────
 
     @PostMapping("/{photoId}/tags")
     public ResponseEntity<?> addTag(
@@ -254,7 +282,7 @@ public class PhotoController {
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "태그를 찾을 수 없습니다."));
     }
 
-    // ==================== 좋아요 기능 ====================
+    // ── 좋아요 기능 ───────────────────────────────────────────────────
 
     @PostMapping("/{photoId}/likes")
     public ResponseEntity<?> likePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
@@ -302,7 +330,7 @@ public class PhotoController {
         return ResponseEntity.ok(result);
     }
 
-    // ==================== 공유 기능 ====================
+    // ── 공유 기능 ─────────────────────────────────────────────────────
 
     @PostMapping("/{photoId}/shares")
     public ResponseEntity<?> sharePhoto(
@@ -333,7 +361,7 @@ public class PhotoController {
         return ResponseEntity.ok(result);
     }
 
-    // ==================== 저장 (북마크) 기능 ====================
+    // ── 저장(북마크) 기능 ──────────────────────────────────────────────
 
     @PostMapping("/{photoId}/saves")
     public ResponseEntity<?> savePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
@@ -377,7 +405,7 @@ public class PhotoController {
         return ResponseEntity.ok(result);
     }
 
-    // ==================== 유틸리티 ====================
+    // ── 유틸리티 ──────────────────────────────────────────────────────
 
     private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message) {
         Map<String, Object> error = new HashMap<>();

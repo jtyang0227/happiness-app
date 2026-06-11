@@ -14,4 +14,7 @@ public interface PhotoLikeRepository extends JpaRepository<PhotoLike, Long> {
 
     @Transactional
     void deleteByPhotoIdAndMemberId(Long photoId, Long memberId);
+
+    @Transactional
+    void deleteByPhotoId(Long photoId);
 }

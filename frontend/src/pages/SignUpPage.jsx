@@ -73,7 +73,7 @@ export default function SignUpPage() {
     if (!form.email.trim()) errs.email = '이메일을 입력해주세요.';
     else if (!EMAIL_REGEX.test(form.email)) errs.email = '올바른 이메일 형식이 아닙니다.';
     if (!form.password) errs.password = '비밀번호를 입력해주세요.';
-    else if (form.password.length < 6) errs.password = '비밀번호는 최소 6자 이상이어야 합니다.';
+    else if (form.password.length < 8) errs.password = '비밀번호는 최소 8자 이상이어야 합니다.';
     if (form.password !== form.confirmPassword) errs.confirmPassword = '비밀번호가 일치하지 않습니다.';
     if (!form.profileName.trim()) errs.profileName = '포트폴리오 주소를 입력해주세요.';
     else if (!/^[a-z0-9-]+$/.test(form.profileName)) errs.profileName = '영문 소문자, 숫자, 하이픈만 사용 가능합니다.';

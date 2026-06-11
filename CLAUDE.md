@@ -12,10 +12,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Full-stack photo-sharing app with three components:
+**사진작가 포트폴리오 앱** — 풀스택 3-tier 구성:
 - **backend/** — Spring Boot 3.4.5 + Java 25, Gradle 9.5
 - **frontend/** — React 18 SPA
 - **mobile/** — React Native 0.72 + Expo 49
+
+기능 분석 및 로드맵 전체 내용: **`PORTFOLIO_FEATURES.md`** 참조
 
 ---
 
@@ -159,6 +161,20 @@ src/main/resources/
 
 **운영 주의사항**: `application-prod.yml`의 `ddl-auto: validate` — 절대 `create`/`create-drop` 금지.
 
+#### PhotoRepository 주요 쿼리 메서드
+
+```java
+findByMemberIdOrderByCreatedAtDesc(Long memberId)   // 멤버별 사진
+findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
+search(keyword, colorMood, memberId)                 // 복합 필터 검색 (JPQL)
+deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascade
+```
+
+**사진 삭제 시 cascade 순서** (`PhotoController.deletePhoto`):
+1. `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag` 연관 레코드 먼저 삭제
+2. 이미지 파일 삭제 (`ImageProcessingUtil.deleteImage`)
+3. `Photo` 엔티티 삭제
+
 #### 파일 업로드 API
 
 ```
@@ -185,8 +201,10 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 토스트 알림 훅
 - **services/api.js** — photoApi + authApi (fetch wrapper)
+  - `photoApi.search(keyword, colorMood, memberId)` — 복합 필터 (GET /photos?keyword=&colorMood=)
+  - `photoApi.getByMember(memberId)` — 멤버별 사진 목록
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
-- **services/mockData.js** — 탐색 화면용 목 데이터
+- **services/mockData.js** — (레거시, 현재 미사용)
 
 Routing via React Router DOM v6. No Redux — state managed through Context + local state.
 

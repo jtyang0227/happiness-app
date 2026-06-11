@@ -19,17 +19,21 @@ export default function PhotoDetailPage() {
       setLoading(true);
       setError('');
       try {
-        const all = await photoApi.getAll();
+        const res = await photoApi.getOne(id);
         if (!cancelled) {
-          const found = (Array.isArray(all) ? all : []).find(p => String(p.id) === String(id));
+          const found = res?.data ?? res;
           if (found) {
             setPhoto(found);
           } else {
             setError('사진을 찾을 수 없습니다.');
           }
         }
-      } catch {
-        if (!cancelled) setError('사진을 불러오는데 실패했습니다.');
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.response?.status === 404
+            ? '사진을 찾을 수 없습니다.'
+            : '사진을 불러오는데 실패했습니다.');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -200,9 +204,9 @@ export default function PhotoDetailPage() {
               }}
             >
               {liked ? '♥' : '♡'} 좋아요
-              {photo.likeCount != null && (
+              {photo.likesCount != null && (
                 <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  {photo.likeCount + (liked ? 1 : 0)}
+                  {photo.likesCount + (liked ? 1 : 0)}
                 </span>
               )}
             </button>
