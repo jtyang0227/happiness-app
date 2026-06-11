@@ -6,6 +6,9 @@ build/
 # Maven
 target/
 
+# IDE build output
+bin/
+
 # IDE
 .idea/
 *.iml
