@@ -26,7 +26,7 @@ function PhotoCard({ photo }) {
     <div
       onClick={() => navigate(`/photo/${photo.id}`)}
       style={{
-        background: COLORS.white,
+        background: COLORS.surface,
         borderRadius: 16,
         overflow: 'hidden',
         boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
@@ -130,11 +130,13 @@ export default function ExplorePage() {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px' }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>탐색</h1>
-        <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>다양한 사진들을 둘러보세요</p>
+        <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>
+          {photos.length}장의 사진을 둘러보세요
+        </p>
       </div>
 
       {/* Search form */}
@@ -207,3 +209,24 @@ export default function ExplorePage() {
     </div>
   );
 }
+
+const centerStyle = {
+  display: 'flex', justifyContent: 'center', alignItems: 'center',
+  minHeight: '70vh',
+};
+
+const primaryBtn = {
+  padding: '8px 18px', background: COLORS.primary, color: '#fff',
+  border: 'none', borderRadius: 10, cursor: 'pointer',
+  fontWeight: 700, fontSize: 13,
+};
+
+const chipStyle = (active) => ({
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  padding: '5px 12px', borderRadius: 20,
+  border: `1.5px solid ${active ? COLORS.primary : COLORS.border}`,
+  background: active ? COLORS.primaryLight : COLORS.surface,
+  color: active ? COLORS.primary : COLORS.textSecondary,
+  fontSize: 12, fontWeight: active ? 700 : 500,
+  cursor: 'pointer', transition: 'all 0.15s',
+});

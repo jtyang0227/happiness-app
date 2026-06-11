@@ -10,6 +10,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 디자인 작업 규칙
+
+**UI/UX 관련 작업(신규 화면, 컴포넌트 개선, 레이아웃 변경)을 할 때는 반드시 아래를 수행한다:**
+
+1. 작업 전에 `DESIGN_PROMPT_<feature>.md` 파일을 생성한다
+2. 파일 안에 claude.ai에서 아티팩트로 요청할 수 있는 프롬프트를 작성한다
+3. 프롬프트에는 반드시 아래 시스템 컨텍스트를 포함한다:
+
+```
+[시스템 컨텍스트]
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
+아이콘: 이모지 또는 유니코드 기호 사용 (외부 아이콘 라이브러리 없음)
+
+현재 컬러 시스템:
+  primary:       '#5b6ef5'
+  primaryDark:   '#4458e0'
+  primaryLight:  '#eef0ff'
+  accent:        '#a78bfa'
+  bg:            '#f5f5fa'
+  surface:       '#ffffff'
+  border:        '#e2e2ee'
+  text:          '#1a1a2e'
+  textSecondary: '#5c5c7a'
+  textMuted:     '#9090b0'
+  danger:        '#e53e3e'
+  darkBg:        '#0a0a18'
+  darkSurface:   '#12122a'
+  galleryBg:     '#0e0e0e'
+
+규칙:
+- export default 함수형 컴포넌트 1개만 반환
+- style은 inline object 사용
+- 외부 라이브러리 import 없음 (react, react-router-dom만 허용)
+- 한국어 UI 텍스트
+```
+
+4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
+
+---
+
 ## Project Overview
 
 **사진작가 포트폴리오 앱** — 풀스택 3-tier 구성:
@@ -194,12 +235,14 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 ### Frontend (`src/`)
 
 - **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile)
-- **components/layout/Header** — 상단 네비게이션 (탐색·갤러리·목록·등록·프로필 탭 + 로그아웃)
-- **components/common/** — Toast, GridSpanPicker (12-컬럼 너비 선택), **ImageUploader** (드래그&드롭 + 진행률 + 미리보기)
+- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응
+- **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
+- **components/common/GridSpanPicker** — 12-컬럼 너비 선택
+- **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **contexts/AuthContext** — 전역 인증 상태 (login/signup/updateProfile/logout + localStorage)
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
-- **hooks/useToast** — 토스트 알림 훅
+- **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi (fetch wrapper)
   - `photoApi.search(keyword, colorMood, memberId)` — 복합 필터 (GET /photos?keyword=&colorMood=)
   - `photoApi.getByMember(memberId)` — 멤버별 사진 목록

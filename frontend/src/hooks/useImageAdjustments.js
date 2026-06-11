@@ -19,6 +19,13 @@ export const DEFAULT_CURVE_POINTS = [
   { x: 1, y: 1 },
 ];
 
+export const DEFAULT_CHANNEL_CURVES = {
+  rgb: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+  r:   [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+  g:   [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+  b:   [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+};
+
 // ── Region weight functions ──────────────────────────────────────────
 
 /** 검정 계열: v=0에서 최대, v≈0.3에서 0 */
@@ -296,6 +303,68 @@ function applyGrain(canvas, amount, size, roughness, grainTile) {
     }
   }
   ctx.putImageData(imageData, 0, 0);
+}
+
+// ── 채널별 LUT (per-channel tone curve) ──────────────────────────────
+
+/**
+ * 조정값 + 채널별 커브를 합성한 {r, g, b} LUT 세트를 반환.
+ * 파이프라인: adjustments + rgb master curve → per-channel curve
+ */
+export function buildChannelLUTs(adj, channelCurves) {
+  const sorted = (pts) => [...(pts || [])].sort((a, b) => a.x - b.x);
+  const rgbPts = sorted(channelCurves?.rgb || DEFAULT_CHANNEL_CURVES.rgb);
+  const rPts   = sorted(channelCurves?.r   || DEFAULT_CHANNEL_CURVES.r);
+  const gPts   = sorted(channelCurves?.g   || DEFAULT_CHANNEL_CURVES.g);
+  const bPts   = sorted(channelCurves?.b   || DEFAULT_CHANNEL_CURVES.b);
+
+  const baseLut = buildLUT(adj, rgbPts);
+
+  const rLut = new Uint8Array(256);
+  const gLut = new Uint8Array(256);
+  const bLut = new Uint8Array(256);
+
+  for (let i = 0; i < 256; i++) {
+    const v = baseLut[i] / 255;
+    rLut[i] = Math.min(255, Math.round(catmullRomY(v, rPts) * 255));
+    gLut[i] = Math.min(255, Math.round(catmullRomY(v, gPts) * 255));
+    bLut[i] = Math.min(255, Math.round(catmullRomY(v, bPts) * 255));
+  }
+  return { r: rLut, g: gLut, b: bLut };
+}
+
+export function renderWithChannelLUTs(canvas, originalPixels, w, h, luts) {
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(w, h);
+  const src = originalPixels;
+  const dst = imageData.data;
+
+  for (let i = 0; i < src.length; i += 4) {
+    dst[i]     = luts.r[src[i]];
+    dst[i + 1] = luts.g[src[i + 1]];
+    dst[i + 2] = luts.b[src[i + 2]];
+    dst[i + 3] = src[i + 3];
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * 원본 픽셀에서 R/G/B/Lum 히스토그램(각 256 bins) 반환.
+ */
+export function computeHistogram(pixels) {
+  const r   = new Uint32Array(256);
+  const g   = new Uint32Array(256);
+  const b   = new Uint32Array(256);
+  const lum = new Uint32Array(256);
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    r[pixels[i]]++;
+    g[pixels[i + 1]]++;
+    b[pixels[i + 2]]++;
+    const l = Math.min(255, Math.round(0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]));
+    lum[l]++;
+  }
+  return { r, g, b, lum };
 }
 
 export function applyEffects(canvas, effects, grainTile) {

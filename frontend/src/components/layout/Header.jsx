@@ -18,75 +18,146 @@ export default function Header() {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <header style={{
-      position: 'sticky', top: 0, zIndex: 100,
-      height: 58,
-      background: 'rgba(255,255,255,0.88)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: `1px solid ${COLORS.borderLight}`,
-      boxShadow: '0 1px 0 rgba(91,110,245,0.06)',
-    }}>
-      <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        padding: '0 24px', height: '100%',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    <>
+      {/* PC 헤더 — 768px 이상에서만 표시 */}
+      <style>{`
+        @media (max-width: 767px) {
+          .happiness-pc-header { display: none !important; }
+        }
+        @media (min-width: 768px) {
+          .happiness-bottom-nav { display: none !important; }
+        }
+      `}</style>
+
+      <header className="happiness-pc-header" style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        height: 58,
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: `1px solid ${COLORS.borderLight}`,
+        boxShadow: '0 1px 0 rgba(91,110,245,0.06)',
       }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto',
+          padding: '0 24px', height: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
 
-        {/* Logo */}
-        <NavLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <span style={{ fontSize: 17, color: COLORS.primary }}>✦</span>
-          <span style={{ fontSize: 17, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.5px' }}>
-            Happiness
-          </span>
-        </NavLink>
+          {/* Logo */}
+          <NavLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ fontSize: 17, color: COLORS.primary }}>✦</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.5px' }}>
+              Happiness
+            </span>
+          </NavLink>
 
-        {/* Nav */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {NAV_ITEMS.map(({ to, label, end }) => (
-            <NavLink
-              key={to} to={to} end={end}
-              style={({ isActive }) => ({
-                textDecoration: 'none',
-                fontSize: 14,
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? COLORS.primary : COLORS.textSecondary,
-                padding: '6px 13px',
-                borderRadius: 10,
-                background: isActive ? COLORS.primaryLight : 'transparent',
-                transition: 'all 0.15s',
-              })}
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+          {/* Nav */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {NAV_ITEMS.map(({ to, label, end }) => (
+              <NavLink
+                key={to} to={to} end={end}
+                style={({ isActive }) => ({
+                  textDecoration: 'none',
+                  fontSize: 14,
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? COLORS.primary : COLORS.textSecondary,
+                  padding: '6px 13px',
+                  borderRadius: 10,
+                  background: isActive ? COLORS.primaryLight : 'transparent',
+                  transition: 'all 0.15s',
+                })}
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
 
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: '6px 14px', borderRadius: 10,
-            border: `1px solid ${COLORS.border}`,
-            background: 'transparent',
-            color: COLORS.textSecondary,
-            fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = COLORS.danger;
-            e.currentTarget.style.color = COLORS.danger;
-            e.currentTarget.style.background = COLORS.dangerTonal;
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = COLORS.border;
-            e.currentTarget.style.color = COLORS.textSecondary;
-            e.currentTarget.style.background = 'transparent';
-          }}
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '6px 14px', borderRadius: 10,
+              border: `1px solid ${COLORS.border}`,
+              background: 'transparent',
+              color: COLORS.textSecondary,
+              fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = COLORS.danger;
+              e.currentTarget.style.color = COLORS.danger;
+              e.currentTarget.style.background = COLORS.dangerTonal;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = COLORS.border;
+              e.currentTarget.style.color = COLORS.textSecondary;
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            로그아웃
+          </button>
+        </div>
+      </header>
+
+      {/* 모바일 하단 탭바 — 768px 미만에서만 표시 */}
+      <BottomNav onLogout={handleLogout} />
+    </>
+  );
+}
+
+const BOTTOM_NAV_ITEMS = [
+  { to: '/explore',   label: '탐색',  icon: '🔭', end: false },
+  { to: '/',          label: '갤러리', icon: '✦',  end: true  },
+  { to: '/photo/new', label: '등록',  icon: '+',  end: false, isCenter: true },
+  { to: '/list',      label: '목록',  icon: '☰',  end: false },
+  { to: '/profile',   label: '프로필', icon: '◎',  end: false },
+];
+
+function BottomNav({ onLogout }) {
+  return (
+    <nav className="happiness-bottom-nav" style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
+      height: 'calc(60px + env(safe-area-inset-bottom))',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+      background: 'rgba(255,255,255,0.96)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderTop: `1px solid ${COLORS.border}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+      boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+    }}>
+      {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
+        <NavLink
+          key={to} to={to} end={end}
+          style={({ isActive }) => ({
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: isCenter ? 0 : 3,
+            textDecoration: 'none', flex: 1,
+            color: isActive && !isCenter ? COLORS.primary : COLORS.textMuted,
+            transition: 'color 0.2s, transform 0.2s',
+            transform: isActive && !isCenter ? 'scale(1.05)' : 'scale(1)',
+          })}
         >
-          로그아웃
-        </button>
-      </div>
-    </header>
+          {isCenter ? (
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontSize: 26, fontWeight: 700,
+              boxShadow: `0 4px 16px rgba(91,110,245,0.45)`,
+              marginBottom: 2,
+            }}>
+              +
+            </div>
+          ) : (
+            <>
+              <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em' }}>{label}</span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
   );
 }

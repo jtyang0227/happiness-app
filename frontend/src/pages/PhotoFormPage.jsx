@@ -7,12 +7,13 @@ import ImageAdjustmentPanel from '../components/photo/ImageAdjustmentPanel';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import {
   DEFAULT_ADJUSTMENTS,
-  DEFAULT_CURVE_POINTS,
+  DEFAULT_CHANNEL_CURVES,
   DEFAULT_EFFECTS,
-  buildLUT,
-  renderWithLUT,
+  buildChannelLUTs,
+  renderWithChannelLUTs,
   applyEffects,
   generateGrainTile,
+  computeHistogram,
 } from '../hooks/useImageAdjustments';
 
 const MOOD_OPTIONS = Object.entries(MOOD_COLORS).map(([key, val]) => ({
@@ -23,7 +24,6 @@ const INITIAL_FORM = {
   title: '', description: '', gridColSpan: 6, colorMood: '',
 };
 
-// ── 입력 스타일 헬퍼 ──────────────────────────────────────────────────
 const inputStyle = (hasError) => ({
   width: '100%',
   padding: '12px 16px',
@@ -43,36 +43,41 @@ export default function PhotoFormPage() {
   const { user }    = useAuth();
   const isEdit      = Boolean(id);
 
-  // ── 폼 상태 ──────────────────────────────────────────────────────
+  // ── 폼 상태 ─────────────────────────────────────────────────────────
   const [form, setForm]       = useState(INITIAL_FORM);
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [apiError, setApiError] = useState('');
 
-  // ── 이미지 업로드 탭: 'file' | 'url' ────────────────────────────
+  // ── 이미지 탭: 'file' | 'url' ────────────────────────────────────
   const [imgMode, setImgMode] = useState('file');
   const [urlInput, setUrlInput] = useState('');
 
-  // ── 파일 업로드 상태 ─────────────────────────────────────────────
-  const [imageFile, setImageFile]         = useState(null);
-  const [adjustments, setAdjustments]     = useState({ ...DEFAULT_ADJUSTMENTS });
-  const [curvePoints, setCurvePoints]     = useState([...DEFAULT_CURVE_POINTS]);
-  const [effects, setEffects]             = useState({ ...DEFAULT_EFFECTS });
+  // ── 파일 업로드 보정 상태 ─────────────────────────────────────────
+  const [imageFile, setImageFile]       = useState(null);
+  const [adjustments, setAdjustments]   = useState({ ...DEFAULT_ADJUSTMENTS });
+  const [channelCurves, setChannelCurves] = useState({
+    rgb: [...DEFAULT_CHANNEL_CURVES.rgb],
+    r:   [...DEFAULT_CHANNEL_CURVES.r],
+    g:   [...DEFAULT_CHANNEL_CURVES.g],
+    b:   [...DEFAULT_CHANNEL_CURVES.b],
+  });
+  const [effects, setEffects]       = useState({ ...DEFAULT_EFFECTS });
+  const [histogram, setHistogram]   = useState(null);
 
-  // 원본 픽셀을 저장하는 ref (재보정 시 원본 → 결과 방향으로 적용)
-  const originalPixelsRef  = useRef(null);
-  const previewCanvasRef   = useRef(null);
-  const hiddenCanvasRef    = useRef(null);
-  const grainTileRef       = useRef(null);
+  const originalPixelsRef = useRef(null);
+  const previewCanvasRef  = useRef(null);
+  const hiddenCanvasRef   = useRef(null);
+  const grainTileRef      = useRef(null);
 
-  // ── 편집 모드: 기존 데이터 로드 ──────────────────────────────────
+  // ── 편집 모드: 기존 데이터 로드 ─────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
     (async () => {
       setFetching(true);
       try {
-        const all = await photoApi.getAll();
+        const all  = await photoApi.getAll();
         const list = Array.isArray(all?.data) ? all.data : Array.isArray(all) ? all : [];
         const found = list.find(p => String(p.id) === String(id));
         if (found) {
@@ -93,21 +98,19 @@ export default function PhotoFormPage() {
     })();
   }, [id, isEdit]);
 
-  // ── 조정값이 바뀔 때마다 캔버스 리렌더 ──────────────────────────
+  // ── 보정값 변경 시 캔버스 리렌더 ────────────────────────────────
   const applyAdjustments = useCallback(() => {
     if (!originalPixelsRef.current || !previewCanvasRef.current) return;
     const { pixels, w, h } = originalPixelsRef.current;
-    const lut = buildLUT(adjustments, curvePoints);
-    renderWithLUT(previewCanvasRef.current, pixels, w, h, lut);
+    const luts = buildChannelLUTs(adjustments, channelCurves);
+    renderWithChannelLUTs(previewCanvasRef.current, pixels, w, h, luts);
     if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
     applyEffects(previewCanvasRef.current, effects, grainTileRef.current);
-  }, [adjustments, curvePoints, effects]);
+  }, [adjustments, channelCurves, effects]);
 
-  useEffect(() => {
-    applyAdjustments();
-  }, [applyAdjustments]);
+  useEffect(() => { applyAdjustments(); }, [applyAdjustments]);
 
-  // ── 파일 선택 핸들러 ─────────────────────────────────────────────
+  // ── 파일 선택 ─────────────────────────────────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,7 +119,6 @@ export default function PhotoFormPage() {
 
     const img = new Image();
     img.onload = () => {
-      // 대용량 이미지 제한 (효과 처리 성능)
       const MAX_DIM = 2000;
       let dw = img.width, dh = img.height;
       if (dw > MAX_DIM || dh > MAX_DIM) {
@@ -125,28 +127,25 @@ export default function PhotoFormPage() {
         dh = Math.round(dh * r);
       }
 
-      // hidden 캔버스에 원본 드로우
       const hc = hiddenCanvasRef.current;
-      hc.width  = dw;
-      hc.height = dh;
-      const hCtx = hc.getContext('2d');
-      hCtx.drawImage(img, 0, 0, dw, dh);
-      const imageData = hCtx.getImageData(0, 0, dw, dh);
+      hc.width = dw; hc.height = dh;
+      hc.getContext('2d').drawImage(img, 0, 0, dw, dh);
+      const imageData = hc.getContext('2d').getImageData(0, 0, dw, dh);
 
-      // 원본 픽셀 저장
       originalPixelsRef.current = {
         pixels: new Uint8ClampedArray(imageData.data),
         w: dw,
         h: dh,
       };
 
-      // 프리뷰 캔버스 크기 설정
-      const pc = previewCanvasRef.current;
-      pc.width  = dw;
-      pc.height = dh;
+      // 히스토그램 계산
+      setHistogram(computeHistogram(originalPixelsRef.current.pixels));
 
-      // 최초 렌더 (보정 없음)
-      renderWithLUT(pc, originalPixelsRef.current.pixels, dw, dh, buildLUT(adjustments, curvePoints));
+      const pc = previewCanvasRef.current;
+      pc.width = dw; pc.height = dh;
+
+      const luts = buildChannelLUTs(adjustments, channelCurves);
+      renderWithChannelLUTs(pc, originalPixelsRef.current.pixels, dw, dh, luts);
       if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
       applyEffects(pc, effects, grainTileRef.current);
     };
@@ -157,11 +156,26 @@ export default function PhotoFormPage() {
     setAdjustments(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleChannelCurveChange = useCallback((ch, pts) => {
+    setChannelCurves(prev => ({ ...prev, [ch]: pts }));
+  }, []);
+
   const handleEffect = useCallback((key, value) => {
     setEffects(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  // ── 폼 핸들러 ─────────────────────────────────────────────────────
+  const handleApplyPreset = useCallback(({ adjustments: adj, channelCurves: cc, effects: ef }) => {
+    setAdjustments({ ...adj });
+    setChannelCurves({
+      rgb: cc.rgb.map(p => ({ ...p })),
+      r:   cc.r.map(p => ({ ...p })),
+      g:   cc.g.map(p => ({ ...p })),
+      b:   cc.b.map(p => ({ ...p })),
+    });
+    setEffects({ ...ef });
+  }, []);
+
+  // ── 폼 핸들러 ────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -191,7 +205,6 @@ export default function PhotoFormPage() {
     setApiError('');
     try {
       if (isEdit) {
-        // 편집: JSON 업데이트
         await photoApi.update(id, {
           title:       form.title.trim(),
           description: form.description,
@@ -200,20 +213,18 @@ export default function PhotoFormPage() {
           imageUrl:    urlInput.trim(),
         });
       } else if (imgMode === 'file' && imageFile) {
-        // 파일 업로드: 보정된 캔버스 → Blob → multipart
         const blob = await new Promise(resolve =>
           previewCanvasRef.current.toBlob(resolve, imageFile.type || 'image/jpeg', 0.92)
         );
         const fd = new FormData();
-        fd.append('file', blob, imageFile.name);
-        fd.append('memberId', String(user?.id ?? 1));
+        fd.append('file',        blob, imageFile.name);
+        fd.append('memberId',    String(user?.id ?? 1));
         fd.append('title',       form.title.trim());
         fd.append('description', form.description);
         fd.append('gridColSpan', String(form.gridColSpan));
         fd.append('colorMood',   form.colorMood || '');
         await photoApi.uploadFile(fd);
       } else {
-        // URL 등록
         await photoApi.create({
           memberId:    user?.id ?? 1,
           title:       form.title.trim(),
@@ -241,7 +252,6 @@ export default function PhotoFormPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px 48px' }}>
-      {/* hidden canvases for pixel manipulation */}
       <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
 
       <button
@@ -262,7 +272,7 @@ export default function PhotoFormPage() {
 
         {apiError && (
           <div style={{
-            background: COLORS.dangerTonal, border: `1px solid #ffcccc`,
+            background: COLORS.dangerTonal, border: '1px solid #ffcccc',
             borderRadius: 8, padding: '10px 14px', color: COLORS.danger,
             fontSize: 13, marginBottom: 16,
           }}>
@@ -271,7 +281,7 @@ export default function PhotoFormPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate>
-          {/* ── 제목 ─────────────────────────────────────────────── */}
+          {/* 제목 */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
               제목 <span style={{ color: COLORS.danger }}>*</span>
@@ -284,15 +294,13 @@ export default function PhotoFormPage() {
             {errors.title && <div style={{ color: COLORS.danger, fontSize: 12, marginTop: 4 }}>{errors.title}</div>}
           </div>
 
-          {/* ── 이미지 입력 (탭) ──────────────────────────────────── */}
+          {/* 이미지 입력 (탭) */}
           {!isEdit && (
             <div style={{ marginBottom: errors.image ? 4 : 20 }}>
-              {/* 탭 */}
               <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: `1px solid ${COLORS.border}` }}>
                 {['file', 'url'].map(mode => (
                   <button
-                    key={mode}
-                    type="button"
+                    key={mode} type="button"
                     onClick={() => { setImgMode(mode); setErrors(e => ({ ...e, image: '' })); }}
                     style={{
                       flex: 1, padding: '8px', fontSize: 13, fontWeight: 600,
@@ -321,14 +329,9 @@ export default function PhotoFormPage() {
                       {imageFile ? imageFile.name : '이미지를 선택하거나 여기에 드롭하세요'}
                     </span>
                     <span style={{ fontSize: 11, color: COLORS.textHint }}>JPG, PNG, WEBP 지원</span>
-                    <input
-                      type="file" accept="image/*"
-                      onChange={handleFileChange}
-                      style={{ display: 'none' }}
-                    />
+                    <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                   </label>
 
-                  {/* 프리뷰 캔버스 */}
                   {imageFile && (
                     <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden', maxHeight: 300, display: 'flex', justifyContent: 'center', background: '#000' }}>
                       <canvas
@@ -338,16 +341,17 @@ export default function PhotoFormPage() {
                     </div>
                   )}
 
-                  {/* 보정 패널 */}
                   {imageFile && (
                     <div style={{ marginTop: 12 }}>
                       <ImageAdjustmentPanel
                         adjustments={adjustments}
                         onAdjust={handleAdjust}
-                        curvePoints={curvePoints}
-                        onCurveChange={setCurvePoints}
+                        channelCurves={channelCurves}
+                        onChannelCurveChange={handleChannelCurveChange}
                         effects={effects}
                         onEffect={handleEffect}
+                        histogram={histogram}
+                        onApplyPreset={handleApplyPreset}
                       />
                     </div>
                   )}
@@ -374,17 +378,13 @@ export default function PhotoFormPage() {
             </div>
           )}
 
-          {/* 편집 모드: URL 표시 */}
+          {/* 편집 모드: URL */}
           {isEdit && (
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
                 이미지 URL
               </label>
-              <input
-                type="url" value={urlInput}
-                onChange={e => setUrlInput(e.target.value)}
-                style={inputStyle(false)}
-              />
+              <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} style={inputStyle(false)} />
             </div>
           )}
 
@@ -394,7 +394,7 @@ export default function PhotoFormPage() {
             </div>
           )}
 
-          {/* ── 설명 ─────────────────────────────────────────────── */}
+          {/* 설명 */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
               설명
@@ -408,7 +408,7 @@ export default function PhotoFormPage() {
             />
           </div>
 
-          {/* ── 색채 분위기 ───────────────────────────────────────── */}
+          {/* 색채 분위기 */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>
               색채 분위기
@@ -445,7 +445,7 @@ export default function PhotoFormPage() {
             </div>
           </div>
 
-          {/* ── 갤러리 너비 ───────────────────────────────────────── */}
+          {/* 갤러리 너비 */}
           <div style={{ marginBottom: 28 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>
               갤러리 너비
@@ -453,7 +453,7 @@ export default function PhotoFormPage() {
             <GridSpanPicker value={form.gridColSpan} onChange={val => setForm(prev => ({ ...prev, gridColSpan: val }))} />
           </div>
 
-          {/* ── 버튼 ──────────────────────────────────────────────── */}
+          {/* 버튼 */}
           <div style={{ display: 'flex', gap: 10 }}>
             <button type="button" onClick={() => navigate(-1)}
               style={{
