@@ -2,6 +2,7 @@
 
 > 최종 업데이트: 2026-06-11  
 > 전체 완성도: **Backend 92% / Frontend 88% / Mobile 20%**
+> 기획 추가: Phase 2-6(갤러리 정렬 강화) / Phase 2-7(검색 고도화) / Phase 2-8(마이페이지 강화)
 
 ---
 
@@ -15,6 +16,9 @@
 | **Phase 2-3 — 문의 폼** | ✅ 완료 | 공개 폼, 수신함 CRUD, 이메일 알림(선택), 읽음 처리 |
 | **Phase 2-4 — 통계 대시보드** | ⬜ 별도 앱 | happiness-admin 앱에 구현 예정 |
 | **Phase 2-5 — 사진 순서 정렬** | ✅ 완료 | HTML5 DnD 드래그 정렬, displayOrder 저장 |
+| **Phase 2-6 — 갤러리 정렬 강화** | 📋 기획 완료 | 5가지 정렬 기준, 뷰 전환, 필터 패널 |
+| **Phase 2-7 — 검색 고도화** | 📋 기획 완료 | PostgreSQL FTS + pg_trgm, 자동완성, 태그 검색 |
+| **Phase 2-8 — 마이페이지 강화** | 📋 기획 완료 | 아바타 업로드, 비밀번호 변경, 저장함, 통계 |
 | **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
 
 ### 주요 완성 기능 (2026-06-11 기준)
@@ -278,6 +282,282 @@ MAIL_FROM=your-gmail@gmail.com
 
 - Photo/Series에 `displayOrder` 필드 활용
 - 드래그&드롭 재정렬 (HTML5 DnD 또는 라이브러리 없이 구현)
+
+---
+
+## 📋 Phase 2-6 — 갤러리 정렬 강화 (기획)
+
+> 목표: 사용자가 다양한 기준으로 사진을 탐색할 수 있는 경험 제공
+
+### 현재 상태
+- GalleryPage: 색상 무드 순 고정 (`COLOR_ORDER` 배열 기반 클라이언트 정렬)
+- ExplorePage: `createdAt DESC` 고정 (백엔드 `ORDER BY p.createdAt DESC`)
+- 정렬 변경 UI 없음
+
+### 추가할 정렬 기준 (5가지)
+
+| 정렬 | 레이블 | 백엔드 처리 |
+|------|--------|------------|
+| 최신순 | 🕐 최신순 | `ORDER BY created_at DESC` |
+| 오래된순 | 🕰 오래된순 | `ORDER BY created_at ASC` |
+| 좋아요순 | ❤️ 인기순 | `ORDER BY likes_count DESC` |
+| 저장순 | 🔖 저장 많은순 | `ORDER BY saves_count DESC` |
+| 직접 설정순 | ✦ 내 순서 | `ORDER BY display_order ASC` |
+| 색상 무드순 | 🎨 색상순 | 클라이언트 `COLOR_ORDER` 정렬 (현재 방식 유지) |
+
+### 뷰 전환 (2가지)
+
+| 뷰 | 설명 |
+|----|------|
+| 그리드 뷰 | 현재 Masonry columns 방식 유지 |
+| 리스트 뷰 | 넓은 카드 1열, 제목·설명·무드·날짜 상세 표시 |
+
+### 필터 패널 강화
+
+```
+현재: 무드 칩 버튼 (ExplorePage만)
+추가:
+  - 이미지 비율 필터 (16:9 / 4:3 / 1:1 / 3:4 / 2:3)
+  - 날짜 범위 필터 (이번 달 / 올해 / 직접 입력)
+  - 좋아요 수 범위 슬라이더
+```
+
+### 구현 위치
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `GalleryPage.jsx` | `SortBar` 컴포넌트 추가, 뷰 토글 버튼, 정렬 state |
+| `ExplorePage.jsx` | 정렬 드롭다운 추가, 필터 패널 확장 |
+| `PhotoRepository.java` | `search()` 쿼리에 `sortBy` 파라미터 추가 또는 동적 쿼리 |
+| `PhotoController.java` | `GET /photos?sortBy=likes&order=desc` 파라미터 처리 |
+
+### API 변경 계획
+
+```
+GET /api/photos?keyword=&colorMood=&imageRatio=&sortBy=createdAt&order=desc&memberId=
+```
+
+`sortBy` 허용값: `createdAt` · `likesCount` · `savesCount` · `displayOrder`
+
+---
+
+## 📋 Phase 2-7 — 검색 엔진 고도화 (기획)
+
+> 목표: Elasticsearch 없이 빠르고 정확한 한국어 검색 구현
+
+### 현재 상태
+```sql
+-- 현재 JPQL LIKE 검색 (PhotoRepository.search)
+LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+```
+**한계**: 부분 일치만 가능, 오타 허용 불가, 성능 인덱스 없음
+
+### 검색 엔진 선택 비교
+
+| 방식 | 설명 | 적합성 |
+|------|------|--------|
+| **PostgreSQL FTS + pg_trgm** | DB 내장, 별도 서버 불필요, Supabase 지원 | ⭐ **최우선 권장** |
+| Hibernate Search + Lucene | Spring Boot 임베디드, JPA 엔티티 자동 인덱싱 | ✅ 차선 |
+| MeiliSearch | 가볍고 빠른 전용 검색 서버, 오타 허용 | 🔧 별도 서버 필요 |
+| Typesense | MeiliSearch 대안, 자체 호스팅 가능 | 🔧 별도 서버 필요 |
+| Algolia | 클라우드 서비스, 무료 플랜 10K 레코드 | 💳 유료 확장 |
+| Elasticsearch | 강력하지만 메모리 사용량 많음, 오버스펙 | ❌ 현 규모 불필요 |
+
+### 권장 방식: PostgreSQL FTS + pg_trgm
+
+**선택 이유:**
+- Supabase PostgreSQL에서 `pg_trgm` 확장 기본 제공
+- 추가 인프라·비용 없음 (현재 DB 그대로 사용)
+- 한글 포함 유니코드 trigram 지원 → 부분 일치·오타 허용
+- `GIN 인덱스` 적용 시 대용량에서도 빠른 검색
+
+#### 적용 방법
+
+**① Supabase에서 확장 활성화 (SQL Editor)**
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 검색 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm    ON photos USING GIN (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm     ON photos USING GIN (description gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_tags_trgm     ON photos USING GIN (tags_text gin_trgm_ops);
+```
+
+**② 유사도 기반 검색 쿼리 (Native Query)**
+```sql
+SELECT *, GREATEST(
+  similarity(title, :keyword),
+  similarity(COALESCE(description,''), :keyword)
+) AS score
+FROM photos
+WHERE (
+  title % :keyword OR
+  description % :keyword OR
+  title ILIKE '%' || :keyword || '%'
+)
+AND (:colorMood = '' OR color_mood = :colorMood)
+ORDER BY score DESC, created_at DESC
+```
+
+**③ Spring Boot 적용 포인트**
+```java
+// PhotoRepository.java — Native Query 추가
+@Query(value = """
+    SELECT *, GREATEST(
+      similarity(title, :kw),
+      similarity(COALESCE(description,''), :kw)
+    ) AS score
+    FROM photos
+    WHERE (title % :kw OR description % :kw OR title ILIKE '%' || :kw || '%')
+      AND (:mood = '' OR color_mood = :mood)
+    ORDER BY score DESC, created_at DESC
+    """, nativeQuery = true)
+List<Photo> searchFuzzy(@Param("kw") String keyword, @Param("mood") String mood);
+```
+
+### 추가 구현 기능
+
+**① 자동완성 (Autocomplete)**
+```
+GET /api/photos/suggestions?q=풍경
+→ ["풍경 사진", "풍경 여행", "겨울 풍경"]
+```
+- `photos.title` 에서 앞글자 LIKE 매칭 (`title ILIKE :q || '%'`)
+- 최대 5건, debounce 300ms
+
+**② 태그 검색 강화**
+```
+GET /api/photos?tags=여행,풍경
+```
+- `photo_tags` 테이블의 태그 값으로 IN 검색
+- Frontend: 태그 칩 클릭 → 해당 태그 검색 자동 실행
+
+**③ 검색 결과 하이라이팅**
+- 제목·설명에서 검색어 위치를 `<mark>` 스타일로 강조
+- Frontend에서 `keyword` 기준 문자열 split+highlight 처리
+
+**④ 검색 히스토리 (로컬)**
+- `localStorage`에 최근 5개 검색어 저장
+- 검색창 포커스 시 드롭다운으로 표시
+
+### 구현 파일 목록
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `PhotoRepository.java` | `searchFuzzy()` Native Query 추가 |
+| `PhotoController.java` | `GET /photos/suggestions` 엔드포인트 추가 |
+| `ExplorePage.jsx` | 자동완성 드롭다운, 태그 칩, 하이라이팅, 검색 히스토리 |
+| `GalleryPage.jsx` | 검색창 추가 (현재는 없음) |
+| Supabase SQL | `pg_trgm` 확장 + GIN 인덱스 실행 스크립트 |
+
+---
+
+## 📋 Phase 2-8 — 마이페이지 / 프로필 관리 강화 (기획)
+
+> 목표: 작가가 자신의 계정을 완전히 관리할 수 있는 SNS 스타일 마이페이지
+
+### 현재 상태 (`ProfilePage.jsx`)
+- 이름, 전화번호, 포트폴리오 주소, 인스타그램 ID 편집만 가능
+- 아바타: 이름 첫 글자 텍스트 (이미지 업로드 불가)
+- 통계: 사진수·좋아요·저장 3가지
+- 내 사진: 최대 9개 썸네일만 표시
+- 저장한 사진: 없음
+- 비밀번호 변경: 없음
+
+### 추가할 섹션 / 기능
+
+#### ① 프로필 사진(아바타) 업로드
+```
+- 클릭 → 파일 선택 → Supabase Storage 업로드 → member.avatarUrl 저장
+- 원형 크롭 미리보기 (canvas)
+- 업로드 경로: /api/upload/image?folder=avatars
+- 권장 사이즈: 400×400px
+```
+
+#### ② 프로필 정보 확장
+
+| 필드 | 현재 | 추가 |
+|------|------|------|
+| 이름 | ✅ | — |
+| 전화번호 | ✅ | — |
+| 포트폴리오 주소 | ✅ | — |
+| 인스타그램 | ✅ | — |
+| 자기소개 (Bio) | ❌ | 최대 200자, textarea |
+| 웹사이트 URL | ❌ | URL 유효성 검증 |
+| 위치 (도시) | ❌ | 선택적 텍스트 입력 |
+| 촬영 전문 분야 | ❌ | 체크박스 다중 선택 (결혼식·인물·풍경 등) |
+| 커버 이미지 | ❌ | 헤더 배경 이미지 업로드 |
+
+**백엔드 DB 변경 필요 (운영 마이그레이션 SQL):**
+```sql
+ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url     VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS bio            TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS website_url    VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS location       VARCHAR(100);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS specialties    VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_url      VARCHAR(500);
+```
+
+#### ③ 비밀번호 변경 섹션
+```
+현재 비밀번호 확인 → 새 비밀번호 → 새 비밀번호 확인
+POST /api/auth/member/:id/password
+```
+- 카카오 OAuth 로그인 유저는 해당 섹션 숨김 (`user.provider === 'kakao'`)
+
+#### ④ 탭 구조 전환
+
+```
+[내 작품] [저장함] [시리즈] [설정]
+```
+
+| 탭 | 현재 | 변경 |
+|----|------|------|
+| 내 작품 | 9개 썸네일 고정 | 페이지네이션, 정렬, 그리드/리스트 뷰 |
+| 저장함 | ❌ 없음 | photoApi.getSaved(userId) 연결 |
+| 시리즈 | ❌ 없음 | seriesApi.getByMember(userId) 연결 |
+| 설정 | 편집 폼만 | 아래 설정 항목 분리 |
+
+#### ⑤ 설정 탭
+
+| 항목 | 설명 |
+|------|------|
+| 포트폴리오 공개 여부 | 공개 / 비공개 토글 (`member.isPublic`) |
+| 이메일 알림 | 새 문의 알림 수신 여부 |
+| 비밀번호 변경 | 현재 비밀번호 확인 후 변경 |
+| 계정 연결 | 카카오 연결 상태 표시 |
+| 계정 삭제 | 2단계 확인(이메일 재입력) 후 탈퇴 |
+
+#### ⑥ 통계 강화
+
+| 지표 | 데이터 소스 |
+|------|------------|
+| 전체 사진 수 | `photos COUNT` |
+| 전체 좋아요 | `SUM(likes_count)` |
+| 전체 저장 | `SUM(saves_count)` |
+| 전체 공유 | `SUM(shares_count)` |
+| 받은 문의 | `inquiries COUNT WHERE receiver_member_id = :id` |
+| 미읽음 문의 | `inquiries COUNT WHERE is_read = false` |
+
+**백엔드 신규 API:**
+```
+GET /api/auth/member/:id/stats
+→ { photoCount, totalLikes, totalSaves, totalShares, inquiryCount, unreadInquiryCount }
+```
+
+### 구현 파일 목록
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `ProfilePage.jsx` | 전체 리팩토링 — 탭 구조, 아바타 업로드, 저장함, 통계 강화 |
+| `MemberController.java` | `GET /:id/stats`, `PUT /:id/password`, `PUT /:id/profile` 필드 확장 |
+| `MemberService.java` | 비밀번호 변경 로직 (`BCrypt` 현재→새 비밀번호 검증) |
+| `MemberUpdateRequest.java` | `bio`, `websiteUrl`, `location`, `specialties`, `coverUrl` 추가 |
+| `MemberResponse.java` | 신규 필드 포함 |
+| Supabase SQL | members 테이블 컬럼 추가 마이그레이션 |
+
+---
 
 ### ⬜ Phase 3 — 성장 기능 (향후)
 
