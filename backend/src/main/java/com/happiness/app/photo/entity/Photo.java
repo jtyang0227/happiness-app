@@ -57,6 +57,10 @@ public class Photo {
     @Column(columnDefinition = "TEXT")
     private String colorPalette;
 
+    /** 갤러리 표시 순서 (0 = 최신순, 작을수록 앞에 표시) */
+    @Column(nullable = true)
+    private Integer displayOrder;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

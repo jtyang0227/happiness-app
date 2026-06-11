@@ -32,6 +32,37 @@ const INITIAL_FORM = {
   title: '', description: '', gridColSpan: 6, colorMood: '', imageRatio: '4:3',
 };
 
+const WATERMARK_POSITIONS = [
+  { value: 'bottomRight', label: '우하단' },
+  { value: 'bottomLeft',  label: '좌하단' },
+  { value: 'topRight',    label: '우상단' },
+  { value: 'topLeft',     label: '좌상단' },
+  { value: 'center',      label: '중앙'   },
+];
+
+function applyWatermarkToCanvas(canvas, wm) {
+  if (!wm.enabled || !wm.text.trim()) return;
+  const ctx = canvas.getContext('2d');
+  const fontSize = Math.max(14, Math.round(canvas.width * 0.025));
+  ctx.save();
+  ctx.font = `bold ${fontSize}px sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.72)';
+  ctx.shadowColor = 'rgba(0,0,0,0.7)';
+  ctx.shadowBlur = 6;
+  const padding = Math.round(fontSize * 1.2);
+  const textW = ctx.measureText(wm.text).width;
+  let x, y;
+  switch (wm.position) {
+    case 'topLeft':    x = padding; y = padding + fontSize; break;
+    case 'topRight':   x = canvas.width - textW - padding; y = padding + fontSize; break;
+    case 'bottomLeft': x = padding; y = canvas.height - padding; break;
+    case 'center':     x = (canvas.width - textW) / 2; y = canvas.height / 2 + fontSize / 2; break;
+    default:           x = canvas.width - textW - padding; y = canvas.height - padding;
+  }
+  ctx.fillText(wm.text, x, y);
+  ctx.restore();
+}
+
 const inputStyle = (hasError) => ({
   width: '100%',
   padding: '12px 16px',
@@ -73,6 +104,7 @@ export default function PhotoFormPage() {
   });
   const [effects, setEffects]       = useState({ ...DEFAULT_EFFECTS });
   const [histogram, setHistogram]   = useState(null);
+  const [watermark, setWatermark]   = useState({ enabled: false, text: '', position: 'bottomRight' });
 
   const originalPixelsRef = useRef(null);
   const previewCanvasRef  = useRef(null);
@@ -115,7 +147,8 @@ export default function PhotoFormPage() {
     renderWithChannelLUTs(previewCanvasRef.current, pixels, w, h, luts);
     if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
     applyEffects(previewCanvasRef.current, effects, grainTileRef.current);
-  }, [adjustments, channelCurves, effects]);
+    applyWatermarkToCanvas(previewCanvasRef.current, watermark);
+  }, [adjustments, channelCurves, effects, watermark]);
 
   useEffect(() => { applyAdjustments(); }, [applyAdjustments]);
 
@@ -157,6 +190,7 @@ export default function PhotoFormPage() {
       renderWithChannelLUTs(pc, originalPixelsRef.current.pixels, dw, dh, luts);
       if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
       applyEffects(pc, effects, grainTileRef.current);
+      applyWatermarkToCanvas(pc, watermark);
     };
     img.src = URL.createObjectURL(file);
   };
@@ -365,6 +399,64 @@ export default function PhotoFormPage() {
                         histogram={histogram}
                         onApplyPreset={handleApplyPreset}
                       />
+                    </div>
+                  )}
+
+                  {imageFile && (
+                    <div style={{
+                      marginTop: 12, borderRadius: 12,
+                      border: `1px solid ${COLORS.border}`,
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', background: COLORS.surface,
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.textSecondary }}>
+                          🔏 워터마크
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setWatermark(w => ({ ...w, enabled: !w.enabled }))}
+                          style={{
+                            padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                            border: 'none', cursor: 'pointer',
+                            background: watermark.enabled ? COLORS.primary : COLORS.border,
+                            color: watermark.enabled ? '#fff' : COLORS.textSecondary,
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {watermark.enabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                      {watermark.enabled && (
+                        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}` }}>
+                          <input
+                            type="text"
+                            value={watermark.text}
+                            onChange={e => setWatermark(w => ({ ...w, text: e.target.value }))}
+                            placeholder="© 이름 또는 저작권 텍스트"
+                            style={{ ...inputStyle(false), marginBottom: 10, fontSize: 13 }}
+                          />
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {WATERMARK_POSITIONS.map(pos => (
+                              <button
+                                key={pos.value} type="button"
+                                onClick={() => setWatermark(w => ({ ...w, position: pos.value }))}
+                                style={{
+                                  padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                                  border: `1.5px solid ${watermark.position === pos.value ? COLORS.primary : COLORS.border}`,
+                                  background: watermark.position === pos.value ? COLORS.primaryLight : '#fff',
+                                  color: watermark.position === pos.value ? COLORS.primary : COLORS.textSecondary,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {pos.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

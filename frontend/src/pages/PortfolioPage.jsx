@@ -131,6 +131,7 @@ export default function PortfolioPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('photos');
 
   useEffect(() => {
     let cancelled = false;
@@ -188,7 +189,6 @@ export default function PortfolioPage() {
   }
 
   const { member, photos = [], photoCount = 0, series = [] } = data || {};
-  const [activeTab, setActiveTab] = useState('photos');
   const joinYear = member?.createdAt ? new Date(member.createdAt).getFullYear() : null;
 
   return (
@@ -231,22 +231,38 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {member?.instagramId && (
-          <a
-            href={`https://instagram.com/${member.instagramId}`}
-            target="_blank"
-            rel="noopener noreferrer"
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {member?.instagramId && (
+            <a
+              href={`https://instagram.com/${member.instagramId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 18px', borderRadius: 20,
+                border: '1px solid #2e2e50', background: '#12122a',
+                color: '#9090cc', fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', transition: 'all 0.15s',
+              }}
+            >
+              @ Instagram
+            </a>
+          )}
+          <button
+            onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 18px', borderRadius: 20,
-              border: '1px solid #2e2e50', background: '#12122a',
-              color: '#9090cc', fontSize: 13, fontWeight: 600,
-              textDecoration: 'none', transition: 'all 0.15s',
+              padding: '8px 22px', borderRadius: 20,
+              border: 'none', background: '#5b6ef5',
+              color: '#fff', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#4458e0'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#5b6ef5'; }}
           >
-            @ Instagram
-          </a>
-        )}
+            ✉ 촬영 문의하기
+          </button>
+        </div>
       </div>
 
       {/* 탭 */}

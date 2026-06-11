@@ -1,20 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
+import { inquiryApi } from '../../services/api';
 
 const NAV_ITEMS = [
-  { to: '/explore',   label: '탐색'  },
+  { to: '/explore',   label: '탐색'   },
   { to: '/',          label: '갤러리', end: true },
   { to: '/series',    label: '시리즈' },
-  { to: '/list',      label: '목록'  },
-  { to: '/photo/new', label: '등록'  },
+  { to: '/list',      label: '목록'   },
+  { to: '/photo/new', label: '등록'   },
+  { to: '/inbox',     label: '문의함', badge: true },
   { to: '/profile',   label: '프로필' },
 ];
 
 export default function Header() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    inquiryApi.getUnreadCount(user.id)
+      .then(data => setUnreadCount(typeof data === 'number' ? data : data?.count ?? 0))
+      .catch(() => {});
+  }, [user?.id]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -55,7 +65,7 @@ export default function Header() {
 
           {/* Nav */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {NAV_ITEMS.map(({ to, label, end }) => (
+            {NAV_ITEMS.map(({ to, label, end, badge }) => (
               <NavLink
                 key={to} to={to} end={end}
                 style={({ isActive }) => ({
@@ -67,9 +77,24 @@ export default function Header() {
                   borderRadius: 10,
                   background: isActive ? COLORS.primaryLight : 'transparent',
                   transition: 'all 0.15s',
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
                 })}
               >
                 {label}
+                {badge && unreadCount > 0 && (
+                  <span style={{
+                    background: COLORS.primary, color: '#fff',
+                    fontSize: 10, fontWeight: 800,
+                    minWidth: 16, height: 16, borderRadius: 8,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 4px',
+                  }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>

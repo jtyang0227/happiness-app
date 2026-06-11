@@ -27,6 +27,7 @@ public class PhotoResponse {
     private String dominantColor;
     private String colorMood;
     private String colorPalette;
+    private Integer displayOrder;
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
@@ -48,6 +49,7 @@ public class PhotoResponse {
                 .dominantColor(photo.getDominantColor())
                 .colorMood(photo.getColorMood())
                 .colorPalette(photo.getColorPalette())
+                .displayOrder(photo.getDisplayOrder())
                 .createdAt(photo.getCreatedAt())
                 .updatedAt(photo.getUpdatedAt())
                 .build();

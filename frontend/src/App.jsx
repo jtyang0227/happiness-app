@@ -17,13 +17,16 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import PortfolioPage from './pages/PortfolioPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import SeriesPage from './pages/SeriesPage';
+import InquiryFormPage from './pages/InquiryFormPage';
+import InquiryInboxPage from './pages/InquiryInboxPage';
+import PhotoSortPage from './pages/PhotoSortPage';
 
 // Routes that show the Header (authenticated app shell)
 const STANDALONE_PATHS = ['/login', '/signup', '/oauth/kakao/callback'];
 
 function AppShell() {
   const location = useLocation();
-  const isStandalone = STANDALONE_PATHS.includes(location.pathname);
+  const isStandalone = STANDALONE_PATHS.includes(location.pathname) || location.pathname.startsWith('/inquiry/');
 
   const isGallery = location.pathname === '/';
   const bg = isStandalone ? '#0a0a1a' : isGallery ? '#111111' : '#f7f7fb';
@@ -45,6 +48,9 @@ function AppShell() {
 
           {/* Public portfolio — no login required */}
           <Route path="/portfolio/:profileName" element={<PortfolioPage />} />
+
+          {/* Public inquiry form — no login required */}
+          <Route path="/inquiry/:profileName" element={<InquiryFormPage />} />
 
           {/* Protected routes */}
           <Route path="/" element={
@@ -70,6 +76,12 @@ function AppShell() {
           } />
           <Route path="/series" element={
             <ProtectedRoute><SeriesPage /></ProtectedRoute>
+          } />
+          <Route path="/inbox" element={
+            <ProtectedRoute><InquiryInboxPage /></ProtectedRoute>
+          } />
+          <Route path="/gallery/sort" element={
+            <ProtectedRoute><PhotoSortPage /></ProtectedRoute>
           } />
 
           {/* Unauthorized */}

@@ -405,6 +405,30 @@ public class PhotoController {
         return ResponseEntity.ok(result);
     }
 
+    // ── 순서 변경 ─────────────────────────────────────────────────────
+
+    /**
+     * PUT /api/photos/reorder
+     * Body: [{"id": 1, "displayOrder": 0}, {"id": 2, "displayOrder": 1}, ...]
+     */
+    @PutMapping("/reorder")
+    public ResponseEntity<?> reorderPhotos(@RequestBody List<Map<String, Object>> orders) {
+        for (Map<String, Object> item : orders) {
+            try {
+                Long id = ((Number) item.get("id")).longValue();
+                Integer order = ((Number) item.get("displayOrder")).intValue();
+                photoRepository.findById(id).ifPresent(photo -> {
+                    photo.setDisplayOrder(order);
+                    photoRepository.save(photo);
+                });
+            } catch (Exception ignored) {}
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "success");
+        result.put("message", "순서가 저장되었습니다.");
+        return ResponseEntity.ok(result);
+    }
+
     // ── 유틸리티 ──────────────────────────────────────────────────────
 
     private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message) {

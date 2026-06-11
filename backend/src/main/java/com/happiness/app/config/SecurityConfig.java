@@ -86,6 +86,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/{id}").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/inquiry").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용

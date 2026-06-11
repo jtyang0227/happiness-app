@@ -13,6 +13,9 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
     List<Photo> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
+    /** displayOrder 우선, 동률은 createdAt 역순 */
+    List<Photo> findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(Long memberId);
+
     List<Photo> findByColorMoodOrderByCreatedAtDesc(String colorMood);
 
     @Query("""

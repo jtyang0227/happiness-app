@@ -31,6 +31,26 @@ export const photoApi = {
   savePhoto:   (id, memberId) => apiClient.post(`/photos/${id}/saves`, null, { params: { memberId } }).then(r => r.data),
   unsavePhoto: (id, memberId) => apiClient.delete(`/photos/${id}/saves`, { params: { memberId } }).then(r => r.data),
   getSaved:    (memberId)     => apiClient.get(`/photos/saves/${memberId}`).then(r => r.data),
+
+  reorder: (orders) =>
+    apiClient.put('/photos/reorder', orders).then(r => r.data),
+};
+
+export const inquiryApi = {
+  send: (data) =>
+    apiClient.post('/inquiry', data).then(r => r.data),
+
+  getInbox: (memberId) =>
+    apiClient.get('/inquiry/inbox', { params: { memberId } }).then(r => r.data),
+
+  getUnreadCount: (memberId) =>
+    apiClient.get('/inquiry/inbox/unread-count', { params: { memberId } }).then(r => r.data),
+
+  markRead: (id) =>
+    apiClient.put(`/inquiry/${id}/read`).then(r => r.data),
+
+  remove: (id) =>
+    apiClient.delete(`/inquiry/${id}`).then(r => r.data),
 };
 
 export const seriesApi = {

@@ -192,6 +192,7 @@ Feature-based package layout:
 - **member/** — Auth & users. `AuthController` handles signup/login. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security.
 - **portfolio/** — `PortfolioController` (`GET /api/portfolio/{profileName}`) — 공개 포트폴리오. 로그인 불필요. MemberRepository.findByProfileName + PhotoRepository.findByMemberIdOrderByCreatedAtDesc 사용.
 - **series/** — `SeriesController` (`/api/series`) — 시리즈/컬렉션 CRUD. `Series` 엔티티 + `SeriesPhoto` 조인 테이블. GET(목록/상세)은 공개, POST/PUT/DELETE/사진추가제거는 인증 필요.
+- **inquiry/** — `InquiryController` (`/api/inquiry`) — 촬영 문의. `Inquiry` 엔티티. POST(문의 전송)는 공개. `InquiryEmailService`는 `@Autowired(required=false)`로 메일 서버 없어도 동작. 수신함/읽음처리/삭제는 인증 필요.
 - **storage/** — Supabase Storage 연동. `SupabaseStorageService` (WebClient 기반 업로드/삭제), `StorageController` (`POST /api/upload/image`).
 - **common/** — `HelloController` (health check), `ImageProcessingUtil` (upload + Thumbnailator resize).
 - **board/** — Placeholder; `Board`/`Content` entities with repositories, no service layer yet.
@@ -207,6 +208,24 @@ src/main/resources/
 ```
 
 **운영 주의사항**: `application-prod.yml`의 `ddl-auto: validate` — 절대 `create`/`create-drop` 금지.
+
+**운영 DB 수동 마이그레이션 필요** (새 컬럼 추가 시):
+```sql
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS display_order INTEGER;
+ALTER TABLE series ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+CREATE TABLE IF NOT EXISTS inquiries (
+  id BIGSERIAL PRIMARY KEY,
+  receiver_member_id BIGINT NOT NULL,
+  sender_name VARCHAR(100) NOT NULL,
+  sender_email VARCHAR(255) NOT NULL,
+  shoot_type VARCHAR(50),
+  shoot_date VARCHAR(100),
+  budget VARCHAR(100),
+  message TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
 
 #### PhotoRepository 주요 쿼리 메서드
 
@@ -240,8 +259,8 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile, **Portfolio**, **KakaoCallback**)
-- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**)
+- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount)
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
 - **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
@@ -249,18 +268,27 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **contexts/AuthContext** — 전역 인증 상태 (login/signup/updateProfile/logout + localStorage)
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
-- **services/api.js** — photoApi + authApi (fetch wrapper)
+- **services/api.js** — photoApi + authApi + inquiryApi + seriesApi
   - `photoApi.search(keyword, colorMood, memberId)` — 복합 필터 (GET /photos?keyword=&colorMood=)
   - `photoApi.getByMember(memberId)` — 멤버별 사진 목록
+  - `photoApi.reorder(orders)` — 순서 일괄 저장 `[{id, displayOrder}]`
   - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao?code=xxx
+  - `inquiryApi.send/getInbox/getUnreadCount/markRead/remove` — 문의 CRUD
+  - `seriesApi.getByMember/getOne/create/update/remove/addPhoto/removePhoto` — 시리즈 CRUD
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
 - **services/mockData.js** — (레거시, 현재 미사용)
 
 Routing via React Router DOM v6. No Redux — state managed through Context + local state.
 
 **공개 라우트** (로그인 불필요):
-- `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오)
+- `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오, 문의하기 버튼 포함)
+- `/inquiry/:profileName?memberId=` — InquiryFormPage (촬영 문의 폼, 헤더 없는 standalone)
 - `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백 처리)
+
+**보호 라우트** (로그인 필요):
+- `/inbox` — InquiryInboxPage (문의 수신함)
+- `/gallery/sort` — PhotoSortPage (사진 순서 드래그 정렬)
+- `/series` — SeriesPage (시리즈/컬렉션 관리)
 
 **Kakao OAuth 흐름**:
 1. LoginPage 버튼 클릭 → `kauth.kakao.com/oauth/authorize?client_id=${REACT_APP_KAKAO_APP_KEY}&...`
