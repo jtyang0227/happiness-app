@@ -15,6 +15,8 @@ import com.happiness.app.photo.repository.PhotoSaveRepository;
 import com.happiness.app.photo.repository.PhotoShareRepository;
 import com.happiness.app.photo.repository.PhotoTagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,16 +62,41 @@ public class PhotoController {
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(Sort.Order.by(field).with(direction).nullsLast());
 
-        List<PhotoResponse> photos = photoRepository
-                .search(keyword, colorMood, memberId, imageRatio, sort)
-                .stream()
-                .map(PhotoResponse::fromEntity)
-                .collect(Collectors.toList());
+        List<PhotoResponse> photos;
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        if (hasKeyword) {
+            // 키워드 있을 때: pg_trgm 유사도 검색 → H2/미설치 시 JPQL LIKE 로 fallback
+            try {
+                String cm = colorMood != null ? colorMood : "";
+                String ir = imageRatio != null ? imageRatio : "";
+                photos = photoRepository.searchFuzzy(keyword, cm, memberId, ir)
+                        .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+            } catch (DataAccessException e) {
+                photos = photoRepository.search(keyword, colorMood, memberId, imageRatio, sort)
+                        .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+            }
+        } else {
+            photos = photoRepository.search(null, colorMood, memberId, imageRatio, sort)
+                    .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
         result.put("data", photos);
         return ResponseEntity.ok(result);
+    }
+
+    /** GET /api/photos/suggestions?q=검색어 — 자동완성용 제목 목록 (최대 5건) */
+    @GetMapping("/suggestions")
+    public ResponseEntity<?> getSuggestions(
+            @RequestParam(required = false, defaultValue = "") String q
+    ) {
+        if (q.isBlank()) {
+            return ResponseEntity.ok(Map.of("status", "success", "data", List.of()));
+        }
+        List<String> suggestions = photoRepository.findTitleSuggestions(q, PageRequest.of(0, 5));
+        return ResponseEntity.ok(Map.of("status", "success", "data", suggestions));
     }
 
     @GetMapping("/{id}")

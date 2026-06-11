@@ -233,7 +233,20 @@ CREATE TABLE IF NOT EXISTS inquiries (
 findByMemberIdOrderByCreatedAtDesc(Long memberId)   // 멤버별 사진
 findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
 search(keyword, colorMood, memberId, imageRatio, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
+searchFuzzy(kw, colorMood, memberId, imageRatio)    // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
+findTitleSuggestions(q, Pageable)                   // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
 deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascade
+```
+
+**검색 fallback 전략** (`PhotoController.getAllPhotos`):
+- 키워드 있을 때: `searchFuzzy()` → `DataAccessException` 시 `search()` LIKE로 자동 fallback
+- 키워드 없을 때: `search()` JPQL (동적 Sort 지원)
+
+**운영 DB 설정** (Supabase SQL Editor, 최초 1회):
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (description gin_trgm_ops);
 ```
 
 **사진 삭제 시 cascade 순서** (`PhotoController.deletePhoto`):

@@ -38,6 +38,9 @@ export const photoApi = {
 
   reorder: (orders) =>
     apiClient.put('/photos/reorder', orders).then(r => r.data),
+
+  getSuggestions: (q) =>
+    apiClient.get('/photos/suggestions', { params: { q } }).then(r => r.data),
 };
 
 export const inquiryApi = {

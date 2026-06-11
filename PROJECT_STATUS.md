@@ -1,8 +1,8 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
 > 최종 업데이트: 2026-06-11  
-> 전체 완성도: **Backend 94% / Frontend 90% / Mobile 20%**
-> Phase 2-6 완료: 갤러리 정렬 강화 (6가지 정렬, 그리드/리스트 뷰, 비율 필터)
+> 전체 완성도: **Backend 96% / Frontend 92% / Mobile 20%**
+> Phase 2-7 완료: pg_trgm 유사도 검색, 자동완성 드롭다운, 검색 히스토리, 결과 하이라이팅
 
 ---
 
@@ -17,7 +17,7 @@
 | **Phase 2-4 — 통계 대시보드** | ⬜ 별도 앱 | happiness-admin 앱에 구현 예정 |
 | **Phase 2-5 — 사진 순서 정렬** | ✅ 완료 | HTML5 DnD 드래그 정렬, displayOrder 저장 |
 | **Phase 2-6 — 갤러리 정렬 강화** | ✅ 완료 | 6가지 정렬, 그리드/리스트 뷰, 비율 필터 |
-| **Phase 2-7 — 검색 고도화** | 📋 기획 완료 | PostgreSQL FTS + pg_trgm, 자동완성, 태그 검색 |
+| **Phase 2-7 — 검색 고도화** | ✅ 완료 | pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅 |
 | **Phase 2-8 — 마이페이지 강화** | 📋 기획 완료 | 아바타 업로드, 비밀번호 변경, 저장함, 통계 |
 | **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
 
@@ -317,8 +317,9 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS saves_count INTEGER DEFAULT 0;
 
 ---
 
-## 📋 Phase 2-7 — 검색 엔진 고도화 (기획)
+## ✅ Phase 2-7 — 검색 엔진 고도화 (완료)
 
+> 완료일: 2026-06-11  
 > 목표: Elasticsearch 없이 빠르고 정확한 한국어 검색 구현
 
 ### 현재 상태
@@ -421,11 +422,24 @@ GET /api/photos?tags=여행,풍경
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `PhotoRepository.java` | `searchFuzzy()` Native Query 추가 |
-| `PhotoController.java` | `GET /photos/suggestions` 엔드포인트 추가 |
-| `ExplorePage.jsx` | 자동완성 드롭다운, 태그 칩, 하이라이팅, 검색 히스토리 |
-| `GalleryPage.jsx` | 검색창 추가 (현재는 없음) |
-| Supabase SQL | `pg_trgm` 확장 + GIN 인덱스 실행 스크립트 |
+| `PhotoRepository.java` | `searchFuzzy()` native query (pg_trgm) + `findTitleSuggestions()` JPQL 추가 |
+| `PhotoController.java` | `GET /photos/suggestions` 자동완성 엔드포인트 + getAllPhotos에서 fuzzy/LIKE 자동 fallback |
+| `api.js` | `photoApi.getSuggestions(q)` 추가 |
+| `ExplorePage.jsx` | 자동완성 드롭다운(debounce 300ms), 검색 히스토리(localStorage, 최근 5개), 결과 하이라이팅, 이미지 비율 필터 |
+
+### fallback 전략
+
+키워드 검색 시:
+1. `searchFuzzy()` (pg_trgm native query) 시도 → 유사도 기반 정렬
+2. `DataAccessException` 발생 시 (H2 dev / pg_trgm 미설치) → JPQL LIKE 검색으로 자동 fallback
+
+### 운영 DB 설정 (Supabase SQL Editor)
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (description gin_trgm_ops);
+```
 
 ---
 
