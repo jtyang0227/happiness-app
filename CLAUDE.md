@@ -245,8 +245,9 @@ deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascad
 **운영 DB 설정** (Supabase SQL Editor, 최초 1회):
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (description gin_trgm_ops);
+-- 한글·영문 대소문자 무관 검색을 위한 LOWER() 표현식 GIN 인덱스
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (LOWER(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (LOWER(description) gin_trgm_ops);
 ```
 
 **사진 삭제 시 cascade 순서** (`PhotoController.deletePhoto`):

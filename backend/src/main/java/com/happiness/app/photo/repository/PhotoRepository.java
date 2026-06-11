@@ -39,7 +39,10 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     );
 
     /**
-     * pg_trgm 유사도 검색 (PostgreSQL + pg_trgm 확장 필요).
+     * pg_trgm 유사도 검색 — 한글·영문 모두 지원 (PostgreSQL + pg_trgm 확장 필요).
+     * - LOWER() 적용으로 영문 대소문자 무시
+     * - similarity()  : 전체 문자열 유사도 (한글 부분 일치에 효과적)
+     * - word_similarity(): 단어 단위 유사도 (영문 "photography" 에서 "photo" 매칭에 효과적)
      * H2 dev 환경에서는 DataAccessException 발생 → controller에서 JPQL fallback 처리.
      */
     @Query(value = """
@@ -47,14 +50,21 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         WHERE (
             title ILIKE CONCAT('%', :kw, '%') OR
             COALESCE(description, '') ILIKE CONCAT('%', :kw, '%') OR
-            (CHAR_LENGTH(:kw) >= 2 AND (title % :kw OR COALESCE(description, '') % :kw))
+            (CHAR_LENGTH(:kw) >= 2 AND (
+                LOWER(title) % LOWER(:kw) OR
+                LOWER(COALESCE(description, '')) % LOWER(:kw) OR
+                LOWER(:kw) <% LOWER(title) OR
+                LOWER(:kw) <% LOWER(COALESCE(description, ''))
+            ))
         )
         AND (:colorMood = '' OR color_mood = :colorMood)
         AND (:memberId IS NULL OR member_id = :memberId)
         AND (:imageRatio = '' OR image_ratio = :imageRatio)
         ORDER BY GREATEST(
-            similarity(title, :kw),
-            similarity(COALESCE(description, ''), :kw)
+            similarity(LOWER(title),                        LOWER(:kw)),
+            similarity(LOWER(COALESCE(description, '')),    LOWER(:kw)),
+            word_similarity(LOWER(:kw), LOWER(title)),
+            word_similarity(LOWER(:kw), LOWER(COALESCE(description, '')))
         ) DESC, created_at DESC
         """, nativeQuery = true)
     List<Photo> searchFuzzy(

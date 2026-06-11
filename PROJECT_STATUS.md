@@ -437,8 +437,9 @@ GET /api/photos?tags=여행,풍경
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (description gin_trgm_ops);
+-- 한글·영문 대소문자 무관 검색을 위한 LOWER() 표현식 GIN 인덱스
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (LOWER(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (LOWER(description) gin_trgm_ops);
 ```
 
 ---
