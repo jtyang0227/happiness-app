@@ -105,12 +105,15 @@
 | GET | `/check-email` | 이메일 중복 확인 | — |
 | GET | `/check-profile-name` | 프로필명 중복 확인 | — |
 | GET | `/member/:id` | 회원 정보 조회 | ✅ |
-| PUT | `/member/:id/profile` | 프로필 수정 | ✅ |
+| PUT | `/member/:id/profile` | 프로필 수정 (bio/websiteUrl/location/specialties/avatarUrl/coverUrl 포함) | ✅ |
+| GET | `/member/:id/stats` | 통계 6종 조회 | ✅ |
+| PUT | `/member/:id/password` | 비밀번호 변경 (현재 비밀번호 검증) | ✅ |
 
 ##### 사진 (`/api/photos`)
 | 메서드 | 경로 | 설명 | 인증 |
 |--------|------|------|------|
-| GET | `/?keyword=&colorMood=&memberId=` | 사진 목록 (필터) | — |
+| GET | `/?keyword=&colorMood=&memberId=&imageRatio=&sortBy=&order=&tags=` | 사진 목록 (복합 필터+정렬, pg_trgm fallback) | — |
+| GET | `/suggestions?q=` | 자동완성 제목 목록 (최대 5건) | — |
 | GET | `/:id` | 사진 상세 | — |
 | POST | `/` | 사진 등록 (JSON/URL) | ✅ |
 | POST | `/upload` | 사진 업로드 (파일) | ✅ |
@@ -254,36 +257,36 @@ MAIL_FROM=your-gmail@gmail.com
 | 포트폴리오 시리즈 탭 | ✅ | PortfolioPage 탭 분기 |
 | 포트폴리오 API에 series 포함 | ✅ | PortfolioController 업데이트 |
 
-### ⬜ Phase 2-2 — 워터마크 / 저작권 보호
+### ✅ Phase 2-2 — 워터마크 / 저작권 보호 (완료: 2026-06-11)
 
-- 이미지 다운로드 시 워터마크 자동 삽입 (서버 사이드 Java ImageIO)
-- 우클릭 / 드래그 방지 옵션 (Frontend CSS/JS)
-- Supabase Signed URL (만료 시간 설정)
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| Canvas 텍스트 워터마크 오버레이 | ✅ | 5가지 위치 선택 |
+| 워터마크 ON/OFF 토글 | ✅ | PhotoFormPage |
+| 업로드 이미지에 워터마크 내장 | ✅ | Canvas toBlob → 서버 업로드 |
 
-### ⬜ Phase 2-3 — 문의 / 고객 연락 폼
+### ✅ Phase 2-3 — 문의 / 고객 연락 폼 (완료: 2026-06-11)
 
-포트폴리오 페이지에서 잠재 고객이 작가에게 연락하는 기능.
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| 공개 촬영 문의 폼 (`/inquiry/:profileName`) | ✅ | 7가지 촬영 종류 |
+| 문의 수신함 (`/inbox`) | ✅ | 읽음/안읽음 필터, 삭제 |
+| 미읽음 배지 (헤더) | ✅ | `inquiryApi.getUnreadCount` |
+| 이메일 알림 (선택적) | ✅ | `@Autowired(required=false)`, MAIL_HOST 미설정 시 생략 |
+| 읽음 처리 / 삭제 API | ✅ | `PUT /:id/read`, `DELETE /:id` |
 
-```
-필드: 이름, 이메일, 촬영 종류, 날짜, 예산, 메시지
-```
+### ⬜ Phase 2-4 — 통계 대시보드 (별도 앱 예정)
 
-- 이메일 발송 (Spring Mail + Gmail SMTP 또는 SendGrid)
-- 작가 대시보드에서 수신함 관리
+happiness-admin 앱에 구현 예정. 현재 마이페이지 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount)은 Phase 2-8에서 구현 완료.
 
-### ⬜ Phase 2-4 — 통계 대시보드
+### ✅ Phase 2-5 — 사진 순서 드래그 정렬 (완료: 2026-06-11)
 
-| 지표 | 설명 |
-|------|------|
-| 조회수 | 페이지별 방문자 수 |
-| 좋아요 추이 | 최근 30일 그래프 |
-| 인기 작품 | 가장 많이 본 / 좋아요 받은 사진 |
-| 방문자 출처 | 직접 접속 / SNS / 검색 |
-
-### ⬜ Phase 2-5 — 사진 순서 드래그 정렬
-
-- Photo/Series에 `displayOrder` 필드 활용
-- 드래그&드롭 재정렬 (HTML5 DnD 또는 라이브러리 없이 구현)
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| `displayOrder` 필드 (Photo, Series) | ✅ | DB 컬럼 |
+| HTML5 DnD 드래그&드롭 UI | ✅ | PhotoSortPage (`/gallery/sort`) |
+| 순서 번호 배지 표시 | ✅ | |
+| `PUT /photos/reorder` API | ✅ | `[{id, displayOrder}]` 일괄 저장 |
 
 ---
 
@@ -481,17 +484,17 @@ CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (LOWER(desc
 
 #### ② 프로필 정보 확장
 
-| 필드 | 현재 | 추가 |
+| 필드 | 상태 | 비고 |
 |------|------|------|
-| 이름 | ✅ | — |
-| 전화번호 | ✅ | — |
-| 포트폴리오 주소 | ✅ | — |
-| 인스타그램 | ✅ | — |
-| 자기소개 (Bio) | ❌ | 최대 200자, textarea |
-| 웹사이트 URL | ❌ | URL 유효성 검증 |
-| 위치 (도시) | ❌ | 선택적 텍스트 입력 |
-| 촬영 전문 분야 | ❌ | 체크박스 다중 선택 (결혼식·인물·풍경 등) |
-| 커버 이미지 | ❌ | 헤더 배경 이미지 업로드 |
+| 이름 | ✅ | |
+| 전화번호 | ✅ | |
+| 포트폴리오 주소 | ✅ | |
+| 인스타그램 | ✅ | |
+| 자기소개 (Bio) | ✅ | textarea, Member.bio (TEXT) |
+| 웹사이트 URL | ✅ | `https://` 형식 검증, Member.websiteUrl |
+| 위치 (도시) | ✅ | 선택적 텍스트 입력, Member.location |
+| 촬영 전문 분야 | ✅ | 10개 체크박스 다중 선택, 콤마 구분 저장 |
+| 커버 이미지 | ✅ | hover overlay 클릭 → Supabase Storage 업로드 |
 
 **백엔드 DB 변경 필요 (운영 마이그레이션 SQL):**
 ```sql
