@@ -1,25 +1,29 @@
 import apiClient from '../api/apiClient';
 
 export const photoApi = {
-  getAll: ()         => apiClient.get('/photos').then(r => r.data),
+  getAll: ({ sortBy = 'createdAt', order = 'desc' } = {}) =>
+    apiClient.get('/photos', { params: { sortBy, order } }).then(r => r.data),
   getOne: (id)       => apiClient.get(`/photos/${id}`).then(r => r.data),
   create: (data)     => apiClient.post('/photos', data).then(r => r.data),
   update: (id, data) => apiClient.put(`/photos/${id}`, data).then(r => r.data),
   remove: (id)       => apiClient.delete(`/photos/${id}`).then(r => r.data),
 
-  /** 키워드·무드·멤버 필터 검색. 파라미터 모두 선택적 */
-  search: (keyword, colorMood, memberId) =>
+  /** 키워드·무드·멤버·비율 필터 + 정렬. 파라미터 모두 선택적 */
+  search: ({ keyword, colorMood, memberId, imageRatio, sortBy = 'createdAt', order = 'desc' } = {}) =>
     apiClient.get('/photos', {
       params: {
-        ...(keyword   ? { keyword }   : {}),
-        ...(colorMood ? { colorMood } : {}),
-        ...(memberId  ? { memberId }  : {}),
+        ...(keyword    ? { keyword }    : {}),
+        ...(colorMood  ? { colorMood }  : {}),
+        ...(memberId   ? { memberId }   : {}),
+        ...(imageRatio ? { imageRatio } : {}),
+        sortBy,
+        order,
       },
     }).then(r => r.data),
 
   /** 특정 멤버의 사진 목록 */
-  getByMember: (memberId) =>
-    apiClient.get('/photos', { params: { memberId } }).then(r => r.data),
+  getByMember: (memberId, { sortBy = 'createdAt', order = 'desc' } = {}) =>
+    apiClient.get('/photos', { params: { memberId, sortBy, order } }).then(r => r.data),
 
   uploadFile: (formData) =>
     apiClient.post('/photos/upload', formData, {

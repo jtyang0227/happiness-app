@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS inquiries (
 ```java
 findByMemberIdOrderByCreatedAtDesc(Long memberId)   // 멤버별 사진
 findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
-search(keyword, colorMood, memberId)                 // 복합 필터 검색 (JPQL)
+search(keyword, colorMood, memberId, imageRatio, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
 deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascade
 ```
 
@@ -269,8 +269,9 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi + inquiryApi + seriesApi
-  - `photoApi.search(keyword, colorMood, memberId)` — 복합 필터 (GET /photos?keyword=&colorMood=)
-  - `photoApi.getByMember(memberId)` — 멤버별 사진 목록
+  - `photoApi.search({ keyword, colorMood, memberId, imageRatio, sortBy, order })` — 복합 필터+정렬 (GET /photos)
+  - `photoApi.getAll({ sortBy, order })` — 전체 사진 목록 (정렬 지원)
+  - `photoApi.getByMember(memberId, { sortBy, order })` — 멤버별 사진 목록
   - `photoApi.reorder(orders)` — 순서 일괄 저장 `[{id, displayOrder}]`
   - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao?code=xxx
   - `inquiryApi.send/getInbox/getUnreadCount/markRead/remove` — 문의 CRUD

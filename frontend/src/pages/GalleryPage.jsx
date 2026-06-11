@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePhotos } from '../hooks/usePhotos';
+import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
@@ -9,6 +9,15 @@ const COLOR_ORDER = [
   'WARM', 'ENERGETIC', 'VIBRANT', 'ROMANTIC',
   'NATURAL', 'COOL', 'SERENE',
   'MUTED', 'DRAMATIC', 'CLEAN', 'MONOCHROME',
+];
+
+const SORT_OPTIONS = [
+  { label: '최신순',       value: 'createdAt',   order: 'desc', clientSort: null },
+  { label: '오래된 순',    value: 'createdAt',   order: 'asc',  clientSort: null, key: 'oldest' },
+  { label: '좋아요 순',    value: 'likesCount',  order: 'desc', clientSort: null },
+  { label: '저장 순',      value: 'savesCount',  order: 'desc', clientSort: null },
+  { label: '색상 순',      value: 'color',       order: 'asc',  clientSort: true  },
+  { label: '표시 순서',    value: 'displayOrder', order: 'asc', clientSort: null },
 ];
 
 function sortByColor(photos) {
@@ -20,13 +29,42 @@ function sortByColor(photos) {
 }
 
 export default function GalleryPage() {
-  const { photos, loading, error, refetch } = usePhotos();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState(null);
+  const [photos, setPhotos]       = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [selected, setSelected]   = useState(null);
+  const [sortIdx, setSortIdx]     = useState(0);
+  const [viewMode, setViewMode]   = useState('masonry');
 
-  const sorted = useMemo(() => sortByColor(photos), [photos]);
+  const currentSort = SORT_OPTIONS[sortIdx];
+
+  const fetchPhotos = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const params = currentSort.clientSort
+        ? {}
+        : { sortBy: currentSort.value, order: currentSort.order };
+      const res = await photoApi.search(params);
+      const list = res?.data ?? (Array.isArray(res) ? res : []);
+      setPhotos(list);
+    } catch {
+      setError('사진을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentSort]);
+
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+
+  const displayed = useMemo(
+    () => currentSort.clientSort ? sortByColor(photos) : photos,
+    [photos, currentSort]
+  );
 
   const handleUpdated = useCallback((updated) => {
+    setPhotos(prev => prev.map(p => p.id === updated.id ? updated : p));
     setSelected(prev => (prev?.id === updated.id ? updated : prev));
   }, []);
 
@@ -35,7 +73,7 @@ export default function GalleryPage() {
       <div style={centerStyle}>
         <div style={{
           width: 36, height: 36, borderRadius: '50%',
-          border: `3px solid ${COLORS.galleryBorder}`,
+          border: `3px solid ${COLORS.galleryBorder ?? '#333'}`,
           borderTopColor: COLORS.primary,
           animation: 'spin 0.8s linear infinite',
         }} />
@@ -48,17 +86,7 @@ export default function GalleryPage() {
     return (
       <div style={{ ...centerStyle, flexDirection: 'column', gap: 14 }}>
         <div style={{ color: '#ff8080', fontSize: 15 }}>{error}</div>
-        <button onClick={refetch} style={primaryBtn}>다시 시도</button>
-      </div>
-    );
-  }
-
-  if (photos.length === 0) {
-    return (
-      <div style={{ ...centerStyle, flexDirection: 'column', gap: 16 }}>
-        <span style={{ fontSize: 40, opacity: 0.3 }}>✦</span>
-        <div style={{ color: '#555', fontSize: 15 }}>아직 등록된 사진이 없습니다.</div>
-        <button onClick={() => navigate('/photo/new')} style={primaryBtn}>첫 사진 등록하기</button>
+        <button onClick={fetchPhotos} style={primaryBtn}>다시 시도</button>
       </div>
     );
   }
@@ -69,29 +97,115 @@ export default function GalleryPage() {
       {/* Toolbar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 20px',
-        borderBottom: `1px solid ${COLORS.galleryBorder}`,
+        padding: '14px 16px', gap: 10, flexWrap: 'wrap',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
-        <span style={{ fontSize: 12, color: '#444', fontWeight: 600, letterSpacing: '0.05em' }}>
-          {sorted.length}장 · 색상 순
-        </span>
-        <button onClick={() => navigate('/photo/new')} style={primaryBtn}>
-          + 등록
-        </button>
+
+        {/* Sort chips */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+          {SORT_OPTIONS.map((opt, idx) => (
+            <button
+              key={opt.key ?? opt.value + opt.order}
+              onClick={() => setSortIdx(idx)}
+              style={{
+                padding: '5px 12px', borderRadius: 20, border: 'none',
+                cursor: 'pointer', fontSize: 12, fontWeight: sortIdx === idx ? 700 : 500,
+                background: sortIdx === idx ? COLORS.primary : 'rgba(255,255,255,0.08)',
+                color: sortIdx === idx ? '#fff' : 'rgba(255,255,255,0.55)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 10, overflow: 'hidden' }}>
+            {[
+              { mode: 'masonry', icon: '⊞' },
+              { mode: 'list',    icon: '☰' },
+            ].map(({ mode, icon }) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  padding: '6px 11px', border: 'none', cursor: 'pointer', fontSize: 15,
+                  background: viewMode === mode ? COLORS.primary : 'transparent',
+                  color: viewMode === mode ? '#fff' : 'rgba(255,255,255,0.45)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{displayed.length}장</span>
+
+          <button onClick={() => navigate('/photo/new')} style={primaryBtn}>+ 등록</button>
+        </div>
       </div>
 
-      {/* Masonry grid */}
-      <div style={{
-        columns: '4 200px',
-        columnGap: 3,
-        padding: 3,
-      }}>
-        {sorted.map(photo => (
-          <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
-            <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
-          </div>
-        ))}
-      </div>
+      {displayed.length === 0 ? (
+        <div style={{ ...centerStyle, flexDirection: 'column', gap: 16, paddingTop: 80 }}>
+          <span style={{ fontSize: 40, opacity: 0.3 }}>✦</span>
+          <div style={{ color: '#555', fontSize: 15 }}>아직 등록된 사진이 없습니다.</div>
+          <button onClick={() => navigate('/photo/new')} style={primaryBtn}>첫 사진 등록하기</button>
+        </div>
+      ) : viewMode === 'masonry' ? (
+        /* Masonry grid */
+        <div style={{ columns: '4 200px', columnGap: 3, padding: 3 }}>
+          {displayed.map(photo => (
+            <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
+              <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* List view */
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '16px 16px' }}>
+          {displayed.map(photo => (
+            <div
+              key={photo.id}
+              onClick={() => setSelected(photo)}
+              style={{
+                display: 'flex', gap: 14, alignItems: 'flex-start',
+                padding: '12px 0',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                cursor: 'pointer',
+              }}
+            >
+              <img
+                src={photo.thumbnailUrl || photo.imageUrl}
+                alt={photo.title}
+                style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }}
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.88)', marginBottom: 4 }}>
+                  {photo.title || '제목 없음'}
+                </div>
+                {photo.description && (
+                  <div style={{
+                    fontSize: 12, color: 'rgba(255,255,255,0.42)', lineHeight: 1.5,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {photo.description}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+                  <span>♡ {photo.likesCount ?? 0}</span>
+                  <span>🔖 {photo.savesCount ?? 0}</span>
+                  {photo.colorMood && <span>{photo.colorMood}</span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Detail modal */}
       {selected && (
@@ -111,7 +225,7 @@ const centerStyle = {
 };
 
 const primaryBtn = {
-  padding: '8px 18px',
+  padding: '7px 16px',
   background: COLORS.primary,
   color: '#fff', border: 'none',
   borderRadius: 10, cursor: 'pointer',

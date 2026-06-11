@@ -22,6 +22,7 @@ public class PhotoResponse {
     private String description;
     private String imageRatio;
     private Integer likesCount;
+    private Integer savesCount;
     private Integer sharesCount;
     private Integer gridColSpan;
     private String dominantColor;
@@ -44,6 +45,7 @@ public class PhotoResponse {
                 .description(photo.getDescription())
                 .imageRatio(photo.getImageRatio())
                 .likesCount(photo.getLikesCount())
+                .savesCount(photo.getSavesCount())
                 .sharesCount(photo.getSharesCount())
                 .gridColSpan(photo.getGridColSpan() != null ? photo.getGridColSpan() : 6)
                 .dominantColor(photo.getDominantColor())

@@ -1,8 +1,8 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
 > 최종 업데이트: 2026-06-11  
-> 전체 완성도: **Backend 92% / Frontend 88% / Mobile 20%**
-> 기획 추가: Phase 2-6(갤러리 정렬 강화) / Phase 2-7(검색 고도화) / Phase 2-8(마이페이지 강화)
+> 전체 완성도: **Backend 94% / Frontend 90% / Mobile 20%**
+> Phase 2-6 완료: 갤러리 정렬 강화 (6가지 정렬, 그리드/리스트 뷰, 비율 필터)
 
 ---
 
@@ -16,7 +16,7 @@
 | **Phase 2-3 — 문의 폼** | ✅ 완료 | 공개 폼, 수신함 CRUD, 이메일 알림(선택), 읽음 처리 |
 | **Phase 2-4 — 통계 대시보드** | ⬜ 별도 앱 | happiness-admin 앱에 구현 예정 |
 | **Phase 2-5 — 사진 순서 정렬** | ✅ 완료 | HTML5 DnD 드래그 정렬, displayOrder 저장 |
-| **Phase 2-6 — 갤러리 정렬 강화** | 📋 기획 완료 | 5가지 정렬 기준, 뷰 전환, 필터 패널 |
+| **Phase 2-6 — 갤러리 정렬 강화** | ✅ 완료 | 6가지 정렬, 그리드/리스트 뷰, 비율 필터 |
 | **Phase 2-7 — 검색 고도화** | 📋 기획 완료 | PostgreSQL FTS + pg_trgm, 자동완성, 태그 검색 |
 | **Phase 2-8 — 마이페이지 강화** | 📋 기획 완료 | 아바타 업로드, 비밀번호 변경, 저장함, 통계 |
 | **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
@@ -285,59 +285,35 @@ MAIL_FROM=your-gmail@gmail.com
 
 ---
 
-## 📋 Phase 2-6 — 갤러리 정렬 강화 (기획)
+## ✅ Phase 2-6 — 갤러리 정렬 강화 (완료)
 
-> 목표: 사용자가 다양한 기준으로 사진을 탐색할 수 있는 경험 제공
+> 완료일: 2026-06-11
 
-### 현재 상태
-- GalleryPage: 색상 무드 순 고정 (`COLOR_ORDER` 배열 기반 클라이언트 정렬)
-- ExplorePage: `createdAt DESC` 고정 (백엔드 `ORDER BY p.createdAt DESC`)
-- 정렬 변경 UI 없음
-
-### 추가할 정렬 기준 (5가지)
-
-| 정렬 | 레이블 | 백엔드 처리 |
-|------|--------|------------|
-| 최신순 | 🕐 최신순 | `ORDER BY created_at DESC` |
-| 오래된순 | 🕰 오래된순 | `ORDER BY created_at ASC` |
-| 좋아요순 | ❤️ 인기순 | `ORDER BY likes_count DESC` |
-| 저장순 | 🔖 저장 많은순 | `ORDER BY saves_count DESC` |
-| 직접 설정순 | ✦ 내 순서 | `ORDER BY display_order ASC` |
-| 색상 무드순 | 🎨 색상순 | 클라이언트 `COLOR_ORDER` 정렬 (현재 방식 유지) |
-
-### 뷰 전환 (2가지)
-
-| 뷰 | 설명 |
-|----|------|
-| 그리드 뷰 | 현재 Masonry columns 방식 유지 |
-| 리스트 뷰 | 넓은 카드 1열, 제목·설명·무드·날짜 상세 표시 |
-
-### 필터 패널 강화
-
-```
-현재: 무드 칩 버튼 (ExplorePage만)
-추가:
-  - 이미지 비율 필터 (16:9 / 4:3 / 1:1 / 3:4 / 2:3)
-  - 날짜 범위 필터 (이번 달 / 올해 / 직접 입력)
-  - 좋아요 수 범위 슬라이더
-```
-
-### 구현 위치
+### 구현 내용
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `GalleryPage.jsx` | `SortBar` 컴포넌트 추가, 뷰 토글 버튼, 정렬 state |
-| `ExplorePage.jsx` | 정렬 드롭다운 추가, 필터 패널 확장 |
-| `PhotoRepository.java` | `search()` 쿼리에 `sortBy` 파라미터 추가 또는 동적 쿼리 |
-| `PhotoController.java` | `GET /photos?sortBy=likes&order=desc` 파라미터 처리 |
+| `Photo.java` | `savesCount` 필드 추가 (nullable=false, @PrePersist 초기값 0) |
+| `PhotoResponse.java` | `savesCount` 응답 필드 추가 |
+| `PhotoRepository.java` | `search()` 메서드: `imageRatio` 파라미터 + `Sort sort` 동적 정렬 추가, 하드코딩 ORDER BY 제거 |
+| `PhotoController.java` | `GET /photos?sortBy=&order=&imageRatio=` 파라미터 처리, Sort 화이트리스트 검증, save/unsave에서 savesCount 증감 |
+| `api.js` | `photoApi.search()` + `getAll()` + `getByMember()` 에 sortBy/order/imageRatio 파라미터 추가 |
+| `GalleryPage.jsx` | 6가지 정렬 칩(최신/오래된/좋아요/저장/색상/표시순서) + 그리드/리스트 뷰 토글 |
+| `ExplorePage.jsx` | 정렬 드롭다운 + 이미지 비율 필터 칩 추가 |
 
-### API 변경 계획
+### API
 
 ```
 GET /api/photos?keyword=&colorMood=&imageRatio=&sortBy=createdAt&order=desc&memberId=
 ```
 
-`sortBy` 허용값: `createdAt` · `likesCount` · `savesCount` · `displayOrder`
+`sortBy` 허용값: `createdAt` · `likesCount` · `savesCount` · `sharesCount` · `displayOrder` · `title`
+
+### 운영 DB 마이그레이션 (신규 배포 시)
+
+```sql
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS saves_count INTEGER DEFAULT 0;
+```
 
 ---
 

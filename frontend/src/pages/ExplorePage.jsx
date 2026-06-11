@@ -18,6 +18,22 @@ const MOODS = [
   { value: 'MONOCHROME', label: '흑백' },
 ];
 
+const RATIOS = [
+  { value: '', label: '전체 비율' },
+  { value: '1:1', label: '1:1' },
+  { value: '4:3', label: '4:3' },
+  { value: '3:4', label: '3:4' },
+  { value: '16:9', label: '16:9' },
+  { value: '9:16', label: '9:16' },
+];
+
+const SORT_OPTIONS = [
+  { label: '최신순',    sortBy: 'createdAt',    order: 'desc' },
+  { label: '오래된 순', sortBy: 'createdAt',    order: 'asc'  },
+  { label: '좋아요 순', sortBy: 'likesCount',   order: 'desc' },
+  { label: '저장 순',   sortBy: 'savesCount',   order: 'desc' },
+];
+
 function PhotoCard({ photo }) {
   const navigate = useNavigate();
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
@@ -101,18 +117,20 @@ function PhotoCard({ photo }) {
 }
 
 export default function ExplorePage() {
-  const [photos, setPhotos]     = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [search, setSearch]     = useState('');
-  const [mood, setMood]         = useState('');
-  const [query, setQuery]       = useState({ keyword: '', colorMood: '' });
+  const [photos, setPhotos]       = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [search, setSearch]       = useState('');
+  const [mood, setMood]           = useState('');
+  const [imageRatio, setImageRatio] = useState('');
+  const [sortIdx, setSortIdx]     = useState(0);
+  const [query, setQuery]         = useState({ keyword: '', colorMood: '', imageRatio: '', sortBy: 'createdAt', order: 'desc' });
 
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await photoApi.search(query.keyword, query.colorMood);
+      const res = await photoApi.search(query);
       const list = res?.data ?? (Array.isArray(res) ? res : []);
       setPhotos(list);
     } catch {
@@ -124,9 +142,20 @@ export default function ExplorePage() {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
+  const applyFilters = useCallback((overrides = {}) => {
+    const s = SORT_OPTIONS[overrides.sortIdx ?? sortIdx];
+    setQuery({
+      keyword:    overrides.keyword    ?? search.trim(),
+      colorMood:  overrides.colorMood  ?? mood,
+      imageRatio: overrides.imageRatio ?? imageRatio,
+      sortBy:     s.sortBy,
+      order:      s.order,
+    });
+  }, [search, mood, imageRatio, sortIdx]);
+
   const handleSearch = (e) => {
     e.preventDefault();
-    setQuery({ keyword: search.trim(), colorMood: mood });
+    applyFilters();
   };
 
   return (
@@ -139,8 +168,8 @@ export default function ExplorePage() {
         </p>
       </div>
 
-      {/* Search form */}
-      <form onSubmit={handleSearch} style={{ marginBottom: 20, display: 'flex', gap: 8 }}>
+      {/* Search form + sort */}
+      <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
         <input
           type="text"
           value={search}
@@ -151,6 +180,23 @@ export default function ExplorePage() {
             border: `1.5px solid ${COLORS.border}`, fontSize: 14, color: COLORS.text, outline: 'none',
           }}
         />
+        <select
+          value={sortIdx}
+          onChange={e => {
+            const idx = Number(e.target.value);
+            setSortIdx(idx);
+            applyFilters({ sortIdx: idx });
+          }}
+          style={{
+            padding: '11px 14px', borderRadius: 12,
+            border: `1.5px solid ${COLORS.border}`, fontSize: 13, color: COLORS.text,
+            background: COLORS.surface, cursor: 'pointer', outline: 'none',
+          }}
+        >
+          {SORT_OPTIONS.map((opt, idx) => (
+            <option key={opt.label} value={idx}>{opt.label}</option>
+          ))}
+        </select>
         <button
           type="submit"
           style={{
@@ -164,7 +210,7 @@ export default function ExplorePage() {
       </form>
 
       {/* Mood filter chips */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {MOODS.map(m => {
           const moodInfo = m.value ? MOOD_COLORS[m.value] : null;
           const active = mood === m.value;
@@ -174,10 +220,10 @@ export default function ExplorePage() {
               onClick={() => {
                 const next = mood === m.value ? '' : m.value;
                 setMood(next);
-                setQuery({ keyword: search.trim(), colorMood: next });
+                applyFilters({ colorMood: next });
               }}
               style={{
-                padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
+                padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
                 fontWeight: active ? 700 : 500,
                 background: active ? (moodInfo?.bg ?? COLORS.primary) : COLORS.border,
                 color: active ? (moodInfo?.dot ?? '#fff') : COLORS.textSecondary,
@@ -190,6 +236,33 @@ export default function ExplorePage() {
         })}
       </div>
 
+      {/* Ratio filter chips */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+        {RATIOS.map(r => {
+          const active = imageRatio === r.value;
+          return (
+            <button
+              key={r.value}
+              onClick={() => {
+                const next = imageRatio === r.value ? '' : r.value;
+                setImageRatio(next);
+                applyFilters({ imageRatio: next });
+              }}
+              style={{
+                padding: '4px 11px', borderRadius: 20,
+                border: `1.5px solid ${active ? COLORS.primary : COLORS.border}`,
+                background: active ? COLORS.primaryLight : COLORS.surface,
+                color: active ? COLORS.primary : COLORS.textSecondary,
+                fontSize: 12, fontWeight: active ? 700 : 500,
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+            >
+              {r.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Content */}
       {loading ? (
         <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '60px 0' }}>불러오는 중...</div>
@@ -197,7 +270,7 @@ export default function ExplorePage() {
         <div style={{ textAlign: 'center', color: COLORS.danger, padding: '60px 0' }}>{error}</div>
       ) : photos.length === 0 ? (
         <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '60px 0', fontSize: 15 }}>
-          {query.keyword || query.colorMood ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
+          {query.keyword || query.colorMood || query.imageRatio ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>

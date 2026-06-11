@@ -41,6 +41,9 @@ public class Photo {
     private Integer likesCount;
 
     @Column(nullable = false)
+    private Integer savesCount;
+
+    @Column(nullable = false)
     private Integer sharesCount;
 
     /** 12컬럼 그리드에서 차지하는 열 수 (1–12, 기본 6 = 반폭) */
@@ -71,7 +74,8 @@ public class Photo {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if (this.likesCount == null) this.likesCount = 0;
+        if (this.likesCount == null)  this.likesCount  = 0;
+        if (this.savesCount == null)  this.savesCount  = 0;
         if (this.sharesCount == null) this.sharesCount = 0;
         if (this.imageRatio == null) this.imageRatio = "1:1";
         if (this.gridColSpan == null || this.gridColSpan < 1 || this.gridColSpan > 12) this.gridColSpan = 6;

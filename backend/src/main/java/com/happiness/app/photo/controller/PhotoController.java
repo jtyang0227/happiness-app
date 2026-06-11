@@ -15,6 +15,7 @@ import com.happiness.app.photo.repository.PhotoSaveRepository;
 import com.happiness.app.photo.repository.PhotoShareRepository;
 import com.happiness.app.photo.repository.PhotoTagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,30 +39,32 @@ public class PhotoController {
 
     // ── 사진 조회 ─────────────────────────────────────────────────────
 
+    private static final Set<String> SORT_WHITELIST = Set.of(
+            "createdAt", "likesCount", "savesCount", "sharesCount", "displayOrder", "title"
+    );
+
     /**
-     * GET /api/photos?keyword=&colorMood=&memberId=
+     * GET /api/photos?keyword=&colorMood=&memberId=&imageRatio=&sortBy=createdAt&order=desc
      * 모든 파라미터 선택적 — 없으면 전체 반환
      */
     @GetMapping
     public ResponseEntity<?> getAllPhotos(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String colorMood,
-            @RequestParam(required = false) Long memberId
+            @RequestParam(required = false) Long memberId,
+            @RequestParam(required = false) String imageRatio,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String order
     ) {
-        List<PhotoResponse> photos;
+        String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
+        Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(Sort.Order.by(field).with(direction).nullsLast());
 
-        if ((keyword != null && !keyword.isBlank()) ||
-            (colorMood != null && !colorMood.isBlank()) ||
-            memberId != null) {
-            photos = photoRepository.search(keyword, colorMood, memberId)
-                    .stream()
-                    .map(PhotoResponse::fromEntity)
-                    .collect(Collectors.toList());
-        } else {
-            photos = photoRepository.findAll().stream()
-                    .map(PhotoResponse::fromEntity)
-                    .collect(Collectors.toList());
-        }
+        List<PhotoResponse> photos = photoRepository
+                .search(keyword, colorMood, memberId, imageRatio, sort)
+                .stream()
+                .map(PhotoResponse::fromEntity)
+                .collect(Collectors.toList());
 
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
@@ -110,6 +113,7 @@ public class PhotoController {
                     .colorMood(mood)
                     .colorPalette(upload.colorPalette())
                     .likesCount(0)
+                    .savesCount(0)
                     .sharesCount(0)
                     .build();
 
@@ -151,6 +155,7 @@ public class PhotoController {
                 .imageRatio(request.getImageRatio() != null ? request.getImageRatio() : "1:1")
                 .gridColSpan(colSpan)
                 .likesCount(0)
+                .savesCount(0)
                 .sharesCount(0)
                 .build();
         Photo saved = photoRepository.save(photo);
@@ -365,12 +370,16 @@ public class PhotoController {
 
     @PostMapping("/{photoId}/saves")
     public ResponseEntity<?> savePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
-        if (!photoRepository.existsById(photoId)) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
+        Photo photo = photoRepository.findById(photoId).orElse(null);
+        if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (photoSaveRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
             return errorResponse(HttpStatus.BAD_REQUEST, "이미 저장한 사진입니다.");
         }
 
         photoSaveRepository.save(PhotoSave.builder().photoId(photoId).memberId(memberId).build());
+        photo.setSavesCount(photo.getSavesCount() + 1);
+        photoRepository.save(photo);
+
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
         result.put("message", "사진이 저장되었습니다.");
@@ -379,12 +388,16 @@ public class PhotoController {
 
     @DeleteMapping("/{photoId}/saves")
     public ResponseEntity<?> unsavePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
-        if (!photoRepository.existsById(photoId)) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
+        Photo photo = photoRepository.findById(photoId).orElse(null);
+        if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (!photoSaveRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
             return errorResponse(HttpStatus.BAD_REQUEST, "저장 기록이 없습니다.");
         }
 
         photoSaveRepository.deleteByPhotoIdAndMemberId(photoId, memberId);
+        photo.setSavesCount(Math.max(0, photo.getSavesCount() - 1));
+        photoRepository.save(photo);
+
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
         result.put("message", "저장이 취소되었습니다.");
