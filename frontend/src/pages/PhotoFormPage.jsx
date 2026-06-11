@@ -20,8 +20,16 @@ const MOOD_OPTIONS = Object.entries(MOOD_COLORS).map(([key, val]) => ({
   key, label: val.label, dot: val.dot, bg: val.bg,
 }));
 
+const RATIO_OPTIONS = [
+  { value: '16:9', label: '16:9', hint: '와이드' },
+  { value: '4:3',  label: '4:3',  hint: '가로' },
+  { value: '1:1',  label: '1:1',  hint: '정사각' },
+  { value: '3:4',  label: '3:4',  hint: '세로' },
+  { value: '2:3',  label: '2:3',  hint: '세로긴' },
+];
+
 const INITIAL_FORM = {
-  title: '', description: '', gridColSpan: 6, colorMood: '',
+  title: '', description: '', gridColSpan: 6, colorMood: '', imageRatio: '4:3',
 };
 
 const inputStyle = (hasError) => ({
@@ -86,6 +94,7 @@ export default function PhotoFormPage() {
             description: found.description || '',
             gridColSpan: found.gridColSpan || 6,
             colorMood:   found.colorMood   || '',
+            imageRatio:  found.imageRatio  || '4:3',
           });
           setUrlInput(found.imageUrl || '');
           setImgMode('url');
@@ -210,6 +219,7 @@ export default function PhotoFormPage() {
           description: form.description,
           gridColSpan: form.gridColSpan,
           colorMood:   form.colorMood || null,
+          imageRatio:  form.imageRatio,
           imageUrl:    urlInput.trim(),
         });
       } else if (imgMode === 'file' && imageFile) {
@@ -223,6 +233,7 @@ export default function PhotoFormPage() {
         fd.append('description', form.description);
         fd.append('gridColSpan', String(form.gridColSpan));
         fd.append('colorMood',   form.colorMood || '');
+        fd.append('imageRatio',  form.imageRatio);
         await photoApi.uploadFile(fd);
       } else {
         await photoApi.create({
@@ -232,6 +243,7 @@ export default function PhotoFormPage() {
           description: form.description,
           gridColSpan: form.gridColSpan,
           colorMood:   form.colorMood || null,
+          imageRatio:  form.imageRatio,
         });
       }
       navigate('/');
@@ -439,6 +451,45 @@ export default function PhotoFormPage() {
                   >
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
                     {mood.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 이미지 비율 */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>
+              이미지 비율
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {RATIO_OPTIONS.map(opt => {
+                const [w, h] = opt.value.split(':').map(Number);
+                const selected = form.imageRatio === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, imageRatio: opt.value }))}
+                    style={{
+                      flex: 1, padding: '8px 4px', borderRadius: 10,
+                      border: `1.5px solid ${selected ? COLORS.primary : COLORS.border}`,
+                      background: selected ? COLORS.primaryLight : COLORS.surface,
+                      cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', gap: 6, transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: Math.round(32 * Math.min(1, w / h)),
+                      height: Math.round(32 * Math.min(1, h / w)),
+                      borderRadius: 3,
+                      background: selected ? COLORS.primary : COLORS.border,
+                      transition: 'background 0.15s',
+                    }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: selected ? COLORS.primary : COLORS.textSecondary }}>
+                      {opt.label}
+                    </span>
+                    <span style={{ fontSize: 10, color: COLORS.textMuted }}>{opt.hint}</span>
                   </button>
                 );
               })}

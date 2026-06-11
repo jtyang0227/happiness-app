@@ -139,7 +139,44 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div style={{ marginTop: 22, textAlign: 'center', color: COLORS.darkTextSub, fontSize: 14 }}>
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 16px' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ color: COLORS.darkTextSub, fontSize: 12 }}>또는</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+
+          {/* Kakao login */}
+          <button
+            type="button"
+            onClick={() => {
+              const appKey = process.env.REACT_APP_KAKAO_APP_KEY;
+              const redirectUri = process.env.REACT_APP_KAKAO_REDIRECT_URI
+                || `${window.location.origin}/oauth/kakao/callback`;
+              if (!appKey) {
+                alert('카카오 앱 키가 설정되지 않았습니다.');
+                return;
+              }
+              window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${appKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+            }}
+            style={{
+              width: '100%', padding: '14px',
+              borderRadius: 12, border: 'none',
+              background: '#FEE500',
+              color: 'rgba(0,0,0,0.85)',
+              fontSize: 15, fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+          >
+            <span style={{ fontSize: 18 }}>💬</span>
+            카카오로 계속하기
+          </button>
+
+          <div style={{ marginTop: 20, textAlign: 'center', color: COLORS.darkTextSub, fontSize: 14 }}>
             계정이 없으신가요?{' '}
             <Link to="/signup" style={{ color: COLORS.accent, fontWeight: 700, textDecoration: 'none' }}>
               회원가입

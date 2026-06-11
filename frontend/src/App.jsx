@@ -14,9 +14,11 @@ import PhotoDetailPage from './pages/PhotoDetailPage';
 import PhotoFormPage   from './pages/PhotoFormPage';
 import ProfilePage  from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import PortfolioPage from './pages/PortfolioPage';
+import KakaoCallbackPage from './pages/KakaoCallbackPage';
 
 // Routes that show the Header (authenticated app shell)
-const STANDALONE_PATHS = ['/login', '/signup'];
+const STANDALONE_PATHS = ['/login', '/signup', '/oauth/kakao/callback'];
 
 function AppShell() {
   const location = useLocation();
@@ -38,6 +40,10 @@ function AppShell() {
           {/* Standalone (no header, dark theme) */}
           <Route path="/login"  element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
+
+          {/* Public portfolio — no login required */}
+          <Route path="/portfolio/:profileName" element={<PortfolioPage />} />
 
           {/* Protected routes */}
           <Route path="/" element={

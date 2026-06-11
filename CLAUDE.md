@@ -174,6 +174,10 @@ CORS_ALLOWED_ORIGINS=https://app.example.com
 
 # Spring
 SPRING_PROFILES_ACTIVE=prod  # 운영 | dev (기본값)
+
+# Kakao OAuth (프론트엔드 — .env.development / Vercel)
+REACT_APP_KAKAO_APP_KEY=YOUR_KAKAO_REST_API_KEY
+REACT_APP_KAKAO_REDIRECT_URI=https://app.example.com/oauth/kakao/callback
 ```
 
 ---
@@ -186,6 +190,7 @@ Feature-based package layout:
 
 - **photo/** — Core domain. `PhotoController` exposes REST endpoints for CRUD plus likes/saves/shares/tags. Entities: `Photo`, `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag`.
 - **member/** — Auth & users. `AuthController` handles signup/login. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security.
+- **portfolio/** — `PortfolioController` (`GET /api/portfolio/{profileName}`) — 공개 포트폴리오. 로그인 불필요. MemberRepository.findByProfileName + PhotoRepository.findByMemberIdOrderByCreatedAtDesc 사용.
 - **storage/** — Supabase Storage 연동. `SupabaseStorageService` (WebClient 기반 업로드/삭제), `StorageController` (`POST /api/upload/image`).
 - **common/** — `HelloController` (health check), `ImageProcessingUtil` (upload + Thumbnailator resize).
 - **board/** — Placeholder; `Board`/`Content` entities with repositories, no service layer yet.
@@ -234,7 +239,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile)
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, Profile, **Portfolio**, **KakaoCallback**)
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
@@ -246,10 +251,20 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/api.js** — photoApi + authApi (fetch wrapper)
   - `photoApi.search(keyword, colorMood, memberId)` — 복합 필터 (GET /photos?keyword=&colorMood=)
   - `photoApi.getByMember(memberId)` — 멤버별 사진 목록
+  - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao?code=xxx
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
 - **services/mockData.js** — (레거시, 현재 미사용)
 
 Routing via React Router DOM v6. No Redux — state managed through Context + local state.
+
+**공개 라우트** (로그인 불필요):
+- `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오)
+- `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백 처리)
+
+**Kakao OAuth 흐름**:
+1. LoginPage 버튼 클릭 → `kauth.kakao.com/oauth/authorize?client_id=${REACT_APP_KAKAO_APP_KEY}&...`
+2. 카카오 인증 후 `/oauth/kakao/callback?code=xxx` 리다이렉트
+3. KakaoCallbackPage → `POST /api/auth/oauth/kakao?code=xxx` → JWT 토큰 수신 → `authStore.loginSuccess()`
 
 **갤러리 12-컬럼 그리드**: `packRows()` 알고리즘으로 `gridColSpan` 합이 12가 되도록 사진을 행으로 묶어 CSS flexbox로 렌더링. 각 사진은 `flex: gridColSpan` 비율로 너비 배분.
 

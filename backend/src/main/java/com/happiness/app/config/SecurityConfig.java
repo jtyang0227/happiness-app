@@ -83,6 +83,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/auth/check-profile-name").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용

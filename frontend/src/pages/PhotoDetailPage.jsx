@@ -288,89 +288,11 @@ export default function PhotoDetailPage() {
           {imageSection}
           {infoSection}
         </div>
-
-        {/* Details */}
-        <div style={{ padding: '24px 28px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, flex: 1 }}>
-              {photo.title || '제목 없음'}
-            </h1>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 12, flexShrink: 0 }}>
-              <button
-                onClick={() => navigate(`/photo/${id}/edit`)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#f0f0f8',
-                  color: COLORS.primary,
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                수정
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                style={{
-                  padding: '8px 16px',
-                  background: deleting ? '#f5f5f5' : '#fff0f0',
-                  color: COLORS.danger,
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: deleting ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                {deleting ? '삭제 중...' : '삭제'}
-              </button>
-            </div>
-          </div>
-
-          {photo.description && (
-            <p style={{ fontSize: 15, color: COLORS.textSecondary, lineHeight: 1.7, marginBottom: 20 }}>
-              {photo.description}
-            </p>
-          )}
-
-          {/* Meta */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, paddingTop: 16, borderTop: `1px solid ${COLORS.border}` }}>
-            {/* Like button */}
-            <button
-              onClick={() => setLiked(prev => !prev)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 16px',
-                borderRadius: 10,
-                border: `1.5px solid ${liked ? '#e53e3e' : COLORS.border}`,
-                background: liked ? '#fff0f0' : COLORS.white,
-                color: liked ? '#e53e3e' : COLORS.textSecondary,
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: 14,
-                transition: 'all 0.15s',
-              }}
-            >
-              {liked ? '♥' : '♡'} 좋아요
-              {photo.likesCount != null && (
-                <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  {photo.likesCount + (liked ? 1 : 0)}
-                </span>
-              )}
-            </button>
-
-            {photo.gridColSpan && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: COLORS.textMuted, fontSize: 13 }}>
-                <span>그리드:</span>
-                <strong style={{ color: COLORS.textSecondary }}>{photo.gridColSpan}칸</strong>
-              </div>
-            )}
-          </div>
+      ) : (
+        /* 데스크탑: 가로 분할 */
+        <div style={{ display: 'flex', height: 'calc(100vh - 60px)', maxHeight: '92vh', marginTop: 60 }}>
+          {imageSection}
+          {infoSection}
         </div>
       )}
     </div>
