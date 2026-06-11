@@ -15,11 +15,15 @@ public class InquiryEmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    @Value("${spring.mail.host:}")
+    private String mailHost;
+
     @Value("${spring.mail.from:noreply@happiness.app}")
     private String fromAddress;
 
     public void sendInquiryNotification(String artistEmail, InquiryRequest req) {
-        if (mailSender == null || artistEmail == null || artistEmail.isBlank()) {
+        if (mailSender == null || mailHost == null || mailHost.isBlank()
+                || artistEmail == null || artistEmail.isBlank()) {
             log.info("Mail not configured or artist email not set — inquiry saved to DB only.");
             return;
         }
