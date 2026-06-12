@@ -32,6 +32,13 @@ public class PhotoResponse {
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
+    // EXIF
+    private String cameraModel;
+    private String lensModel;
+    private String aperture;
+    private String shutterSpeed;
+    private Integer iso;
+    private String focalLength;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -52,6 +59,12 @@ public class PhotoResponse {
                 .colorMood(photo.getColorMood())
                 .colorPalette(photo.getColorPalette())
                 .displayOrder(photo.getDisplayOrder())
+                .cameraModel(photo.getCameraModel())
+                .lensModel(photo.getLensModel())
+                .aperture(photo.getAperture())
+                .shutterSpeed(photo.getShutterSpeed())
+                .iso(photo.getIso())
+                .focalLength(photo.getFocalLength())
                 .createdAt(photo.getCreatedAt())
                 .updatedAt(photo.getUpdatedAt())
                 .build();

@@ -64,6 +64,14 @@ public class Photo {
     @Column(nullable = true)
     private Integer displayOrder;
 
+    // ── EXIF 메타데이터 ─────────────────────────────────
+    @Column(nullable = true, length = 100) private String cameraModel;
+    @Column(nullable = true, length = 100) private String lensModel;
+    @Column(nullable = true, length = 20)  private String aperture;
+    @Column(nullable = true, length = 20)  private String shutterSpeed;
+    @Column(nullable = true)               private Integer iso;
+    @Column(nullable = true, length = 20)  private String focalLength;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

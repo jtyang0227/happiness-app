@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import apiClient from '../api/apiClient';
+import { followApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 function PhotoCard({ photo, onClick }) {
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
@@ -128,10 +130,14 @@ function SeriesCard({ series, onClick }) {
 export default function PortfolioPage() {
   const { profileName } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('photos');
+  const [following, setFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +159,37 @@ export default function PortfolioPage() {
     })();
     return () => { cancelled = true; };
   }, [profileName]);
+
+  useEffect(() => {
+    if (!data?.member?.id) return;
+    const memberId = data.member.id;
+    followApi.getCount(memberId).then(res => {
+      setFollowerCount(res?.data?.followerCount ?? 0);
+    }).catch(() => {});
+    if (user?.id && user.id !== memberId) {
+      followApi.isFollowing(user.id, memberId).then(res => {
+        setFollowing(res?.data?.following ?? false);
+      }).catch(() => {});
+    }
+  }, [data?.member?.id, user?.id]);
+
+  const handleFollow = async () => {
+    if (!user?.id || !data?.member?.id) return;
+    const memberId = data.member.id;
+    setFollowLoading(true);
+    const prev = following;
+    setFollowing(!prev);
+    setFollowerCount(c => c + (prev ? -1 : 1));
+    try {
+      if (prev) await followApi.unfollow(user.id, memberId);
+      else await followApi.follow(user.id, memberId);
+    } catch {
+      setFollowing(prev);
+      setFollowerCount(c => c + (prev ? 1 : -1));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -226,6 +263,10 @@ export default function PortfolioPage() {
             <div style={{ fontSize: 12, color: '#6060a0' }}>작품</div>
           </div>
           <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{followerCount}</div>
+            <div style={{ fontSize: 12, color: '#6060a0' }}>팔로워</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{series.length}</div>
             <div style={{ fontSize: 12, color: '#6060a0' }}>시리즈</div>
           </div>
@@ -247,6 +288,24 @@ export default function PortfolioPage() {
             >
               @ Instagram
             </a>
+          )}
+          {user?.id && user.id !== member?.id && (
+            <button
+              onClick={handleFollow}
+              disabled={followLoading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 22px', borderRadius: 20,
+                border: following ? '1px solid #2e2e50' : 'none',
+                background: following ? '#12122a' : '#5b6ef5',
+                color: following ? '#9090cc' : '#fff',
+                fontSize: 13, fontWeight: 700,
+                cursor: followLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s', opacity: followLoading ? 0.7 : 1,
+              }}
+            >
+              {following ? '✓ 팔로잉' : '+ 팔로우'}
+            </button>
           )}
           <button
             onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}

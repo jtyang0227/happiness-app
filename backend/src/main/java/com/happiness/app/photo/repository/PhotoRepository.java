@@ -96,4 +96,8 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     List<Long> findIdsByMemberId(@Param("memberId") Long memberId);
 
     void deleteByMemberId(Long memberId);
+
+    /** 피드 — 팔로우한 유저들의 사진 최신순 (Pageable 지원) */
+    @Query("SELECT p FROM Photo p WHERE p.memberId IN :memberIds ORDER BY p.createdAt DESC")
+    List<Photo> findByMemberIdInOrderByCreatedAtDesc(@Param("memberIds") List<Long> memberIds, Pageable pageable);
 }

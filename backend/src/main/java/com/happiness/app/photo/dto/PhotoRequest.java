@@ -15,4 +15,11 @@ public class PhotoRequest {
     private String imageRatio;
     private Integer gridColSpan;
     private String colorMood;
+    // EXIF
+    private String cameraModel;
+    private String lensModel;
+    private String aperture;
+    private String shutterSpeed;
+    private Integer iso;
+    private String focalLength;
 }

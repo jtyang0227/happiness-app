@@ -1,8 +1,8 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
 > 최종 업데이트: 2026-06-12  
-> 전체 완성도: **Backend 99% / Frontend 97% / Mobile 20%**
-> Phase 2-8 전체 완료: 탭 구조·토글·계정 연결·계정 삭제·내 작품 정렬/뷰 전환
+> 전체 완성도: **Backend 100% / Frontend 99% / Mobile 20%**
+> Phase 3 완료: 팔로우·피드·댓글+대댓글·EXIF·AI자동태그, 계정 삭제 cascade
 
 ---
 
@@ -19,7 +19,7 @@
 | **Phase 2-6 — 갤러리 정렬 강화** | ✅ 완료 | 6가지 정렬, 그리드/리스트 뷰, 비율 필터 |
 | **Phase 2-7 — 검색 고도화** | ✅ 완료 | pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅, 태그 검색 |
 | **Phase 2-8 — 마이페이지 강화** | ✅ 완료 | 4탭 구조, 아바타/커버 업로드, 통계 6종, 비밀번호 변경, 저장함/시리즈 |
-| **Phase 3 — 커뮤니티** | ⬜ 미착수 | 팔로우/피드/댓글/AI태그 |
+| **Phase 3 — 커뮤니티** | ✅ 완료 | 팔로우/피드/댓글+대댓글/EXIF/AI자동태그 |
 
 ### 주요 완성 기능 (2026-06-11 기준)
 
@@ -29,8 +29,8 @@
 ✅ 사진 업로드 (파일/URL, Canvas 보정, LUT 파이프라인)
 ✅ 갤러리 12컬럼 masonry 그리드
 ✅ 탐색 페이지 (키워드/무드 필터, 실제 API 연동)
-✅ 사진 상세 (좋아요/저장 API 연결, 보정값 요약)
-✅ 공개 포트폴리오 (/portfolio/:profileName) — 로그인 불필요, 문의하기 버튼
+✅ 사진 상세 (좋아요/저장 API 연결, 보정값 요약, 댓글+대댓글)
+✅ 공개 포트폴리오 (/portfolio/:profileName) — 팔로우 버튼, 팔로워 수, 문의하기 버튼
 ✅ 시리즈/컬렉션 CRUD + 사진 추가/제거 관리 UI
 ✅ 포트폴리오 페이지 — 작품/시리즈 탭 분리
 ✅ 이미지 비율 선택 (16:9 / 4:3 / 1:1 / 3:4 / 2:3)
@@ -40,6 +40,10 @@
 ✅ 사진 순서 정렬 (/gallery/sort) — 드래그&드롭, displayOrder API 저장
 ✅ 검색 고도화 — pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅, 태그 검색
 ✅ 마이페이지 4탭 — 내 작품·저장함·시리즈·설정, 아바타/커버 업로드, 통계 6종, 비밀번호 변경
+✅ 팔로우/팔로워 시스템 + 피드 페이지 (/feed)
+✅ 댓글 + 대댓글 1단계 (PhotoDetailPage 하단)
+✅ EXIF 메타데이터 (카메라/렌즈/조리개/셔터/ISO/초점거리)
+✅ AI 자동 태그 추천 (키워드 추출 + 색상 무드 매핑)
 ✅ Rate Limiting, JWT 보안, Supabase Storage 연동
 ```
 
@@ -57,9 +61,10 @@
 | 탐색 | `/explore` | ✅ 완성 | 카드 그리드, 키워드+무드 필터, 실제 API 연동 |
 | 목록 | `/list` | ✅ 완성 | 행 목록, 좋아요/저장/공유 카운트 |
 | 사진 등록 | `/photo/new` | ✅ 완성 | 파일/URL, 이미지 비율 선택, Canvas 보정 패널 |
-| 사진 상세 | `/photo/:id` | ✅ 완성 | 좋아요/저장 API, 보정값 요약, 작성자 정보 |
+| 사진 상세 | `/photo/:id` | ✅ 완성 | 좋아요/저장 API, 보정값 요약, 댓글+대댓글 |
 | 시리즈 | `/series` | ✅ 완성 | 시리즈 CRUD, 사진 추가/제거, 포트폴리오 링크 |
-| 공개 포트폴리오 | `/portfolio/:profileName` | ✅ 완성 | 작품/시리즈 탭, 프로필, 문의하기 버튼 |
+| 공개 포트폴리오 | `/portfolio/:profileName` | ✅ 완성 | 작품/시리즈 탭, 팔로우 버튼, 팔로워 수, 문의하기 버튼 |
+| 피드 | `/feed` | ✅ 완성 | 팔로우한 작가 최신 사진, 더 보기 페이지네이션 |
 | 촬영 문의 폼 | `/inquiry/:profileName` | ✅ 완성 | 공개 폼, 촬영 종류 7가지, 성공 화면 |
 | 문의 수신함 | `/inbox` | ✅ 완성 | 읽음/안읽음 필터, expandable 카드, 답장/삭제 |
 | 사진 순서 정렬 | `/gallery/sort` | ✅ 완성 | HTML5 DnD 드래그, 순서 번호 배지, API 저장 |
@@ -159,6 +164,33 @@
 | 메서드 | 경로 | 설명 | 인증 |
 |--------|------|------|------|
 | PUT | `/api/photos/reorder` | 사진 순서 일괄 저장 (`[{id, displayOrder}]`) | ✅ |
+
+##### 팔로우 (`/api/follows`) — Phase 3 신규
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| POST | `/?followerId=&followingId=` | 팔로우 | ✅ |
+| DELETE | `/?followerId=&followingId=` | 언팔로우 | ✅ |
+| GET | `/check?followerId=&followingId=` | 팔로우 여부 확인 | — |
+| GET | `/count?memberId=` | 팔로워/팔로잉 수 | — |
+| GET | `/followers?memberId=` | 팔로워 목록 | — |
+| GET | `/following?memberId=` | 팔로잉 목록 | — |
+
+##### 댓글 (`/api/photos/:id/comments`, `/api/comments`) — Phase 3 신규
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| GET | `/api/photos/:id/comments` | 댓글 목록 (replies 포함) | — |
+| POST | `/api/photos/:id/comments` | 댓글 등록 | ✅ |
+| DELETE | `/api/comments/:id?memberId=` | 댓글 삭제 (작성자만) | ✅ |
+
+##### 피드 (`/api/feed`) — Phase 3 신규
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| GET | `/?memberId=&page=&size=` | 팔로우 피드 (최신순) | ✅ |
+
+##### AI 자동 태그 (`/api/photos/:id/auto-tags`) — Phase 3 신규
+| 메서드 | 경로 | 설명 | 인증 |
+|--------|------|------|------|
+| POST | `/api/photos/:id/auto-tags` | 키워드+무드 기반 태그 추천 (최대 10개) | — |
 
 ##### 스토리지 (`/api/upload`)
 | 메서드 | 경로 | 설명 | 인증 |
@@ -583,15 +615,103 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN NOT NUL
 
 ---
 
-### ⬜ Phase 3 — 성장 기능 (향후)
+---
+
+## ✅ Phase 3 — 커뮤니티 기능 (완료)
+
+> 완료일: 2026-06-12
+
+### 구현 내용
+
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| 팔로우/언팔로우 | ✅ | `POST/DELETE /api/follows`, unique constraint |
+| 팔로우 확인/카운트/목록 | ✅ | `GET /api/follows/check` · `/count` · `/followers` · `/following` |
+| 피드 페이지 (`/feed`) | ✅ | 팔로우한 유저 최신 사진, 무한 스크롤(더 보기), 빈 피드 안내 |
+| 포트폴리오 팔로우 버튼 | ✅ | optimistic 즉시 반영, 팔로워 수 표시 |
+| 댓글 CRUD | ✅ | `GET/POST /api/photos/:id/comments`, `DELETE /api/comments/:id` |
+| 대댓글 1단계 | ✅ | `parentId` nullable, tree 빌드 (LinkedHashMap) |
+| PhotoDetailPage 댓글 UI | ✅ | 댓글 목록·입력·대댓글 인라인 표시 |
+| EXIF 메타데이터 | ✅ | Photo 6개 필드 (cameraModel/lensModel/aperture/shutterSpeed/iso/focalLength) |
+| AI 자동 태그 추천 | ✅ | `POST /api/photos/:id/auto-tags`, 키워드+무드 매핑 (최대 10개) |
+
+### 신규 파일 목록 (백엔드)
+
+| 파일 | 설명 |
+|------|------|
+| `follow/Follow.java` | Follow 엔티티 (UniqueConstraint) |
+| `follow/FollowRepository.java` | 팔로우 조회/확인/삭제 쿼리 |
+| `follow/FollowService.java` | follow/unfollow/getFollowingIds 등 |
+| `follow/FollowController.java` | `POST/DELETE /api/follows`, 체크/카운트/목록 |
+| `comment/Comment.java` | Comment 엔티티 (parentId nullable) |
+| `comment/CommentRepository.java` | photoId별 조회, cascade 삭제 |
+| `comment/CommentRequest.java` | 댓글 등록 DTO |
+| `comment/CommentResponse.java` | replies 리스트 포함 DTO |
+| `comment/CommentService.java` | addComment/getComments(tree)/deleteComment |
+| `comment/CommentController.java` | `GET/POST /api/photos/:id/comments`, `DELETE /api/comments/:id` |
+| `photo/service/AutoTagService.java` | 키워드 추출 + MOOD_TAGS 매핑 |
+| `feed/FeedController.java` | `GET /api/feed?memberId=&page=&size=` |
+
+### 수정된 파일 목록
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `Photo.java` | EXIF 6개 필드 추가 |
+| `PhotoRequest.java` | EXIF 6개 필드 추가 |
+| `PhotoResponse.java` | EXIF 6개 필드 + `fromEntity()` 매핑 |
+| `PhotoRepository.java` | `findByMemberIdInOrderByCreatedAtDesc()` 피드 쿼리 추가 |
+| `PhotoController.java` | AutoTagService 주입 + `POST /:id/auto-tags` 엔드포인트 |
+| `api.js` | `followApi`, `commentApi`, `photoApi.getFeed()`, `photoApi.autoTag()` 추가 |
+| `App.jsx` | `/feed` 보호 라우트 추가 |
+| `PhotoDetailPage.jsx` | 댓글 섹션 (목록·입력·대댓글·삭제) |
+| `PortfolioPage.jsx` | 팔로우/언팔로우 버튼, 팔로워 수 표시 |
+
+### 신규 파일 목록 (프론트엔드)
+
+| 파일 | 설명 |
+|------|------|
+| `pages/FeedPage.jsx` | 팔로우 피드 페이지, 더 보기 페이지네이션 |
+
+### 운영 DB 마이그레이션 (신규 배포 시)
+
+```sql
+-- 팔로우 테이블
+CREATE TABLE IF NOT EXISTS follows (
+  id BIGSERIAL PRIMARY KEY,
+  follower_id  BIGINT NOT NULL,
+  following_id BIGINT NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (follower_id, following_id)
+);
+
+-- 댓글 테이블
+CREATE TABLE IF NOT EXISTS comments (
+  id               BIGSERIAL PRIMARY KEY,
+  photo_id         BIGINT NOT NULL,
+  member_id        BIGINT NOT NULL,
+  member_name      VARCHAR(100) NOT NULL,
+  member_avatar_url VARCHAR(500),
+  content          TEXT NOT NULL,
+  parent_id        BIGINT,
+  created_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- EXIF 컬럼 (photos 테이블)
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS camera_model   VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS lens_model     VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS aperture       VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS shutter_speed  VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso            INTEGER;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length   VARCHAR(20);
+```
+
+### ⬜ Phase 4 — 향후 기능
 
 | 기능 | 설명 |
 |------|------|
-| 팔로우 / 팔로워 | `follows` 테이블, 피드 기능 |
-| 댓글 | `comments` 테이블, 대댓글 1단계 |
-| EXIF 데이터 표시 | 카메라/렌즈/조리개/셔터/ISO |
-| AI 자동 태그 | 업로드 시 주제/장소 자동 분류 |
 | 인쇄/굿즈 주문 | 파트너 API 연동 |
+| 실시간 알림 | WebSocket / SSE |
+| 통계 대시보드 | happiness-admin 앱 |
 
 ---
 

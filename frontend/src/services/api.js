@@ -45,6 +45,29 @@ export const photoApi = {
   /** tags: 콤마 구분 태그 이름 문자열 */
   searchByTags: (tags, { sortBy = 'createdAt', order = 'desc' } = {}) =>
     apiClient.get('/photos', { params: { tags, sortBy, order } }).then(r => r.data),
+
+  /** 팔로우한 유저들의 피드 */
+  getFeed: (memberId, { page = 0, size = 20 } = {}) =>
+    apiClient.get('/feed', { params: { memberId, page, size } }).then(r => r.data),
+
+  /** AI 자동 태그 추천 */
+  autoTag: (photoId) =>
+    apiClient.post(`/photos/${photoId}/auto-tags`).then(r => r.data),
+};
+
+export const followApi = {
+  follow:      (followerId, followingId) => apiClient.post('/follows', null, { params: { followerId, followingId } }).then(r => r.data),
+  unfollow:    (followerId, followingId) => apiClient.delete('/follows', { params: { followerId, followingId } }).then(r => r.data),
+  isFollowing: (followerId, followingId) => apiClient.get('/follows/check', { params: { followerId, followingId } }).then(r => r.data),
+  getCount:    (memberId)               => apiClient.get('/follows/count', { params: { memberId } }).then(r => r.data),
+  getFollowers:(memberId)               => apiClient.get('/follows/followers', { params: { memberId } }).then(r => r.data),
+  getFollowing:(memberId)               => apiClient.get('/follows/following', { params: { memberId } }).then(r => r.data),
+};
+
+export const commentApi = {
+  getComments: (photoId)           => apiClient.get(`/photos/${photoId}/comments`).then(r => r.data),
+  addComment:  (photoId, data)     => apiClient.post(`/photos/${photoId}/comments`, data).then(r => r.data),
+  deleteComment:(commentId, memberId) => apiClient.delete(`/comments/${commentId}`, { params: { memberId } }).then(r => r.data),
 };
 
 export const inquiryApi = {

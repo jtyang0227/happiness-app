@@ -14,6 +14,7 @@ import com.happiness.app.photo.repository.PhotoRepository;
 import com.happiness.app.photo.repository.PhotoSaveRepository;
 import com.happiness.app.photo.repository.PhotoShareRepository;
 import com.happiness.app.photo.repository.PhotoTagRepository;
+import com.happiness.app.photo.service.AutoTagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +39,7 @@ public class PhotoController {
     private final PhotoShareRepository photoShareRepository;
     private final PhotoSaveRepository photoSaveRepository;
     private final ImageProcessingUtil imageProcessingUtil;
+    private final AutoTagService autoTagService;
 
     // ── 사진 조회 ─────────────────────────────────────────────────────
 
@@ -484,6 +486,23 @@ public class PhotoController {
         result.put("status", "success");
         result.put("message", "순서가 저장되었습니다.");
         return ResponseEntity.ok(result);
+    }
+
+    // ── AI 자동 태그 추천 ──────────────────────────────────────────────
+
+    /** POST /api/photos/{id}/auto-tags — 제목·설명·색상무드 기반 태그 자동 추천 (최대 10개) */
+    @PostMapping("/{id}/auto-tags")
+    public ResponseEntity<?> autoTagSuggestions(@PathVariable Long id) {
+        return photoRepository.findById(id)
+                .map(photo -> {
+                    List<String> suggestions = autoTagService.suggest(
+                            photo.getTitle(), photo.getDescription(), photo.getColorMood());
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("status", "success");
+                    result.put("data", suggestions);
+                    return ResponseEntity.ok(result);
+                })
+                .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
     }
 
     // ── 유틸리티 ──────────────────────────────────────────────────────

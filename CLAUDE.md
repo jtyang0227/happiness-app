@@ -194,6 +194,10 @@ Feature-based package layout:
 - **series/** — `SeriesController` (`/api/series`) — 시리즈/컬렉션 CRUD. `Series` 엔티티 + `SeriesPhoto` 조인 테이블. GET(목록/상세)은 공개, POST/PUT/DELETE/사진추가제거는 인증 필요.
 - **inquiry/** — `InquiryController` (`/api/inquiry`) — 촬영 문의. `Inquiry` 엔티티. POST(문의 전송)는 공개. `InquiryEmailService`는 `@Autowired(required=false)`로 메일 서버 없어도 동작. 수신함/읽음처리/삭제는 인증 필요.
 - **storage/** — Supabase Storage 연동. `SupabaseStorageService` (WebClient 기반 업로드/삭제), `StorageController` (`POST /api/upload/image`).
+- **follow/** — `FollowController` (`/api/follows`) — 팔로우/언팔로우/확인/카운트/목록. `Follow` 엔티티 (UniqueConstraint on follower_id+following_id). `FollowService.getFollowingIds()` — FeedController에서 피드 구성에 사용.
+- **comment/** — `CommentController` (`GET/POST /api/photos/:id/comments`, `DELETE /api/comments/:id`). `Comment` 엔티티 (parentId nullable = 대댓글 지원). `CommentService.getComments()` — LinkedHashMap으로 top-level 수집 후 replies attach.
+- **feed/** — `FeedController` (`GET /api/feed?memberId=&page=&size=`) — `FollowService.getFollowingIds()` + `PhotoRepository.findByMemberIdInOrderByCreatedAtDesc()` (JPQL + Pageable).
+- **photo/service/AutoTagService** — 키워드 추출(title+description, stop-word 필터) + MOOD_TAGS 매핑. `POST /api/photos/:id/auto-tags` (max 10 tags).
 - **common/** — `HelloController` (health check), `ImageProcessingUtil` (upload + Thumbnailator resize).
 - **board/** — Placeholder; `Board`/`Content` entities with repositories, no service layer yet.
 - **config/** — `WebConfig` (CORS 설정 포함), `SecurityConfig`, `RedisConfig`, `AsyncConfig`.
@@ -225,6 +229,30 @@ CREATE TABLE IF NOT EXISTS inquiries (
   is_read BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+-- Phase 3 — 팔로우/댓글/EXIF
+CREATE TABLE IF NOT EXISTS follows (
+  id BIGSERIAL PRIMARY KEY,
+  follower_id BIGINT NOT NULL,
+  following_id BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (follower_id, following_id)
+);
+CREATE TABLE IF NOT EXISTS comments (
+  id BIGSERIAL PRIMARY KEY,
+  photo_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  member_name VARCHAR(100) NOT NULL,
+  member_avatar_url VARCHAR(500),
+  content TEXT NOT NULL,
+  parent_id BIGINT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS camera_model  VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS lens_model    VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS aperture      VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS shutter_speed VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso           INTEGER;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length  VARCHAR(20);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
@@ -235,6 +263,8 @@ findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
 search(keyword, colorMood, memberId, imageRatio, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
 searchFuzzy(kw, colorMood, memberId, imageRatio)    // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
 findTitleSuggestions(q, Pageable)                   // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
+findByMemberIdInOrderByCreatedAtDesc(List<Long>, Pageable) // 피드 — 팔로우 유저 최신순
+findIdsByMemberId(Long memberId)                     // 계정 삭제 cascade용 photo ID 목록
 deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascade
 ```
 
@@ -273,7 +303,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김)
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 3): 하단 댓글+대댓글 섹션 추가. **PortfolioPage** (Phase 3): 팔로우/언팔로우 버튼 + 팔로워 수.
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount)
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
@@ -292,6 +322,10 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
   - `authApi.changePassword(id, data)` — PUT /auth/member/:id/password
   - `photoApi.getSuggestions(q)` — GET /photos/suggestions (자동완성)
   - `photoApi.searchByTags(tags, {sortBy, order})` — GET /photos?tags=콤마구분
+  - `photoApi.getFeed(memberId, {page, size})` — GET /feed (팔로우 피드)
+  - `photoApi.autoTag(photoId)` — POST /photos/:id/auto-tags
+  - `followApi.follow/unfollow/isFollowing/getCount/getFollowers/getFollowing` — 팔로우 CRUD
+  - `commentApi.getComments/addComment/deleteComment` — 댓글 CRUD
   - `inquiryApi.send/getInbox/getUnreadCount/markRead/remove` — 문의 CRUD
   - `seriesApi.getByMember/getOne/create/update/remove/addPhoto/removePhoto` — 시리즈 CRUD
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
@@ -308,6 +342,7 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/inbox` — InquiryInboxPage (문의 수신함)
 - `/gallery/sort` — PhotoSortPage (사진 순서 드래그 정렬)
 - `/series` — SeriesPage (시리즈/컬렉션 관리)
+- `/feed` — FeedPage (팔로우 피드)
 
 **Kakao OAuth 흐름**:
 1. LoginPage 버튼 클릭 → `kauth.kakao.com/oauth/authorize?client_id=${REACT_APP_KAKAO_APP_KEY}&...`

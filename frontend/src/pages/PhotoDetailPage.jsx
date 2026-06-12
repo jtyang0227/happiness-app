@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { photoApi } from '../services/api';
+import { photoApi, commentApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 
@@ -34,6 +34,10 @@ export default function PhotoDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [saved, setSaved] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [replyTo, setReplyTo] = useState(null); // { id, memberName }
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -85,6 +89,61 @@ export default function PhotoDetailPage() {
     if (user?.id) {
       if (next) photoApi.savePhoto(id, user.id).catch(() => {});
       else photoApi.unsavePhoto(id, user.id).catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    commentApi.getComments(id).then(res => setComments(res?.data ?? [])).catch(() => {});
+  }, [id]);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim() || !user?.id) return;
+    setSubmittingComment(true);
+    try {
+      const payload = {
+        memberId: user.id,
+        memberName: user.name || user.email,
+        memberAvatarUrl: user.avatarUrl || null,
+        content: commentText.trim(),
+        parentId: replyTo?.id ?? null,
+      };
+      const res = await commentApi.addComment(id, payload);
+      const newComment = res?.data ?? res;
+      if (replyTo) {
+        setComments(prev => prev.map(c =>
+          c.id === replyTo.id
+            ? { ...c, replies: [...(c.replies || []), newComment] }
+            : c
+        ));
+      } else {
+        setComments(prev => [...prev, { ...newComment, replies: [] }]);
+      }
+      setCommentText('');
+      setReplyTo(null);
+    } catch {
+      // silently fail
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId, parentId) => {
+    if (!window.confirm('댓글을 삭제하시겠습니까?')) return;
+    try {
+      await commentApi.deleteComment(commentId, user.id);
+      if (parentId) {
+        setComments(prev => prev.map(c =>
+          c.id === parentId
+            ? { ...c, replies: (c.replies || []).filter(r => r.id !== commentId) }
+            : c
+        ));
+      } else {
+        setComments(prev => prev.filter(c => c.id !== commentId));
+      }
+    } catch {
+      // silently fail
     }
   };
 
@@ -245,7 +304,7 @@ export default function PhotoDetailPage() {
       {adjSummary.length > 0 && (
         <div style={{
           background: '#12122a', borderRadius: 10, padding: '12px 14px',
-          border: '1px solid #1e1e3a',
+          border: '1px solid #1e1e3a', marginBottom: 20,
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#6060a0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
             보정 설정
@@ -263,6 +322,121 @@ export default function PhotoDetailPage() {
           </div>
         </div>
       )}
+
+      {/* 댓글 섹션 */}
+      <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.textSecondary, marginBottom: 14 }}>
+          댓글 {comments.length > 0 ? comments.reduce((acc, c) => acc + 1 + (c.replies?.length ?? 0), 0) : 0}
+        </div>
+
+        {/* 댓글 목록 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          {comments.map(comment => (
+            <div key={comment.id}>
+              {/* 댓글 */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: '#fff',
+                }}>
+                  {(comment.memberName || '?').charAt(0)}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>{comment.memberName}</span>
+                    <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                      {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('ko-KR') : ''}
+                    </span>
+                    {user?.id === comment.memberId && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id, null)}
+                        style={{ marginLeft: 'auto', fontSize: 11, color: COLORS.danger, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 13, color: COLORS.textSecondary, margin: 0, lineHeight: 1.5 }}>{comment.content}</p>
+                  <button
+                    onClick={() => setReplyTo(replyTo?.id === comment.id ? null : { id: comment.id, memberName: comment.memberName })}
+                    style={{ fontSize: 11, color: COLORS.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', fontWeight: 600 }}
+                  >
+                    {replyTo?.id === comment.id ? '취소' : '답글'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 대댓글 */}
+              {(comment.replies || []).map(reply => (
+                <div key={reply.id} style={{ display: 'flex', gap: 10, marginLeft: 38, marginTop: 8 }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                    background: COLORS.border,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, fontWeight: 700, color: COLORS.textSecondary,
+                  }}>
+                    {(reply.memberName || '?').charAt(0)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.text }}>{reply.memberName}</span>
+                      <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                        {reply.createdAt ? new Date(reply.createdAt).toLocaleDateString('ko-KR') : ''}
+                      </span>
+                      {user?.id === reply.memberId && (
+                        <button
+                          onClick={() => handleDeleteComment(reply.id, comment.id)}
+                          style={{ marginLeft: 'auto', fontSize: 11, color: COLORS.danger, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: COLORS.textSecondary, margin: 0, lineHeight: 1.5 }}>{reply.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* 댓글 입력 */}
+        {replyTo && (
+          <div style={{ fontSize: 12, color: COLORS.primary, marginBottom: 6, fontWeight: 600 }}>
+            @{replyTo.memberName}에게 답글 작성 중 —{' '}
+            <button onClick={() => setReplyTo(null)} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', fontSize: 12 }}>취소</button>
+          </div>
+        )}
+        <form onSubmit={handleCommentSubmit} style={{ display: 'flex', gap: 8 }}>
+          <input
+            value={commentText}
+            onChange={e => setCommentText(e.target.value)}
+            placeholder={user ? '댓글을 입력하세요...' : '로그인 후 댓글을 작성할 수 있습니다.'}
+            disabled={!user || submittingComment}
+            style={{
+              flex: 1, padding: '9px 14px', borderRadius: 10,
+              border: `1.5px solid ${COLORS.border}`,
+              background: COLORS.bg, color: COLORS.text,
+              fontSize: 13, outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!user || !commentText.trim() || submittingComment}
+            style={{
+              padding: '9px 16px', borderRadius: 10,
+              background: COLORS.primary, color: '#fff',
+              border: 'none', fontWeight: 700, cursor: 'pointer',
+              fontSize: 13, opacity: (!user || !commentText.trim()) ? 0.5 : 1,
+              flexShrink: 0,
+            }}
+          >
+            등록
+          </button>
+        </form>
+      </div>
     </div>
   );
 
