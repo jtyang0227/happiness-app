@@ -9,11 +9,16 @@ import {
   DEFAULT_ADJUSTMENTS,
   DEFAULT_CHANNEL_CURVES,
   DEFAULT_EFFECTS,
+  DEFAULT_HSL_ADJUSTMENTS,
+  DEFAULT_COLOR_GRADING,
+  DEFAULT_SHARPENING,
+  DEFAULT_NOISE_REDUCTION,
   buildChannelLUTs,
   renderWithChannelLUTs,
   applyEffects,
   generateGrainTile,
   computeHistogram,
+  renderClippingOverlay,
 } from '../hooks/useImageAdjustments';
 
 const MOOD_OPTIONS = Object.entries(MOOD_COLORS).map(([key, val]) => ({
@@ -83,35 +88,49 @@ export default function PhotoFormPage() {
   const isEdit      = Boolean(id);
 
   // ── 폼 상태 ─────────────────────────────────────────────────────────
-  const [form, setForm]       = useState(INITIAL_FORM);
-  const [errors, setErrors]   = useState({});
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(isEdit);
-  const [apiError, setApiError] = useState('');
+  const [form, setForm]           = useState(INITIAL_FORM);
+  const [errors, setErrors]       = useState({});
+  const [loading, setLoading]     = useState(false);
+  const [fetching, setFetching]   = useState(isEdit);
+  const [apiError, setApiError]   = useState('');
 
-  // ── 이미지 탭: 'file' | 'url' ────────────────────────────────────
+  // ── 이미지 탭 ────────────────────────────────────────────────────────
   const [imgMode, setImgMode] = useState('file');
   const [urlInput, setUrlInput] = useState('');
 
-  // ── 파일 업로드 보정 상태 ─────────────────────────────────────────
-  const [imageFile, setImageFile]       = useState(null);
-  const [adjustments, setAdjustments]   = useState({ ...DEFAULT_ADJUSTMENTS });
+  // ── 보정 상태 ────────────────────────────────────────────────────────
+  const [imageFile, setImageFile]         = useState(null);
+  const [adjustments, setAdjustments]     = useState({ ...DEFAULT_ADJUSTMENTS });
   const [channelCurves, setChannelCurves] = useState({
     rgb: [...DEFAULT_CHANNEL_CURVES.rgb],
     r:   [...DEFAULT_CHANNEL_CURVES.r],
     g:   [...DEFAULT_CHANNEL_CURVES.g],
     b:   [...DEFAULT_CHANNEL_CURVES.b],
   });
-  const [effects, setEffects]       = useState({ ...DEFAULT_EFFECTS });
-  const [histogram, setHistogram]   = useState(null);
-  const [watermark, setWatermark]   = useState({ enabled: false, text: '', position: 'bottomRight' });
+  const [effects, setEffects]                   = useState({ ...DEFAULT_EFFECTS });
+  const [hslAdj, setHslAdj]                     = useState(() => JSON.parse(JSON.stringify(DEFAULT_HSL_ADJUSTMENTS)));
+  const [colorGrading, setColorGrading]         = useState(() => JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)));
+  const [sharpening, setSharpening]             = useState({ ...DEFAULT_SHARPENING });
+  const [noiseReduction, setNoiseReduction]     = useState({ ...DEFAULT_NOISE_REDUCTION });
+  const [histogram, setHistogram]               = useState(null);
+  const [watermark, setWatermark]               = useState({ enabled: false, text: '', position: 'bottomRight' });
 
-  const originalPixelsRef = useRef(null);
-  const previewCanvasRef  = useRef(null);
-  const hiddenCanvasRef   = useRef(null);
-  const grainTileRef      = useRef(null);
+  // ── D1: Before/After ─────────────────────────────────────────────────
+  const [showComparison, setShowComparison]   = useState(false);
+  const [splitPos, setSplitPos]               = useState(50); // 0-100%
+  const isDraggingRef                         = useRef(false);
 
-  // ── 편집 모드: 기존 데이터 로드 ─────────────────────────────────
+  // ── D2: Clipping Warning ─────────────────────────────────────────────
+  const [showClipping, setShowClipping]       = useState(false);
+
+  const originalPixelsRef  = useRef(null);
+  const previewCanvasRef   = useRef(null);
+  const originalCanvasRef  = useRef(null);
+  const clippingCanvasRef  = useRef(null);
+  const hiddenCanvasRef    = useRef(null);
+  const grainTileRef       = useRef(null);
+
+  // ── 편집 모드: 기존 데이터 로드 ──────────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
     (async () => {
@@ -139,20 +158,25 @@ export default function PhotoFormPage() {
     })();
   }, [id, isEdit]);
 
-  // ── 보정값 변경 시 캔버스 리렌더 ────────────────────────────────
+  // ── 보정값 변경 시 캔버스 리렌더 ─────────────────────────────────────
   const applyAdjustments = useCallback(() => {
     if (!originalPixelsRef.current || !previewCanvasRef.current) return;
     const { pixels, w, h } = originalPixelsRef.current;
     const luts = buildChannelLUTs(adjustments, channelCurves);
     renderWithChannelLUTs(previewCanvasRef.current, pixels, w, h, luts);
     if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
-    applyEffects(previewCanvasRef.current, effects, grainTileRef.current);
+    applyEffects(previewCanvasRef.current, effects, grainTileRef.current, hslAdj, colorGrading, sharpening, noiseReduction);
     applyWatermarkToCanvas(previewCanvasRef.current, watermark);
-  }, [adjustments, channelCurves, effects, watermark]);
+
+    // Clipping overlay update
+    if (showClipping && clippingCanvasRef.current) {
+      renderClippingOverlay(clippingCanvasRef.current, previewCanvasRef.current);
+    }
+  }, [adjustments, channelCurves, effects, hslAdj, colorGrading, sharpening, noiseReduction, watermark, showClipping]);
 
   useEffect(() => { applyAdjustments(); }, [applyAdjustments]);
 
-  // ── 파일 선택 ─────────────────────────────────────────────────────
+  // ── 파일 선택 ─────────────────────────────────────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -176,12 +200,15 @@ export default function PhotoFormPage() {
 
       originalPixelsRef.current = {
         pixels: new Uint8ClampedArray(imageData.data),
-        w: dw,
-        h: dh,
+        w: dw, h: dh,
       };
 
-      // 히스토그램 계산
       setHistogram(computeHistogram(originalPixelsRef.current.pixels));
+
+      // Draw original canvas (for Before/After)
+      const oc = originalCanvasRef.current;
+      oc.width = dw; oc.height = dh;
+      oc.getContext('2d').putImageData(imageData, 0, 0);
 
       const pc = previewCanvasRef.current;
       pc.width = dw; pc.height = dh;
@@ -189,12 +216,24 @@ export default function PhotoFormPage() {
       const luts = buildChannelLUTs(adjustments, channelCurves);
       renderWithChannelLUTs(pc, originalPixelsRef.current.pixels, dw, dh, luts);
       if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
-      applyEffects(pc, effects, grainTileRef.current);
+      applyEffects(pc, effects, grainTileRef.current, hslAdj, colorGrading, sharpening, noiseReduction);
       applyWatermarkToCanvas(pc, watermark);
     };
     img.src = URL.createObjectURL(file);
   };
 
+  // ── Before/After drag ─────────────────────────────────────────────────
+  const handleSplitDrag = useCallback((e) => {
+    if (!isDraggingRef.current) return;
+    const container = e.currentTarget || e.target.closest('[data-comparison]');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    setSplitPos(pct);
+  }, []);
+
+  // ── handlers ──────────────────────────────────────────────────────────
   const handleAdjust = useCallback((key, value) => {
     setAdjustments(prev => ({ ...prev, [key]: value }));
   }, []);
@@ -207,7 +246,47 @@ export default function PhotoFormPage() {
     setEffects(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleApplyPreset = useCallback(({ adjustments: adj, channelCurves: cc, effects: ef }) => {
+  const handleHSLChange = useCallback((colorKey, subKey, val) => {
+    setHslAdj(prev => ({
+      ...prev,
+      [colorKey]: { ...prev[colorKey], [subKey]: val },
+    }));
+  }, []);
+
+  const handleColorGradingChange = useCallback((zone, subKey, val) => {
+    setColorGrading(prev => {
+      if (subKey === null) {
+        // blending
+        return { ...prev, blending: val };
+      }
+      return { ...prev, [zone]: { ...prev[zone], [subKey]: val } };
+    });
+  }, []);
+
+  const handleSharpeningChange = useCallback((key, val) => {
+    setSharpening(prev => ({ ...prev, [key]: val }));
+  }, []);
+
+  const handleNoiseReductionChange = useCallback((key, val) => {
+    setNoiseReduction(prev => ({ ...prev, [key]: val }));
+  }, []);
+
+  const handleFullReset = useCallback(() => {
+    setAdjustments({ ...DEFAULT_ADJUSTMENTS });
+    setChannelCurves({
+      rgb: [...DEFAULT_CHANNEL_CURVES.rgb],
+      r:   [...DEFAULT_CHANNEL_CURVES.r],
+      g:   [...DEFAULT_CHANNEL_CURVES.g],
+      b:   [...DEFAULT_CHANNEL_CURVES.b],
+    });
+    setEffects({ ...DEFAULT_EFFECTS });
+    setHslAdj(JSON.parse(JSON.stringify(DEFAULT_HSL_ADJUSTMENTS)));
+    setColorGrading(JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)));
+    setSharpening({ ...DEFAULT_SHARPENING });
+    setNoiseReduction({ ...DEFAULT_NOISE_REDUCTION });
+  }, []);
+
+  const handleApplyPreset = useCallback(({ adjustments: adj, channelCurves: cc, effects: ef, hslAdj: hsl, colorGrading: cg, sharpening: sh, noiseReduction: nr }) => {
     setAdjustments({ ...adj });
     setChannelCurves({
       rgb: cc.rgb.map(p => ({ ...p })),
@@ -216,9 +295,13 @@ export default function PhotoFormPage() {
       b:   cc.b.map(p => ({ ...p })),
     });
     setEffects({ ...ef });
+    if (hsl) setHslAdj(JSON.parse(JSON.stringify(hsl)));
+    if (cg)  setColorGrading(JSON.parse(JSON.stringify(cg)));
+    if (sh)  setSharpening({ ...sh });
+    if (nr)  setNoiseReduction({ ...nr });
   }, []);
 
-  // ── 폼 핸들러 ────────────────────────────────────────────────────
+  // ── 폼 핸들러 ─────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -238,7 +321,6 @@ export default function PhotoFormPage() {
     return errs;
   };
 
-  // ── 제출 ─────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -298,7 +380,8 @@ export default function PhotoFormPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px 48px' }}>
-      <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
+      <canvas ref={hiddenCanvasRef}   style={{ display: 'none' }} />
+      <canvas ref={originalCanvasRef} style={{ display: 'none' }} />
 
       <button
         onClick={() => navigate(-1)}
@@ -318,7 +401,7 @@ export default function PhotoFormPage() {
 
         {apiError && (
           <div style={{
-            background: COLORS.dangerTonal, border: '1px solid #ffcccc',
+            background: '#fff0f0', border: '1px solid #ffcccc',
             borderRadius: 8, padding: '10px 14px', color: COLORS.danger,
             fontSize: 13, marginBottom: 16,
           }}>
@@ -374,90 +457,198 @@ export default function PhotoFormPage() {
                     <span style={{ fontSize: 13, color: COLORS.textSecondary, fontWeight: 600 }}>
                       {imageFile ? imageFile.name : '이미지를 선택하거나 여기에 드롭하세요'}
                     </span>
-                    <span style={{ fontSize: 11, color: COLORS.textHint }}>JPG, PNG, WEBP 지원</span>
+                    <span style={{ fontSize: 11, color: COLORS.textMuted }}>JPG, PNG, WEBP 지원</span>
                     <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                   </label>
 
                   {imageFile && (
-                    <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden', maxHeight: 300, display: 'flex', justifyContent: 'center', background: '#000' }}>
-                      <canvas
-                        ref={previewCanvasRef}
-                        style={{ maxWidth: '100%', maxHeight: 300, objectFit: 'contain', display: 'block' }}
-                      />
-                    </div>
-                  )}
-
-                  {imageFile && (
-                    <div style={{ marginTop: 12 }}>
-                      <ImageAdjustmentPanel
-                        adjustments={adjustments}
-                        onAdjust={handleAdjust}
-                        channelCurves={channelCurves}
-                        onChannelCurveChange={handleChannelCurveChange}
-                        effects={effects}
-                        onEffect={handleEffect}
-                        histogram={histogram}
-                        onApplyPreset={handleApplyPreset}
-                      />
-                    </div>
-                  )}
-
-                  {imageFile && (
-                    <div style={{
-                      marginTop: 12, borderRadius: 12,
-                      border: `1px solid ${COLORS.border}`,
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 14px', background: COLORS.surface,
-                      }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.textSecondary }}>
-                          🔏 워터마크
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setWatermark(w => ({ ...w, enabled: !w.enabled }))}
+                    <>
+                      {/* D1: Before / After toggle */}
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 10 }}>
+                        <button type="button"
+                          onClick={() => setShowComparison(v => !v)}
                           style={{
-                            padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                            border: 'none', cursor: 'pointer',
-                            background: watermark.enabled ? COLORS.primary : COLORS.border,
-                            color: watermark.enabled ? '#fff' : COLORS.textSecondary,
-                            transition: 'all 0.2s',
+                            padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                            border: `1px solid ${showComparison ? COLORS.primary : COLORS.border}`,
+                            background: showComparison ? COLORS.primaryLight : '#fff',
+                            color: showComparison ? COLORS.primary : COLORS.textSecondary,
+                            cursor: 'pointer',
                           }}
                         >
-                          {watermark.enabled ? 'ON' : 'OFF'}
+                          ◧ 전/후 비교
+                        </button>
+                        {/* D2: Clipping warning */}
+                        <button type="button"
+                          onClick={() => setShowClipping(v => !v)}
+                          style={{
+                            padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                            border: `1px solid ${showClipping ? '#e53e3e' : COLORS.border}`,
+                            background: showClipping ? '#fff0f0' : '#fff',
+                            color: showClipping ? '#e53e3e' : COLORS.textSecondary,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ◈ 클리핑 확인
                         </button>
                       </div>
-                      {watermark.enabled && (
-                        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}` }}>
-                          <input
-                            type="text"
-                            value={watermark.text}
-                            onChange={e => setWatermark(w => ({ ...w, text: e.target.value }))}
-                            placeholder="© 이름 또는 저작권 텍스트"
-                            style={{ ...inputStyle(false), marginBottom: 10, fontSize: 13 }}
+
+                      {/* Preview area */}
+                      <div
+                        style={{ marginTop: 10, borderRadius: 12, overflow: 'hidden', maxHeight: 300, background: '#000', position: 'relative', cursor: showComparison ? 'ew-resize' : 'default' }}
+                        data-comparison="1"
+                        onMouseMove={handleSplitDrag}
+                        onMouseDown={() => { isDraggingRef.current = true; }}
+                        onMouseUp={() => { isDraggingRef.current = false; }}
+                        onMouseLeave={() => { isDraggingRef.current = false; }}
+                        onTouchMove={handleSplitDrag}
+                        onTouchStart={() => { isDraggingRef.current = true; }}
+                        onTouchEnd={() => { isDraggingRef.current = false; }}
+                      >
+                        {/* Processed canvas */}
+                        <canvas
+                          ref={previewCanvasRef}
+                          style={{ maxWidth: '100%', maxHeight: 300, objectFit: 'contain', display: 'block' }}
+                        />
+
+                        {/* D1: Original overlay for before/after */}
+                        {showComparison && (
+                          <canvas
+                            ref={originalCanvasRef}
+                            style={{
+                              position: 'absolute', top: 0, left: 0,
+                              maxWidth: '100%', maxHeight: 300, objectFit: 'contain',
+                              clipPath: `inset(0 ${100 - splitPos}% 0 0)`,
+                              pointerEvents: 'none',
+                            }}
                           />
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {WATERMARK_POSITIONS.map(pos => (
-                              <button
-                                key={pos.value} type="button"
-                                onClick={() => setWatermark(w => ({ ...w, position: pos.value }))}
-                                style={{
-                                  padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                                  border: `1.5px solid ${watermark.position === pos.value ? COLORS.primary : COLORS.border}`,
-                                  background: watermark.position === pos.value ? COLORS.primaryLight : '#fff',
-                                  color: watermark.position === pos.value ? COLORS.primary : COLORS.textSecondary,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                {pos.label}
-                              </button>
-                            ))}
+                        )}
+
+                        {/* D1: Divider line */}
+                        {showComparison && (
+                          <div style={{
+                            position: 'absolute', top: 0, bottom: 0,
+                            left: `${splitPos}%`,
+                            width: 2,
+                            background: 'rgba(255,255,255,0.9)',
+                            pointerEvents: 'none',
+                            transform: 'translateX(-1px)',
+                          }}>
+                            <div style={{
+                              position: 'absolute', top: '50%', left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              width: 20, height: 20, borderRadius: '50%',
+                              background: '#fff', border: '2px solid rgba(0,0,0,0.3)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 10, color: '#333',
+                            }}>⟺</div>
                           </div>
+                        )}
+
+                        {/* D2: Clipping overlay */}
+                        {showClipping && (
+                          <canvas
+                            ref={clippingCanvasRef}
+                            style={{
+                              position: 'absolute', top: 0, left: 0,
+                              maxWidth: '100%', maxHeight: 300,
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        )}
+
+                        {/* D2: Legend */}
+                        {showClipping && (
+                          <div style={{
+                            position: 'absolute', bottom: 6, left: 6,
+                            display: 'flex', gap: 8, fontSize: 10, fontWeight: 700,
+                          }}>
+                            <span style={{ background: 'rgba(255,0,0,0.8)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>하이라이트</span>
+                            <span style={{ background: 'rgba(0,80,220,0.8)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>섀도우</span>
+                          </div>
+                        )}
+
+                        {showComparison && (
+                          <div style={{
+                            position: 'absolute', bottom: 6, right: 6,
+                            display: 'flex', gap: 4, fontSize: 9, fontWeight: 700, pointerEvents: 'none',
+                          }}>
+                            <span style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>이전</span>
+                            <span style={{ background: 'rgba(91,110,245,0.8)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>이후</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Adjustment Panel */}
+                      <div style={{ marginTop: 12 }}>
+                        <ImageAdjustmentPanel
+                          adjustments={adjustments}
+                          onAdjust={handleAdjust}
+                          channelCurves={channelCurves}
+                          onChannelCurveChange={handleChannelCurveChange}
+                          effects={effects}
+                          onEffect={handleEffect}
+                          hslAdj={hslAdj}
+                          onHSLChange={handleHSLChange}
+                          colorGrading={colorGrading}
+                          onColorGradingChange={handleColorGradingChange}
+                          sharpening={sharpening}
+                          onSharpeningChange={handleSharpeningChange}
+                          noiseReduction={noiseReduction}
+                          onNoiseReductionChange={handleNoiseReductionChange}
+                          histogram={histogram}
+                          onApplyPreset={handleApplyPreset}
+                          onFullReset={handleFullReset}
+                        />
+                      </div>
+
+                      {/* 워터마크 */}
+                      <div style={{ marginTop: 12, borderRadius: 12, border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: COLORS.surface }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.textSecondary }}>🔏 워터마크</span>
+                          <button
+                            type="button"
+                            onClick={() => setWatermark(w => ({ ...w, enabled: !w.enabled }))}
+                            style={{
+                              padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                              border: 'none', cursor: 'pointer',
+                              background: watermark.enabled ? COLORS.primary : COLORS.border,
+                              color: watermark.enabled ? '#fff' : COLORS.textSecondary,
+                              transition: 'all 0.2s',
+                            }}
+                          >
+                            {watermark.enabled ? 'ON' : 'OFF'}
+                          </button>
                         </div>
-                      )}
-                    </div>
+                        {watermark.enabled && (
+                          <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}` }}>
+                            <input
+                              type="text"
+                              value={watermark.text}
+                              onChange={e => setWatermark(w => ({ ...w, text: e.target.value }))}
+                              placeholder="© 이름 또는 저작권 텍스트"
+                              style={{ ...inputStyle(false), marginBottom: 10, fontSize: 13 }}
+                            />
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {WATERMARK_POSITIONS.map(pos => (
+                                <button
+                                  key={pos.value} type="button"
+                                  onClick={() => setWatermark(w => ({ ...w, position: pos.value }))}
+                                  style={{
+                                    padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                                    border: `1.5px solid ${watermark.position === pos.value ? COLORS.primary : COLORS.border}`,
+                                    background: watermark.position === pos.value ? COLORS.primaryLight : '#fff',
+                                    color: watermark.position === pos.value ? COLORS.primary : COLORS.textSecondary,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {pos.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               ) : (
@@ -560,8 +751,7 @@ export default function PhotoFormPage() {
                 const selected = form.imageRatio === opt.value;
                 return (
                   <button
-                    key={opt.value}
-                    type="button"
+                    key={opt.value} type="button"
                     onClick={() => setForm(prev => ({ ...prev, imageRatio: opt.value }))}
                     style={{
                       flex: 1, padding: '8px 4px', borderRadius: 10,

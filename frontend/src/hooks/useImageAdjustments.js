@@ -6,12 +6,14 @@
  */
 
 export const DEFAULT_ADJUSTMENTS = {
-  exposure:   0,   // EV stops  : -3 ~ +3
-  contrast:   0,   // percent   : -100 ~ +100
-  highlights: 0,   // percent   : -100 ~ +100
-  shadows:    0,   // percent   : -100 ~ +100
-  whites:     0,   // percent   : -100 ~ +100
-  blacks:     0,   // percent   : -100 ~ +100
+  exposure:    0,   // EV stops  : -3 ~ +3
+  contrast:    0,   // percent   : -100 ~ +100
+  highlights:  0,   // percent   : -100 ~ +100
+  shadows:     0,   // percent   : -100 ~ +100
+  whites:      0,   // percent   : -100 ~ +100
+  blacks:      0,   // percent   : -100 ~ +100
+  temperature: 0,   // -100 ~ +100 (차갑게 ~ 따뜻하게)
+  tint:        0,   // -100 ~ +100 (초록 ~ 보라)
 };
 
 export const DEFAULT_CURVE_POINTS = [
@@ -26,37 +28,69 @@ export const DEFAULT_CHANNEL_CURVES = {
   b:   [{ x: 0, y: 0 }, { x: 1, y: 1 }],
 };
 
+export const DEFAULT_HSL_ADJUSTMENTS = {
+  red:     { hue: 0, saturation: 0, luminance: 0 },
+  orange:  { hue: 0, saturation: 0, luminance: 0 },
+  yellow:  { hue: 0, saturation: 0, luminance: 0 },
+  green:   { hue: 0, saturation: 0, luminance: 0 },
+  aqua:    { hue: 0, saturation: 0, luminance: 0 },
+  blue:    { hue: 0, saturation: 0, luminance: 0 },
+  purple:  { hue: 0, saturation: 0, luminance: 0 },
+  magenta: { hue: 0, saturation: 0, luminance: 0 },
+};
+
+// Center hue angles for each color range
+const HSL_RANGE_CENTERS = {
+  red:     0,
+  orange:  30,
+  yellow:  60,
+  green:   120,
+  aqua:    180,
+  blue:    210,
+  purple:  270,
+  magenta: 330,
+};
+
+export const DEFAULT_COLOR_GRADING = {
+  shadows:   { hue: 0, saturation: 0 },
+  midtones:  { hue: 0, saturation: 0 },
+  highlights: { hue: 0, saturation: 0 },
+  blending:  50,  // 0~100
+};
+
+export const DEFAULT_SHARPENING = {
+  amount:  0,    // 0~150
+  radius:  1,    // 0.5~3
+  detail:  25,   // 0~100 (edge masking threshold)
+};
+
+export const DEFAULT_NOISE_REDUCTION = {
+  luminance: 0,   // 0~100
+  color:     0,   // 0~100
+};
+
 // ── Region weight functions ──────────────────────────────────────────
 
-/** 검정 계열: v=0에서 최대, v≈0.3에서 0 */
 function blacksWeight(v) {
   return Math.pow(Math.max(0, 1 - v / 0.3), 2);
 }
 
-/** 어두운 영역: v=0.25에서 최대, v=0/0.5에서 0 */
 function shadowsWeight(v) {
   if (v <= 0 || v >= 0.5) return 0;
   return Math.pow(Math.sin(Math.PI * v / 0.5), 2);
 }
 
-/** 밝은 영역: v=0.75에서 최대, v=0.5/1에서 0 */
 function highlightsWeight(v) {
   if (v <= 0.5 || v >= 1) return 0;
   return Math.pow(Math.sin(Math.PI * (v - 0.5) / 0.5), 2);
 }
 
-/** 흰색 계열: v=1에서 최대, v≈0.7에서 0 */
 function whitesWeight(v) {
   return Math.pow(Math.max(0, (v - 0.7) / 0.3), 2);
 }
 
 // ── Catmull-Rom 보간 ─────────────────────────────────────────────────
 
-/**
- * 정렬된 제어점 배열에서 Catmull-Rom 보간으로 y 값 반환.
- * @param {number} x  0-1 입력값
- * @param {{x:number, y:number}[]} pts  x 기준 정렬된 제어점
- */
 export function catmullRomY(x, pts) {
   if (pts.length === 0) return x;
   if (x <= pts[0].x) return pts[0].y;
@@ -88,12 +122,6 @@ export function catmullRomY(x, pts) {
 
 // ── LUT 빌더 ─────────────────────────────────────────────────────────
 
-/**
- * 256-entry 룩업 테이블 생성.
- * @param {typeof DEFAULT_ADJUSTMENTS} adj
- * @param {{x:number,y:number}[]} curvePoints  정렬된 제어점
- * @returns {Uint8Array}
- */
 export function buildLUT(adj, curvePoints) {
   const lut = new Uint8Array(256);
   const pts = [...curvePoints].sort((a, b) => a.x - b.x);
@@ -101,25 +129,18 @@ export function buildLUT(adj, curvePoints) {
   for (let i = 0; i < 256; i++) {
     let v = i / 255;
 
-    // 1. 검정 계열 (흑점 조정)
     const bl = (adj.blacks / 100) * 0.2;
     v += bl * blacksWeight(v);
 
-    // 2. 노출 (EV stop)
     v *= Math.pow(2, adj.exposure);
     v = Math.max(0, Math.min(1, v));
 
-    // 3. 어두운 영역
     v += (adj.shadows / 100) * 0.25 * shadowsWeight(v);
-
-    // 4. 밝은 영역
     v += (adj.highlights / 100) * 0.25 * highlightsWeight(v);
 
-    // 5. 흰색 계열 (백점 조정)
     const wh = (adj.whites / 100) * 0.2;
     v += wh * whitesWeight(v);
 
-    // 6. 대비 (S-커브 vs 선형 압축)
     v = Math.max(0, Math.min(1, v));
     const c = adj.contrast / 100;
     if (c >= 0) {
@@ -130,7 +151,6 @@ export function buildLUT(adj, curvePoints) {
       v = (v - 0.5) * (1 + c) + 0.5;
     }
 
-    // 7. 사용자 곡선
     v = Math.max(0, Math.min(1, v));
     v = catmullRomY(v, pts);
 
@@ -159,22 +179,24 @@ export function renderWithLUT(canvas, originalPixels, w, h, lut) {
 // ── 효과 / 비네팅 / 그레인 ────────────────────────────────────────────
 
 export const DEFAULT_EFFECTS = {
-  texture:        0,  // -100 ~ +100 (소반경 언샵마스크)
-  clarity:        0,  // -100 ~ +100 (대반경 언샵마스크)
-  dehaze:         0,  // -100 ~ +100
-  vignette:       0,  // -100 ~ +100 (음수=가장자리 어둡게)
-  grainAmount:    0,  // 0 ~ 100
-  grainSize:     25,  // 1 ~ 100
-  grainRoughness: 50, // 0 ~ 100
+  texture:        0,   // -100 ~ +100
+  clarity:        0,   // -100 ~ +100
+  dehaze:         0,   // -100 ~ +100
+  vignette:       0,   // -100 ~ +100
+  grainAmount:    0,   // 0 ~ 100
+  grainSize:     25,   // 1 ~ 100
+  grainRoughness: 50,  // 0 ~ 100
+  vibrance:       0,   // -100 ~ +100
+  saturation:     0,   // -100 ~ +100
 };
 
-const GRAIN_TS = 512; // 반드시 2의 거듭제곱
+const GRAIN_TS = 512;
 
 export function generateGrainTile() {
   const tile = new Float32Array(GRAIN_TS * GRAIN_TS);
   for (let i = 0; i < tile.length; i++) {
     const x = Math.sin(i * 9301.0 + 49297.0) * 233280.0;
-    tile[i] = (x - Math.floor(x)) - 0.5; // -0.5 ~ +0.5
+    tile[i] = (x - Math.floor(x)) - 0.5;
   }
   return tile;
 }
@@ -218,7 +240,6 @@ function applyDehaze(canvas, amount) {
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
     if (str > 0) {
-      // 헤이즈 제거: 채도 + 대비 강화
       const sat = 1 + str * 0.5;
       const nr = lum + (r - lum) * sat;
       const ng = lum + (g - lum) * sat;
@@ -235,7 +256,6 @@ function applyDehaze(canvas, amount) {
       d[i + 1] = Math.max(0, Math.min(255, Math.round(curve(ng))));
       d[i + 2] = Math.max(0, Math.min(255, Math.round(curve(nb))));
     } else {
-      // 헤이즈 추가: 대기광(따뜻한 흰색) 방향으로 혼합
       const haze = -str * 0.6;
       d[i]     = Math.round(r + (200 - r) * haze);
       d[i + 1] = Math.round(g + (210 - g) * haze);
@@ -287,12 +307,10 @@ function applyGrain(canvas, amount, size, roughness, grainTile) {
       const ty = Math.floor(y / scale) & mask;
       let noise = grainTile[ty * TS + tx];
 
-      // 거칠기: 세밀한 노이즈와 혼합
       const fx = (x * 2) & mask;
       const fy = (y * 2) & mask;
       noise = noise * (1 - roughStr * 0.5) + grainTile[fy * TS + fx] * roughStr * 0.5;
 
-      // 중간 밝기에서 그레인이 가장 강하게
       const lum = (d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114) / 255;
       const lumW = 1 - Math.pow(Math.abs(lum * 2 - 1), 2) * 0.7;
       const g = noise * str * 2 * lumW;
@@ -307,10 +325,6 @@ function applyGrain(canvas, amount, size, roughness, grainTile) {
 
 // ── 채널별 LUT (per-channel tone curve) ──────────────────────────────
 
-/**
- * 조정값 + 채널별 커브를 합성한 {r, g, b} LUT 세트를 반환.
- * 파이프라인: adjustments + rgb master curve → per-channel curve
- */
 export function buildChannelLUTs(adj, channelCurves) {
   const sorted = (pts) => [...(pts || [])].sort((a, b) => a.x - b.x);
   const rgbPts = sorted(channelCurves?.rgb || DEFAULT_CHANNEL_CURVES.rgb);
@@ -330,6 +344,19 @@ export function buildChannelLUTs(adj, channelCurves) {
     gLut[i] = Math.min(255, Math.round(catmullRomY(v, gPts) * 255));
     bLut[i] = Math.min(255, Math.round(catmullRomY(v, bPts) * 255));
   }
+
+  // A1: Temperature / Tint as per-channel multipliers
+  const temp  = (adj.temperature || 0) / 100;
+  const tintV = (adj.tint        || 0) / 100;
+
+  if (temp !== 0 || tintV !== 0) {
+    for (let i = 0; i < 256; i++) {
+      rLut[i] = Math.max(0, Math.min(255, Math.round(rLut[i] * (1 + temp  * 0.30))));
+      bLut[i] = Math.max(0, Math.min(255, Math.round(bLut[i] * (1 - temp  * 0.30))));
+      gLut[i] = Math.max(0, Math.min(255, Math.round(gLut[i] * (1 - tintV * 0.20))));
+    }
+  }
+
   return { r: rLut, g: gLut, b: bLut };
 }
 
@@ -348,9 +375,316 @@ export function renderWithChannelLUTs(canvas, originalPixels, w, h, luts) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-/**
- * 원본 픽셀에서 R/G/B/Lum 히스토그램(각 256 bins) 반환.
- */
+// ── RGB ↔ HSL helpers ──────────────────────────────────────────────
+
+function rgb2hsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r)      h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else                h = (r - g) / d + 4;
+  h /= 6;
+  return [h * 360, s, l];
+}
+
+function hue2rgb(p, q, t) {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1/6) return p + (q - p) * 6 * t;
+  if (t < 1/2) return q;
+  if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+  return p;
+}
+
+function hsl2rgb(h, s, l) {
+  h /= 360;
+  if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [
+    Math.round(hue2rgb(p, q, h + 1/3) * 255),
+    Math.round(hue2rgb(p, q, h)       * 255),
+    Math.round(hue2rgb(p, q, h - 1/3) * 255),
+  ];
+}
+
+function hsvToRgb(h, s, v) {
+  h /= 360;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  let r, g, b;
+  switch (i % 6) {
+    case 0: r=v;g=t;b=p; break;
+    case 1: r=q;g=v;b=p; break;
+    case 2: r=p;g=v;b=t; break;
+    case 3: r=p;g=q;b=v; break;
+    case 4: r=t;g=p;b=v; break;
+    default:r=v;g=p;b=q;
+  }
+  return [r * 255, g * 255, b * 255];
+}
+
+// ── A2: Vibrance / Saturation ─────────────────────────────────────
+
+function applyVibranceSaturation(canvas, vibrance, saturation) {
+  if (vibrance === 0 && saturation === 0) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  const satStr = saturation / 100;
+  const vibStr = vibrance  / 100;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const [hDeg, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+
+    // Saturation: linear shift
+    let newS = Math.max(0, Math.min(1, s + satStr * (satStr > 0 ? (1 - s) : s)));
+
+    // Vibrance: boost low-saturation pixels more
+    if (vibStr !== 0) {
+      const vibBoost = vibStr * (1 - s) * (satStr > 0 ? 1 : -1);
+      newS = Math.max(0, Math.min(1, newS + Math.abs(vibStr) * (vibrance > 0 ? (1 - s) * 0.7 : -s * 0.7)));
+    }
+
+    const [nr, ng, nb] = hsl2rgb(hDeg, newS, l);
+    d[i]     = Math.max(0, Math.min(255, nr));
+    d[i + 1] = Math.max(0, Math.min(255, ng));
+    d[i + 2] = Math.max(0, Math.min(255, nb));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── A3: HSL Panel ────────────────────────────────────────────────
+
+function hueDistance(a, b) {
+  const diff = Math.abs(a - b) % 360;
+  return diff > 180 ? 360 - diff : diff;
+}
+
+function hslRangeWeight(hueDeg, colorName) {
+  const center = HSL_RANGE_CENTERS[colorName];
+  const dist = hueDistance(hueDeg, center);
+  // Gaussian-cosine blend: full weight at center, 0 at ±60°
+  return dist > 60 ? 0 : Math.pow(Math.cos((dist / 60) * (Math.PI / 2)), 2);
+}
+
+export function applyHSLAdjustments(canvas, hslAdj) {
+  if (!hslAdj) return;
+  const hasAny = Object.values(hslAdj).some(
+    ch => ch.hue !== 0 || ch.saturation !== 0 || ch.luminance !== 0
+  );
+  if (!hasAny) return;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let [hDeg, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+    if (s < 0.01) continue; // skip near-gray pixels
+
+    let dH = 0, dS = 0, dL = 0;
+    for (const [colorName, adj] of Object.entries(hslAdj)) {
+      const w = hslRangeWeight(hDeg, colorName);
+      if (w < 0.001) continue;
+      dH += w * adj.hue;
+      dS += w * (adj.saturation / 100);
+      dL += w * (adj.luminance  / 100);
+    }
+
+    hDeg = ((hDeg + dH) % 360 + 360) % 360;
+    s = Math.max(0, Math.min(1, s + dS * (dS > 0 ? 1 - s : s)));
+    l = Math.max(0, Math.min(1, l + dL * 0.5));
+
+    const [nr, ng, nb] = hsl2rgb(hDeg, s, l);
+    d[i]     = Math.max(0, Math.min(255, nr));
+    d[i + 1] = Math.max(0, Math.min(255, ng));
+    d[i + 2] = Math.max(0, Math.min(255, nb));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── B1: Color Grading ────────────────────────────────────────────
+
+export function applyColorGrading(canvas, colorGrading) {
+  if (!colorGrading) return;
+  const { shadows, midtones, highlights, blending = 50 } = colorGrading;
+  const hasShadow = shadows.saturation > 0;
+  const hasMid    = midtones.saturation > 0;
+  const hasHigh   = highlights.saturation > 0;
+  if (!hasShadow && !hasMid && !hasHigh) return;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  const blend = blending / 100;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Zone weights
+    const swt = Math.pow(Math.max(0, 1 - lum / 0.4), 2);
+    const mwt = Math.pow(Math.cos((lum - 0.5) * Math.PI), 2);
+    const hwt = Math.pow(Math.max(0, (lum - 0.6) / 0.4), 2);
+
+    let dr = 0, dg = 0, db = 0;
+
+    if (hasShadow && swt > 0.001) {
+      const [cr, cg, cb] = hsvToRgb(shadows.hue, shadows.saturation / 100, 0.5);
+      dr += (cr - 128) * swt * blend * 0.3;
+      dg += (cg - 128) * swt * blend * 0.3;
+      db += (cb - 128) * swt * blend * 0.3;
+    }
+    if (hasMid && mwt > 0.001) {
+      const [cr, cg, cb] = hsvToRgb(midtones.hue, midtones.saturation / 100, 0.5);
+      dr += (cr - 128) * mwt * blend * 0.3;
+      dg += (cg - 128) * mwt * blend * 0.3;
+      db += (cb - 128) * mwt * blend * 0.3;
+    }
+    if (hasHigh && hwt > 0.001) {
+      const [cr, cg, cb] = hsvToRgb(highlights.hue, highlights.saturation / 100, 0.5);
+      dr += (cr - 128) * hwt * blend * 0.3;
+      dg += (cg - 128) * hwt * blend * 0.3;
+      db += (cb - 128) * hwt * blend * 0.3;
+    }
+
+    d[i]     = Math.max(0, Math.min(255, Math.round(r + dr)));
+    d[i + 1] = Math.max(0, Math.min(255, Math.round(g + dg)));
+    d[i + 2] = Math.max(0, Math.min(255, Math.round(b + db)));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── C1: Sharpening (Unsharp Mask with edge masking) ───────────────
+
+export function applySharpening(canvas, sharpening) {
+  if (!sharpening || sharpening.amount === 0) return;
+  const { amount, radius, detail } = sharpening;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const original = ctx.getImageData(0, 0, w, h);
+
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tCtx = tmp.getContext('2d');
+  tCtx.filter = `blur(${Math.max(0.5, radius)}px)`;
+  tCtx.drawImage(canvas, 0, 0);
+  const blurred = tCtx.getImageData(0, 0, w, h);
+
+  const str = amount / 100;
+  const threshold = detail / 100 * 60; // pixel threshold for edge masking
+  const result = ctx.createImageData(w, h);
+  const od = original.data, bd = blurred.data;
+
+  for (let i = 0; i < od.length; i += 4) {
+    const edge = Math.abs(
+      0.299 * (od[i] - bd[i]) + 0.587 * (od[i+1] - bd[i+1]) + 0.114 * (od[i+2] - bd[i+2])
+    );
+    // Edge mask: only sharpen where edge > threshold
+    const mask = threshold === 0 ? 1 : Math.min(1, edge / threshold);
+
+    for (let c = 0; c < 3; c++) {
+      const o = od[i + c], b = bd[i + c];
+      result.data[i + c] = Math.max(0, Math.min(255, Math.round(o + str * (o - b) * mask)));
+    }
+    result.data[i + 3] = od[i + 3];
+  }
+  ctx.putImageData(result, 0, 0);
+}
+
+// ── C2: Noise Reduction ───────────────────────────────────────────
+
+export function applyNoiseReduction(canvas, noiseReduction) {
+  if (!noiseReduction) return;
+  const { luminance, color } = noiseReduction;
+  if (luminance === 0 && color === 0) return;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  if (color > 0) {
+    // Color NR: blur only chroma (preserve luma)
+    const before = ctx.getImageData(0, 0, w, h);
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    const tCtx = tmp.getContext('2d');
+    const blurRadius = (color / 100) * 3;
+    tCtx.filter = `blur(${blurRadius}px)`;
+    tCtx.drawImage(canvas, 0, 0);
+    const blurred = tCtx.getImageData(0, 0, w, h);
+    const result = ctx.createImageData(w, h);
+    const bd = before.data, bld = blurred.data;
+
+    for (let i = 0; i < bd.length; i += 4) {
+      const [, , origL] = rgb2hsl(bd[i], bd[i+1], bd[i+2]);
+      const [blurH, blurS] = rgb2hsl(bld[i], bld[i+1], bld[i+2]);
+      const [nr, ng, nb] = hsl2rgb(blurH, blurS, origL);
+      result.data[i]   = Math.max(0, Math.min(255, nr));
+      result.data[i+1] = Math.max(0, Math.min(255, ng));
+      result.data[i+2] = Math.max(0, Math.min(255, nb));
+      result.data[i+3] = bd[i+3];
+    }
+    ctx.putImageData(result, 0, 0);
+  }
+
+  if (luminance > 0) {
+    // Luminance NR: gaussian blur
+    const blurRadius = (luminance / 100) * 2;
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    const tCtx = tmp.getContext('2d');
+    tCtx.filter = `blur(${blurRadius}px)`;
+    tCtx.drawImage(canvas, 0, 0);
+    ctx.drawImage(tmp, 0, 0);
+  }
+}
+
+// ── D2: Clipping Warning overlay ──────────────────────────────────
+
+export function renderClippingOverlay(overlayCanvas, processedCanvas, threshold = 8) {
+  const w = processedCanvas.width, h = processedCanvas.height;
+  overlayCanvas.width  = w;
+  overlayCanvas.height = h;
+
+  const srcCtx = processedCanvas.getContext('2d');
+  const srcData = srcCtx.getImageData(0, 0, w, h);
+  const d = srcData.data;
+
+  const ctx = overlayCanvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+  const out = ctx.createImageData(w, h);
+  const od = out.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i+1], b = d[i+2];
+    // Highlight clipping: all channels near 255
+    if (r >= 255 - threshold && g >= 255 - threshold && b >= 255 - threshold) {
+      od[i] = 255; od[i+1] = 0; od[i+2] = 0; od[i+3] = 180;
+    }
+    // Shadow clipping: all channels near 0
+    else if (r <= threshold && g <= threshold && b <= threshold) {
+      od[i] = 0; od[i+1] = 100; od[i+2] = 255; od[i+3] = 180;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+}
+
+// ── Histogram ────────────────────────────────────────────────────
+
 export function computeHistogram(pixels) {
   const r   = new Uint32Array(256);
   const g   = new Uint32Array(256);
@@ -367,9 +701,37 @@ export function computeHistogram(pixels) {
   return { r, g, b, lum };
 }
 
-export function applyEffects(canvas, effects, grainTile) {
-  applyUnsharpMask(canvas, 4,  effects.texture);  // 텍스처: 소반경
-  applyUnsharpMask(canvas, 20, effects.clarity);  // 부분대비: 대반경
+// ── Main effects pipeline ────────────────────────────────────────
+
+export function applyEffects(
+  canvas,
+  effects,
+  grainTile,
+  hslAdj = null,
+  colorGrading = null,
+  sharpening = null,
+  noiseReduction = null
+) {
+  // A2: Vibrance / Saturation (before other effects)
+  if (effects.vibrance !== 0 || effects.saturation !== 0) {
+    applyVibranceSaturation(canvas, effects.vibrance, effects.saturation);
+  }
+
+  // A3: HSL Panel
+  applyHSLAdjustments(canvas, hslAdj);
+
+  // B1: Color Grading
+  applyColorGrading(canvas, colorGrading);
+
+  // C1: Sharpening
+  applySharpening(canvas, sharpening);
+
+  // C2: Noise Reduction
+  applyNoiseReduction(canvas, noiseReduction);
+
+  // Existing effects
+  applyUnsharpMask(canvas, 4,  effects.texture);
+  applyUnsharpMask(canvas, 20, effects.clarity);
   applyDehaze(canvas, effects.dehaze);
   applyVignette(canvas, effects.vignette);
   if (effects.grainAmount > 0 && grainTile) {

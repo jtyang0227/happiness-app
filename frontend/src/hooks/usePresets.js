@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 const STORAGE_KEY = 'happiness-photo-presets';
-export const MAX_PRESETS = 5;
+export const MAX_PRESETS = 20;
 
 function loadFromStorage() {
   try {
@@ -36,16 +36,20 @@ export function usePresets() {
     });
   }, []);
 
-  const addPreset = useCallback((name, adjustments, channelCurves, effects) => {
+  const addPreset = useCallback((name, adjustments, channelCurves, effects, hslAdj = null, colorGrading = null, sharpening = null, noiseReduction = null) => {
     mutate(prev => {
       if (prev.length >= MAX_PRESETS) return prev;
       const preset = {
         id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         name: name.trim() || `프리셋 ${prev.length + 1}`,
         createdAt: new Date().toISOString(),
-        adjustments: { ...adjustments },
-        channelCurves: deepCloneCurves(channelCurves),
-        effects: { ...effects },
+        adjustments:     { ...adjustments },
+        channelCurves:   deepCloneCurves(channelCurves),
+        effects:         { ...effects },
+        hslAdj:          hslAdj        ? JSON.parse(JSON.stringify(hslAdj))        : null,
+        colorGrading:    colorGrading  ? JSON.parse(JSON.stringify(colorGrading))  : null,
+        sharpening:      sharpening    ? { ...sharpening }                         : null,
+        noiseReduction:  noiseReduction ? { ...noiseReduction }                    : null,
       };
       return [...prev, preset];
     });
@@ -60,5 +64,27 @@ export function usePresets() {
     mutate(prev => prev.map(p => p.id === id ? { ...p, name: name.trim() } : p));
   }, [mutate]);
 
-  return { presets, addPreset, removePreset, renamePreset };
+  const importPresets = useCallback((json) => {
+    try {
+      const imported = JSON.parse(json);
+      if (!Array.isArray(imported)) return false;
+      mutate(prev => {
+        const existing = new Set(prev.map(p => p.id));
+        const toAdd = imported
+          .filter(p => p.id && p.name && p.adjustments)
+          .filter(p => !existing.has(p.id))
+          .slice(0, MAX_PRESETS - prev.length);
+        return [...prev, ...toAdd];
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [mutate]);
+
+  const exportPresets = useCallback(() => {
+    return JSON.stringify(presets, null, 2);
+  }, [presets]);
+
+  return { presets, addPreset, removePreset, renamePreset, importPresets, exportPresets };
 }

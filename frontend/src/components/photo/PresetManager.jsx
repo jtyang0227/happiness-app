@@ -1,6 +1,78 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePresets, MAX_PRESETS } from '../../hooks/usePresets';
 import { COLORS } from '../../constants/colors';
+import {
+  DEFAULT_CHANNEL_CURVES,
+  DEFAULT_EFFECTS,
+  DEFAULT_HSL_ADJUSTMENTS,
+  DEFAULT_COLOR_GRADING,
+  DEFAULT_SHARPENING,
+  DEFAULT_NOISE_REDUCTION,
+} from '../../hooks/useImageAdjustments';
+
+// ── 8 built-in style presets ────────────────────────────────────────
+
+const BUILTIN_PRESETS = [
+  {
+    id: '__fuji-velvia',
+    name: 'Fuji Velvia',
+    adjustments: { exposure: 0.1, contrast: 30, highlights: -10, shadows: 10, whites: 10, blacks: -5, temperature: 5, tint: -5 },
+    effects: { ...DEFAULT_EFFECTS, saturation: 40, vibrance: 20 },
+  },
+  {
+    id: '__kodak-portra',
+    name: 'Kodak Portra',
+    adjustments: { exposure: 0.2, contrast: -10, highlights: -20, shadows: 20, whites: 5, blacks: 5, temperature: 15, tint: 5 },
+    effects: { ...DEFAULT_EFFECTS, saturation: -10, vibrance: 15 },
+  },
+  {
+    id: '__matte-fade',
+    name: 'Matte Fade',
+    adjustments: { exposure: 0.1, contrast: -20, highlights: -10, shadows: 30, whites: -10, blacks: 20, temperature: 0, tint: 0 },
+    effects: { ...DEFAULT_EFFECTS },
+  },
+  {
+    id: '__bw-dramatic',
+    name: 'B&W Dramatic',
+    adjustments: { exposure: 0, contrast: 40, highlights: -30, shadows: -20, whites: 20, blacks: -20, temperature: 0, tint: 0 },
+    effects: { ...DEFAULT_EFFECTS, saturation: -100 },
+  },
+  {
+    id: '__golden-hour',
+    name: 'Golden Hour',
+    adjustments: { exposure: 0.2, contrast: 10, highlights: -20, shadows: 20, whites: 0, blacks: 0, temperature: 35, tint: 10 },
+    effects: { ...DEFAULT_EFFECTS, vibrance: 25 },
+  },
+  {
+    id: '__cool-cinematic',
+    name: 'Cool Cinematic',
+    adjustments: { exposure: -0.1, contrast: 20, highlights: -20, shadows: 10, whites: -5, blacks: 5, temperature: -20, tint: -5 },
+    effects: { ...DEFAULT_EFFECTS, saturation: -15 },
+  },
+  {
+    id: '__pastel-dream',
+    name: 'Pastel Dream',
+    adjustments: { exposure: 0.3, contrast: -25, highlights: -10, shadows: 25, whites: 10, blacks: 20, temperature: 10, tint: 5 },
+    effects: { ...DEFAULT_EFFECTS, saturation: -20, vibrance: -10 },
+  },
+  {
+    id: '__vibrant-pop',
+    name: 'Vibrant Pop',
+    adjustments: { exposure: 0.05, contrast: 25, highlights: -5, shadows: 5, whites: 5, blacks: -5, temperature: 5, tint: 0 },
+    effects: { ...DEFAULT_EFFECTS, saturation: 30, vibrance: 40 },
+  },
+];
+
+const makeBuiltinFull = (p) => ({
+  ...p,
+  channelCurves:  { ...DEFAULT_CHANNEL_CURVES, rgb: [...DEFAULT_CHANNEL_CURVES.rgb], r: [...DEFAULT_CHANNEL_CURVES.r], g: [...DEFAULT_CHANNEL_CURVES.g], b: [...DEFAULT_CHANNEL_CURVES.b] },
+  hslAdj:         JSON.parse(JSON.stringify(DEFAULT_HSL_ADJUSTMENTS)),
+  colorGrading:   JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)),
+  sharpening:     { ...DEFAULT_SHARPENING },
+  noiseReduction: { ...DEFAULT_NOISE_REDUCTION },
+});
+
+// ── Styles ──────────────────────────────────────────────────────────
 
 const S = {
   row: {
@@ -8,12 +80,21 @@ const S = {
     padding: '6px 8px', borderRadius: 8, marginBottom: 4,
     background: '#0d0d22', border: '1px solid #1a1a38',
   },
+  builtinRow: {
+    display: 'flex', alignItems: 'center', gap: 6,
+    padding: '5px 8px', borderRadius: 8, marginBottom: 3,
+    background: '#0a0a1e', border: '1px solid #141430',
+  },
   indexBadge: {
     fontSize: 10, fontWeight: 700, color: '#404060',
     minWidth: 14, textAlign: 'center', flexShrink: 0,
   },
   nameText: {
     flex: 1, fontSize: 12, color: '#c0c0e0',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  builtinName: {
+    flex: 1, fontSize: 12, color: '#8888b0', fontStyle: 'italic',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   nameInput: {
@@ -33,8 +114,7 @@ const S = {
     padding: '3px 7px', borderRadius: 5,
     border: '1px solid #222248',
     background: 'transparent', color: '#555580',
-    fontSize: 12, cursor: 'pointer', flexShrink: 0,
-    lineHeight: 1,
+    fontSize: 12, cursor: 'pointer', flexShrink: 0, lineHeight: 1,
   },
   saveInput: {
     flex: 1, padding: '5px 8px', borderRadius: 6,
@@ -45,8 +125,7 @@ const S = {
   confirmBtn: {
     padding: '4px 10px', borderRadius: 6,
     border: 'none', background: COLORS.primary,
-    color: '#fff', fontSize: 11, fontWeight: 700,
-    cursor: 'pointer', flexShrink: 0,
+    color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
   },
   cancelBtn: {
     padding: '4px 8px', borderRadius: 6,
@@ -55,22 +134,27 @@ const S = {
   },
 };
 
-export default function PresetManager({ adjustments, channelCurves, effects, onApply }) {
-  const { presets, addPreset, removePreset, renamePreset } = usePresets();
+export default function PresetManager({
+  adjustments, channelCurves, effects,
+  hslAdj, colorGrading, sharpening, noiseReduction,
+  onApply,
+}) {
+  const { presets, addPreset, removePreset, renamePreset, importPresets, exportPresets } = usePresets();
 
-  const [saving, setSaving]         = useState(false);
-  const [newName, setNewName]       = useState('');
-  const [editingId, setEditingId]   = useState(null);
+  const [saving, setSaving]           = useState(false);
+  const [newName, setNewName]         = useState('');
+  const [editingId, setEditingId]     = useState(null);
   const [editingName, setEditingName] = useState('');
-  const [toast, setToast]           = useState('');
+  const [toast, setToast]             = useState('');
+  const [showBuiltin, setShowBuiltin] = useState(false);
 
-  const saveInputRef = useRef(null);
-  const editInputRef = useRef(null);
+  const saveInputRef  = useRef(null);
+  const editInputRef  = useRef(null);
+  const importFileRef = useRef(null);
 
   useEffect(() => { if (saving)    saveInputRef.current?.focus(); }, [saving]);
   useEffect(() => { if (editingId) editInputRef.current?.select(); }, [editingId]);
 
-  // 간단한 인라인 토스트
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(''), 1800);
@@ -80,14 +164,14 @@ export default function PresetManager({ adjustments, channelCurves, effects, onA
   const isFull = presets.length >= MAX_PRESETS;
 
   const handleStartSave = () => {
-    if (isFull) { setToast('프리셋은 최대 5개까지 저장할 수 있습니다.'); return; }
+    if (isFull) { setToast(`프리셋은 최대 ${MAX_PRESETS}개까지 저장할 수 있습니다.`); return; }
     setNewName(`프리셋 ${presets.length + 1}`);
     setSaving(true);
   };
 
   const handleConfirmSave = () => {
     if (!newName.trim()) return;
-    addPreset(newName, adjustments, channelCurves, effects);
+    addPreset(newName, adjustments, channelCurves, effects, hslAdj, colorGrading, sharpening, noiseReduction);
     setSaving(false);
     setNewName('');
     setToast('프리셋이 저장되었습니다.');
@@ -114,29 +198,64 @@ export default function PresetManager({ adjustments, channelCurves, effects, onA
         g:   preset.channelCurves.g.map(p => ({ ...p })),
         b:   preset.channelCurves.b.map(p => ({ ...p })),
       },
-      effects: { ...preset.effects },
+      effects:         { ...preset.effects },
+      hslAdj:         preset.hslAdj        ? JSON.parse(JSON.stringify(preset.hslAdj))        : null,
+      colorGrading:   preset.colorGrading  ? JSON.parse(JSON.stringify(preset.colorGrading))  : null,
+      sharpening:     preset.sharpening    ? { ...preset.sharpening }                         : null,
+      noiseReduction: preset.noiseReduction ? { ...preset.noiseReduction }                    : null,
     });
     setToast(`"${preset.name}" 적용됨`);
+  };
+
+  const handleExport = () => {
+    const json = exportPresets();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'happiness-presets.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setToast('프리셋을 내보냈습니다.');
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const ok = importPresets(ev.target.result);
+      setToast(ok ? '프리셋을 불러왔습니다.' : '파일 형식이 올바르지 않습니다.');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
     <div>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: '#6060a0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          프리셋 ({presets.length}/{MAX_PRESETS})
+          내 프리셋 ({presets.length}/{MAX_PRESETS})
         </span>
-        <button type="button" onClick={handleStartSave} disabled={saving}
-          style={{
-            fontSize: 11, fontWeight: 700,
-            color: isFull ? '#3a3a6e' : COLORS.primary,
-            background: 'none', border: 'none',
-            cursor: isFull ? 'default' : 'pointer', padding: '2px 4px',
-          }}
-        >
-          {isFull ? '최대 5개' : '+ 현재 설정 저장'}
-        </button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {presets.length > 0 && (
+            <button type="button" onClick={handleExport}
+              style={{ fontSize: 10, color: '#5555aa', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+            >내보내기</button>
+          )}
+          <button type="button" onClick={() => importFileRef.current?.click()}
+            style={{ fontSize: 10, color: '#5555aa', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+          >불러오기</button>
+          <button type="button" onClick={handleStartSave} disabled={saving}
+            style={{ fontSize: 11, fontWeight: 700, color: isFull ? '#3a3a6e' : COLORS.primary, background: 'none', border: 'none', cursor: isFull ? 'default' : 'pointer', padding: '2px 4px' }}
+          >
+            {isFull ? `최대 ${MAX_PRESETS}개` : '+ 저장'}
+          </button>
+        </div>
       </div>
+
+      <input ref={importFileRef} type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
 
       {/* 저장 인풋 */}
       {saving && (
@@ -160,16 +279,15 @@ export default function PresetManager({ adjustments, channelCurves, effects, onA
 
       {/* 빈 상태 */}
       {presets.length === 0 && !saving && (
-        <div style={{ fontSize: 11, color: '#3a3a5a', textAlign: 'center', padding: '10px 0 6px' }}>
+        <div style={{ fontSize: 11, color: '#3a3a5a', textAlign: 'center', padding: '8px 0 4px' }}>
           저장된 프리셋이 없습니다
         </div>
       )}
 
-      {/* 프리셋 목록 */}
+      {/* 내 프리셋 목록 */}
       {presets.map((preset, idx) => (
         <div key={preset.id} style={S.row}>
           <span style={S.indexBadge}>{idx + 1}</span>
-
           {editingId === preset.id ? (
             <input
               ref={editInputRef}
@@ -192,26 +310,42 @@ export default function PresetManager({ adjustments, channelCurves, effects, onA
               {preset.name}
             </span>
           )}
-
-          <button
-            type="button"
-            onClick={() => handleApply(preset)}
-            style={S.applyBtn}
+          <button type="button" onClick={() => handleApply(preset)} style={S.applyBtn}
             onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = '#fff'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.primary; }}
-          >
-            적용
-          </button>
-          <button
-            type="button"
-            onClick={() => removePreset(preset.id)}
-            style={S.deleteBtn}
-            title="삭제"
+          >적용</button>
+          <button type="button" onClick={() => removePreset(preset.id)} style={S.deleteBtn} title="삭제"
             onMouseEnter={e => { e.currentTarget.style.color = '#e53e3e'; e.currentTarget.style.borderColor = '#e53e3e'; }}
             onMouseLeave={e => { e.currentTarget.style.color = '#555580'; e.currentTarget.style.borderColor = '#222248'; }}
-          >
-            ×
-          </button>
+          >×</button>
+        </div>
+      ))}
+
+      {presets.length > 0 && (
+        <div style={{ fontSize: 10, color: '#33335a', marginBottom: 8, textAlign: 'center' }}>
+          더블클릭으로 이름 수정
+        </div>
+      )}
+
+      {/* 기본 제공 프리셋 */}
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginTop: 8, marginBottom: 4 }}
+        onClick={() => setShowBuiltin(v => !v)}
+      >
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#404060', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          기본 스타일 프리셋
+        </span>
+        <span style={{ fontSize: 10, color: '#404060' }}>{showBuiltin ? '▲' : '▼'}</span>
+      </div>
+
+      {showBuiltin && BUILTIN_PRESETS.map(preset => (
+        <div key={preset.id} style={S.builtinRow}>
+          <span style={{ fontSize: 10, color: '#303050', flexShrink: 0 }}>✦</span>
+          <span style={S.builtinName}>{preset.name}</span>
+          <button type="button" onClick={() => handleApply(makeBuiltinFull(preset))} style={S.applyBtn}
+            onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.primary; }}
+          >적용</button>
         </div>
       ))}
 
@@ -223,13 +357,6 @@ export default function PresetManager({ adjustments, channelCurves, effects, onA
           color: '#80d080', fontSize: 11, textAlign: 'center',
         }}>
           {toast}
-        </div>
-      )}
-
-      {/* 안내 */}
-      {presets.length > 0 && (
-        <div style={{ fontSize: 10, color: '#33335a', marginTop: 4, textAlign: 'center' }}>
-          더블클릭으로 이름 수정
         </div>
       )}
     </div>
