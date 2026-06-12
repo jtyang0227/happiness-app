@@ -587,10 +587,52 @@ npx expo export --platform web 2>&1 | tail -5   # 에러 없음 확인
 | 이미지 선택 | 파일 업로드 탭 → 이미지 선택 | 캔버스 프리뷰 + 보정 패널 표시 |
 | 노출 슬라이더 | 슬라이더 조작 | 프리뷰 밝기 실시간 변경 |
 | 대비 슬라이더 | 슬라이더 조작 | 프리뷰 대비 실시간 변경 |
+| 화이트 밸런스(A1) | 온도/색조 슬라이더 | 색온도 실시간 변경 |
+| 바이브런스/채도(A2) | 색상 섹션 슬라이더 | 채도 실시간 변경 |
+| HSL 패널(A3) | 색조 선택 섹션 → 색상별 슬라이더 | 특정 색상 범위만 선택적 변경 |
+| 색 보정(B1) | 색 보정 섹션 → 존별 색조/채도 | 섀도/미드/하이라이트 색 오버레이 |
+| 선명도(C1) | 선명도 섹션 슬라이더 | 엣지 선명도 변경 |
+| 노이즈 제거(C2) | 노이즈 제거 섹션 | 노이즈 감소 |
+| 전/후 비교(D1) | "◧ 전/후 비교" 버튼 → 드래그 | 분리선 이동으로 원본/보정 비교 |
+| 클리핑 경고(D2) | "◈ 클리핑 확인" 버튼 | 과노출=빨강, 언더=파랑 오버레이 |
+| 프리셋 저장(D3) | 프리셋 섹션 → "+ 저장" | 최대 20개 저장, 더블클릭 이름 수정 |
+| 프리셋 내보내기 | 내보내기 버튼 | happiness-presets.json 다운로드 |
+| 프리셋 불러오기 | 불러오기 → JSON 선택 | 기존 프리셋에 병합 |
+| 내장 스타일 | 기본 스타일 프리셋 펼치기 | 8종 원클릭 적용 |
 | 곡선 — 제어점 추가 | 캔버스 클릭 | 새 제어점 추가됨 |
 | 곡선 — 제어점 이동 | 제어점 드래그 | 커브 모양 변경됨 |
-| 초기화 버튼 | 보정 후 초기화 클릭 | 모든 값 기본값으로 리셋 |
+| 전체 초기화 | 보정 후 "전체 초기화" 클릭 | 모든 값 기본값으로 리셋 |
 | 등록하기 | 보정 후 폼 제출 | 보정된 이미지로 업로드 성공 |
+
+#### 보정 엔진 아키텍처 (useImageAdjustments.js)
+
+```
+파이프라인 순서 (applyEffects):
+  1. buildChannelLUTs  — exposure/contrast/whites/blacks/shadows/highlights + 온도/색조(A1)
+  2. renderWithChannelLUTs — LUT 적용 (픽셀 루프)
+  3. applyVibranceSaturation — 바이브런스/채도(A2), 픽셀별 HSL 변환
+  4. applyHSLAdjustments — HSL 패널(A3), 8색상 가우시안-코사인 가중치
+  5. applyColorGrading — 색 보정(B1), 존별 HSV 컬러 오버레이
+  6. applySharpening — 선명도(C1), 언샵마스크 + 엣지 마스킹
+  7. applyNoiseReduction — 노이즈 제거(C2), 크로마 블러 + 루마 블러
+  8. applyUnsharpMask(texture/clarity) + applyDehaze + applyVignette + applyGrain
+```
+
+새 exports:
+- `DEFAULT_HSL_ADJUSTMENTS` — 8색상 { hue, saturation, luminance }
+- `DEFAULT_COLOR_GRADING` — shadows/midtones/highlights { hue, saturation } + blending
+- `DEFAULT_SHARPENING` — { amount, radius, detail }
+- `DEFAULT_NOISE_REDUCTION` — { luminance, color }
+- `applyHSLAdjustments(canvas, hslAdj)`
+- `applyColorGrading(canvas, colorGrading)`
+- `applySharpening(canvas, sharpening)`
+- `applyNoiseReduction(canvas, noiseReduction)`
+- `renderClippingOverlay(overlayCanvas, processedCanvas, threshold)` — 클리핑 경고 오버레이
+- `DEFAULT_EFFECTS` — vibrance, saturation 추가됨
+- `DEFAULT_ADJUSTMENTS` — temperature, tint 추가됨
+
+ImageAdjustmentPanel: 모든 섹션을 아코디언으로, 변경 있을 때 ● 뱃지 표시
+PresetManager: MAX 5→20, 내보내기/불러오기(JSON), 내장 스타일 8종 (Fuji Velvia, Kodak Portra, Matte Fade, B&W Dramatic, Golden Hour, Cool Cinematic, Pastel Dream, Vibrant Pop)
 
 ### Java 25 연결 확인
 
