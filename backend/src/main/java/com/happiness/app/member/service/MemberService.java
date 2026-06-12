@@ -6,12 +6,15 @@ import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
-import com.happiness.app.photo.repository.PhotoRepository;
+import com.happiness.app.photo.repository.*;
+import com.happiness.app.series.repository.SeriesPhotoRepository;
+import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -23,6 +26,12 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final PhotoRepository photoRepository;
+    private final PhotoLikeRepository photoLikeRepository;
+    private final PhotoSaveRepository photoSaveRepository;
+    private final PhotoShareRepository photoShareRepository;
+    private final PhotoTagRepository photoTagRepository;
+    private final SeriesPhotoRepository seriesPhotoRepository;
+    private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
 
     // RFC 5322 간략화 이메일 정규식
@@ -124,8 +133,38 @@ public class MemberService {
         if (request.getWebsiteUrl() != null)  member.setWebsiteUrl(request.getWebsiteUrl().isBlank() ? null : request.getWebsiteUrl().trim());
         if (request.getLocation() != null)    member.setLocation(request.getLocation().isBlank() ? null : request.getLocation().trim());
         if (request.getSpecialties() != null) member.setSpecialties(request.getSpecialties().isBlank() ? null : request.getSpecialties().trim());
+        if (request.getPublicProfile() != null)       member.setPublicProfile(request.getPublicProfile());
+        if (request.getEmailNotifications() != null)  member.setEmailNotifications(request.getEmailNotifications());
 
         return MemberResponse.fromEntity(memberRepository.save(member));
+    }
+
+    public void deleteAccount(Long memberId) {
+        // 1. 멤버 소유 사진 ID 목록 조회
+        List<Long> photoIds = photoRepository.findIdsByMemberId(memberId);
+
+        // 2. 멤버 사진에 달린 모든 상호작용 삭제 (다른 유저의 좋아요/저장 포함)
+        for (Long photoId : photoIds) {
+            photoLikeRepository.deleteByPhotoId(photoId);
+            photoSaveRepository.deleteByPhotoId(photoId);
+            photoShareRepository.deleteByPhotoId(photoId);
+            photoTagRepository.deleteByPhotoId(photoId);
+            seriesPhotoRepository.deleteByPhotoId(photoId);
+        }
+
+        // 3. 멤버가 다른 사진에 남긴 좋아요/저장 삭제
+        photoLikeRepository.deleteByMemberId(memberId);
+        photoSaveRepository.deleteByMemberId(memberId);
+
+        // 4. 멤버의 시리즈 삭제
+        seriesRepository.findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(memberId)
+                .forEach(s -> seriesPhotoRepository.deleteBySeriesId(s.getId()));
+        seriesRepository.deleteByMemberId(memberId);
+
+        // 5. 사진, 수신 문의, 멤버 삭제
+        photoRepository.deleteByMemberId(memberId);
+        inquiryRepository.deleteByReceiverMemberId(memberId);
+        memberRepository.deleteById(memberId);
     }
 
     public void changePassword(Long memberId, String currentPassword, String newPassword) {

@@ -99,6 +99,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
+    @DeleteMapping("/member/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(@PathVariable Long id) {
+        memberService.deleteAccount(id);
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
     @PostMapping("/oauth/kakao")
     public ResponseEntity<ApiResponse<MemberResponse>> kakaoLogin(
             @RequestBody Map<String, String> body) {

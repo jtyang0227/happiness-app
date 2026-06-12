@@ -17,4 +17,7 @@ public interface PhotoSaveRepository extends JpaRepository<PhotoSave, Long> {
 
     @Transactional
     void deleteByPhotoId(Long photoId);
+
+    @Transactional
+    void deleteByMemberId(Long memberId);
 }

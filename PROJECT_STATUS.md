@@ -1,8 +1,8 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
-> 최종 업데이트: 2026-06-11  
-> 전체 완성도: **Backend 98% / Frontend 95% / Mobile 20%**
-> Phase 2-8 완료: 4탭 마이페이지, 아바타/커버 업로드, 통계 6종, 비밀번호 변경, 저장함/시리즈 탭
+> 최종 업데이트: 2026-06-12  
+> 전체 완성도: **Backend 99% / Frontend 97% / Mobile 20%**
+> Phase 2-8 전체 완료: 탭 구조·토글·계정 연결·계정 삭제·내 작품 정렬/뷰 전환
 
 ---
 
@@ -108,6 +108,7 @@
 | PUT | `/member/:id/profile` | 프로필 수정 (bio/websiteUrl/location/specialties/avatarUrl/coverUrl 포함) | ✅ |
 | GET | `/member/:id/stats` | 통계 6종 조회 | ✅ |
 | PUT | `/member/:id/password` | 비밀번호 변경 (현재 비밀번호 검증) | ✅ |
+| DELETE | `/member/:id` | 계정 삭제 (사진/시리즈/문의 cascade) | ✅ |
 
 ##### 사진 (`/api/photos`)
 | 메서드 | 경로 | 설명 | 인증 |
@@ -513,28 +514,24 @@ POST /api/auth/member/:id/password
 ```
 - 카카오 OAuth 로그인 유저는 해당 섹션 숨김 (`user.provider === 'kakao'`)
 
-#### ④ 탭 구조 전환
+#### ④ 탭 구조 전환 ✅
 
-```
-[내 작품] [저장함] [시리즈] [설정]
-```
+| 탭 | 상태 | 구현 내용 |
+|----|------|----------|
+| 내 작품 | ✅ | 정렬 4종 칩(최신/오래된/좋아요/저장), 그리드/리스트 뷰 토글, 9개씩 더 보기 |
+| 저장함 | ✅ | `photoApi.getSaved(userId)` 연결, 그리드 표시 |
+| 시리즈 | ✅ | `seriesApi.getByMember(userId)` 연결, 2열 카드 표시 |
+| 설정 | ✅ | 기본정보·계정설정·계정연결·비밀번호변경·계정삭제 섹션 분리 |
 
-| 탭 | 현재 | 변경 |
-|----|------|------|
-| 내 작품 | 9개 썸네일 고정 | 페이지네이션, 정렬, 그리드/리스트 뷰 |
-| 저장함 | ❌ 없음 | photoApi.getSaved(userId) 연결 |
-| 시리즈 | ❌ 없음 | seriesApi.getByMember(userId) 연결 |
-| 설정 | 편집 폼만 | 아래 설정 항목 분리 |
+#### ⑤ 설정 탭 ✅
 
-#### ⑤ 설정 탭
-
-| 항목 | 설명 |
-|------|------|
-| 포트폴리오 공개 여부 | 공개 / 비공개 토글 (`member.isPublic`) |
-| 이메일 알림 | 새 문의 알림 수신 여부 |
-| 비밀번호 변경 | 현재 비밀번호 확인 후 변경 |
-| 계정 연결 | 카카오 연결 상태 표시 |
-| 계정 삭제 | 2단계 확인(이메일 재입력) 후 탈퇴 |
+| 항목 | 상태 | 구현 내용 |
+|------|------|----------|
+| 포트폴리오 공개 여부 | ✅ | ON/OFF 슬라이딩 토글, `member.publicProfile` 즉시 저장 |
+| 이메일 알림 | ✅ | ON/OFF 슬라이딩 토글, `member.emailNotifications` 즉시 저장 |
+| 비밀번호 변경 | ✅ | 현재 비밀번호 확인 후 변경, 카카오 유저 숨김 |
+| 계정 연결 | ✅ | 카카오 연결 상태 표시 (이메일/카카오 구분) |
+| 계정 삭제 | ✅ | 2단계 확인(이메일 재입력 일치 시 활성화) + cascade 삭제 |
 
 #### ⑥ 통계 강화
 
@@ -565,19 +562,23 @@ GET /api/auth/member/:id/stats
 | `MemberResponse.java` | 신규 필드 + `provider` 포함 |
 | `PasswordChangeRequest.java` | 신규 DTO (currentPassword, newPassword) |
 | `MemberStatsResponse.java` | 신규 DTO (photoCount, totalLikes, totalSaves, totalShares, inquiryCount, unreadInquiryCount) |
-| `PhotoRepository.java` | `countByMemberId()`, `sumLikesCountByMemberId()`, `sumSavesCountByMemberId()`, `sumSharesCountByMemberId()` 추가 |
+| `PhotoRepository.java` | `countByMemberId()`, `sumLikes/Saves/SharesCountByMemberId()`, `findIdsByMemberId()` 추가 |
+| `PhotoLikeRepository.java` | `deleteByMemberId()` 추가 (계정 탈퇴 cascade) |
+| `PhotoSaveRepository.java` | `deleteByMemberId()` 추가 |
 | `InquiryRepository.java` | `countByReceiverMemberId()` 추가 |
-| `api.js` | `authApi.getStats(id)`, `authApi.changePassword(id, data)` 추가 |
+| `api.js` | `authApi.getStats(id)`, `authApi.changePassword(id, data)`, `authApi.deleteAccount(id)` 추가 |
 
 ### 운영 DB 마이그레이션 (신규 배포 시)
 
 ```sql
-ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url   VARCHAR(500);
-ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_url    VARCHAR(500);
-ALTER TABLE members ADD COLUMN IF NOT EXISTS bio          TEXT;
-ALTER TABLE members ADD COLUMN IF NOT EXISTS website_url  VARCHAR(300);
-ALTER TABLE members ADD COLUMN IF NOT EXISTS location     VARCHAR(100);
-ALTER TABLE members ADD COLUMN IF NOT EXISTS specialties  VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url          VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_url           VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS bio                 TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS website_url         VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS location            VARCHAR(100);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS specialties         VARCHAR(300);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS public_profile      BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN NOT NULL DEFAULT TRUE;
 ```
 
 ---

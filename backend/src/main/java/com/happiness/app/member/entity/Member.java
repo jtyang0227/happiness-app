@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
+import lombok.Builder.Default;
 import java.time.LocalDateTime;
 
 @Entity
@@ -71,6 +72,16 @@ public class Member {
     /** 촬영 전문 분야 — 콤마 구분 문자열 (예: "결혼식,인물,풍경") */
     @Column(nullable = true, length = 300)
     private String specialties;
+
+    /** 포트폴리오 공개 여부 (기본값: 공개) */
+    @Default
+    @Column(nullable = false)
+    private boolean publicProfile = true;
+
+    /** 새 문의 이메일 알림 수신 여부 (기본값: 수신) */
+    @Default
+    @Column(nullable = false)
+    private boolean emailNotifications = true;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

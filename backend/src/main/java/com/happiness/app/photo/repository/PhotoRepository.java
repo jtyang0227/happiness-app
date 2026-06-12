@@ -92,5 +92,8 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     @Query("SELECT COALESCE(SUM(p.sharesCount), 0) FROM Photo p WHERE p.memberId = :memberId")
     long sumSharesCountByMemberId(@Param("memberId") Long memberId);
 
+    @Query("SELECT p.id FROM Photo p WHERE p.memberId = :memberId")
+    List<Long> findIdsByMemberId(@Param("memberId") Long memberId);
+
     void deleteByMemberId(Long memberId);
 }

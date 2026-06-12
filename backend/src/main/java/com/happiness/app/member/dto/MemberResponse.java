@@ -28,6 +28,8 @@ public class MemberResponse {
     private String location;
     private String specialties;
     private String provider;
+    private boolean publicProfile;
+    private boolean emailNotifications;
     private MemberStatus status;
     private Authority authority;
     private LocalDateTime createdAt;
@@ -48,6 +50,8 @@ public class MemberResponse {
                 .location(member.getLocation())
                 .specialties(member.getSpecialties())
                 .provider(member.getProvider())
+                .publicProfile(member.isPublicProfile())
+                .emailNotifications(member.isEmailNotifications())
                 .status(member.getStatus())
                 .authority(member.getAuthority())
                 .createdAt(member.getCreatedAt())

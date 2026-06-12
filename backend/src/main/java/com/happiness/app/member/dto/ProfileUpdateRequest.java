@@ -19,4 +19,6 @@ public class ProfileUpdateRequest {
     private String location;
     /** 촬영 전문 분야 — 콤마 구분 (예: "결혼식,인물,풍경") */
     private String specialties;
+    private Boolean publicProfile;
+    private Boolean emailNotifications;
 }
