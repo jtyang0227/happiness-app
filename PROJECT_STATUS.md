@@ -1,8 +1,9 @@
 # Happiness App — 프로젝트 현황 & 기능 로드맵
 
 > 최종 업데이트: 2026-06-12  
-> 전체 완성도: **Backend 100% / Frontend 99% / Mobile 20%**
-> Phase 3 완료: 팔로우·피드·댓글+대댓글·EXIF·AI자동태그, 계정 삭제 cascade
+> 전체 완성도: **Backend 100% / Frontend 99% / Mobile 90%**
+> Phase 3 완료: 팔로우·피드·댓글+대댓글·EXIF·AI자동태그, 계정 삭제 cascade  
+> Mobile Phase 완료: 탐색/피드/댓글/시리즈/이미지업로드/프로필 강화 + 앱 심사 준수
 
 ---
 
@@ -20,6 +21,8 @@
 | **Phase 2-7 — 검색 고도화** | ✅ 완료 | pg_trgm 유사도 검색, 자동완성, 히스토리, 하이라이팅, 태그 검색 |
 | **Phase 2-8 — 마이페이지 강화** | ✅ 완료 | 4탭 구조, 아바타/커버 업로드, 통계 6종, 비밀번호 변경, 저장함/시리즈 |
 | **Phase 3 — 커뮤니티** | ✅ 완료 | 팔로우/피드/댓글+대댓글/EXIF/AI자동태그 |
+| **Phase M1 — 모바일 전체 구현** | ✅ 완료 | BottomTab/탐색/피드/댓글/시리즈/이미지업로드/프로필 |
+| **Phase M2 — 앱 심사 준수** | ✅ 완료 | 개인정보처리방침/이용약관/LegalScreen/SDK34 |
 
 ### 주요 완성 기능 (2026-06-11 기준)
 
@@ -45,6 +48,14 @@
 ✅ EXIF 메타데이터 (카메라/렌즈/조리개/셔터/ISO/초점거리)
 ✅ AI 자동 태그 추천 (키워드 추출 + 색상 무드 매핑)
 ✅ Rate Limiting, JWT 보안, Supabase Storage 연동
+✅ [모바일] BottomTabNavigator 5탭 (탐색/갤러리/등록/피드/프로필)
+✅ [모바일] 탐색 — 실제 API + 검색 + 무드 필터 + 2컬럼 그리드
+✅ [모바일] 피드 — 팔로우 피드 무한스크롤
+✅ [모바일] 사진 상세 — 댓글/대댓글 + 좋아요/저장
+✅ [모바일] 사진 등록 — expo-image-picker 갤러리/카메라 + 파일 업로드
+✅ [모바일] 프로필 — 아바타 업로드 + bio/location/specialties + 통계
+✅ [모바일] 시리즈 목록 — 펼치기/접기 + 인라인 사진 그리드
+✅ [모바일] 앱 심사 — 개인정보처리방침/이용약관 LegalScreen + SDK34
 ```
 
 ---
@@ -255,16 +266,126 @@ MAIL_FROM=your-gmail@gmail.com
 
 ### Mobile (React Native 0.72 + Expo 49)
 
-| 화면 | 상태 |
-|------|------|
-| Login / SignUp | ✅ |
-| Gallery | ✅ |
-| Explore | ⚠️ 목 데이터 |
-| List | ✅ |
-| PhotoDetail | ✅ |
-| PhotoForm | ✅ (보정 패널 일부) |
-| Profile | ⚠️ 기본 |
-| Series | ❌ 미구현 |
+#### 화면 구현 현황
+
+| 화면 | 상태 | 주요 기능 |
+|------|------|---------|
+| LoginScreen | ✅ 완성 | navigation 기반, 카카오 버튼, 개인정보·약관 링크 |
+| SignUpScreen | ✅ 완성 | 필드 검증, termsAgreed 체크박스, 약관/개인정보 링크 탭 이동 |
+| ExploreScreen | ✅ 완성 | 실제 API 연동, 검색바, 무드 필터 칩, 2컬럼 그리드, pull-to-refresh |
+| GalleryScreen | ✅ 완성 | 멤버별 사진 목록 |
+| PhotoDetailScreen | ✅ 완성 | likePhoto/savePhoto API 수정, EXIF 표시, 태그, 댓글+대댓글 |
+| PhotoFormScreen | ✅ 완성 | expo-image-picker 갤러리/카메라, 파일 업로드, 무드 선택 |
+| ProfileScreen | ✅ 완성 | 아바타 업로드, bio/location/specialties, 통계 4종, 법적 고지 링크 |
+| SeriesScreen | ✅ 완성 (NEW) | 시리즈 목록, 펼치기/접기, 인라인 사진 그리드 |
+| FeedScreen | ✅ 완성 (NEW) | 팔로우 피드, 무한스크롤, 빈 피드 안내, pull-to-refresh |
+| LegalScreen | ✅ 완성 (NEW) | 개인정보처리방침·이용약관 탭 전환, 한국어 전문, 확인 버튼 |
+
+#### 네비게이션
+
+```
+Root Stack
+ ├── [미인증] AuthStack
+ │    ├── Login → SignUp (navigation.navigate)
+ │    └── Legal (개인정보/약관 전용, 헤더 표시)
+ └── [인증] MainStack
+      ├── Main (BottomTabNavigator)
+      │    ├── 탐색 (🔍) — ExploreScreen
+      │    ├── 갤러리 (🖼️) — GalleryScreen
+      │    ├── 등록 (＋, 원형) — PhotoFormScreen
+      │    ├── 피드 (📰) — FeedScreen
+      │    └── 프로필 (👤) — ProfileScreen
+      ├── PhotoDetail (headerShown: false)
+      ├── PhotoForm (수정 모드)
+      ├── Series
+      └── Legal
+```
+
+#### API 레이어 (`src/api/`)
+
+| 파일 | 주요 메서드 |
+|------|------------|
+| `photoApi.js` | getAll(params) / search / getByMember / getFeed / uploadFile / likePhoto / savePhoto |
+| `followApi.js` (NEW) | follow / unfollow / isFollowing / getCount / getFollowers / getFollowing |
+| `commentApi.js` (NEW) | getComments / addComment / deleteComment |
+| `seriesApi.js` (NEW) | getByMember / getOne / create / update / remove / addPhoto / removePhoto |
+| `services/api.js` | 위 4개 모두 re-export |
+
+#### 주요 의존성
+
+```json
+"expo": "~49.0.14",
+"expo-image-picker": "~14.3.2",
+"expo-file-system": "~15.4.5",
+"@react-navigation/bottom-tabs": "^6.5.20",
+"react-dom": "18.2.0",
+"react-native-web": "~0.19.6"
+```
+
+#### 앱 심사 준수 현황
+
+| 항목 | iOS | Android |
+|------|-----|---------|
+| 번들/패키지 ID | ✅ `com.happiness.gallery` | ✅ `com.happiness.gallery` |
+| 개인정보처리방침 앱 내 접근 | ✅ LegalScreen + 3화면 링크 | ✅ 동일 |
+| 이용약관 동의 절차 | ✅ SignUpScreen 체크박스 | ✅ 동일 |
+| 카메라 권한 설명 | ✅ NSCameraUsageDescription | ✅ CAMERA 권한 |
+| 사진 라이브러리 권한 | ✅ NSPhotoLibraryUsageDescription | ✅ READ/WRITE_EXTERNAL_STORAGE |
+| 타겟 API 레벨 | — | ✅ targetSdkVersion 34 |
+| 앱 아이콘/스플래시 | ⚠️ placeholder (교체 필요) | ⚠️ placeholder (교체 필요) |
+| App Privacy / 콘텐츠 등급 | ⚠️ Store Connect 수동 작성 | ⚠️ Play Console 수동 작성 |
+
+#### 미완 항목 (수동 처리 필요)
+
+- `assets/icon.png` → 1024×1024px 실제 아이콘으로 교체
+- `assets/splash.png` → 실제 스플래시 이미지로 교체
+- App Store Connect: App Privacy 섹션, 연령 등급 "4+", 스크린샷
+- Google Play Console: 데이터 안전 섹션, 콘텐츠 등급 설문
+
+---
+
+## ✅ Phase M1 — 모바일 전체 구현 (완료: 2026-06-12)
+
+### 구현 내용
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `package.json` | expo-image-picker / expo-file-system / @react-navigation/bottom-tabs / react-dom / react-native-web 추가 |
+| `app.json` | iOS bundleIdentifier+권한 3종 / Android package+versionCode+SDK34 / web bundler:metro |
+| `src/navigation/AppNavigator.js` | BottomTabNavigator 5탭(탐색/갤러리/등록원형/피드/프로필) + SafeArea 대응 |
+| `screens/ExploreScreen.js` | mock 제거 → 실제 API + 검색 + 무드필터 + 2컬럼 그리드 |
+| `screens/PhotoDetailScreen.js` | API 버그(like→likePhoto) 수정 + 댓글/대댓글 전체 구현 |
+| `screens/PhotoFormScreen.js` | expo-image-picker 갤러리/카메라 + 파일 업로드 + 무드 선택 |
+| `screens/ProfileScreen.js` | 아바타 업로드 + bio/location/specialties + 통계 4종 |
+| `screens/FeedScreen.js` (NEW) | 팔로우 피드 + 무한스크롤 + 빈 피드 안내 |
+| `screens/SeriesScreen.js` (NEW) | 시리즈 목록 + 펼치기 + 인라인 사진 그리드 |
+| `src/api/followApi.js` (NEW) | follow/unfollow/check/count/list |
+| `src/api/commentApi.js` (NEW) | getComments/addComment/deleteComment |
+| `src/api/seriesApi.js` (NEW) | getByMember/getOne/CRUD |
+| `src/api/photoApi.js` | getFeed/search/getByMember/uploadFile 경로 수정 |
+| `services/api.js` | 4개 API 모두 re-export |
+
+### 빌드 검증
+
+```bash
+cd mobile && npx expo export --platform web
+→ "Finished saving JS Bundles" 확인 ✅
+```
+
+---
+
+## ✅ Phase M2 — 앱 심사 준수 (완료: 2026-06-12)
+
+### 구현 내용
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `screens/LegalScreen.js` (NEW) | 개인정보처리방침·이용약관 탭 전환 UI, 한국어 전문 7개 섹션 |
+| `screens/LoginScreen.js` | navigation.navigate 기반 전환 + 하단 법적 링크 2개 |
+| `screens/SignUpScreen.js` | navigation 기반 전환 + 체크박스 약관 텍스트 tappable 링크 |
+| `screens/ProfileScreen.js` | 법적 고지 섹션 (개인정보·이용약관·앱 버전) |
+| `src/navigation/AppNavigator.js` | LegalScreen AuthStack/MainStack 양쪽 등록 |
+| `app.json` | compileSdkVersion: 34, targetSdkVersion: 34 추가 |
 
 ---
 
