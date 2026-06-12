@@ -1,22 +1,48 @@
 {
   "expo": {
-    "name": "Happiness Mobile App",
-    "slug": "happiness-app",
+    "name": "Happiness",
+    "slug": "happiness-gallery",
     "version": "1.0.0",
     "orientation": "portrait",
+    "privacy": "public",
     "sdkVersion": "49.0.0",
-    "platforms": ["ios", "android"],
+    "platforms": ["ios", "android", "web"],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a18"
+    },
     "updates": {
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.happiness.gallery",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "프로필 사진 선택 및 사진 등록을 위해 사진 라이브러리에 접근합니다.",
+        "NSCameraUsageDescription": "사진 촬영을 위해 카메라에 접근합니다.",
+        "NSPhotoLibraryAddUsageDescription": "편집한 사진을 사진 라이브러리에 저장합니다."
+      }
     },
     "android": {
+      "package": "com.happiness.gallery",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a18"
+      },
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     }
   }
 }

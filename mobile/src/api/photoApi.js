@@ -1,14 +1,17 @@
 import apiClient from './apiClient';
 
 export const photoApi = {
-  getAll:    ()          => apiClient.get('/photos').then(r => r.data),
-  getOne:    (id)        => apiClient.get(`/photos/${id}`).then(r => r.data),
-  create:    (data)      => apiClient.post('/photos', data).then(r => r.data),
-  update:    (id, data)  => apiClient.put(`/photos/${id}`, data).then(r => r.data),
-  remove:    (id)        => apiClient.delete(`/photos/${id}`).then(r => r.data),
+  getAll:      (params = {}) => apiClient.get('/photos', { params }).then(r => r.data),
+  getOne:      (id)          => apiClient.get(`/photos/${id}`).then(r => r.data),
+  getByMember: (memberId, params = {}) =>
+    apiClient.get('/photos', { params: { memberId, ...params } }).then(r => r.data),
+  search:      (params = {}) => apiClient.get('/photos', { params }).then(r => r.data),
+  create:      (data)        => apiClient.post('/photos', data).then(r => r.data),
+  update:      (id, data)    => apiClient.put(`/photos/${id}`, data).then(r => r.data),
+  remove:      (id)          => apiClient.delete(`/photos/${id}`).then(r => r.data),
 
   uploadFile: (formData) =>
-    apiClient.post('/photos/upload', formData, {
+    apiClient.post('/upload/image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data),
 
@@ -17,4 +20,10 @@ export const photoApi = {
   savePhoto:   (id, memberId) => apiClient.post(`/photos/${id}/saves`, null, { params: { memberId } }).then(r => r.data),
   unsavePhoto: (id, memberId) => apiClient.delete(`/photos/${id}/saves`, { params: { memberId } }).then(r => r.data),
   getSaved:    (memberId)     => apiClient.get(`/photos/saves/${memberId}`).then(r => r.data),
+
+  getFeed:     (memberId, page = 0, size = 20) =>
+    apiClient.get('/feed', { params: { memberId, page, size } }).then(r => r.data),
+
+  getPortfolio: (profileName) =>
+    apiClient.get(`/portfolio/${profileName}`).then(r => r.data),
 };
