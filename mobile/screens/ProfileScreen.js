@@ -12,7 +12,7 @@ import { FONT, RADIUS, SPACING } from '../constants/layout';
 const PROFILE_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$/;
 const SPECIALTIES_OPTIONS = ['웨딩', '포트레이트', '풍경', '제품', '음식', '건축', '스트릿', '패션', '스포츠', '반려동물'];
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen({ navigation = {} }) {
   const { user, updateProfile, logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -301,6 +301,24 @@ export default function ProfileScreen({ navigation }) {
         )}
       </View>
 
+      {/* 법적 고지 */}
+      <View style={styles.legalSection}>
+        <Text style={styles.legalTitle}>법적 고지</Text>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Legal', { tab: 'privacy' })}>
+          <Text style={styles.legalItemText}>개인정보처리방침</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Legal', { tab: 'terms' })}>
+          <Text style={styles.legalItemText}>이용약관</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.appVersionRow}>
+          <Text style={styles.appVersion}>Happiness v1.0.0</Text>
+        </View>
+      </View>
+
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>로그아웃</Text>
       </TouchableOpacity>
@@ -409,6 +427,19 @@ const styles = StyleSheet.create({
   btnSave:   { backgroundColor: COLORS.primary },
   btnCancel: { backgroundColor: COLORS.cancel },
   btnText:   { color: '#fff', fontWeight: '700' },
+
+  legalSection: { backgroundColor: COLORS.white, borderRadius: RADIUS.card,
+    marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  legalTitle: { color: COLORS.textMuted, fontSize: FONT.xs, fontWeight: '700',
+    paddingHorizontal: SPACING.md, paddingTop: 12, paddingBottom: 4, letterSpacing: 0.5 },
+  legalItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.md, paddingVertical: 14,
+    borderTopWidth: 1, borderTopColor: COLORS.border },
+  legalItemText: { color: COLORS.textPrimary, fontSize: FONT.base },
+  legalChevron: { color: COLORS.textHint, fontSize: 18 },
+  appVersionRow: { paddingHorizontal: SPACING.md, paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: COLORS.border },
+  appVersion: { color: COLORS.textHint, fontSize: FONT.xs, textAlign: 'center' },
 
   logoutBtn: { backgroundColor: '#fff', borderRadius: RADIUS.md, paddingVertical: 14,
     alignItems: 'center', borderWidth: 1, borderColor: '#ff3b30' },

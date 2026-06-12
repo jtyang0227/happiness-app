@@ -18,6 +18,7 @@ import FeedScreen        from '../../screens/FeedScreen';
 import ProfileScreen     from '../../screens/ProfileScreen';
 import PhotoDetailScreen from '../../screens/PhotoDetailScreen';
 import SeriesScreen      from '../../screens/SeriesScreen';
+import LegalScreen       from '../../screens/LegalScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -116,6 +117,9 @@ function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login"  component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
+      <Stack.Screen name="Legal"  component={LegalScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#1a1a2e', title: '법적 고지' }} />
     </Stack.Navigator>
   );
 }
@@ -132,6 +136,9 @@ function MainStack() {
       <Stack.Screen name="Series"      component={SeriesScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#0a0a18' },
           headerTintColor: '#fff', title: '시리즈' }} />
+      <Stack.Screen name="Legal"       component={LegalScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#1a1a2e', title: '법적 고지' }} />
     </Stack.Navigator>
   );
 }

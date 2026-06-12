@@ -21,23 +21,19 @@ function validate(form) {
                                   return '프로필 이름은 소문자·숫자·하이픈(3-30자)만 가능합니다.';
   if (form.instagramId && !INSTAGRAM_REGEX.test(form.instagramId.replace(/^@/, '')))
                                   return '인스타그램 아이디 형식이 올바르지 않습니다.';
-  if (!form.termsAgreed)          return '이용약관에 동의해야 합니다.';
+  if (!form.termsAgreed)          return '이용약관 및 개인정보처리방침에 동의해야 합니다.';
   return null;
 }
 
-export default function SignUpScreen({ onGoLogin }) {
+export default function SignUpScreen({ navigation }) {
   const { signup } = useAuth();
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
     tel: '', profileName: '', instagramId: '', termsAgreed: false,
   });
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  const set = (key, val) => {
-    setForm(f => ({ ...f, [key]: val }));
-    setErrors(e => ({ ...e, [key]: null }));
-  };
+  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const handleSignUp = async () => {
     const msg = validate(form);
@@ -45,13 +41,13 @@ export default function SignUpScreen({ onGoLogin }) {
     setLoading(true);
     try {
       await signup({
-        name:        form.name.trim(),
-        email:       form.email.trim().toLowerCase(),
-        password:    form.password,
-        tel:         form.tel.trim(),
-        profileName: form.profileName.trim().toLowerCase() || undefined,
-        instagramId: form.instagramId.replace(/^@/, '') || undefined,
-        termsAgreed: true,
+        name:          form.name.trim(),
+        email:         form.email.trim().toLowerCase(),
+        password:      form.password,
+        tel:           form.tel.trim(),
+        profileName:   form.profileName.trim().toLowerCase() || undefined,
+        instagramId:   form.instagramId.replace(/^@/, '') || undefined,
+        termsAgreed:   true,
         privacyAgreed: true,
       });
     } catch (err) {
@@ -73,10 +69,9 @@ export default function SignUpScreen({ onGoLogin }) {
         </View>
 
         <Text style={styles.title}>새 계정 만들기</Text>
-        <Text style={styles.subtitle}>당신의 포트폴리오 우주를 시작하세요</Text>
+        <Text style={styles.subtitle}>당신의 포트폴리오를 세상에 선보이세요</Text>
 
         <View style={styles.card}>
-
           {/* 필수 정보 */}
           <Text style={styles.sectionLabel}>기본 정보</Text>
 
@@ -121,7 +116,7 @@ export default function SignUpScreen({ onGoLogin }) {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <Text style={styles.domainSuffix}>.cosmos.app</Text>
+              <Text style={styles.domainSuffix}>.happiness.app</Text>
             </View>
           </View>
 
@@ -149,7 +144,17 @@ export default function SignUpScreen({ onGoLogin }) {
             <View style={[styles.checkbox, form.termsAgreed && styles.checkboxChecked]}>
               {form.termsAgreed && <Text style={styles.checkmark}>✓</Text>}
             </View>
-            <Text style={styles.checkLabel}>이용약관 및 개인정보처리방침에 동의합니다 *</Text>
+            <Text style={styles.checkLabel}>
+              {'(필수) '}
+              <Text style={styles.checkLinkText} onPress={() => navigation.navigate('Legal', { tab: 'terms' })}>
+                이용약관
+              </Text>
+              {' 및 '}
+              <Text style={styles.checkLinkText} onPress={() => navigation.navigate('Legal', { tab: 'privacy' })}>
+                개인정보처리방침
+              </Text>
+              {'에 동의합니다.'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.btnPrimary} onPress={handleSignUp} disabled={loading}>
@@ -159,7 +164,7 @@ export default function SignUpScreen({ onGoLogin }) {
             }
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginLink} onPress={onGoLogin}>
+          <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.loginLinkText}>
               이미 계정이 있으신가요? <Text style={styles.loginLinkBold}>로그인</Text>
             </Text>
@@ -211,12 +216,14 @@ const styles = StyleSheet.create({
   atPrefix:        { backgroundColor: '#0f0f1e', borderWidth: 1, borderColor: '#374151',
                      borderTopLeftRadius: 12, borderBottomLeftRadius: 12, borderRightWidth: 0,
                      paddingHorizontal: 12, paddingVertical: 11, color: '#a78bfa', fontWeight: '700' },
-  checkRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 8 },
+  checkRow:    { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20, marginTop: 8 },
   checkbox:    { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: '#374151',
-                 marginRight: 10, alignItems: 'center', justifyContent: 'center' },
+                 marginRight: 10, marginTop: 1, alignItems: 'center', justifyContent: 'center',
+                 flexShrink: 0 },
   checkboxChecked: { backgroundColor: '#5b6ef5', borderColor: '#5b6ef5' },
   checkmark:   { color: '#fff', fontSize: 12, fontWeight: '700' },
-  checkLabel:  { color: '#9ca3af', fontSize: 12, flex: 1 },
+  checkLabel:  { color: '#9ca3af', fontSize: 12, flex: 1, lineHeight: 20 },
+  checkLinkText: { color: '#a78bfa', textDecorationLine: 'underline' },
   btnPrimary:  { backgroundColor: '#5b6ef5', borderRadius: 12, paddingVertical: 14,
                  alignItems: 'center', marginBottom: 16 },
   btnText:     { color: '#fff', fontWeight: '700', fontSize: 16 },

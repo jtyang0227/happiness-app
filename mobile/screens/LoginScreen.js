@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../store/AuthContext';
 
-export default function LoginScreen({ onGoSignUp }) {
+export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +38,7 @@ export default function LoginScreen({ onGoSignUp }) {
         </View>
 
         <Text style={styles.title}>다시 만나서 반가워요</Text>
-        <Text style={styles.subtitle}>계정에 로그인하고 우주를 탐험하세요</Text>
+        <Text style={styles.subtitle}>계정에 로그인하고 포트폴리오를 탐험하세요</Text>
 
         <View style={styles.card}>
           <Text style={styles.label}>이메일</Text>
@@ -80,10 +80,21 @@ export default function LoginScreen({ onGoSignUp }) {
             <Text style={styles.btnKakaoText}>카카오로 로그인</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.signupLink} onPress={onGoSignUp}>
+          <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate('SignUp')}>
             <Text style={styles.signupLinkText}>
               계정이 없으신가요? <Text style={styles.signupLinkBold}>회원가입</Text>
             </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 법적 고지 */}
+        <View style={styles.legalRow}>
+          <TouchableOpacity onPress={() => navigation.navigate('Legal', { tab: 'privacy' })}>
+            <Text style={styles.legalLink}>개인정보처리방침</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSep}>·</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Legal', { tab: 'terms' })}>
+            <Text style={styles.legalLink}>이용약관</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -93,7 +104,7 @@ export default function LoginScreen({ onGoSignUp }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a1a' },
-  inner: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  inner: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 32 },
   logoWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   logoIcon: { fontSize: 28, color: '#a78bfa', marginRight: 8 },
   logoText: { fontSize: 32, fontWeight: '800', color: '#fff', letterSpacing: 2 },
@@ -132,4 +143,9 @@ const styles = StyleSheet.create({
   signupLink:      { marginTop: 20, alignItems: 'center' },
   signupLinkText:  { color: '#9ca3af', fontSize: 13 },
   signupLinkBold:  { color: '#a78bfa', fontWeight: '700' },
+
+  legalRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    marginTop: 20, gap: 8 },
+  legalLink: { color: '#6b7280', fontSize: 12, textDecorationLine: 'underline' },
+  legalSep: { color: '#374151', fontSize: 12 },
 });
