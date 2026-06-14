@@ -49,6 +49,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
 
+### 디자인 작업 우선순위 로드맵
+
+전체 우선순위 및 각 작업별 프롬프트 파일은 `DESIGN_PROMPTS/DESIGN_ROADMAP.md` 참조.
+
+**P0 — 즉시 수정 (블로커)**
+| 파일 | 작업 |
+|------|------|
+| `P0_01_EMPTY_STATE.md` | 갤러리·탐색·프로필 빈 상태 UI |
+| `P0_02_GALLERY_RESPONSIVE.md` | 갤러리 반응형 (모바일 2컬럼) + useBreakpoint 훅 |
+| `P0_03_COMMENTS_SECTION.md` | CommentsSection 컴포넌트 분리 (Modal·Detail 공용) |
+| `P0_04_MODAL_UX.md` | 모달 body 스크롤 잠금 + 포커스 트랩 |
+| `P0_05_IMAGE_ALT.md` | 이미지 alt 텍스트 + aria-label 접근성 |
+
+**P1 — 단기 (1~2주)**
+| 파일 | 작업 |
+|------|------|
+| `P1_01_SKELETON_LOADING.md` | shimmer 스켈레톤 카드 (갤러리·탐색·목록) |
+| `P1_02_BUTTON_COMPONENT.md` | 공통 Button 컴포넌트 (variant/size/loading) |
+| `P1_03_INPUT_COMPONENT.md` | 공통 Input·Textarea·FormField 컴포넌트 |
+| `P1_04_HEADER_REDESIGN.md` | Header 아바타 드롭다운 (프로필·로그아웃) |
+| `P1_05_EXPLORE_SORT.md` | 탐색 정렬·활성 필터 배지·결과 수 표시 |
+| `P1_06_AVATAR_UPLOAD.md` | 프로필 아바타 이미지 업로드 |
+
+**P2 — 중기 (1개월)**
+| 파일 | 작업 |
+|------|------|
+| `P2_01_PHOTOFORM_LAYOUT.md` | PhotoForm 2컬럼 레이아웃 (프리뷰·보정패널·메타데이터 바) |
+| `P2_02_BEFORE_AFTER.md` | Before/After 이미지 스플릿 슬라이더 |
+| `P2_03_INFINITE_SCROLL.md` | 무한 스크롤 (useInfiniteScroll 훅) |
+| `P2_04_DRAFT_AUTOSAVE.md` | PhotoForm 드래프트 자동저장 (useDraft 훅) |
+| `P2_05_AUTHOR_PROFILE.md` | 작가 공개 프로필 페이지 (/u/:profileName) |
+
 ---
 
 ## Project Overview
