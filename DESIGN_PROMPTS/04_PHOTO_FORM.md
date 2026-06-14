@@ -223,6 +223,184 @@ const { value: draft, setValue: setDraft, savedAt, isDirty, clearDraft, hasDraft
 
 ---
 
+---
+
+## [4] 워터마크 UI (누락 항목 추가)
+
+### 현재 문제
+
+워터마크 기능이 백엔드 Photo 엔티티에 `watermarkEnabled`, `watermarkText` 필드로 존재하지만 PhotoFormPage에 UI가 없음.
+
+### claude.ai 아티팩트 프롬프트
+
+```
+[시스템 컨텍스트]
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
+아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
+컬러: primary '#5b6ef5' primaryLight '#eef0ff' bg '#f7f7fb' surface '#fff'
+      border '#e5e5ed' text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb'
+규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
+
+WatermarkPanel 컴포넌트를 만들어주세요.
+
+Props:
+- enabled: boolean
+- text: string
+- position: 'top-left'|'top-right'|'bottom-left'|'bottom-right'|'center'
+- onChange: ({ enabled, text, position }) => void
+
+레이아웃:
+  섹션 헤더: "🔏 워터마크" 13px 600 + 우측 토글 스위치 (enabled ON/OFF)
+  enabled=false: 나머지 컨트롤 opacity:0.4, pointer-events:none
+
+  텍스트 입력:
+    label "워터마크 텍스트" 12px textMuted
+    input 100% border radius 8px padding '8px 12px' placeholder '@내아이디'
+
+  위치 선택 (5개 버튼, 3×2 그리드 — center는 하단 전체 폭):
+    top-left "↖" / top-right "↗" / bottom-left "↙" / bottom-right "↘" / center "가운데"
+    선택됨: bg primaryLight border primary color primary
+    비선택: bg surface border '#e5e5ed'
+
+  미리보기 힌트: "이미지 우하단에 반투명 텍스트로 표시됩니다" 11px textMuted italic
+
+토글 스위치 디자인:
+  width 40px height 22px border-radius 11px
+  ON: bg primary / OFF: bg '#ccccdd'
+  thumb: 18px 원형 bg white, transition left 0.2s
+  ON: left 20px / OFF: left 2px
+
+데모: 5가지 위치 버튼, 텍스트 입력, ON/OFF 토글
+```
+
+### 통합 방법
+
+```jsx
+// PhotoFormPage.jsx 메타데이터 바 또는 보정 패널 하단에 추가
+const [watermark, setWatermark] = useState({
+  enabled: false, text: '', position: 'bottom-right'
+})
+// 등록 API 호출 시 watermarkEnabled, watermarkText 필드 포함
+```
+
+---
+
+## [5] 이미지 비율 선택 UI (누락 항목 추가)
+
+### 현재 문제
+
+백엔드 Photo 엔티티에 `imageRatio` 필드(`16:9`/`4:3`/`1:1`/`3:4`/`2:3`)가 있으며
+ExplorePage에서 필터로 사용되지만 PhotoFormPage에 선택 UI가 없음.
+
+### claude.ai 아티팩트 프롬프트
+
+```
+[시스템 컨텍스트]
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
+아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
+컬러: primary '#5b6ef5' primaryLight '#eef0ff' surface '#fff' border '#e5e5ed'
+      text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb'
+규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
+
+ImageRatioPicker 컴포넌트를 만들어주세요.
+
+Props:
+- value: '16:9'|'4:3'|'1:1'|'3:4'|'2:3'|null
+- onChange: (ratio) => void
+
+비율 옵션 5개:
+  { ratio: '16:9',  label: '가로 와이드', w: 48, h: 27 }
+  { ratio: '4:3',   label: '가로 표준',   w: 40, h: 30 }
+  { ratio: '1:1',   label: '정방형',      w: 36, h: 36 }
+  { ratio: '3:4',   label: '세로 표준',   w: 30, h: 40 }
+  { ratio: '2:3',   label: '세로 좁음',   w: 27, h: 40 }
+
+각 카드:
+  width 72px, flex column align-items center, cursor pointer
+  비율 시각화 박스: w×h px (위 값 사용), border radius 4px
+    선택됨: bg primaryLight border '2px solid primary'
+    비선택: bg surfaceDim border '1px solid border'
+  ratio 텍스트: 11px 600 margin-top 6px
+  label 텍스트: 10px textMuted
+
+flex row gap 8px, "비율 선택 (선택사항)" 12px textMuted 상단 레이블
+
+데모: 5개 카드, 클릭 시 선택 상태 전환, 재클릭 시 해제
+```
+
+### 통합 방법
+
+```jsx
+// PhotoFormPage.jsx 하단 메타데이터 바에 추가
+const [imageRatio, setImageRatio] = useState(null)
+// 등록 API 호출 시 imageRatio 필드 포함
+```
+
+---
+
+## [6] AI 자동태그 버튼 (누락 항목 추가)
+
+### 현재 문제
+
+백엔드에 `POST /api/photos/:id/auto-tags` 엔드포인트가 있고 (`AutoTagService`),
+`photoApi.autoTag(photoId)` API 메서드도 있지만 PhotoFormPage에 UI가 없음.
+
+### claude.ai 아티팩트 프롬프트
+
+```
+[시스템 컨텍스트]
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
+아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
+컬러: primary '#5b6ef5' primaryLight '#eef0ff' accent '#a78bfa'
+      surface '#fff' border '#e5e5ed' text '#0f0f1a' textMuted '#8888bb'
+규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
+
+AutoTagPanel 컴포넌트를 만들어주세요.
+
+Props:
+- photoId: number | null  (null이면 버튼 disabled)
+- existingTags: string[]
+- onTagsChange: (tags: string[]) => void
+
+레이아웃:
+  섹션 헤더: "🏷️ 태그"
+  태그 입력:
+    input + [+ 추가] 버튼 (Enter로도 추가)
+    input: flex 1, placeholder '#태그입력'
+  태그 칩 목록:
+    각 칩: '#태그명' + × 삭제 버튼 (accent bg, 12px, border-radius full, padding '4px 10px')
+    최대 10개, 10개 초과 시 추가 버튼 비활성
+  AI 버튼:
+    "✨ AI 태그 자동추출" — accent(#a78bfa) bg, white text, height 32px, radius 8px, 12px 600
+    photoId null이면 opacity:0.4 cursor:not-allowed + tooltip "먼저 사진을 등록하세요"
+    클릭 시: 버튼 내 스피너 + "추출 중..." 텍스트, 비활성
+    성공: 추출된 태그가 기존 태그에 병합 (중복 제거), 성공 메시지 2초 표시
+    실패: 에러 메시지 표시
+
+  목 데이터로 동작 시뮬레이션:
+    AI 추출 시 1.5초 후 ['자연광', '인물', '도시', '감성'] 반환
+    기존 태그 ['풍경', '자연광']이면 병합 → ['풍경', '자연광', '인물', '도시', '감성']
+
+데모: 태그 추가/삭제, AI 버튼 로딩, 성공 상태 순서로 시연
+```
+
+### 통합 방법
+
+```jsx
+// PhotoFormPage.jsx — 등록 후 photoId 받아서 autoTag 호출 가능
+// 또는 사진 수정(edit) 모드에서 즉시 AI 태그 추출
+const handleAutoTag = async () => {
+  const { tags } = await photoApi.autoTag(photoId)
+  const merged = [...new Set([...existingTags, ...tags])]
+  setTags(merged)
+}
+```
+
+---
+
 ## 완료 체크리스트
 
 - [ ] PhotoFormPage PC 2컬럼 레이아웃 구현
@@ -237,3 +415,8 @@ const { value: draft, setValue: setDraft, savedAt, isDirty, clearDraft, hasDraft
 - [ ] AutoSaveIndicator.jsx 생성
 - [ ] PhotoFormPage 드래프트 연결 (제목/설명/분위기/너비)
 - [ ] 등록 완료 시 clearDraft 호출 확인
+- [ ] WatermarkPanel.jsx 생성
+- [ ] ImageRatioPicker.jsx 생성 (5가지 비율 시각화)
+- [ ] AutoTagPanel.jsx 생성 (AI 태그 추출 + 칩 관리)
+- [ ] PhotoFormPage에 WatermarkPanel, ImageRatioPicker, AutoTagPanel 추가
+- [ ] 등록 API 호출 시 watermarkEnabled/watermarkText/imageRatio/tags 포함 확인

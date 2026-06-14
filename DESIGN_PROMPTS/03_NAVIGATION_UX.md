@@ -1,6 +1,6 @@
 # 03 — 내비게이션 & UX (Header · Modal · 접근성)
 
-> P0: Modal UX · 접근성 / P1: Header 아바타 드롭다운
+> P0: Modal UX · 접근성 / P1: Header 아바타 드롭다운 + 7-item 재설계
 
 ---
 
@@ -14,17 +14,20 @@ frontend/src/
 
 ---
 
-## [1] Header 재설계 — 아바타 드롭다운
+## [1] Header 재설계 — 7-item Nav + 아바타 드롭다운
 
 ### 현재 → 목표
 
 ```
-현재: [✦ Happiness] [탐색][갤러리][목록][등록][프로필] [로그아웃]
-목표: [✦ Happiness] [탐색][갤러리][목록]         [+ 등록] [아바타▾]
-                                                         ├ 프로필 보기
-                                                         ├ ────────
-                                                         └ 로그아웃
+현재: [✦ Happiness] [탐색][갤러리][시리즈][목록][등록][문의함🔴N][프로필] [로그아웃]
+목표: [✦ Happiness] [탐색][갤러리][시리즈][목록]  [문의함🔴N] [+ 등록] [아바타▾]
+                                                                       ├ 프로필 보기
+                                                                       ├ ────────
+                                                                       └ 로그아웃
 ```
+
+> ⚠️ 현재 구현된 Header는 7개 항목(탐색/갤러리/시리즈/목록/등록/문의함배지/프로필)을
+> 포함하며, 모바일은 BottomNav(탐색·갤러리·등록·피드·프로필)로 분기됨.
 
 ### claude.ai 아티팩트 프롬프트
 
@@ -34,8 +37,8 @@ frontend/src/
 기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
 컬러: primary '#5b6ef5' primaryDark '#4458e0' primaryLight '#eef0ff'
-      bg '#f5f5fa' surface '#fff' border '#e2e2ee'
-      text '#1a1a2e' textSecondary '#5c5c7a' textMuted '#9090b0' danger '#e53e3e'
+      bg '#f7f7fb' surface '#fff' border '#e5e5ed'
+      text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb' danger '#e53e3e'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, react+react-router-dom만 허용, 한국어 UI
 
 PC 전용 Header 컴포넌트를 만들어주세요 (768px 미만 display:none).
@@ -43,23 +46,30 @@ PC 전용 Header 컴포넌트를 만들어주세요 (768px 미만 display:none).
 Props:
 - user: { id, name, profileName, avatarUrl } | null
 - currentPath: string
+- unreadInquiryCount: number (기본 0)
 - onNavigate: (path) => void
 - onLogout: () => void
 
 레이아웃: position sticky top 0 z-index 100, height 56px,
           bg 'rgba(255,255,255,0.92)' backdropFilter 'blur(12px)'
-          border-bottom '1px solid #e2e2ee' padding '0 24px'
+          border-bottom '1px solid #e5e5ed' padding '0 24px'
           display flex align-items center
 
 좌측 로고 (✦ Happiness):
   ✦ primary색, "Happiness" 16px 700, 클릭→onNavigate('/'), margin-right 24px
 
 중앙 Nav (flex-grow 1, gap 4px):
-  탐색(/explore) · 갤러리(/) · 목록(/list)
+  탐색(/explore) · 갤러리(/) · 시리즈(/series) · 목록(/list)
   비활성: 14px 500 textSecondary, hover color text
   활성: primary색 + primaryLight bg, padding '6px 12px' radius 6px
 
 우측 (display flex align-items center gap 12px):
+
+문의함 링크 (position relative):
+  "📨 문의함" 14px textSecondary, /inbox 이동
+  unreadInquiryCount > 0: 우상단 배지 (min-width 18px, height 18px, bg danger, color white, 11px 700,
+    border-radius 9999px, padding '0 4px', position absolute top -6px right -8px)
+  활성(/inbox): primary색
 
 "+ 등록" 버튼:
   bg primary, color white, height 34px, padding '0 16px', radius 8px, 13px 600
@@ -71,30 +81,42 @@ Props:
                열릴 때: box-shadow '0 0 0 2px #eef0ff'
 
   드롭다운 패널 (position absolute top '100%' right 0 margin-top 8px):
-    bg white, border '1px solid #e2e2ee', radius 12px
+    bg white, border '1px solid #e5e5ed', radius 12px
     box-shadow '0 8px 32px rgba(91,110,245,0.16)', min-width 200px, padding '8px 0', z-index 200
 
-    헤더(클릭 불가): padding '12px 16px' border-bottom '1px solid #e2e2ee'
+    헤더(클릭 불가): padding '12px 16px' border-bottom '1px solid #e5e5ed'
       이름 14px 600 / @profileName 12px textMuted
 
     메뉴 항목 (padding '10px 16px' 14px hover: bg primaryLight color primary):
       "👤 프로필 보기" → onNavigate('/profile')
-      구분선 (margin '4px 16px' border-top '#e2e2ee')
+      구분선 (margin '4px 16px' border-top '#e5e5ed')
       "로그아웃" → danger색 hover: bg '#fff0f0' → onLogout()
 
   외부 클릭 닫기: useEffect + mousedown 이벤트 + useRef
 
+모바일 BottomNav (768px 미만에만 표시, position fixed bottom 0, bg white, border-top):
+  5개 탭: 탐색(🔍/explore) · 갤러리(🖼️/) · 등록(＋/photo/new, 원형 primary 강조) · 피드(📰/feed) · 프로필(👤/profile)
+  등록 탭: 50px 원형 bg primary, margin-bottom 16px (다른 탭보다 위로 돌출)
+  활성 탭: primary색 텍스트, 비활성: textMuted
+  safe-area: paddingBottom 'env(safe-area-inset-bottom, 8px)'
+
 데모:
-- 활성 경로 3가지 (탐색/갤러리/목록)
-- 드롭다운 열린 상태
-- 아바타 없는 상태(이니셜) / 있는 상태(더미 URL)
+- Nav 활성 경로 4가지 (탐색/갤러리/시리즈/목록)
+- 드롭다운 열린 상태 (이니셜 아바타)
+- 드롭다운 열린 상태 (이미지 아바타)
+- 문의함 미읽음 배지 표시 (unreadInquiryCount=3)
+- 모바일 BottomNav (768px 뷰포트)
 ```
 
 ### 통합 방법
 
 ```jsx
-// Header.jsx 기존 "로그아웃" 텍스트 버튼 섹션 교체
-// 아래 상태 추가:
+// Header.jsx 수정 항목:
+// 1. Nav에 시리즈(/series) 항목 추가
+// 2. 문의함 링크를 별도 position:relative wrapper로 감싸고 배지 추가
+// 3. 기존 "로그아웃" 텍스트 버튼 → 아바타 드롭다운으로 교체
+// 4. unreadCount를 props 또는 inquiryApi.getUnreadCount()로 주입
+
 const [dropdownOpen, setDropdownOpen] = useState(false)
 const dropdownRef = useRef(null)
 useEffect(() => {
@@ -195,10 +217,14 @@ useEffect(() => {
 
 ## 완료 체크리스트
 
-- [ ] Header 아바타 드롭다운 추가
+- [ ] Header Nav에 시리즈(/series) 항목 추가
+- [ ] Header 문의함 링크에 unreadInquiryCount 배지 추가
 - [ ] Header "등록" Primary 버튼 분리
+- [ ] Header 아바타 드롭다운 추가 (프로필 보기 / 로그아웃)
 - [ ] 드롭다운 외부 클릭 닫기
-- [ ] 모바일 768px 미만 Header 숨김 확인
+- [ ] 모바일 768px 미만 Header 숨김 + BottomNav 표시
+- [ ] BottomNav 등록 탭 원형 강조 확인
+- [ ] BottomNav safe-area-inset-bottom 적용 확인
 - [ ] ModalOverlay.jsx 생성 (body 스크롤 잠금)
 - [ ] PhotoModal body overflow:hidden 적용
 - [ ] PhotoModal 배경 클릭 닫기 확인
