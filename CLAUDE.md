@@ -210,6 +210,18 @@ SPRING_PROFILES_ACTIVE=prod  # 운영 | dev (기본값)
 # Kakao OAuth (프론트엔드 — .env.development / Vercel)
 REACT_APP_KAKAO_APP_KEY=YOUR_KAKAO_REST_API_KEY
 REACT_APP_KAKAO_REDIRECT_URI=https://app.example.com/oauth/kakao/callback
+
+# Google OAuth
+REACT_APP_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+REACT_APP_GOOGLE_REDIRECT_URI=https://app.example.com/oauth/google/callback
+
+# Naver OAuth
+REACT_APP_NAVER_CLIENT_ID=YOUR_NAVER_CLIENT_ID
+REACT_APP_NAVER_REDIRECT_URI=https://app.example.com/oauth/naver/callback
+
+# Apple OAuth (HTTPS 필수)
+REACT_APP_APPLE_CLIENT_ID=com.happiness.gallery.web
+REACT_APP_APPLE_REDIRECT_URI=https://api.example.com/api/auth/oauth/apple/callback
 ```
 
 ---
@@ -222,6 +234,10 @@ Feature-based package layout:
 
 - **photo/** — Core domain. `PhotoController` exposes REST endpoints for CRUD plus likes/saves/shares/tags. Entities: `Photo`, `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag`.
 - **member/** — Auth & users. `AuthController` handles signup/login/stats/password-change. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security. `Member` entity includes: avatarUrl, coverUrl, bio, websiteUrl, location, specialties (Phase 2-8 추가). `MemberStatsResponse` — 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount). Endpoints: `GET /member/:id/stats`, `PUT /member/:id/password`.
+- **member/service/GoogleOAuthService** — Google OAuth 2.0. `googleLogin(code)` → Token URL: `oauth2.googleapis.com/token`, UserInfo: `googleapis.com/oauth2/v2/userinfo`.
+- **member/service/NaverOAuthService** — 네이버 OAuth 2.0. `naverLogin(code, state)` → Token: `nid.naver.com/oauth2.0/token`, UserInfo: `openapi.naver.com/v1/nid/me`.
+- **member/service/AppleOAuthService** — Apple Sign In. `appleLogin(idToken, userJson)` → id_token JWT 디코딩(base64)으로 sub+email 추출. `generateClientSecret()` → JJWT ES256으로 client_secret JWT 생성.
+- **member/service/AuthService** — `issueTokensForOAuth(MemberResponse, HttpRequest)` 추가 — 소셜 로그인 공통 JWT 발급.
 - **portfolio/** — `PortfolioController` (`GET /api/portfolio/{profileName}`) — 공개 포트폴리오. 로그인 불필요. MemberRepository.findByProfileName + PhotoRepository.findByMemberIdOrderByCreatedAtDesc 사용.
 - **series/** — `SeriesController` (`/api/series`) — 시리즈/컬렉션 CRUD. `Series` 엔티티 + `SeriesPhoto` 조인 테이블. GET(목록/상세)은 공개, POST/PUT/DELETE/사진추가제거는 인증 필요.
 - **inquiry/** — `InquiryController` (`/api/inquiry`) — 촬영 문의. `Inquiry` 엔티티. POST(문의 전송)는 공개. `InquiryEmailService`는 `@Autowired(required=false)`로 메일 서버 없어도 동작. 수신함/읽음처리/삭제는 인증 필요.
@@ -349,7 +365,10 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
   - `photoApi.getAll({ sortBy, order })` — 전체 사진 목록 (정렬 지원)
   - `photoApi.getByMember(memberId, { sortBy, order })` — 멤버별 사진 목록
   - `photoApi.reorder(orders)` — 순서 일괄 저장 `[{id, displayOrder}]`
-  - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao?code=xxx
+  - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao → TokenResponse
+  - `authApi.googleLogin(code)` — POST /auth/oauth/google → TokenResponse
+  - `authApi.naverLogin(code, state)` — POST /auth/oauth/naver → TokenResponse
+  - `authApi.getMember(id)` — GET /auth/member/:id
   - `authApi.getStats(id)` — GET /auth/member/:id/stats (6종 통계)
   - `authApi.changePassword(id, data)` — PUT /auth/member/:id/password
   - `photoApi.getSuggestions(q)` — GET /photos/suggestions (자동완성)
@@ -368,7 +387,10 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 **공개 라우트** (로그인 불필요):
 - `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오, 문의하기 버튼 포함)
 - `/inquiry/:profileName?memberId=` — InquiryFormPage (촬영 문의 폼, 헤더 없는 standalone)
-- `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백 처리)
+- `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백)
+- `/oauth/google/callback` — GoogleCallbackPage (구글 OAuth 콜백)
+- `/oauth/naver/callback` — NaverCallbackPage (네이버 OAuth 콜백)
+- `/oauth/apple/result` — AppleResultPage (Apple 백엔드 리다이렉트 결과)
 
 **보호 라우트** (로그인 필요):
 - `/inbox` — InquiryInboxPage (문의 수신함)
@@ -376,10 +398,22 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/series` — SeriesPage (시리즈/컬렉션 관리)
 - `/feed` — FeedPage (팔로우 피드)
 
-**Kakao OAuth 흐름**:
-1. LoginPage 버튼 클릭 → `kauth.kakao.com/oauth/authorize?client_id=${REACT_APP_KAKAO_APP_KEY}&...`
-2. 카카오 인증 후 `/oauth/kakao/callback?code=xxx` 리다이렉트
-3. KakaoCallbackPage → `POST /api/auth/oauth/kakao?code=xxx` → JWT 토큰 수신 → `authStore.loginSuccess()`
+**소셜 OAuth 흐름 (카카오/구글/네이버)**:
+1. LoginPage 버튼 클릭 → OAuth 제공자 인증 페이지로 리다이렉트
+2. 인증 후 `/oauth/{provider}/callback?code=xxx` 리다이렉트
+3. Callback 페이지 → `POST /api/auth/oauth/{provider}` → `TokenResponse(accessToken, refreshToken, member)` 수신 → `authStore.loginSuccess()`
+
+**Apple OAuth 흐름** (form_post 특수 처리):
+1. LoginPage Apple 버튼 → `appleid.apple.com/auth/authorize` (redirect_uri=백엔드 URL)
+2. Apple → `POST /api/auth/oauth/apple/callback` (백엔드)
+3. 백엔드 → id_token 파싱 → 회원 생성/조회 → JWT 발급 → 프론트엔드 `/oauth/apple/result?accessToken=...` 리다이렉트
+4. AppleResultPage → `/auth/member/:id` 호출 → `authStore.loginSuccess()`
+
+**모든 OAuth 엔드포인트** → `TokenResponse` 반환 (accessToken, refreshToken, member 포함)
+- `POST /api/auth/oauth/kakao` — `AuthService.issueTokensForOAuth()` 공통 처리
+- `POST /api/auth/oauth/google` — GoogleOAuthService
+- `POST /api/auth/oauth/naver` — NaverOAuthService
+- `POST /api/auth/oauth/apple/callback` — AppleOAuthService (백엔드 form_post 수신)
 
 **갤러리 12-컬럼 그리드**: `packRows()` 알고리즘으로 `gridColSpan` 합이 12가 되도록 사진을 행으로 묶어 CSS flexbox로 렌더링. 각 사진은 `flex: gridColSpan` 비율로 너비 배분.
 

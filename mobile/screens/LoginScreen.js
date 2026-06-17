@@ -76,8 +76,17 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity style={styles.btnKakao}>
-            <Text style={styles.btnKakaoText}>카카오로 로그인</Text>
+          <TouchableOpacity style={styles.btnKakao} onPress={() => Alert.alert('준비 중', '카카오 로그인은 준비 중입니다.')}>
+            <Text style={styles.btnKakaoText}>💬  카카오로 계속하기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.btnNaver} onPress={() => Alert.alert('준비 중', '네이버 로그인은 준비 중입니다.')}>
+            <Text style={styles.btnNaverText}>N  네이버로 계속하기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.btnGoogle} onPress={() => Alert.alert('준비 중', 'Google 로그인은 준비 중입니다.')}>
+            <Text style={styles.btnGoogleText}>G  Google로 계속하기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.btnApple} onPress={() => Alert.alert('준비 중', 'Apple 로그인은 준비 중입니다.')}>
+            <Text style={styles.btnAppleText}> Apple로 계속하기</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate('SignUp')}>
@@ -138,8 +147,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    marginBottom: 8,
   },
   btnKakaoText: { color: '#3C1E1E', fontWeight: '700', fontSize: 15 },
+  btnNaver: {
+    backgroundColor: '#03C75A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  btnNaverText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnGoogle: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#dadce0',
+  },
+  btnGoogleText: { color: '#3c4043', fontWeight: '700', fontSize: 15 },
+  btnApple: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  btnAppleText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   signupLink:      { marginTop: 20, alignItems: 'center' },
   signupLinkText:  { color: '#9ca3af', fontSize: 13 },
   signupLinkBold:  { color: '#a78bfa', fontWeight: '700' },

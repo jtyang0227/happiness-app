@@ -118,10 +118,13 @@ export const authApi = {
   updateProfile:    (id, data) => apiClient.put(`/auth/member/${id}/profile`,    data).then(r => r.data),
   checkEmail:       (email)    => apiClient.get('/auth/check-email',    { params: { email } }).then(r => r.data),
   checkProfileName: (name)     => apiClient.get('/auth/check-profile-name', { params: { name } }).then(r => r.data),
-  kakaoLogin:       (code)     => apiClient.post('/auth/oauth/kakao', null, { params: { code } }).then(r => r.data),
-  getStats:         (id)       => apiClient.get(`/auth/member/${id}/stats`).then(r => r.data),
-  changePassword:   (id, data) => apiClient.put(`/auth/member/${id}/password`, data).then(r => r.data),
-  deleteAccount:    (id)       => apiClient.delete(`/auth/member/${id}`).then(r => r.data),
+  kakaoLogin:       (code)           => apiClient.post('/auth/oauth/kakao',  { code }).then(r => r.data),
+  googleLogin:      (code)           => apiClient.post('/auth/oauth/google', { code }).then(r => r.data),
+  naverLogin:       (code, state)    => apiClient.post('/auth/oauth/naver',  { code, state }).then(r => r.data),
+  getMember:        (id)             => apiClient.get(`/auth/member/${id}`).then(r => r.data),
+  getStats:         (id)             => apiClient.get(`/auth/member/${id}/stats`).then(r => r.data),
+  changePassword:   (id, data)       => apiClient.put(`/auth/member/${id}/password`, data).then(r => r.data),
+  deleteAccount:    (id)             => apiClient.delete(`/auth/member/${id}`).then(r => r.data),
 
   uploadFile: (formData) =>
     apiClient.post('/photos/upload', formData, {

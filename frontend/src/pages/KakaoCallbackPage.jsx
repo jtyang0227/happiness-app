@@ -18,7 +18,7 @@ export default function KakaoCallbackPage() {
     (async () => {
       try {
         const res = await authApi.kakaoLogin(code);
-        const { accessToken, refreshToken, member } = res;
+        const { accessToken, refreshToken, member } = res.data ?? res;
         useAuthStore.getState().loginSuccess(accessToken, refreshToken, member);
         navigate('/', { replace: true });
       } catch (err) {

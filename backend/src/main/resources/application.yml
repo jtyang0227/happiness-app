@@ -69,6 +69,30 @@ management:
     health:
       show-details: when-authorized
 
+# OAuth 소셜 로그인
+kakao:
+  client-id: ${KAKAO_CLIENT_ID:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}
+  redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/oauth/kakao/callback}
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+  redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:3000/oauth/google/callback}
+
+naver:
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}
+  redirect-uri: ${NAVER_REDIRECT_URI:http://localhost:3000/oauth/naver/callback}
+
+apple:
+  client-id: ${APPLE_CLIENT_ID:}           # Apple Services ID (com.xxx.web)
+  team-id: ${APPLE_TEAM_ID:}
+  key-id: ${APPLE_KEY_ID:}
+  private-key: ${APPLE_PRIVATE_KEY:}       # PKCS#8 PEM (헤더 제외, 개행 포함 가능)
+  redirect-uri: ${APPLE_REDIRECT_URI:https://api.example.com/api/auth/oauth/apple/callback}
+  frontend-redirect-uri: ${APPLE_FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/apple/result}
+
 # Logging
 logging:
   pattern:

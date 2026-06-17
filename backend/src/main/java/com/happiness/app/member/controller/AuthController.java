@@ -2,17 +2,20 @@ package com.happiness.app.member.controller;
 
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.member.dto.*;
-import com.happiness.app.member.service.AuthService;
-import com.happiness.app.member.service.KakaoOAuthService;
-import com.happiness.app.member.service.MemberService;
+import com.happiness.app.member.service.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -24,6 +27,9 @@ public class AuthController {
     private final MemberService memberService;
     private final AuthService authService;
     private final KakaoOAuthService kakaoOAuthService;
+    private final GoogleOAuthService googleOAuthService;
+    private final NaverOAuthService naverOAuthService;
+    private final AppleOAuthService appleOAuthService;
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -106,10 +112,55 @@ public class AuthController {
     }
 
     @PostMapping("/oauth/kakao")
-    public ResponseEntity<ApiResponse<MemberResponse>> kakaoLogin(
-            @RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<TokenResponse>> kakaoLogin(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
         String code = body.get("code");
         MemberResponse member = kakaoOAuthService.kakaoLogin(code);
-        return ResponseEntity.ok(ApiResponse.ok(member));
+        TokenResponse token = authService.issueTokensForOAuth(member, httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(token));
+    }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<ApiResponse<TokenResponse>> googleLogin(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
+        String code = body.get("code");
+        MemberResponse member = googleOAuthService.googleLogin(code);
+        TokenResponse token = authService.issueTokensForOAuth(member, httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(token));
+    }
+
+    @PostMapping("/oauth/naver")
+    public ResponseEntity<ApiResponse<TokenResponse>> naverLogin(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
+        String code = body.get("code");
+        String state = body.get("state");
+        MemberResponse member = naverOAuthService.naverLogin(code, state);
+        TokenResponse token = authService.issueTokensForOAuth(member, httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(token));
+    }
+
+    /** Apple은 form_post로 redirect → 백엔드에서 처리 후 프론트엔드로 리다이렉트 */
+    @PostMapping(value = "/oauth/apple/callback", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public void appleCallback(
+            @RequestParam(name = "id_token", required = false) String idToken,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String user,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) throws IOException {
+        try {
+            MemberResponse member = appleOAuthService.appleLogin(idToken, user);
+            TokenResponse token = authService.issueTokensForOAuth(member, httpRequest);
+            String redirectUrl = appleOAuthService.getFrontendRedirectUri()
+                    + "?accessToken=" + URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8)
+                    + "&refreshToken=" + URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8)
+                    + "&memberId=" + token.getMember().getId();
+            httpResponse.sendRedirect(redirectUrl);
+        } catch (Exception e) {
+            String errorUrl = appleOAuthService.getFrontendRedirectUri() + "?error=apple_login_failed";
+            httpResponse.sendRedirect(errorUrl);
+        }
     }
 }

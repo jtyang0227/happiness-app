@@ -142,39 +142,65 @@ export default function LoginPage() {
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 16px' }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ color: COLORS.darkTextSub, fontSize: 12 }}>또는</span>
+            <span style={{ color: COLORS.darkTextSub, fontSize: 12 }}>간편 로그인</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
           </div>
 
-          {/* Kakao login */}
-          <button
-            type="button"
-            onClick={() => {
-              const appKey = process.env.REACT_APP_KAKAO_APP_KEY;
-              const redirectUri = process.env.REACT_APP_KAKAO_REDIRECT_URI
-                || `${window.location.origin}/oauth/kakao/callback`;
-              if (!appKey) {
-                alert('카카오 앱 키가 설정되지 않았습니다.');
-                return;
-              }
-              window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${appKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
-            }}
-            style={{
-              width: '100%', padding: '14px',
-              borderRadius: 12, border: 'none',
-              background: '#FEE500',
-              color: 'rgba(0,0,0,0.85)',
-              fontSize: 15, fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-          >
-            <span style={{ fontSize: 18 }}>💬</span>
-            카카오로 계속하기
-          </button>
+          {/* Social login buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Kakao */}
+            <SocialButton
+              bg="#FEE500" color="rgba(0,0,0,0.85)" icon="💬" label="카카오로 계속하기"
+              onClick={() => {
+                const appKey = process.env.REACT_APP_KAKAO_APP_KEY;
+                const redirectUri = process.env.REACT_APP_KAKAO_REDIRECT_URI
+                  || `${window.location.origin}/oauth/kakao/callback`;
+                if (!appKey) { alert('카카오 앱 키가 설정되지 않았습니다.'); return; }
+                window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${appKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+              }}
+            />
+
+            {/* Naver */}
+            <SocialButton
+              bg="#03C75A" color="#fff" icon="N" label="네이버로 계속하기" iconStyle={{ fontWeight: 900, fontSize: 16 }}
+              onClick={() => {
+                const clientId = process.env.REACT_APP_NAVER_CLIENT_ID;
+                const redirectUri = process.env.REACT_APP_NAVER_REDIRECT_URI
+                  || `${window.location.origin}/oauth/naver/callback`;
+                if (!clientId) { alert('네이버 클라이언트 ID가 설정되지 않았습니다.'); return; }
+                const state = Math.random().toString(36).slice(2);
+                sessionStorage.setItem('naver_oauth_state', state);
+                window.location.href = `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
+              }}
+            />
+
+            {/* Google */}
+            <SocialButton
+              bg="#fff" color="#3c4043" icon="G" label="Google로 계속하기"
+              iconStyle={{ fontWeight: 700, fontSize: 16, color: '#4285F4' }}
+              style={{ border: '1.5px solid #dadce0' }}
+              onClick={() => {
+                const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+                const redirectUri = process.env.REACT_APP_GOOGLE_REDIRECT_URI
+                  || `${window.location.origin}/oauth/google/callback`;
+                if (!clientId) { alert('Google 클라이언트 ID가 설정되지 않았습니다.'); return; }
+                const scope = encodeURIComponent('openid email profile');
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
+              }}
+            />
+
+            {/* Apple */}
+            <SocialButton
+              bg="#000" color="#fff" icon="⬡" label="Apple로 계속하기" iconStyle={{ fontSize: 18 }}
+              onClick={() => {
+                const clientId = process.env.REACT_APP_APPLE_CLIENT_ID;
+                const redirectUri = process.env.REACT_APP_APPLE_REDIRECT_URI;
+                if (!clientId || !redirectUri) { alert('Apple 로그인이 설정되지 않았습니다.'); return; }
+                const state = Math.random().toString(36).slice(2);
+                window.location.href = `https://appleid.apple.com/auth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code%20id_token&scope=name%20email&response_mode=form_post&state=${state}`;
+              }}
+            />
+          </div>
 
           <div style={{ marginTop: 20, textAlign: 'center', color: COLORS.darkTextSub, fontSize: 14 }}>
             계정이 없으신가요?{' '}
@@ -185,6 +211,30 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SocialButton({ bg, color, icon, label, onClick, iconStyle = {}, style = {} }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        width: '100%', padding: '13px',
+        borderRadius: 12, border: 'none',
+        background: bg, color,
+        fontSize: 15, fontWeight: 700,
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        transition: 'opacity 0.2s',
+        ...style,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+      onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+    >
+      <span style={{ fontSize: 18, lineHeight: 1, ...iconStyle }}>{icon}</span>
+      {label}
+    </button>
   );
 }
 

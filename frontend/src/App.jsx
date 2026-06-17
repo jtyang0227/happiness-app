@@ -16,6 +16,9 @@ import ProfilePage  from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import PortfolioPage from './pages/PortfolioPage';
 import KakaoCallbackPage from './pages/KakaoCallbackPage';
+import GoogleCallbackPage from './pages/GoogleCallbackPage';
+import NaverCallbackPage from './pages/NaverCallbackPage';
+import AppleResultPage from './pages/AppleResultPage';
 import SeriesPage from './pages/SeriesPage';
 import InquiryFormPage from './pages/InquiryFormPage';
 import InquiryInboxPage from './pages/InquiryInboxPage';
@@ -23,7 +26,13 @@ import PhotoSortPage from './pages/PhotoSortPage';
 import FeedPage from './pages/FeedPage';
 
 // Routes that show the Header (authenticated app shell)
-const STANDALONE_PATHS = ['/login', '/signup', '/oauth/kakao/callback'];
+const STANDALONE_PATHS = [
+  '/login', '/signup',
+  '/oauth/kakao/callback',
+  '/oauth/google/callback',
+  '/oauth/naver/callback',
+  '/oauth/apple/result',
+];
 
 function AppShell() {
   const location = useLocation();
@@ -45,7 +54,10 @@ function AppShell() {
           {/* Standalone (no header, dark theme) */}
           <Route path="/login"  element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
+          <Route path="/oauth/kakao/callback"  element={<KakaoCallbackPage />} />
+          <Route path="/oauth/google/callback" element={<GoogleCallbackPage />} />
+          <Route path="/oauth/naver/callback"  element={<NaverCallbackPage />} />
+          <Route path="/oauth/apple/result"    element={<AppleResultPage />} />
 
           {/* Public portfolio — no login required */}
           <Route path="/portfolio/:profileName" element={<PortfolioPage />} />

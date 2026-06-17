@@ -150,6 +150,18 @@ public class AuthService {
         }
     }
 
+    public TokenResponse issueTokensForOAuth(MemberResponse memberResponse, HttpServletRequest httpRequest) {
+        String deviceId = resolveDeviceId(null, httpRequest);
+        String role = memberResponse.getAuthority().name();
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                memberResponse.getId(), memberResponse.getEmail(), role);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                memberResponse.getId(), memberResponse.getEmail());
+        refreshTokenStore.save(memberResponse.getId(), deviceId, refreshToken);
+        return TokenResponse.of(accessToken, refreshToken,
+                jwtProperties.getAccessTokenExpiryMs(), memberResponse);
+    }
+
     private String resolveDeviceId(String fromRequest, HttpServletRequest httpRequest) {
         if (StringUtils.hasText(fromRequest)) return fromRequest;
         String fromHeader = httpRequest.getHeader(DEVICE_ID_HEADER);
