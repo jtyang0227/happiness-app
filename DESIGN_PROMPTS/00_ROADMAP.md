@@ -1,6 +1,6 @@
 # Happiness — 디자인 작업 로드맵
 
-검증일: 2026-06-14 (전체 코드베이스 재분석 후 갱신)
+검증일: 2026-06-17 (Phase 4 기획 추가)
 
 ## 파일 구성
 
@@ -13,8 +13,8 @@
 | `05_PROFILE_SOCIAL.md` | 프로필 4탭 · 커버업로드 · 6종통계 · 계정삭제 · 댓글 · 팔로우모달 |
 | `06_SERIES_INQUIRY.md` | SeriesPage · InquiryFormPage · InquiryInboxPage 전체 UX |
 | `07_FEED_SORT.md` | FeedPage · PhotoSortPage(드래그 정렬) UX |
-
-> **06, 07 파일이 신규 추가됨** — 기존 문서에 없던 페이지들의 디자인 프롬프트
+| `08_COLOR_PALETTE_DETAIL.md` | **[신규]** 5색 팔레트 추출 · PhotoDetail 강화 (네비게이션/전체화면/관련사진/공유/인쇄) |
+| `09_PORTFOLIO_BUILDER.md` | **[신규]** 슬라이드쇼 뷰어 · 매거진 레이아웃 · PDF 내보내기 · 임베드 코드 |
 
 ---
 

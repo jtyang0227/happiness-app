@@ -23,6 +23,9 @@
 | **Phase 3 — 커뮤니티** | ✅ 완료 | 팔로우/피드/댓글+대댓글/EXIF/AI자동태그 |
 | **Phase M1 — 모바일 전체 구현** | ✅ 완료 | BottomTab/탐색/피드/댓글/시리즈/이미지업로드/프로필 |
 | **Phase M2 — 앱 심사 준수** | ✅ 완료 | 개인정보처리방침/이용약관/LegalScreen/SDK34 |
+| **Phase 4-1 — 컬러 팔레트** | ⬜ 기획 완료 | 5색 추출·표시·저장 (DESIGN_PROMPTS/08) |
+| **Phase 4-2 — 상세 페이지 강화** | ⬜ 기획 완료 | 이전/다음·전체화면·관련사진·공유·인쇄 (DESIGN_PROMPTS/08) |
+| **Phase 4-3 — 포트폴리오 빌더** | ⬜ 기획 완료 | 슬라이드쇼·매거진·PDF·임베드 (DESIGN_PROMPTS/09) |
 
 ### 주요 완성 기능 (2026-06-11 기준)
 
@@ -826,13 +829,91 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso            INTEGER;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length   VARCHAR(20);
 ```
 
-### ⬜ Phase 4 — 향후 기능
+### ⬜ Phase 4 — 사진 상세 강화 + 이미지 포트폴리오 빌더
+
+> 최종 업데이트: 2026-06-17  
+> 기획 완료. DESIGN_PROMPTS/08, 09 파일 참조.
+
+#### Phase 4-1: 사진 컬러 팔레트 시스템 (P1)
+
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| `useColorExtraction` 훅 | ⬜ | Canvas K-means 5색 추출 (캐싱 포함) |
+| `ColorPalette` 컴포넌트 | ⬜ | 5색 팔레트 바 + 클릭 복사 + shimmer 로딩 |
+| `Photo.dominantColors` 필드 | ⬜ | `VARCHAR(200)` JSON 배열 저장 |
+| PhotoDetailPage 통합 | ⬜ | 정보 섹션에 ColorPalette 배치 |
+
+**백엔드 마이그레이션:**
+```sql
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS dominant_colors VARCHAR(200);
+```
+
+#### Phase 4-2: 사진 상세 페이지 강화 (P1~P2)
+
+| 기능 | 상태 | 파일 | 설명 |
+|------|------|------|------|
+| `PhotoNavigation` | ⬜ | `components/photo/` | 이전/다음 버튼 + ←→ 키보드 |
+| `ShareButton` | ⬜ | `components/photo/` | URL 복사 + Web Share API |
+| `PhotoViewer` | ⬜ | `components/photo/` | 전체화면 뷰어 + ESC 닫기 |
+| `RelatedPhotos` | ⬜ | `components/photo/` | 같은 무드 관련 사진 6개 |
+| `SeriesBadge` | ⬜ | `components/photo/` | 속한 시리즈 컨텍스트 배지 |
+| 인쇄 모드 | ⬜ | `PhotoDetailPage.jsx` | `@media print` CSS + 인쇄 버튼 |
+
+**통합 순서 (PhotoDetailPage 정보 섹션):**
+```
+1. 작가 정보
+2. 제목 + 무드 배지
+3. 설명 텍스트
+4. [좋아요] [저장] [공유] [🖨️ 인쇄]
+5. SeriesBadge
+6. ColorPalette  ← 신규
+7. EXIF 메타데이터
+8. 태그 칩
+9. RelatedPhotos  ← 신규
+10. CommentsSection
+```
+
+#### Phase 4-3: 이미지 포트폴리오 빌더 (P2)
+
+외국 사진작가 스타일의 몰입형 포트폴리오 경험 구현.
+
+| 기능 | 상태 | 파일 | 설명 |
+|------|------|------|------|
+| `PortfolioSlideshowPage` | ⬜ | `pages/` | 풀스크린 슬라이드쇼 뷰어 |
+| `PortfolioCoverPage` | ⬜ | `components/portfolio/` | 작가 소개 커버 슬라이드 |
+| `PrintButton` | ⬜ | `components/portfolio/` | PDF 내보내기 (window.print) |
+| `EmbedCodeModal` | ⬜ | `components/portfolio/` | iframe 임베드 코드 생성 |
+| `PortfolioLayoutPicker` | ⬜ | `components/portfolio/` | 레이아웃 선택 (그리드/매거진/슬라이드) |
+| `MagazineGrid` | ⬜ | `components/portfolio/` | 잡지형 비균등 그리드 |
+| 슬라이드쇼 진입 버튼 | ⬜ | `PortfolioPage.jsx` | "▶ 슬라이드쇼 보기" 버튼 추가 |
+| 레이아웃 설정 저장 | ⬜ | `ProfilePage.jsx` + Backend | portfolioLayout + coverPhotoId |
+
+**신규 라우트:**
+```
+/portfolio/:profileName/slideshow  — PortfolioSlideshowPage (공개, 헤더 없음)
+```
+
+**백엔드 마이그레이션:**
+```sql
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_layout VARCHAR(20) DEFAULT 'grid';
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_cover_photo_id BIGINT;
+```
+
+**구현 순서 (단계별):**
+1. Phase 4-3-1: 슬라이드쇼 뷰어 + 라우트
+2. Phase 4-3-2: 커버 페이지 + PDF 내보내기
+3. Phase 4-3-3: 레이아웃 선택 + 매거진 그리드
+4. Phase 4-3-4: 임베드 코드 생성
+
+---
+
+### ⬜ Phase 5 — 향후 기능
 
 | 기능 | 설명 |
 |------|------|
-| 인쇄/굿즈 주문 | 파트너 API 연동 |
 | 실시간 알림 | WebSocket / SSE |
 | 통계 대시보드 | happiness-admin 앱 |
+| 인쇄/굿즈 주문 | 파트너 API 연동 |
 
 ---
 

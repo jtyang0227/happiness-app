@@ -71,6 +71,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `P1_04_HEADER_REDESIGN.md` | Header 아바타 드롭다운 (프로필·로그아웃) |
 | `P1_05_EXPLORE_SORT.md` | 탐색 정렬·활성 필터 배지·결과 수 표시 |
 | `P1_06_AVATAR_UPLOAD.md` | 프로필 아바타 이미지 업로드 |
+| `08_COLOR_PALETTE_DETAIL.md` | 5색 팔레트 추출 · PhotoDetail 강화 (네비게이션/전체화면/관련사진/공유/인쇄) |
 
 **P2 — 중기 (1개월)**
 | 파일 | 작업 |
@@ -80,6 +81,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `P2_03_INFINITE_SCROLL.md` | 무한 스크롤 (useInfiniteScroll 훅) |
 | `P2_04_DRAFT_AUTOSAVE.md` | PhotoForm 드래프트 자동저장 (useDraft 훅) |
 | `P2_05_AUTHOR_PROFILE.md` | 작가 공개 프로필 페이지 (/u/:profileName) |
+| `09_PORTFOLIO_BUILDER.md` | 슬라이드쇼 뷰어 · 매거진 레이아웃 · PDF 내보내기 · 임베드 코드 |
 
 ---
 
