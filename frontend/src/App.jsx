@@ -23,6 +23,10 @@ import SeriesPage from './pages/SeriesPage';
 import InquiryFormPage from './pages/InquiryFormPage';
 import InquiryInboxPage from './pages/InquiryInboxPage';
 import FeedPage from './pages/FeedPage';
+import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
+import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
+import AdminMembersPage      from './pages/admin/AdminMembersPage';
+import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
 
 // Routes that show the Header (authenticated app shell)
 const STANDALONE_PATHS = [
@@ -35,7 +39,9 @@ const STANDALONE_PATHS = [
 
 function AppShell() {
   const location = useLocation();
-  const isStandalone = STANDALONE_PATHS.includes(location.pathname) || location.pathname.startsWith('/inquiry/');
+  const isStandalone = STANDALONE_PATHS.includes(location.pathname)
+    || location.pathname.startsWith('/inquiry/')
+    || location.pathname.startsWith('/admin');
 
   const isGallery = location.pathname === '/';
   const bg = isStandalone ? '#0a0a1a' : isGallery ? '#111111' : '#f7f7fb';
@@ -94,6 +100,20 @@ function AppShell() {
           } />
           <Route path="/feed" element={
             <ProtectedRoute><FeedPage /></ProtectedRoute>
+          } />
+
+          {/* Admin routes — ADMIN 권한 필요 */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/gallery-order" element={
+            <ProtectedRoute requiredRoles={['ADMIN']}><AdminGalleryOrderPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/members" element={
+            <ProtectedRoute requiredRoles={['ADMIN']}><AdminMembersPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/photos" element={
+            <ProtectedRoute requiredRoles={['ADMIN']}><AdminPhotosPage /></ProtectedRoute>
           } />
 
           {/* Unauthorized */}

@@ -404,12 +404,19 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 3): 하단 댓글+대댓글 섹션 추가. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드.
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount)
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
 - **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
+- **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
+- **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비)
+- **components/photo/PhotoNavigation** — 사진 이전/다음 화살표 오버레이 (키보드 ← →)
+- **components/photo/ShareButton** — Web Share API / clipboard 공유 버튼
+- **components/photo/RelatedPhotos** — 같은 작가 관련 사진 3열 그리드 (최대 6개)
+- **components/layout/AdminLayout** — 어드민 사이드바+상단바 셸 (모바일 햄버거 지원)
+- **hooks/useColorExtraction** — Canvas K-means(k=5) 대표 색상 추출 훅 (캐싱 포함)
 - **contexts/AuthContext** — 전역 인증 상태 (login/signup/updateProfile/logout + localStorage)
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
@@ -449,6 +456,12 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/inbox` — InquiryInboxPage (문의 수신함)
 - `/series` — SeriesPage (시리즈/컬렉션 관리)
 - `/feed` — FeedPage (팔로우 피드)
+
+**어드민 라우트** (ADMIN 권한 필요, `ProtectedRoute requiredRoles=['ADMIN']`):
+- `/admin` — AdminDashboardPage (통계 카드 + 빠른 접근)
+- `/admin/gallery-order` — AdminGalleryOrderPage (멤버 선택 + 드래그 순서 관리)
+- `/admin/members` — AdminMembersPage (회원 목록, 권한 변경, 삭제)
+- `/admin/photos` — AdminPhotosPage (전체 사진 목록, 강제 삭제)
 
 > ⚠️ `/gallery/sort` (PhotoSortPage) 는 일반 사용자 앱에서 **제거**됨.  
 > 사진 표시 순서 관리는 어드민 패널(`/admin/gallery-order`)로 이관. `10_ADMIN_PANEL.md` 참조.
