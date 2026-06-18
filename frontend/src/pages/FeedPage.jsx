@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
+import EmptyState from '../components/common/EmptyState';
+import { SkeletonFeedCard } from '../components/common/Skeleton';
 
 function FeedCard({ photo, onClick }) {
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
@@ -132,51 +134,39 @@ export default function FeedPage() {
     await loadFeed(next, true);
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
-      <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 8 }}>피드</h2>
-      <p style={{ fontSize: 14, color: COLORS.textMuted, marginBottom: 28 }}>
-        팔로우한 작가들의 최신 작품
-      </p>
-
-      {photos.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '80px 0',
-          color: COLORS.textMuted, fontSize: 15,
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>✦</div>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>피드가 비어있습니다</div>
-          <div style={{ fontSize: 13, marginBottom: 24 }}>작가를 팔로우하면 여기서 새 작품을 볼 수 있습니다.</div>
-          <button
-            onClick={() => navigate('/explore')}
-            style={{
-              padding: '10px 24px', background: COLORS.primary, color: '#fff',
-              border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 14,
-            }}
-          >
-            작가 탐색하기
-          </button>
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 20px 60px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>📰 피드</h2>
+          <p style={{ fontSize: 13, color: COLORS.textMuted }}>팔로우한 작가들의 최신 작품</p>
         </div>
+        {!loading && photos.length === 0 && (
+          <button onClick={() => navigate('/explore')} style={{
+            padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+            border: `1.5px solid ${COLORS.border}`, background: COLORS.surface,
+            color: COLORS.textSecondary, cursor: 'pointer',
+          }}>
+            탐색하기
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonFeedCard key={i} />)}
+        </div>
+      ) : photos.length === 0 ? (
+        <EmptyState
+          icon="📸"
+          title="피드가 비어 있습니다"
+          description="마음에 드는 작가를 팔로우하면 여기에 최신 사진이 나타납니다."
+          actionLabel="작가 탐색하기"
+          onAction={() => navigate('/explore')}
+        />
       ) : (
         <>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 20,
-          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {photos.map(photo => (
               <FeedCard key={photo.id} photo={photo} onClick={id => navigate(`/photo/${id}`)} />
             ))}
@@ -197,6 +187,11 @@ export default function FeedPage() {
               >
                 {loadingMore ? '로딩 중...' : '더 보기'}
               </button>
+            </div>
+          )}
+          {!hasMore && photos.length > 0 && (
+            <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: COLORS.textMuted }}>
+              모든 게시물을 확인했습니다 ✓
             </div>
           )}
         </>

@@ -92,15 +92,53 @@ export default function PhotoSortPage() {
   };
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px 60px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px 80px' }}>
+      {/* Dirty 배너 — sticky */}
+      {dirty && (
+        <div style={{
+          position: 'sticky', top: 58, zIndex: 50,
+          background: COLORS.primaryLight,
+          borderBottom: '1px solid rgba(91,110,245,0.2)',
+          padding: '10px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          margin: '0 -20px 16px',
+        }}>
+          <span style={{ fontSize: 13, color: COLORS.primary, fontWeight: 600 }}>
+            ⚠️ 저장하지 않은 변경사항이 있습니다
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleSave} disabled={saving}
+              style={{
+                padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                border: 'none', background: COLORS.primary, color: '#fff',
+                cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1,
+              }}
+            >
+              {saving ? '저장 중...' : '지금 저장'}
+            </button>
+            <button
+              onClick={fetchPhotos}
+              style={{
+                padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${COLORS.border}`, background: '#fff',
+                color: COLORS.textSecondary, cursor: 'pointer',
+              }}
+            >
+              되돌리기
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>
-            갤러리 순서 변경
+            🗂️ 갤러리 순서 변경
           </h1>
           <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>
-            드래그로 순서를 바꾼 후 저장하세요
+            드래그하여 사진 순서를 변경하세요
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -142,86 +180,77 @@ export default function PhotoSortPage() {
           <p style={{ color: COLORS.textSecondary }}>등록된 사진이 없습니다.</p>
         </div>
       ) : (
-        <>
-          {dirty && (
-            <div style={{
-              background: COLORS.primaryLight, borderRadius: 10,
-              padding: '10px 16px', marginBottom: 16,
-              fontSize: 13, color: COLORS.primary, fontWeight: 600,
-            }}>
-              순서가 변경되었습니다. 저장 버튼을 눌러 적용하세요.
-            </div>
-          )}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-            gap: 12,
-          }}>
-            {photos.map((photo, idx) => (
-              <div
-                key={photo.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDrop={(e) => handleDrop(e, idx)}
-                style={{
-                  borderRadius: 12, overflow: 'hidden', cursor: 'grab',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: `2px solid ${COLORS.border}`,
-                  background: COLORS.surface, userSelect: 'none',
-                  transition: 'box-shadow 0.15s',
-                }}
-                onDragEnter={e => {
-                  if (dragIdxRef.current !== idx) {
-                    e.currentTarget.style.border = `2px solid ${COLORS.primary}`;
-                    e.currentTarget.style.boxShadow = `0 0 0 2px ${COLORS.primaryLight}`;
-                  }
-                }}
-                onDragLeave={e => {
-                  e.currentTarget.style.border = `2px solid ${COLORS.border}`;
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                }}
-              >
-                {/* 순서 배지 */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ aspectRatio: '1', overflow: 'hidden', background: '#f0f0f0' }}>
-                    <img
-                      src={photo.thumbnailUrl || photo.imageUrl}
-                      alt={photo.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
-                      draggable={false}
-                    />
-                  </div>
-                  <div style={{
-                    position: 'absolute', top: 6, left: 6,
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: COLORS.primary, color: '#fff',
-                    fontSize: 11, fontWeight: 800,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {idx + 1}
-                  </div>
-                  <div style={{
-                    position: 'absolute', top: 6, right: 6,
-                    color: 'rgba(255,255,255,0.8)', fontSize: 14,
-                    textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                  }}>
-                    ⠿
-                  </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+          gap: 12,
+        }}>
+          {photos.map((photo, idx) => (
+            <div
+              key={photo.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDrop={(e) => handleDrop(e, idx)}
+              style={{
+                borderRadius: 12, overflow: 'hidden', cursor: 'grab',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                border: `2px solid ${COLORS.border}`,
+                background: COLORS.surface, userSelect: 'none',
+                transition: 'box-shadow 0.15s, border-color 0.15s',
+              }}
+              onDragEnter={e => {
+                if (dragIdxRef.current !== idx) {
+                  e.currentTarget.style.borderColor = COLORS.primary;
+                  e.currentTarget.style.boxShadow = `0 4px 20px rgba(91,110,245,0.2)`;
+                }
+              }}
+              onDragLeave={e => {
+                e.currentTarget.style.borderColor = COLORS.border;
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{ position: 'relative' }}>
+                <div style={{ aspectRatio: '1', overflow: 'hidden', background: '#f0f0f0' }}>
+                  <img
+                    src={photo.thumbnailUrl || photo.imageUrl}
+                    alt={photo.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
+                    draggable={false}
+                  />
                 </div>
-                <div style={{ padding: '8px 10px' }}>
-                  <p style={{
-                    fontSize: 11, fontWeight: 600, color: COLORS.text,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>
-                    {photo.title || '제목 없음'}
-                  </p>
+                {/* 순서 배지 */}
+                <div style={{
+                  position: 'absolute', top: 6, left: 6,
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: COLORS.primary, color: '#fff',
+                  fontSize: 11, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {idx + 1}
+                </div>
+                {/* 드래그 핸들 */}
+                <div style={{
+                  position: 'absolute', top: 6, right: 6,
+                  color: 'rgba(255,255,255,0.9)', fontSize: 16,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                  lineHeight: 1, userSelect: 'none',
+                }}>
+                  ⠿
                 </div>
               </div>
-            ))}
-          </div>
-        </>
+              <div style={{ padding: '8px 10px' }}>
+                <p style={{
+                  fontSize: 11, fontWeight: 600, color: COLORS.text,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0,
+                }}>
+                  {photo.title || '제목 없음'}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
