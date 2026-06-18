@@ -1,211 +1,150 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MOOD_COLORS, COLORS } from '../constants/colors';
+import { MOOD_COLORS } from '../constants/colors';
 import apiClient from '../api/apiClient';
 import { followApi, seriesApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-// ── PhotoCard ──────────────────────────────────────────────────────────
-
-function PhotoCard({ photo, onClick }) {
-  const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
+/* ── Masonry Gallery Item ─────────────────────────────── */
+function MasonryPhoto({ photo, onClick }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <div
       onClick={() => onClick(photo.id)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#1a1a2e', borderRadius: 14, overflow: 'hidden',
-        cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-3px)';
-        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.6)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,0,0,0.4)';
+        breakInside: 'avoid', marginBottom: 4, cursor: 'pointer',
+        position: 'relative', overflow: 'hidden', display: 'block',
       }}
     >
-      <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: '#0e0e0e' }}>
-        <img
-          src={photo.thumbnailUrl || photo.imageUrl}
-          alt={photo.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          onError={e => { e.target.style.display = 'none'; }}
-        />
-        {mood && (
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            display: 'flex', alignItems: 'center', gap: 4,
-            background: mood.bg, padding: '3px 9px', borderRadius: 10,
-            fontSize: 11, fontWeight: 700,
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-            {mood.label}
+      <img
+        src={photo.thumbnailUrl || photo.imageUrl}
+        alt={photo.title || '사진'}
+        loading="lazy"
+        style={{
+          width: '100%', height: 'auto', display: 'block',
+          transform: hovered ? 'scale(1.03)' : 'scale(1)',
+          transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)',
+        }}
+        onError={e => { e.target.style.display = 'none'; }}
+      />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.8) 100%)',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'flex-end', padding: '16px 12px',
+      }}>
+        {photo.title && (
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.3, marginBottom: 4 }}>
+            {photo.title}
           </div>
         )}
-        {photo.dominantColor && (
-          <div style={{
-            position: 'absolute', bottom: 8, left: 8,
-            width: 14, height: 14, borderRadius: '50%',
-            background: photo.dominantColor,
-            border: '2px solid rgba(255,255,255,0.6)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-          }} />
-        )}
-      </div>
-      <div style={{ padding: 14 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: '#e8e8f0', marginBottom: 4, lineHeight: 1.4 }}>
-          {photo.title || '제목 없음'}
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: '#6060a0' }}>{photo.imageRatio}</span>
-          <span style={{ fontSize: 12, color: '#6060a0', fontWeight: 600 }}>♡ {photo.likesCount ?? 0}</span>
-        </div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>♡ {photo.likesCount ?? 0}</div>
       </div>
     </div>
   );
 }
 
-// ── SeriesCard (클릭 시 인라인 사진 펼치기) ───────────────────────────
+/* ── Series Horizontal Card ───────────────────────────── */
+function SeriesScrollCard({ series, onPhotoClick }) {
+  const [detail, setDetail] = useState(null);
+  const [open, setOpen] = useState(false);
 
-function SeriesCard({ series, expanded, onToggle, onPhotoClick }) {
-  const [detail, setDetail]           = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-
-  const handleToggle = async () => {
-    onToggle(series.id);
-    if (!expanded && !detail) {
-      setLoadingDetail(true);
+  const handleClick = async () => {
+    if (!open && !detail) {
       try {
         const res = await seriesApi.getOne(series.id);
         setDetail(res?.data ?? res);
-      } catch {
-        setDetail({ photos: [] });
-      } finally {
-        setLoadingDetail(false);
-      }
+      } catch { setDetail({ photos: [] }); }
     }
+    setOpen(v => !v);
   };
 
+  const firstPhoto = detail?.photos?.[0];
+
   return (
-    <div style={{
-      background: '#1a1a2e', borderRadius: 14, overflow: 'hidden',
-      boxShadow: '0 2px 16px rgba(0,0,0,0.4)', transition: 'box-shadow 0.2s',
-    }}>
-      {/* 헤더 */}
+    <div style={{ flexShrink: 0, width: 240 }}>
       <div
-        onClick={handleToggle}
-        style={{ cursor: 'pointer' }}
-        onMouseEnter={e => { e.currentTarget.parentElement.style.boxShadow = '0 8px 32px rgba(0,0,0,0.6)'; }}
-        onMouseLeave={e => { e.currentTarget.parentElement.style.boxShadow = '0 2px 16px rgba(0,0,0,0.4)'; }}
+        onClick={handleClick}
+        style={{
+          width: 240, borderRadius: 12, overflow: 'hidden',
+          cursor: 'pointer', background: '#12122a',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          transition: 'transform 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        <div style={{ position: 'relative', aspectRatio: '16/9', background: '#0e0e0e', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', aspectRatio: '16/9', background: '#0a0a18', overflow: 'hidden' }}>
           {series.coverImageUrl ? (
-            <img
-              src={series.coverImageUrl} alt={series.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
+            <img src={series.coverImageUrl} alt={series.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           ) : (
-            <div style={{
-              width: '100%', height: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 32, color: '#4040a0',
-            }}>✦</div>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#3a3a6a' }}>✦</div>
           )}
           <div style={{
-            position: 'absolute', bottom: 8, right: 8,
-            background: 'rgba(0,0,0,0.6)', borderRadius: 8,
-            padding: '3px 9px', fontSize: 11, fontWeight: 700, color: '#fff',
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(transparent 40%, rgba(0,0,0,0.7) 100%)',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: 8, left: 10,
+            fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
           }}>
             {series.photoCount ?? 0}장
           </div>
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            background: 'rgba(0,0,0,0.5)', borderRadius: '50%',
-            width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, color: '#fff',
-          }}>
-            {expanded ? '▲' : '▼'}
-          </div>
         </div>
-        <div style={{ padding: '12px 14px' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#e8e8f0', marginBottom: 4 }}>
-            {series.title}
-          </h3>
+        <div style={{ padding: '10px 12px' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#d0d0f0', marginBottom: 2 }}>{series.title}</div>
           {series.description && (
-            <p style={{
-              fontSize: 12, color: '#6060a0', lineHeight: 1.5,
-              display: '-webkit-box', WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            }}>
-              {series.description}
-            </p>
+            <div style={{
+              fontSize: 11, color: '#6060a0', lineHeight: 1.5,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{series.description}</div>
           )}
         </div>
       </div>
 
-      {/* 인라인 사진 그리드 */}
-      {expanded && (
-        <div style={{ borderTop: '1px solid #1e1e3a', padding: 14 }}>
-          {loadingDetail ? (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: '#5555aa', fontSize: 12 }}>
-              불러오는 중...
+      {/* 인라인 펼치기 */}
+      {open && detail && (
+        <div style={{
+          marginTop: 8, background: '#12122a', borderRadius: 10, padding: 10,
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4,
+        }}>
+          {(detail.photos ?? []).slice(0, 6).map(p => (
+            <div key={p.id} onClick={() => onPhotoClick(p.id)}
+              style={{ aspectRatio: '1', borderRadius: 6, overflow: 'hidden', cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
+              <img src={p.thumbnailUrl || p.imageUrl} alt={p.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={e => { e.target.style.display = 'none'; }} />
             </div>
-          ) : (detail?.photos?.length > 0) ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8 }}>
-              {detail.photos.map(photo => (
-                <div
-                  key={photo.id}
-                  onClick={() => onPhotoClick(photo.id)}
-                  style={{
-                    aspectRatio: '1', borderRadius: 8, overflow: 'hidden',
-                    cursor: 'pointer', background: '#0e0e0e',
-                    transition: 'opacity 0.15s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                >
-                  <img
-                    src={photo.thumbnailUrl || photo.imageUrl}
-                    alt={photo.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    onError={e => { e.target.style.display = 'none'; }}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', fontSize: 12, color: '#5555aa', padding: '16px 0' }}>
-              등록된 사진이 없습니다.
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-// ── FollowListModal ────────────────────────────────────────────────────
-
+/* ── Follow List Modal ────────────────────────────────── */
 function FollowListModal({ title, members, loading, onClose }) {
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000,
-      }}
       onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+      }}
     >
-      <div
-        style={{
-          background: '#12122a', borderRadius: 16, padding: '20px',
-          width: '90%', maxWidth: 360, maxHeight: '70vh',
-          overflow: 'auto', border: '1px solid #2a2a50',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#12122a', borderRadius: 16, padding: 20,
+        width: '90%', maxWidth: 360, maxHeight: '70vh', overflow: 'auto',
+        border: '1px solid #2a2a50',
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#eeeeff' }}>{title}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9090cc', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
@@ -214,62 +153,56 @@ function FollowListModal({ title, members, loading, onClose }) {
           <div style={{ textAlign: 'center', padding: '24px 0', color: '#5555aa', fontSize: 13 }}>불러오는 중...</div>
         ) : members.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#5555aa', padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
-        ) : (
-          members.map(m => (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #1e1e3a' }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden',
-              }}>
-                {m.avatarUrl
-                  ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : m.name?.charAt(0)}
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#d0d0f0' }}>{m.name}</div>
-                {m.profileName && <div style={{ fontSize: 11, color: '#6060a0' }}>@{m.profileName}</div>}
-              </div>
+        ) : members.map(m => (
+          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #1e1e3a' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden',
+            }}>
+              {m.avatarUrl
+                ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : m.name?.charAt(0)}
             </div>
-          ))
-        )}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#d0d0f0' }}>{m.name}</div>
+              {m.profileName && <div style={{ fontSize: 11, color: '#6060a0' }}>@{m.profileName}</div>}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────
-
+/* ── Main Page ────────────────────────────────────────── */
 export default function PortfolioPage() {
   const { profileName } = useParams();
-  const navigate        = useNavigate();
-  const { user }        = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const filterBarRef = useRef(null);
 
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
 
-  const [activeTab, setActiveTab]   = useState('photos');
   const [moodFilter, setMoodFilter] = useState('');
-  const [expandedSeriesId, setExpandedSeriesId] = useState(null);
 
   const [following, setFollowing]         = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const [followModal, setFollowModal]           = useState(null); // 'followers' | 'following'
+  const [followModal, setFollowModal]               = useState(null);
   const [followModalMembers, setFollowModalMembers] = useState([]);
-  const [loadingModal, setLoadingModal]         = useState(false);
+  const [loadingModal, setLoadingModal]             = useState(false);
 
-  // ── 포트폴리오 로드 ─────────────────────────────────────────────────
+  /* ── 포트폴리오 로드 ── */
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setError('');
-      setIsPrivate(false);
+      setLoading(true); setError(''); setIsPrivate(false);
       try {
         const res = await apiClient.get(`/portfolio/${profileName}`);
         if (!cancelled) {
@@ -289,7 +222,7 @@ export default function PortfolioPage() {
     return () => { cancelled = true; };
   }, [profileName]);
 
-  // ── 팔로우 여부 확인 ─────────────────────────────────────────────────
+  /* ── 팔로우 여부 ── */
   useEffect(() => {
     if (!data?.member?.id || !user?.id || user.id === data.member.id) return;
     followApi.isFollowing(user.id, data.member.id)
@@ -306,7 +239,7 @@ export default function PortfolioPage() {
     setFollowerCount(c => c + (prev ? -1 : 1));
     try {
       if (prev) await followApi.unfollow(user.id, memberId);
-      else      await followApi.follow(user.id, memberId);
+      else await followApi.follow(user.id, memberId);
     } catch {
       setFollowing(prev);
       setFollowerCount(c => c + (prev ? 1 : -1));
@@ -317,58 +250,41 @@ export default function PortfolioPage() {
 
   const handleOpenFollowModal = async (type) => {
     if (!data?.member?.id) return;
-    setFollowModal(type);
-    setFollowModalMembers([]);
-    setLoadingModal(true);
+    setFollowModal(type); setFollowModalMembers([]); setLoadingModal(true);
     try {
       const res = type === 'followers'
         ? await followApi.getFollowers(data.member.id)
         : await followApi.getFollowing(data.member.id);
       const list = res?.data ?? res ?? [];
       setFollowModalMembers(Array.isArray(list) ? list : []);
-    } catch {
-      setFollowModalMembers([]);
-    } finally {
-      setLoadingModal(false);
-    }
+    } catch { setFollowModalMembers([]); }
+    finally { setLoadingModal(false); }
   };
 
-  // ── Loading ──────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#5b6ef5', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  /* ── 로딩 ── */
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#5b6ef5', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  // ── 비공개 ──────────────────────────────────────────────────────────
-  if (isPrivate) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a18', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <div style={{ fontSize: 48 }}>🔒</div>
-        <div style={{ color: '#eeeeff', fontSize: 18, fontWeight: 700 }}>비공개 포트폴리오</div>
-        <div style={{ color: '#6060a0', fontSize: 14 }}>이 작가의 포트폴리오는 비공개 상태입니다.</div>
-        <button onClick={() => navigate(-1)}
-          style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}
-        >돌아가기</button>
-      </div>
-    );
-  }
+  if (isPrivate) return (
+    <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ fontSize: 48 }}>🔒</div>
+      <div style={{ color: '#eeeeff', fontSize: 18, fontWeight: 700 }}>비공개 포트폴리오</div>
+      <div style={{ color: '#6060a0', fontSize: 14 }}>이 작가의 포트폴리오는 비공개 상태입니다.</div>
+      <button onClick={() => navigate(-1)} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>돌아가기</button>
+    </div>
+  );
 
-  // ── Error ─────────────────────────────────────────────────────────
-  if (error) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a18', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <div style={{ fontSize: 48 }}>✦</div>
-        <div style={{ color: '#9090b0', fontSize: 16 }}>{error}</div>
-        <button onClick={() => navigate('/login')}
-          style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-        >로그인하기</button>
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ fontSize: 48 }}>✦</div>
+      <div style={{ color: '#9090b0', fontSize: 16 }}>{error}</div>
+      <button onClick={() => navigate('/login')} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>로그인하기</button>
+    </div>
+  );
 
   const {
     member, photos = [], photoCount = 0, series = [],
@@ -377,252 +293,308 @@ export default function PortfolioPage() {
 
   const joinYear    = member?.createdAt ? new Date(member.createdAt).getFullYear() : null;
   const specialties = member?.specialties ? member.specialties.split(',').map(s => s.trim()).filter(Boolean) : [];
-
   const availableMoods  = [...new Set(photos.map(p => p.colorMood).filter(Boolean))];
   const filteredPhotos  = moodFilter ? photos.filter(p => p.colorMood === moodFilter) : photos;
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0a0a18', color: '#e8e8f0' }}>
+  const isOwnPage = user?.id === member?.id;
+  const hasCover  = !!member?.coverUrl;
 
-      {/* ── 커버 이미지 ─────────────────────────────────────────── */}
-      {member?.coverUrl && (
-        <div style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
+  return (
+    <div style={{ minHeight: '100vh', background: '#0e0e0e', color: '#e8e8f0' }}>
+
+      {/* ══ HERO ══════════════════════════════════════════════ */}
+      <div style={{
+        position: 'relative', height: '82vh', minHeight: 480,
+        overflow: 'hidden', display: 'flex', alignItems: 'flex-end',
+      }}>
+        {/* 배경 */}
+        {hasCover ? (
           <img src={member.coverUrl} alt="커버"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, rgba(10,10,24,0) 40%, rgba(10,10,24,1) 100%)',
-          }} />
+            background: 'linear-gradient(160deg, #12122a 0%, #0a0a18 50%, #0e0e0e 100%)',
+          }}>
+            {/* 장식 패턴 */}
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle at 25% 35%, #5b6ef5 0%, transparent 50%), radial-gradient(circle at 75% 65%, #a78bfa 0%, transparent 50%)' }} />
+          </div>
+        )}
+
+        {/* 오버레이 그라디언트 */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.92) 100%)',
+        }} />
+
+        {/* 히어로 콘텐츠 */}
+        <div style={{ position: 'relative', width: '100%', padding: '0 32px 0', zIndex: 1 }}>
+          {/* 아바타 */}
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%', marginBottom: 20,
+            background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 28, fontWeight: 800, color: '#fff',
+            border: '2.5px solid rgba(255,255,255,0.25)', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+          }}>
+            {member?.avatarUrl
+              ? <img src={member.avatarUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : (member?.name?.charAt(0) ?? '?')}
+          </div>
+
+          {/* 이름 */}
+          <h1 style={{
+            fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: 900,
+            color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 10,
+          }}>
+            {member?.name ?? profileName}
+          </h1>
+
+          {/* @handle + 전문 분야 */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>
+              @{profileName}
+            </span>
+            {joinYear && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>· Since {joinYear}</span>}
+            {member?.location && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>· 📍 {member.location}</span>}
+            {specialties.map(sp => (
+              <span key={sp} style={{
+                padding: '3px 10px', borderRadius: 20,
+                background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(6px)',
+                fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(255,255,255,0.15)',
+              }}>{sp}</span>
+            ))}
+          </div>
+
+          {/* CTA 버튼 */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 0 }}>
+            {member?.websiteUrl && (
+              <a href={member.websiteUrl} target="_blank" rel="noopener noreferrer" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '9px 18px', borderRadius: 24,
+                background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
+                color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)',
+                transition: 'background 0.2s',
+              }}>🔗 웹사이트</a>
+            )}
+            {member?.instagramId && (
+              <a href={`https://instagram.com/${member.instagramId}`} target="_blank" rel="noopener noreferrer" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '9px 18px', borderRadius: 24,
+                background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
+                color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)',
+              }}>@ Instagram</a>
+            )}
+            {user?.id && !isOwnPage && (
+              <button onClick={handleFollow} disabled={followLoading} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700,
+                border: following ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                background: following ? 'rgba(255,255,255,0.1)' : '#5b6ef5',
+                color: '#fff', cursor: followLoading ? 'not-allowed' : 'pointer',
+                opacity: followLoading ? 0.7 : 1, backdropFilter: 'blur(8px)',
+              }}>
+                {following ? '✓ 팔로잉' : '+ 팔로우'}
+              </button>
+            )}
+            <button
+              onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700,
+                border: 'none', background: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)', color: '#fff', cursor: 'pointer',
+                border: '1px solid rgba(255,255,255,0.25)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,110,245,0.6)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+            >✉ 촬영 문의하기</button>
+          </div>
+        </div>
+
+        {/* Stats Bar (hero 하단 오버레이) */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex', justifyContent: 'center', gap: 0,
+        }}>
+          {[
+            { value: photoCount, label: '작품' },
+            { value: followerCount, label: '팔로워', onClick: () => handleOpenFollowModal('followers') },
+            { value: followingCount, label: '팔로잉', onClick: () => handleOpenFollowModal('following') },
+            { value: totalLikes, label: '총 좋아요' },
+            ...(series.length > 0 ? [{ value: series.length, label: '시리즈' }] : []),
+          ].map((stat, i, arr) => (
+            <div
+              key={stat.label}
+              onClick={stat.onClick}
+              style={{
+                flex: 1, maxWidth: 160, padding: '14px 0', textAlign: 'center',
+                cursor: stat.onClick ? 'pointer' : 'default',
+                borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+              }}
+              onMouseEnter={e => { if (stat.onClick) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>{stat.value}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ BIO SECTION ═══════════════════════════════════════ */}
+      {member?.bio && (
+        <div style={{
+          maxWidth: 640, margin: '0 auto', padding: '52px 32px 40px',
+          textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <p style={{
+            fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.55)',
+            fontStyle: 'italic', wordBreak: 'keep-all',
+          }}>"{member.bio}"</p>
         </div>
       )}
 
-      {/* ── Hero 프로필 ────────────────────────────────────────── */}
-      <div style={{
-        background: member?.coverUrl ? 'transparent' : 'linear-gradient(180deg, #12122a 0%, #0a0a18 100%)',
-        padding: member?.coverUrl ? '0 24px 40px' : '60px 24px 40px',
-        textAlign: 'center',
-        borderBottom: '1px solid #1e1e3a',
-        marginTop: member?.coverUrl ? -56 : 0,
-        position: 'relative',
-      }}>
-        {/* 아바타 */}
-        <div style={{
-          width: 90, height: 90, borderRadius: '50%', margin: '0 auto 16px',
-          background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 34, fontWeight: 700, color: '#fff',
-          boxShadow: '0 6px 32px rgba(91,110,245,0.5)',
-          border: '3px solid #0a0a18', overflow: 'hidden',
-        }}>
-          {member?.avatarUrl
-            ? <img src={member.avatarUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : (member?.name?.charAt(0) ?? '?')}
-        </div>
-
-        {/* 이름 */}
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-          {member?.name ?? profileName}
-        </h1>
-
-        {/* @handle + Since + Location */}
-        <div style={{ color: '#6060a0', fontSize: 13, marginBottom: 10, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <span>@{profileName}</span>
-          {joinYear && <span>Since {joinYear}</span>}
-          {member?.location && <span>📍 {member.location}</span>}
-        </div>
-
-        {/* bio */}
-        {member?.bio && (
-          <p style={{ fontSize: 13, color: '#9090c0', lineHeight: 1.6, maxWidth: 480, margin: '0 auto 12px', wordBreak: 'keep-all' }}>
-            {member.bio}
-          </p>
-        )}
-
-        {/* specialties */}
-        {specialties.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-            {specialties.map(sp => (
-              <span key={sp} style={{
-                padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: '#1a1a3a', color: '#8080cc', border: '1px solid #2a2a50',
-              }}>
-                {sp}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 통계 4종 */}
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{photoCount}</div>
-            <div style={{ fontSize: 11, color: '#6060a0' }}>작품</div>
-          </div>
-          <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => handleOpenFollowModal('followers')}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{followerCount}</div>
-            <div style={{ fontSize: 11, color: '#6060a0' }}>팔로워</div>
-          </div>
-          <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => handleOpenFollowModal('following')}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{followingCount}</div>
-            <div style={{ fontSize: 11, color: '#6060a0' }}>팔로잉</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{totalLikes}</div>
-            <div style={{ fontSize: 11, color: '#6060a0' }}>총 좋아요</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{series.length}</div>
-            <div style={{ fontSize: 11, color: '#6060a0' }}>시리즈</div>
-          </div>
-        </div>
-
-        {/* 액션 버튼 */}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {member?.websiteUrl && (
-            <a href={member.websiteUrl} target="_blank" rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 16px', borderRadius: 20,
-                border: '1px solid #2e2e50', background: '#12122a',
-                color: '#9090cc', fontSize: 13, fontWeight: 600, textDecoration: 'none',
-              }}
-            >🔗 웹사이트</a>
-          )}
-          {member?.instagramId && (
-            <a href={`https://instagram.com/${member.instagramId}`} target="_blank" rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 18px', borderRadius: 20,
-                border: '1px solid #2e2e50', background: '#12122a',
-                color: '#9090cc', fontSize: 13, fontWeight: 600, textDecoration: 'none',
-              }}
-            >@ Instagram</a>
-          )}
-          {user?.id && user.id !== member?.id && (
-            <button onClick={handleFollow} disabled={followLoading}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 22px', borderRadius: 20,
-                border: following ? '1px solid #2e2e50' : 'none',
-                background: following ? '#12122a' : '#5b6ef5',
-                color: following ? '#9090cc' : '#fff',
-                fontSize: 13, fontWeight: 700,
-                cursor: followLoading ? 'not-allowed' : 'pointer',
-                opacity: followLoading ? 0.7 : 1,
-              }}
-            >
-              {following ? '✓ 팔로잉' : '+ 팔로우'}
-            </button>
-          )}
+      {/* ══ CATEGORY FILTER (sticky) ══════════════════════════ */}
+      {availableMoods.length > 0 && (
+        <div
+          ref={filterBarRef}
+          style={{
+            position: 'sticky', top: 0, zIndex: 10,
+            background: 'rgba(14,14,14,0.92)', backdropFilter: 'blur(16px)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            padding: '12px 20px',
+            display: 'flex', gap: 6, overflowX: 'auto',
+            scrollbarWidth: 'none',
+          }}
+        >
+          <style>{`div::-webkit-scrollbar { display: none; }`}</style>
           <button
-            onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
+            onClick={() => setMoodFilter('')}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 22px', borderRadius: 20,
-              border: 'none', background: '#5b6ef5',
-              color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              border: !moodFilter ? '1.5px solid #5b6ef5' : '1.5px solid rgba(255,255,255,0.1)',
+              background: !moodFilter ? 'rgba(91,110,245,0.2)' : 'transparent',
+              color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)',
+              cursor: 'pointer',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#4458e0'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#5b6ef5'; }}
-          >✉ 촬영 문의하기</button>
-        </div>
-      </div>
+          >전체 {photos.length}</button>
 
-      {/* ── 탭 + 콘텐츠 ───────────────────────────────────────── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px 48px' }}>
-        {/* 탭 */}
-        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #1e1e3a', marginBottom: 24 }}>
-          {[
-            { key: 'photos', label: `작품 ${photoCount}` },
-            { key: 'series', label: `시리즈 ${series.length}` },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '12px 20px', background: 'none', border: 'none',
-                cursor: 'pointer', fontSize: 14, fontWeight: 700,
-                color: activeTab === tab.key ? '#a0a0ff' : '#6060a0',
-                borderBottom: `2px solid ${activeTab === tab.key ? '#5b6ef5' : 'transparent'}`,
-                marginBottom: -1, transition: 'all 0.15s',
-              }}
-            >{tab.label}</button>
+          {availableMoods.map(mood => {
+            const md = MOOD_COLORS[mood];
+            if (!md) return null;
+            const active = moodFilter === mood;
+            const count = photos.filter(p => p.colorMood === mood).length;
+            return (
+              <button
+                key={mood}
+                onClick={() => setMoodFilter(active ? '' : mood)}
+                style={{
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                  border: `1.5px solid ${active ? md.dot : 'rgba(255,255,255,0.1)'}`,
+                  background: active ? `${md.dot}22` : 'transparent',
+                  color: active ? md.dot : 'rgba(255,255,255,0.4)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: md.dot, display: 'inline-block' }} />
+                {md.label} {count}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ══ MASONRY GALLERY ═══════════════════════════════════ */}
+      <style>{`
+        .portfolio-masonry { columns: 4 220px; column-gap: 4px; }
+        @media (max-width: 900px) { .portfolio-masonry { columns: 3; } }
+        @media (max-width: 600px) { .portfolio-masonry { columns: 2; } }
+      `}</style>
+
+      {filteredPhotos.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'rgba(255,255,255,0.2)', fontSize: 15 }}>
+          {moodFilter ? '해당 분위기의 작품이 없습니다.' : '아직 등록된 작품이 없습니다.'}
+        </div>
+      ) : (
+        <div className="portfolio-masonry" style={{ padding: '4px 4px' }}>
+          {filteredPhotos.map(photo => (
+            <MasonryPhoto key={photo.id} photo={photo} onClick={id => navigate(`/photo/${id}`)} />
           ))}
         </div>
+      )}
 
-        {/* 작품 탭 */}
-        {activeTab === 'photos' && (
-          <>
-            {/* 무드 필터 */}
-            {availableMoods.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
-                <button onClick={() => setMoodFilter('')}
-                  style={{
-                    padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                    border: `1.5px solid ${!moodFilter ? '#5b6ef5' : '#2a2a50'}`,
-                    background: !moodFilter ? 'rgba(91,110,245,0.15)' : 'transparent',
-                    color: !moodFilter ? '#a0a0ff' : '#6060a0', cursor: 'pointer',
-                  }}
-                >전체</button>
-                {availableMoods.map(mood => {
-                  const md = MOOD_COLORS[mood];
-                  if (!md) return null;
-                  const active = moodFilter === mood;
-                  return (
-                    <button key={mood} onClick={() => setMoodFilter(active ? '' : mood)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                        border: `1.5px solid ${active ? md.dot : '#2a2a50'}`,
-                        background: active ? md.bg : 'transparent',
-                        color: active ? COLORS.text : '#6060a0', cursor: 'pointer',
-                      }}
-                    >
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: md.dot, display: 'inline-block' }} />
-                      {md.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {filteredPhotos.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#6060a0', padding: '60px 0', fontSize: 15 }}>
-                {moodFilter ? '해당 색채 분위기의 작품이 없습니다.' : '아직 등록된 작품이 없습니다.'}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                {filteredPhotos.map(photo => (
-                  <PhotoCard key={photo.id} photo={photo} onClick={id => navigate(`/photo/${id}`)} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* 시리즈 탭 */}
-        {activeTab === 'series' && (
-          series.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#6060a0', padding: '60px 0', fontSize: 15 }}>
-              아직 등록된 시리즈가 없습니다.
+      {/* ══ SERIES SECTION ════════════════════════════════════ */}
+      {series.length > 0 && (
+        <div style={{ padding: '60px 0 48px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '0 24px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                컬렉션 · {series.length}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {series.map(s => (
-                <SeriesCard
-                  key={s.id}
-                  series={s}
-                  expanded={expandedSeriesId === s.id}
-                  onToggle={id => setExpandedSeriesId(prev => prev === id ? null : id)}
-                  onPhotoClick={id => navigate(`/photo/${id}`)}
-                />
-              ))}
-            </div>
-          )
-        )}
-      </div>
+          </div>
+          <div style={{
+            display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px',
+            scrollbarWidth: 'none',
+          }}>
+            {series.map(s => (
+              <SeriesScrollCard
+                key={s.id}
+                series={s}
+                onPhotoClick={id => navigate(`/photo/${id}`)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* Footer */}
-      <div style={{ textAlign: 'center', padding: '24px 0', color: '#3a3a60', fontSize: 12 }}>
-        ✦ Happiness — 포트폴리오 갤러리
+      {/* ══ FOOTER CTA ════════════════════════════════════════ */}
+      <div style={{
+        padding: '64px 24px 48px', textAlign: 'center',
+        background: 'linear-gradient(180deg, transparent 0%, rgba(18,18,42,0.4) 100%)',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
+          Get in Touch
+        </div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: 8, letterSpacing: '-0.01em' }}>
+          함께 작업하고 싶으신가요?
+        </h2>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28, lineHeight: 1.7 }}>
+          촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.
+        </p>
+        <button
+          onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
+          style={{
+            padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700,
+            border: 'none', background: '#5b6ef5', color: '#fff', cursor: 'pointer',
+            boxShadow: '0 4px 24px rgba(91,110,245,0.4)',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(91,110,245,0.5)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 24px rgba(91,110,245,0.4)';
+          }}
+        >
+          ✉ 촬영 문의하기
+        </button>
+        <div style={{ marginTop: 40, fontSize: 11, color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em' }}>
+          ✦ Happiness — 포트폴리오 갤러리
+        </div>
       </div>
 
       {/* 팔로워/팔로잉 모달 */}
