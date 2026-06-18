@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { photoApi } from '../../services/api';
 import { MOOD_COLORS } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
+import CommentsSection from './CommentsSection';
 
 export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const { user } = useAuth();
   const [photo, setPhoto] = useState(initial);
-  const [comment, setComment] = useState('');
-  const [comments, setComments] = useState([]);
   const [liking, setLiking] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -51,18 +50,6 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleComment = () => {
-    const text = comment.trim();
-    if (!text) return;
-    setComments(prev => [...prev, {
-      id: Date.now(),
-      text,
-      author: user?.name || '나',
-      createdAt: new Date(),
-    }]);
-    setComment('');
   };
 
   return (
@@ -163,59 +150,9 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
             />
           </div>
 
-          {/* 댓글 목록 */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 8px' }}>
-            <div style={{ color: '#6b7280', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: 0.4 }}>
-              댓글{comments.length > 0 ? ` (${comments.length})` : ''}
-            </div>
-
-            {comments.length === 0 && (
-              <div style={{ color: '#374151', fontSize: 13, textAlign: 'center', paddingTop: 16 }}>
-                첫 댓글을 남겨보세요 ✍️
-              </div>
-            )}
-
-            {comments.map(c => (
-              <div key={c.id} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: '#5b6ef5', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 11, fontWeight: 700,
-                  }}>
-                    {c.author.charAt(0).toUpperCase()}
-                  </div>
-                  <span style={{ color: '#d1d5db', fontSize: 12, fontWeight: 600 }}>{c.author}</span>
-                  <span style={{ color: '#374151', fontSize: 11, marginLeft: 'auto' }}>{formatTime(c.createdAt)}</span>
-                </div>
-                <p style={{ color: '#e5e7eb', fontSize: 13, lineHeight: 1.55, margin: '0 0 0 36px' }}>
-                  {c.text}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* 댓글 입력 */}
-          <div style={{ padding: '10px 20px 18px', borderTop: '1px solid #2a2a45', flexShrink: 0, display: 'flex', gap: 8 }}>
-            <input
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
-              placeholder="댓글 달기..."
-              style={{
-                flex: 1, background: '#0f0f1e', border: '1px solid #2a2a45',
-                borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none',
-              }}
-            />
-            <button
-              onClick={handleComment}
-              style={{
-                background: '#5b6ef5', color: '#fff', border: 'none',
-                borderRadius: 8, padding: '0 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13,
-                flexShrink: 0,
-              }}
-            >전송</button>
+          {/* 댓글 섹션 */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 18px' }}>
+            <CommentsSection photoId={photo.id} currentUser={user} theme="dark" />
           </div>
         </div>
       </div>
@@ -243,10 +180,3 @@ function ActionBtn({ onClick, disabled, color, label }) {
   );
 }
 
-function formatTime(date) {
-  const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60) return '방금';
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  return new Date(date).toLocaleDateString('ko-KR');
-}

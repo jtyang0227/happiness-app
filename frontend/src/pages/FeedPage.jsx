@@ -6,16 +6,25 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 
 function FeedCard({ photo, onClick }) {
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
-  const createdAt = photo.createdAt ? new Date(photo.createdAt).toLocaleDateString('ko-KR') : '';
+  const authorName = photo.memberName || photo.member?.name || '익명';
+  const authorAvatar = photo.memberAvatarUrl || photo.member?.avatarUrl;
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60) return '방금';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+    return new Date(dateStr).toLocaleDateString('ko-KR');
+  }
 
   return (
     <div
-      onClick={() => onClick(photo.id)}
       style={{
         background: COLORS.surface,
         borderRadius: 16,
         overflow: 'hidden',
-        cursor: 'pointer',
         border: `1px solid ${COLORS.border}`,
         transition: 'transform 0.18s, box-shadow 0.18s',
       }}
@@ -28,33 +37,55 @@ function FeedCard({ photo, onClick }) {
         e.currentTarget.style.boxShadow = '';
       }}
     >
-      <div style={{ position: 'relative', aspectRatio: '4/3', background: '#0e0e0e', overflow: 'hidden' }}>
+      {/* 작가 헤더 */}
+      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          background: authorAvatar ? 'transparent' : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden',
+        }}>
+          {authorAvatar
+            ? <img src={authorAvatar} alt={authorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : authorName.charAt(0).toUpperCase()
+          }
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>{authorName}</div>
+          {mood && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
+              <span style={{ fontSize: 11, color: COLORS.textMuted }}>{mood.label}</span>
+            </div>
+          )}
+        </div>
+        <span style={{ fontSize: 11, color: COLORS.textMuted }}>{relativeTime(photo.createdAt)}</span>
+      </div>
+
+      {/* 이미지 */}
+      <div
+        onClick={() => onClick(photo.id)}
+        style={{ position: 'relative', aspectRatio: '4/3', background: '#0e0e0e', overflow: 'hidden', cursor: 'pointer' }}
+      >
         <img
           src={photo.thumbnailUrl || photo.imageUrl}
-          alt={photo.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          alt={photo.title || '사진'}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
           onError={e => { e.target.style.display = 'none'; }}
         />
-        {mood && (
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            display: 'flex', alignItems: 'center', gap: 4,
-            background: mood.bg, padding: '3px 9px', borderRadius: 10,
-            fontSize: 11, fontWeight: 700,
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-            {mood.label}
-          </div>
-        )}
       </div>
-      <div style={{ padding: '14px 16px' }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 6, lineHeight: 1.4 }}>
-          {photo.title || '제목 없음'}
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12, color: COLORS.textMuted }}>{createdAt}</span>
-          <span style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 600 }}>♡ {photo.likesCount ?? 0}</span>
-        </div>
+
+      {/* 하단 액션 바 */}
+      <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 13, color: COLORS.textMuted }}>♡</span>
+        <span style={{ fontSize: 12, color: COLORS.textSecondary, marginRight: 8 }}>{photo.likesCount ?? 0}</span>
+        <span style={{ fontSize: 13, color: COLORS.textMuted }}>🔖</span>
+        <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{photo.savesCount ?? 0}</span>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: COLORS.text, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {photo.title || ''}
+        </span>
       </div>
     </div>
   );

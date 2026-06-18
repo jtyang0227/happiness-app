@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
@@ -18,6 +18,8 @@ export default function Header() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -25,6 +27,15 @@ export default function Header() {
       .then(data => setUnreadCount(typeof data === 'number' ? data : data?.count ?? 0))
       .catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+        setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -99,30 +110,86 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '6px 14px', borderRadius: 10,
-              border: `1px solid ${COLORS.border}`,
-              background: 'transparent',
-              color: COLORS.textSecondary,
-              fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = COLORS.danger;
-              e.currentTarget.style.color = COLORS.danger;
-              e.currentTarget.style.background = COLORS.dangerTonal;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = COLORS.border;
-              e.currentTarget.style.color = COLORS.textSecondary;
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            로그아웃
-          </button>
+          {/* Avatar Dropdown */}
+          <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setDropdownOpen(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                outline: dropdownOpen ? `2px solid ${COLORS.primaryLight}` : 'none',
+                borderRadius: 30,
+              }}
+              aria-label="사용자 메뉴"
+              aria-expanded={dropdownOpen}
+            >
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: user?.avatarUrl ? 'transparent' : `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.accent})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 700, color: '#fff',
+                overflow: 'hidden', flexShrink: 0,
+                border: `2px solid ${dropdownOpen ? COLORS.primary : COLORS.border}`,
+                transition: 'border-color 0.15s',
+              }}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : (user?.name || user?.email || '?').charAt(0).toUpperCase()
+                }
+              </div>
+              <span style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1 }}>▾</span>
+            </button>
+
+            {dropdownOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                background: COLORS.surface,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 14,
+                boxShadow: '0 8px 32px rgba(91,110,245,0.14)',
+                minWidth: 210, zIndex: 200,
+                overflow: 'hidden',
+              }}>
+                {/* 사용자 정보 */}
+                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.border}` }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{user?.name || '사용자'}</div>
+                  {user?.profileName && (
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>@{user.profileName}</div>
+                  )}
+                </div>
+                {/* 메뉴 항목 */}
+                {[
+                  { icon: '👤', label: '프로필 보기', action: () => { navigate('/profile'); setDropdownOpen(false); } },
+                ].map(({ icon, label, action }) => (
+                  <button key={label} onClick={action} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', padding: '11px 16px', border: 'none',
+                    background: 'none', cursor: 'pointer', fontSize: 14,
+                    color: COLORS.text, textAlign: 'left',
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.primaryLight; e.currentTarget.style.color = COLORS.primary; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = COLORS.text; }}
+                  >
+                    <span>{icon}</span> {label}
+                  </button>
+                ))}
+                <div style={{ height: 1, background: COLORS.border, margin: '4px 0' }} />
+                <button onClick={handleLogout} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', padding: '11px 16px', border: 'none',
+                  background: 'none', cursor: 'pointer', fontSize: 14,
+                  color: COLORS.danger, textAlign: 'left',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#fff0f0'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                >
+                  <span>🚪</span> 로그아웃
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

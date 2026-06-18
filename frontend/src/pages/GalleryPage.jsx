@@ -4,6 +4,8 @@ import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
+import EmptyState from '../components/common/EmptyState';
+import { SkeletonGalleryCard } from '../components/common/Skeleton';
 
 const COLOR_ORDER = [
   'WARM', 'ENERGETIC', 'VIBRANT', 'ROMANTIC',
@@ -66,20 +68,6 @@ export default function GalleryPage() {
     setPhotos(prev => prev.map(p => p.id === updated.id ? updated : p));
     setSelected(prev => (prev?.id === updated.id ? updated : prev));
   }, []);
-
-  if (loading) {
-    return (
-      <div style={centerStyle}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          border: `3px solid ${COLORS.galleryBorder ?? '#333'}`,
-          borderTopColor: COLORS.primary,
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -148,21 +136,44 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {displayed.length === 0 ? (
-        <div style={{ ...centerStyle, flexDirection: 'column', gap: 16, paddingTop: 80 }}>
-          <span style={{ fontSize: 40, opacity: 0.3 }}>✦</span>
-          <div style={{ color: '#555', fontSize: 15 }}>아직 등록된 사진이 없습니다.</div>
-          <button onClick={() => navigate('/photo/new')} style={primaryBtn}>첫 사진 등록하기</button>
-        </div>
+      {loading ? (
+        /* 스켈레톤 로딩 — 마소닉 */
+        <>
+          <style>{`
+            .gallery-masonry { columns: 4 200px; }
+            @media (max-width: 600px) { .gallery-masonry { columns: 2; } }
+          `}</style>
+          <div className="gallery-masonry" style={{ columnGap: 3, padding: 3 }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <SkeletonGalleryCard key={i} dark />
+            ))}
+          </div>
+        </>
+      ) : displayed.length === 0 ? (
+        <EmptyState
+          icon="✦"
+          title="아직 등록된 사진이 없습니다"
+          description="첫 번째 사진을 등록하고 갤러리를 채워보세요."
+          actionLabel="첫 사진 등록하기"
+          onAction={() => navigate('/photo/new')}
+          theme="dark"
+          style={{ minHeight: '60vh' }}
+        />
       ) : viewMode === 'masonry' ? (
-        /* Masonry grid */
-        <div style={{ columns: '4 200px', columnGap: 3, padding: 3 }}>
-          {displayed.map(photo => (
-            <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
-              <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
-            </div>
-          ))}
-        </div>
+        /* Masonry grid — PC 4컬럼, 모바일 2컬럼 */
+        <>
+          <style>{`
+            .gallery-masonry { columns: 4 200px; }
+            @media (max-width: 600px) { .gallery-masonry { columns: 2; } }
+          `}</style>
+          <div className="gallery-masonry" style={{ columnGap: 3, padding: 3 }}>
+            {displayed.map(photo => (
+              <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
+                <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         /* List view */
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '16px 16px' }}>

@@ -6,11 +6,22 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
   const imgSrc = photo.imageUrl || photo.image;
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      aria-label={`${photo.title || '사진'} 보기`}
       style={{
         position: 'relative',
         cursor: 'pointer',
@@ -18,11 +29,22 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
         width: '100%',
         overflow: 'hidden',
         borderRadius: 4,
+        outline: 'none',
       }}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
     >
+      <style>{`
+        [role="button"]:focus-visible {
+          outline: 2px solid #5b6ef5 !important;
+          outline-offset: 2px;
+        }
+      `}</style>
+
       <img
         src={imgSrc}
-        alt={photo.title}
+        alt={photo.title || '사진'}
+        loading="lazy"
         style={{
           width: '100%', height: 'auto', display: 'block',
           transform: hovered ? 'scale(1.04)' : 'scale(1)',
@@ -32,15 +54,18 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
 
       {/* Mood badge */}
       {mood && (
-        <div style={{
-          position: 'absolute', top: 9, right: 9,
-          display: 'flex', alignItems: 'center', gap: 4,
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(6px)',
-          borderRadius: 20, padding: '3px 9px',
-          fontSize: 11, fontWeight: 600,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-        }}>
+        <div
+          aria-label={`분위기: ${mood.label}`}
+          style={{
+            position: 'absolute', top: 9, right: 9,
+            display: 'flex', alignItems: 'center', gap: 4,
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(6px)',
+            borderRadius: 20, padding: '3px 9px',
+            fontSize: 11, fontWeight: 600,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
           <span style={{
             width: 7, height: 7, borderRadius: '50%',
             background: mood.dot, display: 'inline-block', flexShrink: 0,
