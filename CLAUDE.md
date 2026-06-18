@@ -72,6 +72,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `P1_05_EXPLORE_SORT.md` | 탐색 정렬·활성 필터 배지·결과 수 표시 |
 | `P1_06_AVATAR_UPLOAD.md` | 프로필 아바타 이미지 업로드 |
 | `08_COLOR_PALETTE_DETAIL.md` | 5색 팔레트 추출 · PhotoDetail 강화 (네비게이션/전체화면/관련사진/공유/인쇄) |
+| `10_ADMIN_PANEL.md` | Admin 패널 — 갤러리 순서 관리(GalleryOrderPage) · 회원 관리 · 대시보드 |
 
 **P2 — 중기 (1개월)**
 | 파일 | 작업 |
@@ -396,9 +397,11 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 
 **보호 라우트** (로그인 필요):
 - `/inbox` — InquiryInboxPage (문의 수신함)
-- `/gallery/sort` — PhotoSortPage (사진 순서 드래그 정렬)
 - `/series` — SeriesPage (시리즈/컬렉션 관리)
 - `/feed` — FeedPage (팔로우 피드)
+
+> ⚠️ `/gallery/sort` (PhotoSortPage) 는 일반 사용자 앱에서 **제거**됨.  
+> 사진 표시 순서 관리는 어드민 패널(`/admin/gallery-order`)로 이관. `10_ADMIN_PANEL.md` 참조.
 
 **소셜 OAuth 흐름 (카카오/구글/네이버)**:
 1. LoginPage 버튼 클릭 → OAuth 제공자 인증 페이지로 리다이렉트

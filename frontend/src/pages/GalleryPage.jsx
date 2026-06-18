@@ -17,7 +17,6 @@ const SORT_OPTIONS = [
   { label: '좋아요 순',    value: 'likesCount',  order: 'desc', clientSort: null },
   { label: '저장 순',      value: 'savesCount',  order: 'desc', clientSort: null },
   { label: '색상 순',      value: 'color',       order: 'asc',  clientSort: true  },
-  { label: '표시 순서',    value: 'displayOrder', order: 'asc', clientSort: null },
 ];
 
 function sortByColor(photos) {

@@ -1,6 +1,6 @@
 # Happiness — 디자인 작업 로드맵
 
-검증일: 2026-06-17 (Phase 4 기획 추가)
+검증일: 2026-06-18 (Admin Panel 기획 추가)
 
 ## 파일 구성
 
@@ -15,6 +15,7 @@
 | `07_FEED_SORT.md` | FeedPage · PhotoSortPage(드래그 정렬) UX |
 | `08_COLOR_PALETTE_DETAIL.md` | **[신규]** 5색 팔레트 추출 · PhotoDetail 강화 (네비게이션/전체화면/관련사진/공유/인쇄) |
 | `09_PORTFOLIO_BUILDER.md` | **[신규]** 슬라이드쇼 뷰어 · 매거진 레이아웃 · PDF 내보내기 · 임베드 코드 |
+| `10_ADMIN_PANEL.md` | **[신규]** 어드민 패널 — 갤러리 순서 관리 · 회원 관리 · 대시보드 (AdminGuard 포함) |
 
 ---
 
@@ -36,7 +37,8 @@
 - [ ] 갤러리 뷰 토글(마소닉↔리스트) + 정렬 UI → `02_GALLERY_EXPLORE.md`
 - [ ] 프로필 아바타/커버 이미지 업로드 → `05_PROFILE_SOCIAL.md`
 - [ ] InquiryInbox 카드 UX (읽음/미읽음, 펼치기) → `06_SERIES_INQUIRY.md`
-- [ ] PhotoSortPage 드래그 UX 개선 → `07_FEED_SORT.md`
+- [ ] Admin 갤러리 순서 관리 (GalleryOrderPage) → `10_ADMIN_PANEL.md`
+- [ ] Admin 대시보드 + 회원 관리 → `10_ADMIN_PANEL.md`
 
 ### P2 — 중기 (1개월)
 - [ ] PhotoForm 워터마크 UI → `04_PHOTO_FORM.md`

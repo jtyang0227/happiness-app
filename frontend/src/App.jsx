@@ -22,7 +22,6 @@ import AppleResultPage from './pages/AppleResultPage';
 import SeriesPage from './pages/SeriesPage';
 import InquiryFormPage from './pages/InquiryFormPage';
 import InquiryInboxPage from './pages/InquiryInboxPage';
-import PhotoSortPage from './pages/PhotoSortPage';
 import FeedPage from './pages/FeedPage';
 
 // Routes that show the Header (authenticated app shell)
@@ -92,9 +91,6 @@ function AppShell() {
           } />
           <Route path="/inbox" element={
             <ProtectedRoute><InquiryInboxPage /></ProtectedRoute>
-          } />
-          <Route path="/gallery/sort" element={
-            <ProtectedRoute><PhotoSortPage /></ProtectedRoute>
           } />
           <Route path="/feed" element={
             <ProtectedRoute><FeedPage /></ProtectedRoute>
