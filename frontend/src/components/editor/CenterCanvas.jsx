@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { COLORS } from '../../constants/colors';
 import {
@@ -58,26 +58,28 @@ export default function CenterCanvas() {
       originalPixelsRef.current = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
       offscreenRef.current = offscreen;
       if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
-      renderCanvas();
+      renderCanvas();   // renderCanvas is a stable ref — no stale closure
     };
     img.src = currentImage.objectUrl;
-  }, [currentImage?.id]); // intentional: re-run only on image change
+  }, [currentImage?.id, renderCanvas]);
 
-  // ── Re-render when editState changes ─────────────────────────
-  useEffect(() => {
-    if (!imgElRef.current || !originalPixelsRef.current) return;
-    renderCanvas();
-  }, [currentEditState, zoom, panOffset, renderCanvas]);
+  // Store latest values in refs so renderCanvas never needs to be recreated
+  const editStateRef = useRef(currentEditState);
+  const zoomRef      = useRef(zoom);
+  editStateRef.current = currentEditState;
+  zoomRef.current      = zoom;
 
-  const renderCanvas = useCallback(() => {
+  // Stable renderCanvas — never recreated, reads from refs
+  const renderCanvas = useRef(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
-      const canvas = canvasRef.current;
-      const img    = imgElRef.current;
+      const canvas    = canvasRef.current;
+      const img       = imgElRef.current;
       const offscreen = offscreenRef.current;
       if (!canvas || !img || !offscreen) return;
 
-      const es = currentEditState;
+      const es = editStateRef.current;
+      const zv = zoomRef.current;
       const { rotate, flip, crop } = es;
 
       const sw = img.naturalWidth  * crop.w;
@@ -88,8 +90,8 @@ export default function CenterCanvas() {
       const rad = (rotate * Math.PI) / 180;
       const cos = Math.abs(Math.cos(rad));
       const sin = Math.abs(Math.sin(rad));
-      const dw  = Math.round((sw * cos + sh * sin) * zoom);
-      const dh  = Math.round((sw * sin + sh * cos) * zoom);
+      const dw  = Math.round((sw * cos + sh * sin) * zv);
+      const dh  = Math.round((sw * sin + sh * cos) * zv);
 
       canvas.width  = dw;
       canvas.height = dh;
@@ -101,27 +103,26 @@ export default function CenterCanvas() {
       ctx.rotate(rad);
       ctx.scale(flip.h ? -1 : 1, flip.v ? -1 : 1);
 
-      // Apply colour adjustments to offscreen copy
       const tmp = document.createElement('canvas');
       tmp.width  = sw; tmp.height = sh;
       const tCtx = tmp.getContext('2d');
-      // Re-draw original pixels (cropped)
       tCtx.putImageData(originalPixelsRef.current, -sx, -sy);
 
-      // LUT-based adjustments
       const luts = buildChannelLUTs(es.adjustments, es.channelCurves);
       renderWithChannelLUTs(tmp, tCtx.getImageData(0, 0, sw, sh).data, sw, sh, luts);
-
-      // Effects pipeline
       applyEffects(tmp, es.effects, grainTileRef.current, es.hslAdj, es.colorGrading, es.sharpening, es.noiseReduction);
 
-      ctx.drawImage(tmp, -sw * zoom / 2, -sh * zoom / 2, sw * zoom, sh * zoom);
+      ctx.drawImage(tmp, -sw * zv / 2, -sh * zv / 2, sw * zv, sh * zv);
       ctx.restore();
-
-      // Draw overlays
       drawOverlays(ctx, es.overlays, dw, dh);
     });
-  }, [currentEditState, zoom]);
+  }).current;
+
+  // ── Re-render when editState or zoom/pan changes ──────────────
+  useEffect(() => {
+    if (!imgElRef.current || !originalPixelsRef.current) return;
+    renderCanvas();
+  }, [currentEditState, zoom, panOffset, renderCanvas]);
 
   function drawOverlays(ctx, overlays, dw, dh) {
     if (!overlays?.length) return;

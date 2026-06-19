@@ -1,10 +1,19 @@
-import React, { createContext, useContext, useReducer, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useMemo, useEffect } from 'react';
 import { editorReducer, initialState, DEFAULT_EDIT_STATE } from '../reducers/editorReducer';
 
 const EditorContext = createContext(null);
 
 export function EditorProvider({ children }) {
   const [state, dispatch] = useReducer(editorReducer, initialState);
+
+  // Revoke all objectUrls on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      state.images.forEach(img => {
+        if (img.objectUrl) URL.revokeObjectURL(img.objectUrl);
+      });
+    };
+  }, []); // runs only on unmount
 
   const currentImage = useMemo(
     () => state.images.find(img => img.id === state.selectedId) ?? null,

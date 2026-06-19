@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
 import { buildChannelLUTs, renderWithChannelLUTs, applyEffects, generateGrainTile } from '../../hooks/useImageAdjustments';
 import { uploadImage } from '../../services/uploadApi';
@@ -93,6 +94,7 @@ async function renderExport(img, editState, { size, format, quality }) {
 
 export default function ExportModal({ onClose }) {
   const { state, currentImage, currentEditState } = useEditor();
+  const { user } = useAuth();
   const [format,   setFormat]   = useState('JPG');
   const [quality,  setQuality]  = useState(92);
   const [sizeOpt,  setSizeOpt]  = useState('original');
@@ -135,7 +137,7 @@ export default function ExportModal({ onClose }) {
       if (uploadToGallery) {
         setProgress('업로드 중...');
         const url = await uploadImage(blob, 'photos');
-        await photoApi.create({ imageUrl: url, title: filename });
+        await photoApi.create({ imageUrl: url, title: filename, memberId: user?.id });
         setProgress('✅ 갤러리에 업로드 완료!');
       } else {
         downloadBlob(blob, `${filename}.${ext}`);
