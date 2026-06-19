@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import apiClient from '../../api/apiClient';
+import { inquiryApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 function StatCard({ icon, label, value, color = '#5b6ef5', loading }) {
   return (
@@ -26,24 +28,27 @@ function StatCard({ icon, label, value, color = '#5b6ef5', loading }) {
 }
 
 export default function AdminDashboardPage() {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      apiClient.get('/photos', { params: { size: 1 } }).catch(() => ({ data: [] })),
+      apiClient.get('/photos').catch(() => ({ data: [] })),
       apiClient.get('/auth/members').catch(() => ({ data: [] })),
-      apiClient.get('/inquiry/inbox/unread-count', { params: { memberId: 0 } }).catch(() => ({ data: { count: 0 } })),
+      user?.id
+        ? inquiryApi.getUnreadCount(user.id).catch(() => ({ count: 0 }))
+        : Promise.resolve({ count: 0 }),
     ]).then(([photosRes, membersRes, inquiryRes]) => {
       const photos  = photosRes?.data;
       const members = membersRes?.data;
       setStats({
-        photos:   Array.isArray(photos)  ? photos.length  : (photos?.totalElements ?? photos?.length ?? '—'),
+        photos:   Array.isArray(photos)  ? photos.length  : (photos?.totalElements ?? '—'),
         members:  Array.isArray(members) ? members.length : (members?.totalElements ?? '—'),
-        inquiries: inquiryRes?.data?.count ?? 0,
+        inquiries: typeof inquiryRes === 'number' ? inquiryRes : (inquiryRes?.count ?? 0),
       });
     }).finally(() => setLoading(false));
-  }, []);
+  }, [user?.id]);
 
   return (
     <AdminLayout currentPageTitle="대시보드">

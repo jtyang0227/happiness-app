@@ -40,16 +40,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
             to={to}
             end={end}
             onClick={() => setMobileOpen(false)}
-            style={({ isActive }) => ({
-              display: 'block', padding: '10px 14px', borderRadius: 8,
-              marginBottom: 2, textDecoration: 'none', fontSize: 13, fontWeight: 600,
-              background: isActive ? '#eef0ff' : 'transparent',
-              color: isActive ? '#5b6ef5' : '#5c5c7a',
-              borderLeft: isActive ? '3px solid #5b6ef5' : '3px solid transparent',
-              transition: 'background 0.15s',
-            })}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f0f0f8'; }}
-            onMouseLeave={e => { }}
+            className={({ isActive }) => `admin-nav-link${isActive ? ' admin-nav-link--active' : ''}`}
           >
             {label}
           </NavLink>
@@ -78,6 +69,10 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       <style>{`
         @media (max-width: 768px) { .admin-sidebar { display: none !important; } }
         @media (min-width: 769px) { .admin-mobile-overlay { display: none !important; } }
+        .admin-nav-link { display: block; padding: 10px 14px; border-radius: 8px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s; }
+        .admin-nav-link:hover { background: #f0f0f8; }
+        .admin-nav-link--active { background: #eef0ff; color: #5b6ef5; border-left: 3px solid #5b6ef5; }
+        .admin-nav-link--active:hover { background: #eef0ff; }
       `}</style>
       <div className="admin-sidebar">{sidebar}</div>
 

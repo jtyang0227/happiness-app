@@ -15,6 +15,18 @@ export default function AdminGalleryOrderPage() {
 
   const dragIdxRef = useRef(null);
 
+  // 저장 안 된 변경사항이 있을 때 페이지 이탈 경고
+  useEffect(() => {
+    const handler = (e) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
   // 회원 목록
   useEffect(() => {
     apiClient.get('/auth/members')
