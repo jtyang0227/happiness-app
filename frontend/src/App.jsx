@@ -24,6 +24,7 @@ import InquiryFormPage from './pages/InquiryFormPage';
 import InquiryInboxPage from './pages/InquiryInboxPage';
 import FeedPage from './pages/FeedPage';
 import ImageEditorPage from './pages/ImageEditorPage';
+import PortfolioSlideshowPage from './pages/PortfolioSlideshowPage';
 import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
 import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
@@ -43,7 +44,8 @@ function AppShell() {
   const location = useLocation();
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
-    || location.pathname.startsWith('/admin');
+    || location.pathname.startsWith('/admin')
+    || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname);
 
   const isGallery = location.pathname === '/';
   const bg = isStandalone ? '#0a0a1a' : isGallery ? '#111111' : '#f7f7fb';
@@ -68,6 +70,7 @@ function AppShell() {
 
           {/* Public portfolio — no login required */}
           <Route path="/portfolio/:profileName" element={<PortfolioPage />} />
+          <Route path="/portfolio/:profileName/slideshow" element={<PortfolioSlideshowPage />} />
 
           {/* Public inquiry form — no login required */}
           <Route path="/inquiry/:profileName" element={<InquiryFormPage />} />

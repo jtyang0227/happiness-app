@@ -4,6 +4,7 @@ import { MOOD_COLORS } from '../constants/colors';
 import apiClient from '../api/apiClient';
 import { followApi, seriesApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import MagazineGrid from '../components/portfolio/MagazineGrid';
 
 /* ── Masonry Gallery Item ─────────────────────────────── */
 function MasonryPhoto({ photo, onClick }) {
@@ -296,8 +297,9 @@ export default function PortfolioPage() {
   const availableMoods  = [...new Set(photos.map(p => p.colorMood).filter(Boolean))];
   const filteredPhotos  = moodFilter ? photos.filter(p => p.colorMood === moodFilter) : photos;
 
-  const isOwnPage = user?.id === member?.id;
-  const hasCover  = !!member?.coverUrl;
+  const isOwnPage       = user?.id === member?.id;
+  const hasCover        = !!member?.coverUrl;
+  const isMagazine      = member?.portfolioLayout === 'magazine';
 
   return (
     <div style={{ minHeight: '100vh', background: '#0e0e0e', color: '#e8e8f0' }}>
@@ -406,13 +408,23 @@ export default function PortfolioPage() {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700,
-                border: 'none', background: 'rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.15)',
                 backdropFilter: 'blur(8px)', color: '#fff', cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.25)',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,110,245,0.6)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
             >✉ 촬영 문의하기</button>
+            <button
+              onClick={() => navigate(`/portfolio/${profileName}/slideshow`)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 18px', borderRadius: 24, fontSize: 13, fontWeight: 600,
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#e8e8f0', cursor: 'pointer', backdropFilter: 'blur(8px)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+            >▶ 슬라이드쇼</button>
           </div>
         </div>
 
@@ -512,7 +524,7 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* ══ MASONRY GALLERY ═══════════════════════════════════ */}
+      {/* ══ GALLERY ═══════════════════════════════════════════ */}
       <style>{`
         .portfolio-masonry { columns: 4 220px; column-gap: 4px; }
         @media (max-width: 900px) { .portfolio-masonry { columns: 3; } }
@@ -522,6 +534,10 @@ export default function PortfolioPage() {
       {filteredPhotos.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '100px 0', color: 'rgba(255,255,255,0.2)', fontSize: 15 }}>
           {moodFilter ? '해당 분위기의 작품이 없습니다.' : '아직 등록된 작품이 없습니다.'}
+        </div>
+      ) : isMagazine ? (
+        <div style={{ padding: '4px' }}>
+          <MagazineGrid photos={filteredPhotos} onPhotoClick={id => navigate(`/photo/${id}`)} />
         </div>
       ) : (
         <div className="portfolio-masonry" style={{ padding: '4px 4px' }}>
