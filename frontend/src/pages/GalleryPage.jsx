@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
+import { GLASS } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 import EmptyState from '../components/common/EmptyState';
@@ -81,11 +82,16 @@ export default function GalleryPage() {
   return (
     <div style={{ background: COLORS.galleryBg, minHeight: '100vh' }}>
 
-      {/* Toolbar */}
+      {/* Toolbar — dark glass */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 16px', gap: 10, flexWrap: 'wrap',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        position: 'sticky', top: 0, zIndex: 10,
+        background: GLASS.dark.surface,
+        backdropFilter: GLASS.dark.blur,
+        WebkitBackdropFilter: GLASS.dark.blur,
+        borderBottom: `1px solid ${GLASS.dark.borderSubtle}`,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }}>
 
         {/* Sort chips */}

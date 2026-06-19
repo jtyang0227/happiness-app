@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 const CONFIGS = {
-  success: { icon: '✓', bar: '#38a169', bg: '#f0fff4', text: '#276749', border: '#c6f6d5' },
-  error:   { icon: '✕', bar: '#e53e3e', bg: '#fff5f5', text: '#9b2c2c', border: '#fed7d7' },
-  warning: { icon: '!', bar: '#dd6b20', bg: '#fffaf0', text: '#7b341e', border: '#feebc8' },
-  info:    { icon: 'i', bar: '#5b6ef5', bg: '#f0f2ff', text: '#3d51cc', border: '#c7cffe' },
+  success: { icon: '✓', bar: '#38a169', bg: 'rgba(240,255,244,0.82)', text: '#276749', border: 'rgba(198,246,213,0.7)' },
+  error:   { icon: '✕', bar: '#e53e3e', bg: 'rgba(255,245,245,0.82)', text: '#9b2c2c', border: 'rgba(254,215,215,0.7)' },
+  warning: { icon: '!', bar: '#dd6b20', bg: 'rgba(255,250,240,0.82)', text: '#7b341e', border: 'rgba(254,235,200,0.7)' },
+  info:    { icon: 'i', bar: '#5b6ef5', bg: 'rgba(240,242,255,0.82)', text: '#3d51cc', border: 'rgba(199,207,254,0.7)' },
 };
 
 function ToastItem({ toast, onDismiss }) {
@@ -21,14 +21,16 @@ function ToastItem({ toast, onDismiss }) {
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 0,
       background: cfg.bg,
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
       border: `1px solid ${cfg.border}`,
-      borderRadius: 12,
+      borderRadius: 16,
       overflow: 'hidden',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
       minWidth: 260, maxWidth: 340,
-      transform: visible ? 'translateX(0)' : 'translateX(110%)',
+      transform: visible ? 'translateX(0) scale(1)' : 'translateX(110%) scale(0.95)',
       opacity: visible ? 1 : 0,
-      transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
+      transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
       pointerEvents: 'all',
     }}>
       {/* Left color bar */}

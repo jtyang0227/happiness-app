@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { GLASS } from '../../constants/glass';
 
 const NAV_ITEMS = [
   { to: '/admin',               label: '📊 대시보드',     end: true },
@@ -23,12 +24,17 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
 
   const sidebar = (
     <div style={{
-      width: SIDEBAR_W, minHeight: '100vh', background: '#fff',
-      borderRight: '1px solid #e5e5ed', display: 'flex', flexDirection: 'column',
+      width: SIDEBAR_W, minHeight: '100vh',
+      background: GLASS.light.surfaceStrong,
+      backdropFilter: GLASS.light.blurStrong,
+      WebkitBackdropFilter: GLASS.light.blurStrong,
+      borderRight: `1px solid ${GLASS.light.border}`,
+      boxShadow: '4px 0 24px rgba(91,110,245,0.06)',
+      display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, zIndex: 200,
     }}>
       {/* 로고 */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #e5e5ed' }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${GLASS.light.borderSubtle}` }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#5b6ef5' }}>🛠️ Happiness Admin</div>
       </div>
 
@@ -48,12 +54,15 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       </nav>
 
       {/* 로그아웃 */}
-      <div style={{ padding: '12px 8px', borderTop: '1px solid #e5e5ed' }}>
+      <div style={{ padding: '12px 8px', borderTop: `1px solid ${GLASS.light.border}` }}>
         <button
           onClick={handleLogout}
           style={{
-            width: '100%', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            border: '1.5px solid #fecaca', background: '#fff5f5',
+            width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+            border: '1px solid rgba(229,62,62,0.25)',
+            background: 'rgba(255,245,245,0.72)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             color: '#e53e3e', cursor: 'pointer', textAlign: 'left',
           }}
         >
@@ -64,15 +73,15 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f7fb' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(160deg, #f0f2ff 0%, #f5f0ff 40%, #eff8ff 100%)', backgroundAttachment: 'fixed' }}>
       {/* 데스크탑 사이드바 */}
       <style>{`
         @media (max-width: 768px) { .admin-sidebar { display: none !important; } }
         @media (min-width: 769px) { .admin-mobile-overlay { display: none !important; } }
-        .admin-nav-link { display: block; padding: 10px 14px; border-radius: 8px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s; }
-        .admin-nav-link:hover { background: #f0f0f8; }
-        .admin-nav-link--active { background: #eef0ff; color: #5b6ef5; border-left: 3px solid #5b6ef5; }
-        .admin-nav-link--active:hover { background: #eef0ff; }
+        .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
+        .admin-nav-link:hover { background: rgba(91,110,245,0.07); color: #5b6ef5; }
+        .admin-nav-link--active { background: rgba(91,110,245,0.12); color: #5b6ef5; border-left: 3px solid #5b6ef5; }
+        .admin-nav-link--active:hover { background: rgba(91,110,245,0.14); }
       `}</style>
       <div className="admin-sidebar">{sidebar}</div>
 
@@ -81,7 +90,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
         <div
           className="admin-mobile-overlay"
           onClick={() => setMobileOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 190 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,24,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 190 }}
         >
           <div onClick={e => e.stopPropagation()}>{sidebar}</div>
         </div>
@@ -91,9 +100,13 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       <div style={{ flex: 1, marginLeft: 0, display: 'flex', flexDirection: 'column' }}>
         <style>{`@media (min-width: 769px) { .admin-content { margin-left: ${SIDEBAR_W}px !important; } }`}</style>
 
-        {/* 상단바 */}
+        {/* 상단바 — glass */}
         <div style={{
-          background: '#fff', borderBottom: '1px solid #e5e5ed',
+          background: GLASS.light.surfaceStrong,
+          backdropFilter: GLASS.light.blur,
+          WebkitBackdropFilter: GLASS.light.blur,
+          borderBottom: `1px solid ${GLASS.light.border}`,
+          boxShadow: '0 2px 12px rgba(91,110,245,0.06)',
           padding: '0 24px', height: 56, display: 'flex', alignItems: 'center',
           gap: 16, position: 'sticky', top: 0, zIndex: 100,
         }}>

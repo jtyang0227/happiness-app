@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -81,17 +82,23 @@ function PhotoCard({ photo, keyword }) {
     <div
       onClick={() => navigate(`/photo/${photo.id}`)}
       style={{
-        background: COLORS.surface, borderRadius: 16, overflow: 'hidden',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer',
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        background: GLASS.light.surface,
+        backdropFilter: GLASS.light.blur,
+        WebkitBackdropFilter: GLASS.light.blur,
+        borderRadius: 20, overflow: 'hidden',
+        border: `1px solid ${GLASS.light.border}`,
+        boxShadow: GLASS.light.shadow,
+        cursor: 'pointer',
+        transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease',
+        animation: 'glassIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
+        e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+        e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)';
+        e.currentTarget.style.boxShadow = GLASS.light.shadow;
       }}
     >
       <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: '#f0f0f0' }}>
@@ -254,6 +261,11 @@ export default function ExplorePage() {
   const dropType  = search.trim() ? 'suggestion' : 'history';
 
   return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #f0f2ff 0%, #f8f5ff 50%, #eff8ff 100%)',
+    }}>
+    <style>{GLASS_KEYFRAMES}</style>
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px' }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
@@ -263,7 +275,7 @@ export default function ExplorePage() {
 
       {/* Search form + sort */}
       <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        {/* Search input with dropdown */}
+        {/* Glass search pill */}
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             ref={inputRef}
@@ -275,9 +287,14 @@ export default function ExplorePage() {
             placeholder="제목, 설명 검색... (유사어 포함)"
             style={{
               width: '100%', boxSizing: 'border-box',
-              padding: '11px 16px', borderRadius: 12,
-              border: `1.5px solid ${showDrop && dropItems.length ? COLORS.primary : COLORS.border}`,
+              padding: '12px 20px', borderRadius: 50,
+              border: `1px solid ${showDrop && dropItems.length ? COLORS.primary : GLASS.light.border}`,
               fontSize: 14, color: COLORS.text, outline: 'none',
+              background: GLASS.light.surfaceStrong,
+              backdropFilter: GLASS.light.blur,
+              WebkitBackdropFilter: GLASS.light.blur,
+              boxShadow: GLASS.light.shadow,
+              transition: 'border-color 0.2s, box-shadow 0.2s',
             }}
           />
 
@@ -286,10 +303,13 @@ export default function ExplorePage() {
             <div
               ref={dropRef}
               style={{
-                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
-                background: COLORS.surface, borderRadius: 12,
-                border: `1.5px solid ${COLORS.border}`,
-                boxShadow: '0 6px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
+                background: GLASS.light.surfaceStrong,
+                backdropFilter: GLASS.light.blurStrong,
+                WebkitBackdropFilter: GLASS.light.blurStrong,
+                borderRadius: 20,
+                border: `1px solid ${GLASS.light.border}`,
+                boxShadow: GLASS.light.shadowStrong, overflow: 'hidden',
               }}
             >
               {dropType === 'history' && (
@@ -339,9 +359,13 @@ export default function ExplorePage() {
             applyFilters({ sortIdx: idx });
           }}
           style={{
-            padding: '11px 14px', borderRadius: 12,
-            border: `1.5px solid ${COLORS.border}`, fontSize: 13, color: COLORS.text,
-            background: COLORS.surface, cursor: 'pointer', outline: 'none',
+            padding: '12px 14px', borderRadius: 50,
+            border: `1px solid ${GLASS.light.border}`, fontSize: 13, color: COLORS.text,
+            background: GLASS.light.surfaceStrong,
+            backdropFilter: GLASS.light.blur,
+            WebkitBackdropFilter: GLASS.light.blur,
+            cursor: 'pointer', outline: 'none',
+            boxShadow: GLASS.light.shadow,
           }}
         >
           {SORT_OPTIONS.map((opt, idx) => (
@@ -351,10 +375,15 @@ export default function ExplorePage() {
         <button
           type="submit"
           style={{
-            padding: '11px 20px', borderRadius: 12,
-            background: COLORS.primary, color: '#fff', border: 'none',
+            padding: '12px 24px', borderRadius: 50,
+            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+            color: '#fff', border: 'none',
             fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(91,110,245,0.35)',
+            transition: 'opacity 0.15s, transform 0.15s',
           }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'scale(1.04)'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = ''; }}
         >
           검색
         </button>
@@ -471,6 +500,7 @@ export default function ExplorePage() {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }

@@ -3,13 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { seriesApi, photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
+import { GLASS } from '../constants/glass';
 
 /* ─── 시리즈 카드 ─────────────────────────────────────────── */
 function SeriesCard({ series, onEdit, onDelete, onManagePhotos }) {
   return (
     <div style={{
-      background: COLORS.surface, borderRadius: 16,
-      overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+      background: GLASS.light.surface,
+      backdropFilter: GLASS.light.blur,
+      WebkitBackdropFilter: GLASS.light.blur,
+      borderRadius: 20,
+      overflow: 'hidden',
+      border: `1px solid ${GLASS.light.border}`,
+      boxShadow: GLASS.light.shadow,
+      transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease',
     }}>
       {/* 커버 */}
       <div style={{

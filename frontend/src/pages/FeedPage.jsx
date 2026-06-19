@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
+import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
 import EmptyState from '../components/common/EmptyState';
 import { SkeletonFeedCard } from '../components/common/Skeleton';
 
@@ -24,19 +25,23 @@ function FeedCard({ photo, onClick }) {
   return (
     <div
       style={{
-        background: COLORS.surface,
-        borderRadius: 16,
+        background: GLASS.light.surface,
+        backdropFilter: GLASS.light.blur,
+        WebkitBackdropFilter: GLASS.light.blur,
+        borderRadius: 20,
         overflow: 'hidden',
-        border: `1px solid ${COLORS.border}`,
-        transition: 'transform 0.18s, box-shadow 0.18s',
+        border: `1px solid ${GLASS.light.border}`,
+        boxShadow: GLASS.light.shadow,
+        transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease',
+        animation: 'glassIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-3px)';
-        e.currentTarget.style.boxShadow = '0 8px 32px rgba(91,110,245,0.12)';
+        e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+        e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = '';
+        e.currentTarget.style.boxShadow = GLASS.light.shadow;
       }}
     >
       {/* 작가 헤더 */}
@@ -135,6 +140,11 @@ export default function FeedPage() {
   };
 
   return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #f0f2ff 0%, #f5f0ff 40%, #eff7ff 100%)',
+    }}>
+    <style>{GLASS_KEYFRAMES}</style>
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 20px 60px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -143,8 +153,11 @@ export default function FeedPage() {
         </div>
         {!loading && photos.length === 0 && (
           <button onClick={() => navigate('/explore')} style={{
-            padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
-            border: `1.5px solid ${COLORS.border}`, background: COLORS.surface,
+            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+            border: `1px solid ${GLASS.light.border}`,
+            background: GLASS.light.surface,
+            backdropFilter: GLASS.light.blur,
+            WebkitBackdropFilter: GLASS.light.blur,
             color: COLORS.textSecondary, cursor: 'pointer',
           }}>
             탐색하기
@@ -178,11 +191,15 @@ export default function FeedPage() {
                 onClick={handleLoadMore}
                 disabled={loadingMore}
                 style={{
-                  padding: '10px 32px', borderRadius: 10,
-                  border: `1.5px solid ${COLORS.border}`,
-                  background: COLORS.surface, color: COLORS.textSecondary,
+                  padding: '10px 32px', borderRadius: 24,
+                  border: `1px solid ${GLASS.light.border}`,
+                  background: GLASS.light.surface,
+                  backdropFilter: GLASS.light.blur,
+                  WebkitBackdropFilter: GLASS.light.blur,
+                  color: COLORS.textSecondary,
                   fontWeight: 600, cursor: loadingMore ? 'not-allowed' : 'pointer',
                   fontSize: 14, opacity: loadingMore ? 0.6 : 1,
+                  boxShadow: GLASS.light.shadow,
                 }}
               >
                 {loadingMore ? '로딩 중...' : '더 보기'}
@@ -196,6 +213,7 @@ export default function FeedPage() {
           )}
         </>
       )}
+    </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
+import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -45,11 +46,13 @@ export default function LoginPage() {
 
   const inputBase = {
     width: '100%', padding: '13px 16px',
-    borderRadius: 12,
+    borderRadius: 14,
     fontSize: 15, outline: 'none',
     color: COLORS.darkText,
-    background: 'rgba(255,255,255,0.05)',
-    transition: 'border-color 0.15s',
+    background: 'rgba(255,255,255,0.07)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   };
 
   return (
@@ -58,8 +61,37 @@ export default function LoginPage() {
       background: COLORS.darkBg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
+      <style>{GLASS_KEYFRAMES}</style>
+
+      {/* Boké background orbs */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{
+          position: 'absolute', top: '10%', left: '15%',
+          width: 360, height: 360, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(91,110,245,0.22) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'bokehFloat 8s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '15%', right: '10%',
+          width: 280, height: 280, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 70%)',
+          filter: 'blur(50px)',
+          animation: 'bokehFloat 11s ease-in-out infinite reverse',
+        }} />
+        <div style={{
+          position: 'absolute', top: '50%', right: '30%',
+          width: 200, height: 200, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(91,110,245,0.12) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+          animation: 'bokehFloat 14s ease-in-out infinite 2s',
+        }} />
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 44 }}>
@@ -79,13 +111,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Card */}
+        {/* Glass Card */}
         <div style={{
-          background: COLORS.darkSurface,
-          borderRadius: 22,
+          background: GLASS.dark.surface,
+          backdropFilter: GLASS.dark.blur,
+          WebkitBackdropFilter: GLASS.dark.blur,
+          borderRadius: 24,
           padding: '32px 28px',
-          border: `1px solid ${COLORS.darkBorder}`,
-          boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
+          border: `1px solid ${GLASS.dark.border}`,
+          boxShadow: GLASS.dark.shadowStrong,
+          animation: 'glassIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }}>
           <h2 style={{ color: COLORS.darkText, fontSize: 20, fontWeight: 700, marginBottom: 24 }}>
             로그인

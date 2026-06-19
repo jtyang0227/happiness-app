@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
 import { COLORS } from '../constants/colors';
+import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -102,13 +103,15 @@ export default function SignUpPage() {
   const inputStyle = (hasError) => ({
     width: '100%',
     padding: '12px 16px',
-    borderRadius: 10,
-    border: `1.5px solid ${hasError ? COLORS.danger : COLORS.darkBorder}`,
-    background: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
+    border: `1px solid ${hasError ? COLORS.danger : GLASS.dark.border}`,
+    background: 'rgba(255,255,255,0.07)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
     color: COLORS.darkText,
     fontSize: 14,
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   });
 
   const Field = ({ label, name, type = 'text', placeholder, onBlur, hint }) => (
@@ -144,9 +147,29 @@ export default function SignUpPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ width: '100%', maxWidth: 440 }}>
+      <style>{GLASS_KEYFRAMES}</style>
+      {/* Boké orbs */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{
+          position: 'absolute', top: '5%', right: '10%',
+          width: 320, height: 320, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'bokehFloat 10s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '10%', left: '5%',
+          width: 260, height: 260, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(91,110,245,0.18) 0%, transparent 70%)',
+          filter: 'blur(50px)',
+          animation: 'bokehFloat 13s ease-in-out infinite reverse',
+        }} />
+      </div>
+      <div style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 32, fontWeight: 800, color: COLORS.primary, marginBottom: 8 }}>
@@ -157,11 +180,14 @@ export default function SignUpPage() {
 
         <div
           style={{
-            background: COLORS.darkCard,
-            borderRadius: 20,
+            background: GLASS.dark.surface,
+            backdropFilter: GLASS.dark.blur,
+            WebkitBackdropFilter: GLASS.dark.blur,
+            borderRadius: 24,
             padding: 32,
-            border: `1px solid ${COLORS.darkBorder}`,
-            boxShadow: '0 8px 40px rgba(91,110,245,0.15)',
+            border: `1px solid ${GLASS.dark.border}`,
+            boxShadow: GLASS.dark.shadowStrong,
+            animation: 'glassIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
           }}
         >
           <h2 style={{ color: COLORS.darkText, fontSize: 20, fontWeight: 700, marginBottom: 24 }}>

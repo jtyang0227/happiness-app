@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
+import { GLASS } from '../../constants/glass';
 import { inquiryApi } from '../../services/api';
 
 const NAV_ITEMS = [
@@ -55,11 +56,11 @@ export default function Header() {
       <header className="happiness-pc-header" style={{
         position: 'sticky', top: 0, zIndex: 100,
         height: 58,
-        background: 'rgba(255,255,255,0.88)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: `1px solid ${COLORS.borderLight}`,
-        boxShadow: '0 1px 0 rgba(91,110,245,0.06)',
+        background: GLASS.light.surfaceStrong,
+        backdropFilter: GLASS.light.blur,
+        WebkitBackdropFilter: GLASS.light.blur,
+        borderBottom: `1px solid ${GLASS.light.border}`,
+        boxShadow: '0 1px 0 rgba(91,110,245,0.08), 0 4px 16px rgba(91,110,245,0.04)',
       }}>
         <div style={{
           maxWidth: 1200, margin: '0 auto',
@@ -214,12 +215,12 @@ function BottomNav({ onLogout }) {
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
       height: 'calc(60px + env(safe-area-inset-bottom))',
       paddingBottom: 'env(safe-area-inset-bottom)',
-      background: 'rgba(255,255,255,0.96)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderTop: `1px solid ${COLORS.border}`,
+      background: GLASS.dark.surfaceStrong,
+      backdropFilter: GLASS.dark.blur,
+      WebkitBackdropFilter: GLASS.dark.blur,
+      borderTop: `1px solid ${GLASS.dark.border}`,
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-      boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+      boxShadow: '0 -8px 32px rgba(0,0,0,0.32)',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
         <NavLink
@@ -228,9 +229,9 @@ function BottomNav({ onLogout }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
             textDecoration: 'none', flex: 1,
-            color: isActive && !isCenter ? COLORS.primary : COLORS.textMuted,
+            color: isActive && !isCenter ? '#a0aaff' : 'rgba(255,255,255,0.45)',
             transition: 'color 0.2s, transform 0.2s',
-            transform: isActive && !isCenter ? 'scale(1.05)' : 'scale(1)',
+            transform: isActive && !isCenter ? 'scale(1.08)' : 'scale(1)',
           })}
         >
           {isCenter ? (
