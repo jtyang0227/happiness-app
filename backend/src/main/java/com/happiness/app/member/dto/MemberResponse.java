@@ -30,12 +30,18 @@ public class MemberResponse {
     private String provider;
     private boolean publicProfile;
     private boolean emailNotifications;
+    private String portfolioLayout;
+    private Long portfolioCoverPhotoId;
     private MemberStatus status;
     private Authority authority;
+    /** WM/SA → "ADMIN", US → "USER" (프론트엔드 role 체크용) */
+    private String role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public static MemberResponse fromEntity(Member member) {
+        Authority auth = member.getAuthority();
+        String role = (auth == Authority.WM || auth == Authority.SA) ? "ADMIN" : "USER";
         return MemberResponse.builder()
                 .id(member.getId())
                 .email(member.getEmail())
@@ -52,8 +58,11 @@ public class MemberResponse {
                 .provider(member.getProvider())
                 .publicProfile(member.isPublicProfile())
                 .emailNotifications(member.isEmailNotifications())
+                .portfolioLayout(member.getPortfolioLayout())
+                .portfolioCoverPhotoId(member.getPortfolioCoverPhotoId())
                 .status(member.getStatus())
-                .authority(member.getAuthority())
+                .authority(auth)
+                .role(role)
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .build();

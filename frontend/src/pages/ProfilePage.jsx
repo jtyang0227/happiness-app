@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { photoApi, authApi, seriesApi } from '../services/api';
 import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
+import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 
 const TABS = [
   { key: 'photos',   label: '내 작품' },
@@ -155,6 +156,7 @@ export default function ProfilePage() {
     location: user?.location || '',
     bio: user?.bio || '',
     specialties: user?.specialties ? user.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
+    portfolioLayout: user?.portfolioLayout || 'grid',
   });
   const [formErrors, setFormErrors] = useState({});
   const [savingForm, setSavingForm] = useState(false);
@@ -278,6 +280,7 @@ export default function ProfilePage() {
         profileName: form.profileName, instagramId: form.instagramId,
         websiteUrl: form.websiteUrl, location: form.location,
         bio: form.bio, specialties: form.specialties.join(', '),
+        portfolioLayout: form.portfolioLayout,
       });
       showToast('프로필이 저장되었습니다.');
     } catch (err) {
@@ -532,6 +535,30 @@ export default function ProfilePage() {
                       {savingForm ? '저장 중...' : '프로필 저장'}
                     </button>
                   </form>
+                </div>
+
+                {/* 포트폴리오 레이아웃 */}
+                <div style={sectionCard}>
+                  <div style={sectionTitle}>포트폴리오 레이아웃</div>
+                  <PortfolioLayoutPicker
+                    value={form.portfolioLayout}
+                    onChange={layout => setForm(p => ({ ...p, portfolioLayout: layout }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSavingForm(true);
+                      try {
+                        await updateProfile({ portfolioLayout: form.portfolioLayout });
+                        showToast('레이아웃이 저장되었습니다.');
+                      } catch { showToast('저장에 실패했습니다.'); }
+                      finally { setSavingForm(false); }
+                    }}
+                    disabled={savingForm}
+                    style={{ ...primaryBtn(savingForm), marginTop: 14 }}
+                  >
+                    {savingForm ? '저장 중...' : '레이아웃 저장'}
+                  </button>
                 </div>
 
                 {/* 계정 설정 */}

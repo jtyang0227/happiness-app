@@ -135,6 +135,8 @@ public class MemberService {
         if (request.getSpecialties() != null) member.setSpecialties(request.getSpecialties().isBlank() ? null : request.getSpecialties().trim());
         if (request.getPublicProfile() != null)       member.setPublicProfile(request.getPublicProfile());
         if (request.getEmailNotifications() != null)  member.setEmailNotifications(request.getEmailNotifications());
+        if (request.getPortfolioLayout() != null)     member.setPortfolioLayout(request.getPortfolioLayout().isBlank() ? null : request.getPortfolioLayout().trim());
+        if (request.getPortfolioCoverPhotoId() != null) member.setPortfolioCoverPhotoId(request.getPortfolioCoverPhotoId());
 
         return MemberResponse.fromEntity(memberRepository.save(member));
     }
@@ -221,6 +223,20 @@ public class MemberService {
     public MemberResponse getMemberByEmail(String email) {
         return MemberResponse.fromEntity(memberRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다.")));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberResponse> getAllMembers() {
+        return memberRepository.findAll().stream()
+                .map(MemberResponse::fromEntity)
+                .toList();
+    }
+
+    public MemberResponse changeMemberRole(Long memberId, String role) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        member.setAuthority("ADMIN".equalsIgnoreCase(role) ? Authority.SA : Authority.US);
+        return MemberResponse.fromEntity(memberRepository.save(member));
     }
 
     @Transactional(readOnly = true)

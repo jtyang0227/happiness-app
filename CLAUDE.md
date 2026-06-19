@@ -367,6 +367,9 @@ src/main/resources/
 ```sql
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS display_order INTEGER;
 ALTER TABLE series ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+-- Phase 4 — 포트폴리오 레이아웃
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_layout VARCHAR(20) DEFAULT 'grid';
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_cover_photo_id BIGINT;
 CREATE TABLE IF NOT EXISTS inquiries (
   id BIGSERIAL PRIMARY KEY,
   receiver_member_id BIGINT NOT NULL,
@@ -453,7 +456,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount)
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
@@ -495,6 +498,7 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 
 **공개 라우트** (로그인 불필요):
 - `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오, 문의하기 버튼 포함)
+- `/portfolio/:profileName/slideshow` — PortfolioSlideshowPage (풀스크린 슬라이드쇼, 로그인 불필요)
 - `/inquiry/:profileName?memberId=` — InquiryFormPage (촬영 문의 폼, 헤더 없는 standalone)
 - `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백)
 - `/oauth/google/callback` — GoogleCallbackPage (구글 OAuth 콜백)

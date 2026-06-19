@@ -7,7 +7,7 @@
  * </ProtectedRoute>
  *
  * 관리자 전용:
- * <ProtectedRoute requiredRoles={['WM', 'SA']}>
+ * <ProtectedRoute requiredRoles={['ADMIN']}>
  *   <AdminPage />
  * </ProtectedRoute>
  */
@@ -33,7 +33,7 @@ export default function ProtectedRoute({ children, requiredRoles }) {
   }
 
   if (requiredRoles && requiredRoles.length > 0) {
-    const userRole = user?.authority || user?.role;
+    const userRole = user?.role || user?.authority;
     if (!requiredRoles.includes(userRole)) {
       return <Navigate to="/unauthorized" replace />;
     }

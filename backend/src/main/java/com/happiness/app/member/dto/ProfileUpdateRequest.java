@@ -21,4 +21,6 @@ public class ProfileUpdateRequest {
     private String specialties;
     private Boolean publicProfile;
     private Boolean emailNotifications;
+    private String portfolioLayout;
+    private Long portfolioCoverPhotoId;
 }

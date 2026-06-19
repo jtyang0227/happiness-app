@@ -10,8 +10,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -109,6 +112,21 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@PathVariable Long id) {
         memberService.deleteAccount(id);
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @GetMapping("/members")
+    @PreAuthorize("hasAnyRole('WM', 'SA')")
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> getAllMembers() {
+        return ResponseEntity.ok(ApiResponse.ok(memberService.getAllMembers()));
+    }
+
+    @PutMapping("/member/{id}/role")
+    @PreAuthorize("hasAnyRole('WM', 'SA')")
+    public ResponseEntity<ApiResponse<MemberResponse>> changeMemberRole(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String role = body.get("role");
+        return ResponseEntity.ok(ApiResponse.ok(memberService.changeMemberRole(id, role)));
     }
 
     @PostMapping("/oauth/kakao")

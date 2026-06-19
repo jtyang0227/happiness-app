@@ -83,6 +83,14 @@ public class Member {
     @Column(nullable = false)
     private boolean emailNotifications = true;
 
+    /** 포트폴리오 레이아웃 — grid | magazine | slideshow (기본값: grid) */
+    @Column(nullable = true, length = 20)
+    private String portfolioLayout;
+
+    /** 포트폴리오 커버 사진 ID (null이면 기본 그라디언트 배경) */
+    @Column(nullable = true)
+    private Long portfolioCoverPhotoId;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
