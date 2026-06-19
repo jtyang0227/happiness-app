@@ -23,6 +23,7 @@ import SeriesPage from './pages/SeriesPage';
 import InquiryFormPage from './pages/InquiryFormPage';
 import InquiryInboxPage from './pages/InquiryInboxPage';
 import FeedPage from './pages/FeedPage';
+import ImageEditorPage from './pages/ImageEditorPage';
 import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
 import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
@@ -35,6 +36,7 @@ const STANDALONE_PATHS = [
   '/oauth/google/callback',
   '/oauth/naver/callback',
   '/oauth/apple/result',
+  '/editor',
 ];
 
 function AppShell() {
@@ -100,6 +102,9 @@ function AppShell() {
           } />
           <Route path="/feed" element={
             <ProtectedRoute><FeedPage /></ProtectedRoute>
+          } />
+          <Route path="/editor" element={
+            <ProtectedRoute><ImageEditorPage /></ProtectedRoute>
           } />
 
           {/* Admin routes — ADMIN 권한 필요 */}

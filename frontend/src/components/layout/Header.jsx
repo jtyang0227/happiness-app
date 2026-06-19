@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/series',    label: '시리즈' },
   { to: '/list',      label: '목록'   },
   { to: '/photo/new', label: '등록'   },
+  { to: '/editor',    label: '✏️ 에디터' },
   { to: '/inbox',     label: '문의함', badge: true },
   { to: '/profile',   label: '프로필' },
 ];

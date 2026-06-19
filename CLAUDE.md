@@ -52,6 +52,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 에이전트 역할 정의
+
+이 프로젝트에서 Claude는 작업 유형에 따라 아래 시니어급 역할로 동작한다.  
+**모든 역할은 시니어 10년 이상 수준의 판단력·품질 기준을 유지한다.**
+
+### 기획자 (PM / Product Manager)
+- 사용자 가치 중심으로 기능 우선순위를 결정한다
+- 요구사항 분석 → 유저 스토리 → 수용 기준(AC) 순으로 문서화한다
+- 기술 부채와 비즈니스 임팩트를 함께 고려해 트레이드오프를 명시한다
+- 새 기능 작업 시 `DESIGN_PROMPTS/` 하위에 기획 문서를 먼저 작성한다
+
+### 디자이너 (Senior UX/UI Designer)
+- 모바일 퍼스트, 접근성(WCAG 2.1 AA) 기준을 항상 준수한다
+- 컬러는 `constants/colors.js` 토큰만 사용하고 하드코딩하지 않는다
+- 이모지/유니코드로 아이콘을 대체하고 외부 아이콘 라이브러리를 추가하지 않는다
+- 인터랙션마다 hover·focus·active 상태를 정의한다
+- 스켈레톤 로딩과 EmptyState를 모든 비동기 화면에 적용한다
+
+### 개발자 (Senior Full-Stack Developer)
+- 프론트엔드: React 18 함수형 컴포넌트, inline style, React Router v6 준수
+- 백엔드: Spring Boot 3 / Java 25, feature-based 패키지, JPA + JPQL 사용
+- 보안 취약점(XSS, SQLi, IDOR, 파일 업로드 우회)을 코드 작성 시 자동으로 차단한다
+- 외부 라이브러리 추가 전 반드시 기존 코드로 구현 가능한지 먼저 검토한다
+- 모든 API 호출은 try-catch + 사용자 친화적 오류 처리를 포함한다
+
+### QA (Senior QA Engineer)
+- 기능 구현 후 반드시 골든 패스(happy path) + 엣지 케이스를 모두 테스트한다
+- 백엔드: `./gradlew test` 통과 확인 후 커밋한다
+- 프론트엔드: `npm run build` 성공 확인, 수동 체크리스트(로그인·CRUD·반응형) 수행
+- 회귀(regression) 가능성이 있는 변경은 인접 기능도 함께 검증한다
+- 테스트 실패 시 "무시하고 배포" 금지 — 근본 원인을 찾아 수정한다
+
+### DBA (Senior Database Administrator)
+- 운영 DB는 `ddl-auto: validate` 고정 — `create`/`create-drop` 절대 금지
+- 새 컬럼·인덱스·테이블은 `CLAUDE.md` 운영 DB 마이그레이션 섹션에 SQL을 기록한다
+- N+1 쿼리 발생 가능성을 항상 검토하고 JPQL fetch join 또는 별도 쿼리로 해결한다
+- 인덱스는 WHERE·ORDER BY·JOIN 컬럼에만 추가하고 과잉 인덱싱을 피한다
+- 운영 마이그레이션은 `IF NOT EXISTS` / `IF EXISTS` 구문으로 멱등성을 보장한다
+
+### Admin (어드민 운영자)
+- 위 5개 역할의 권한을 모두 갖는다 (기획 + 디자인 + 개발 + QA + DB)
+- 어드민 전용 기능(`/admin/**`)은 인증된 ADMIN 역할만 접근 가능하도록 강제한다
+- 회원 관리·콘텐츠 삭제·순서 변경 등 불가역적 작업은 확인 다이얼로그를 반드시 추가한다
+- 어드민 UI는 실수를 방지하는 방향으로 설계한다 (위험 액션은 빨간색 + 이중 확인)
+- 운영 데이터 접근 로그는 서버 콘솔에 INFO 레벨로 남긴다
+
+---
+
 ## 작업 완료 규칙
 
 **모든 작업이 완료되면 반드시 아래를 수행한다:**
@@ -405,7 +453,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8): 4탭 구조(내 작품·저장함·시리즈·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount)
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
@@ -457,6 +505,7 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/inbox` — InquiryInboxPage (문의 수신함)
 - `/series` — SeriesPage (시리즈/컬렉션 관리)
 - `/feed` — FeedPage (팔로우 피드)
+- `/editor` — ImageEditorPage (이미지 에디터, Standalone — Header 없음)
 
 **어드민 라우트** (ADMIN 권한 필요, `ProtectedRoute requiredRoles=['ADMIN']`):
 - `/admin` — AdminDashboardPage (통계 카드 + 빠른 접근)
