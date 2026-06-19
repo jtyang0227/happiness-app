@@ -133,6 +133,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `P2_04_DRAFT_AUTOSAVE.md` | PhotoForm 드래프트 자동저장 (useDraft 훅) |
 | `P2_05_AUTHOR_PROFILE.md` | 작가 공개 프로필 페이지 (/u/:profileName) |
 | `09_PORTFOLIO_BUILDER.md` | 슬라이드쇼 뷰어 · 매거진 레이아웃 · PDF 내보내기 · 임베드 코드 |
+| `11_IMAGE_EDITOR.md` | 독립 이미지 에디터 SPA — React+TS+Zustand+Konva, 업로드·Transform·색상보정·필터·오버레이·Export (Format.com 스타일) |
 
 ---
 
