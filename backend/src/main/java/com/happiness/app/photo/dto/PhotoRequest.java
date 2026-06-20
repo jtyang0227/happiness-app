@@ -22,4 +22,11 @@ public class PhotoRequest {
     private String shutterSpeed;
     private Integer iso;
     private String focalLength;
+    // Feature 26 — 장르 분류
+    private String genre;
+    private String subGenres;
+    // Feature 25 — 매거진 판 타입
+    private String panType;
+    private String magazineCaption;
+    private Boolean imageRight;
 }

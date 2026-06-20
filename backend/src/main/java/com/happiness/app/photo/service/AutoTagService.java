@@ -34,6 +34,34 @@ public class AutoTagService {
         "to", "for", "of", "and", "or", "it", "this", "that", "with"
     );
 
+    private static final Map<String, String> GENRE_KEYWORDS = Map.ofEntries(
+        Map.entry("인물", "PORTRAIT"),   Map.entry("portrait", "PORTRAIT"),
+        Map.entry("사람", "PORTRAIT"),   Map.entry("얼굴", "PORTRAIT"),   Map.entry("모델", "PORTRAIT"),
+        Map.entry("웨딩", "WEDDING"),    Map.entry("wedding", "WEDDING"),
+        Map.entry("결혼", "WEDDING"),    Map.entry("신부", "WEDDING"),    Map.entry("신랑", "WEDDING"),
+        Map.entry("풍경", "LANDSCAPE"),  Map.entry("landscape", "LANDSCAPE"),
+        Map.entry("산", "LANDSCAPE"),    Map.entry("바다", "LANDSCAPE"),  Map.entry("하늘", "LANDSCAPE"),
+        Map.entry("꽃", "NATURE"),       Map.entry("나무", "NATURE"),     Map.entry("동물", "NATURE"),
+        Map.entry("자연", "NATURE"),     Map.entry("식물", "NATURE"),
+        Map.entry("거리", "STREET"),     Map.entry("street", "STREET"),   Map.entry("도시", "STREET"),
+        Map.entry("건물", "ARCHITECTURE"), Map.entry("건축", "ARCHITECTURE"), Map.entry("architecture", "ARCHITECTURE"),
+        Map.entry("음식", "FOOD"),       Map.entry("카페", "FOOD"),       Map.entry("커피", "FOOD"),     Map.entry("식당", "FOOD"),
+        Map.entry("여행", "TRAVEL"),     Map.entry("travel", "TRAVEL"),
+        Map.entry("패션", "FASHION"),    Map.entry("fashion", "FASHION"), Map.entry("의상", "FASHION"),  Map.entry("스타일", "FASHION"),
+        Map.entry("일상", "LIFESTYLE"),  Map.entry("라이프", "LIFESTYLE"), Map.entry("감성", "LIFESTYLE"),
+        Map.entry("제품", "COMMERCIAL"), Map.entry("브랜드", "COMMERCIAL"), Map.entry("광고", "COMMERCIAL"),
+        Map.entry("추상", "FINE_ART"),   Map.entry("예술", "FINE_ART"),   Map.entry("아트", "FINE_ART")
+    );
+
+    public String suggestGenre(String title, String description) {
+        String combined = ((title != null ? title : "") + " " + (description != null ? description : "")).toLowerCase();
+        return GENRE_KEYWORDS.entrySet().stream()
+            .filter(e -> combined.contains(e.getKey()))
+            .map(Map.Entry::getValue)
+            .findFirst()
+            .orElse(null);
+    }
+
     public List<String> suggest(String title, String description, String colorMood) {
         Set<String> result = new LinkedHashSet<>();
 

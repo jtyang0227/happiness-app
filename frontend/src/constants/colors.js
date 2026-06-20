@@ -54,3 +54,20 @@ export const MOOD_COLORS = {
   CLEAN:      { dot: '#90A4AE', bg: '#F8F9FA', label: '청결함'    },
   MONOCHROME: { dot: '#607D8B', bg: '#ECEFF1', label: '단색'      },
 };
+
+export const GENRE_META = {
+  PORTRAIT:     { emoji: '👤', label: '인물',        color: '#8B5CF6' },
+  WEDDING:      { emoji: '💍', label: '웨딩',        color: '#EC4899' },
+  LANDSCAPE:    { emoji: '🏔', label: '풍경',        color: '#3B82F6' },
+  NATURE:       { emoji: '🌿', label: '자연',        color: '#10B981' },
+  STREET:       { emoji: '🚶', label: '스트리트',     color: '#6B7280' },
+  ARCHITECTURE: { emoji: '🏛', label: '건축',        color: '#F59E0B' },
+  FOOD:         { emoji: '🍽', label: '음식',        color: '#EF4444' },
+  TRAVEL:       { emoji: '✈️', label: '여행',        color: '#06B6D4' },
+  FASHION:      { emoji: '👗', label: '패션',        color: '#A855F7' },
+  LIFESTYLE:    { emoji: '☀️', label: '라이프스타일', color: '#F97316' },
+  COMMERCIAL:   { emoji: '📦', label: '상업',        color: '#64748B' },
+  FINE_ART:     { emoji: '🎨', label: '파인아트',    color: '#84CC16' },
+};
+
+export const GENRE_LIST = Object.entries(GENRE_META).map(([code, meta]) => ({ code, ...meta }));

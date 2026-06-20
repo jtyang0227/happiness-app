@@ -8,6 +8,7 @@ import PhotoModal from '../components/photo/PhotoModal';
 import EmptyState from '../components/common/EmptyState';
 import { SkeletonGalleryCard } from '../components/common/Skeleton';
 import { useGalleryLayout } from '../hooks/useGalleryLayout';
+import GenreTabBar from '../components/common/GenreTabBar';
 
 /* ── 색감 정렬 ── */
 const COLOR_ORDER = [
@@ -104,11 +105,12 @@ function JustifiedPhotoCell({ photo, onClick }) {
 export default function GalleryPage() {
   const navigate = useNavigate();
 
-  const [photos, setPhotos]     = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [selected, setSelected] = useState(null);
-  const [sortIdx, setSortIdx]   = useState(0);
+  const [photos, setPhotos]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [selected, setSelected]     = useState(null);
+  const [sortIdx, setSortIdx]       = useState(0);
+  const [selectedGenre, setSelectedGenre] = useState('');
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem('gallery_view') ?? 'justified',
   );
@@ -140,10 +142,17 @@ export default function GalleryPage() {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  const displayed = useMemo(
-    () => currentSort.clientSort ? sortByColor(photos) : photos,
-    [photos, currentSort],
+  // 해당 갤러리에 있는 장르 코드만 동적으로 추출
+  const genresInGallery = useMemo(
+    () => [...new Set(photos.map(p => p.genre).filter(Boolean))],
+    [photos],
   );
+
+  const displayed = useMemo(() => {
+    const sorted = currentSort.clientSort ? sortByColor(photos) : photos;
+    if (!selectedGenre) return sorted;
+    return sorted.filter(p => p.genre === selectedGenre || (p.subGenres && p.subGenres.includes(selectedGenre)));
+  }, [photos, currentSort, selectedGenre]);
 
   /* ── Justified Layout 훅 ── */
   const { containerRef, layout } = useGalleryLayout(displayed, {
@@ -238,6 +247,23 @@ export default function GalleryPage() {
           <button onClick={() => navigate('/photo/new')} style={primaryBtn}>+ 등록</button>
         </div>
       </div>
+
+      {/* ── 장르 탭바 (해당 갤러리 장르만 표시) ── */}
+      {!loading && genresInGallery.length > 0 && (
+        <div style={{
+          padding: '8px 16px',
+          background: 'rgba(255,255,255,0.04)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <GenreTabBar
+            selected={selectedGenre}
+            onChange={setSelectedGenre}
+            genres={genresInGallery}
+            showAll
+            theme="dark"
+          />
+        </div>
+      )}
 
       {/* ── 콘텐츠 ── */}
       {loading ? (

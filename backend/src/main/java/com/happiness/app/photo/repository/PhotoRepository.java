@@ -29,12 +29,14 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
           AND (:colorMood IS NULL OR :colorMood = '' OR p.colorMood = :colorMood)
           AND (:memberId IS NULL OR p.memberId = :memberId)
           AND (:imageRatio IS NULL OR :imageRatio = '' OR p.imageRatio = :imageRatio)
+          AND (:genre IS NULL OR :genre = '' OR p.genre = :genre)
         """)
     List<Photo> search(
             @Param("keyword")    String keyword,
             @Param("colorMood")  String colorMood,
             @Param("memberId")   Long memberId,
             @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre,
             Sort sort
     );
 
@@ -60,6 +62,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         AND (:colorMood = '' OR color_mood = :colorMood)
         AND (:memberId IS NULL OR member_id = :memberId)
         AND (:imageRatio = '' OR image_ratio = :imageRatio)
+        AND (:genre = '' OR genre = :genre)
         ORDER BY GREATEST(
             similarity(LOWER(title),                        LOWER(:kw)),
             similarity(LOWER(COALESCE(description, '')),    LOWER(:kw)),
@@ -71,7 +74,8 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             @Param("kw")         String keyword,
             @Param("colorMood")  String colorMood,
             @Param("memberId")   Long memberId,
-            @Param("imageRatio") String imageRatio
+            @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre
     );
 
     /** 자동완성 — 제목 부분 일치 (최대 5건, JPQL로 H2·PostgreSQL 모두 동작) */
@@ -100,4 +104,8 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     /** 피드 — 팔로우한 유저들의 사진 최신순 (Pageable 지원) */
     @Query("SELECT p FROM Photo p WHERE p.memberId IN :memberIds ORDER BY p.createdAt DESC")
     List<Photo> findByMemberIdInOrderByCreatedAtDesc(@Param("memberIds") List<Long> memberIds, Pageable pageable);
+
+    /** 장르별 사진 수 통계 */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.genre IS NOT NULL AND (:memberId IS NULL OR p.memberId = :memberId) GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenre(@Param("memberId") Long memberId);
 }

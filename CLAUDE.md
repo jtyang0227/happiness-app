@@ -406,6 +406,13 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS aperture      VARCHAR(20);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS shutter_speed VARCHAR(20);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso           INTEGER;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length  VARCHAR(20);
+-- Feature 26 — 장르 분류
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS genre      VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS sub_genres VARCHAR(60);
+-- Feature 25 — 매거진 면·판 레이아웃
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS pan_type         VARCHAR(20) DEFAULT 'EDITORIAL';
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS magazine_caption TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS image_right      BOOLEAN DEFAULT FALSE;
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
@@ -413,8 +420,8 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length  VARCHAR(20);
 ```java
 findByMemberIdOrderByCreatedAtDesc(Long memberId)   // 멤버별 사진
 findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
-search(keyword, colorMood, memberId, imageRatio, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
-searchFuzzy(kw, colorMood, memberId, imageRatio)    // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
+search(keyword, colorMood, memberId, imageRatio, genre, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
+searchFuzzy(kw, colorMood, memberId, imageRatio, genre) // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
 findTitleSuggestions(q, Pageable)                   // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
 findByMemberIdInOrderByCreatedAtDesc(List<Long>, Pageable) // 피드 — 팔로우 유저 최신순
 findIdsByMemberId(Long memberId)                     // 계정 삭제 cascade용 photo ID 목록
