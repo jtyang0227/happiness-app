@@ -9,6 +9,7 @@ import PhotoViewer from '../components/photo/PhotoViewer';
 import PhotoNavigation from '../components/photo/PhotoNavigation';
 import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
+import GenreBadge from '../components/photo/GenreBadge';
 import useColorExtraction from '../hooks/useColorExtraction';
 
 function buildAdjSummary(adj, effects) {
@@ -244,17 +245,22 @@ export default function PhotoDetailPage() {
         {photo.title || '제목 없음'}
       </h1>
 
-      {/* 무드 배지 */}
-      {mood && (
-        <div style={{ marginBottom: 12 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            background: mood.bg, padding: '4px 12px', borderRadius: 20,
-            fontSize: 12, fontWeight: 700,
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-            {mood.label}
-          </span>
+      {/* 무드 배지 + 장르 배지 */}
+      {(mood || photo.genre) && (
+        <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {mood && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: mood.bg, padding: '4px 12px', borderRadius: 20,
+              fontSize: 12, fontWeight: 700,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
+              {mood.label}
+            </span>
+          )}
+          {photo.genre && (
+            <GenreBadge genre={photo.genre} subGenres={photo.subGenres || []} />
+          )}
         </div>
       )}
 
