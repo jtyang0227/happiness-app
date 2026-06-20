@@ -4,7 +4,7 @@
 
 ---
 
-## 파일 구성 (전체 24개)
+## 파일 구성 (전체 25개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -35,6 +35,7 @@
 | `22_IOS26_LIQUID_GLASS_REDESIGN.md` | iOS 26 Liquid Glass 전체 재설계 바이블 (54KB · 6가지 소재 변형) | 기획 완료 |
 | `23_IOS26_LIQUID_GLASS_V2.md` | iOS 26 Liquid Glass V2 — specular highlight · vibrancy · aurora 배경 개선 | 기획 완료 |
 | `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` | 사진 정렬 알고리즘 재설계 — Justified Layout · 4가지 정렬 전략 · IDOR 수정 | 기획 완료 |
+| `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  
