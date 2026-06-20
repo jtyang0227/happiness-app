@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import GridSpanPicker from '../components/common/GridSpanPicker';
 import ImageAdjustmentPanel from '../components/photo/ImageAdjustmentPanel';
 import GenreSelector from '../components/photo/GenreSelector';
+import PanSelector from '../components/magazine/PanSelector';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import {
   DEFAULT_ADJUSTMENTS,
@@ -117,6 +118,9 @@ export default function PhotoFormPage() {
   const [subGenres, setSubGenres]         = useState([]);
   const [suggestedGenre, setSuggestedGenre] = useState(null);
 
+  // ── 매거진 판 타입 ────────────────────────────────────────────────────
+  const [panType, setPanType] = useState('EDITORIAL');
+
   // ── 이미지 탭 ────────────────────────────────────────────────────────
   const [imgMode, setImgMode] = useState('file');
   const [urlInput, setUrlInput] = useState('');
@@ -181,6 +185,7 @@ export default function PhotoFormPage() {
               if (Array.isArray(subs)) setSubGenres(subs);
             } catch {}
           }
+          if (found.panType) setPanType(found.panType);
         }
       } catch {
         setApiError('사진 정보를 불러오는데 실패했습니다.');
@@ -380,6 +385,7 @@ export default function PhotoFormPage() {
           imageUrl:    urlInput.trim(),
           genre:       primaryGenre || null,
           subGenres:   subGenres.length > 0 ? JSON.stringify(subGenres) : null,
+          panType:     panType || 'EDITORIAL',
         });
       } else if (imgMode === 'file' && imageFile) {
         const blob = await new Promise(resolve =>
@@ -395,6 +401,7 @@ export default function PhotoFormPage() {
         fd.append('imageRatio',  form.imageRatio);
         if (primaryGenre) fd.append('genre', primaryGenre);
         if (subGenres.length > 0) fd.append('subGenres', JSON.stringify(subGenres));
+        fd.append('panType', panType || 'EDITORIAL');
         await photoApi.uploadFile(fd);
       } else {
         await photoApi.create({
@@ -407,6 +414,7 @@ export default function PhotoFormPage() {
           imageRatio:  form.imageRatio,
           genre:       primaryGenre || null,
           subGenres:   subGenres.length > 0 ? JSON.stringify(subGenres) : null,
+          panType:     panType || 'EDITORIAL',
         });
       }
       navigate('/');
@@ -834,6 +842,11 @@ export default function PhotoFormPage() {
               onChangeSubGenres={setSubGenres}
               suggestedGenre={suggestedGenre}
             />
+          </div>
+
+          {/* 매거진 판 타입 */}
+          <div style={{ marginBottom: 20, padding: 16, background: '#f5f5fa', borderRadius: 12 }}>
+            <PanSelector selected={panType} onChange={setPanType} />
           </div>
 
           {/* 갤러리 너비 */}

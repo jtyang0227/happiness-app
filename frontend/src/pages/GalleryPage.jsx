@@ -9,6 +9,7 @@ import EmptyState from '../components/common/EmptyState';
 import { SkeletonGalleryCard } from '../components/common/Skeleton';
 import { useGalleryLayout } from '../hooks/useGalleryLayout';
 import GenreTabBar from '../components/common/GenreTabBar';
+import MagazineViewer from '../components/magazine/MagazineViewer';
 
 /* ── 색감 정렬 ── */
 const COLOR_ORDER = [
@@ -40,6 +41,7 @@ const VIEW_MODES = [
   { mode: 'justified', icon: '▦', label: 'Justified' },
   { mode: 'masonry',   icon: '⊞', label: 'Masonry'   },
   { mode: 'list',      icon: '☰', label: 'List'       },
+  { mode: 'magazine',  icon: '⊟', label: '매거진'    },
 ];
 
 /* ── Justified Layout 셀 ── */
@@ -338,6 +340,13 @@ export default function GalleryPage() {
           </div>
         </>
 
+      ) : viewMode === 'magazine' ? (
+
+        /* ── Magazine — MagazineViewer 오버레이가 처리 ── */
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+          매거진 뷰어 로딩 중...
+        </div>
+
       ) : (
 
         /* ── List ── */
@@ -383,11 +392,20 @@ export default function GalleryPage() {
       )}
 
       {/* ── 상세 모달 ── */}
-      {selected && (
+      {selected && viewMode !== 'magazine' && (
         <PhotoModal
           photo={selected}
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
+        />
+      )}
+
+      {/* ── 매거진 뷰어 ── */}
+      {viewMode === 'magazine' && displayed.length > 0 && (
+        <MagazineViewer
+          photos={displayed}
+          title="매거진 뷰"
+          onClose={() => setViewMode('justified')}
         />
       )}
     </div>

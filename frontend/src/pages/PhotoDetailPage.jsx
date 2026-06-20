@@ -11,6 +11,7 @@ import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
 import GenreBadge from '../components/photo/GenreBadge';
 import useColorExtraction from '../hooks/useColorExtraction';
+import MagazineViewer from '../components/magazine/MagazineViewer';
 
 function buildAdjSummary(adj, effects) {
   const items = [];
@@ -44,6 +45,8 @@ export default function PhotoDetailPage() {
 
   // 전체화면 뷰어
   const [viewerOpen, setViewerOpen] = useState(false);
+  // 매거진 뷰어
+  const [magazineOpen, setMagazineOpen] = useState(false);
 
   // 같은 작가 사진 목록 (네비게이션 + 관련사진)
   const [photoList, setPhotoList] = useState([]);
@@ -293,6 +296,15 @@ export default function PhotoDetailPage() {
         </button>
         <ShareButton url={window.location.href} title={photo.title} theme="light" />
         <button
+          onClick={() => setMagazineOpen(true)}
+          style={{
+            height: 40, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+            border: `1.5px solid ${COLORS.primary}`, background: COLORS.primaryLight,
+            color: COLORS.primary, cursor: 'pointer',
+          }}
+          className="no-print"
+        >⊟ 매거진</button>
+        <button
           onClick={() => window.print()}
           style={{
             height: 40, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
@@ -404,6 +416,16 @@ export default function PhotoDetailPage() {
         hasPrev={!!viewerPrev}
         hasNext={!!viewerNext}
       />
+
+      {/* 매거진 뷰어 */}
+      {magazineOpen && (
+        <MagazineViewer
+          photos={photoList.length > 0 ? photoList : [photo]}
+          initialIndex={Math.max(0, photoList.findIndex(p => String(p.id) === String(photo.id)))}
+          title={photo.title}
+          onClose={() => setMagazineOpen(false)}
+        />
+      )}
     </div>
   );
 }
