@@ -1,4 +1,4 @@
-# 11 — 포트폴리오 페이지 전면 재설계 (lisamicheleburns.com 참조)
+# 11 — 포트폴리오 페이지 전면 재설계 (lisamicheleburns.com 참조) ✅ 구현됨
 
 ## 기획 개요
 
@@ -119,15 +119,20 @@
   primaryDark:   '#4458e0'
   primaryLight:  '#eef0ff'
   accent:        '#a78bfa'
-  bg:            '#f5f5fa'
+  bg:            '#f7f7fb'
   surface:       '#ffffff'
-  border:        '#e2e2ee'
-  text:          '#1a1a2e'
-  textSecondary: '#5c5c7a'
-  textMuted:     '#9090b0'
+  surfaceDim:    '#ededf4'
+  border:        '#e5e5ed'
+  text:          '#0f0f1a'
+  textSecondary: '#5555aa'
+  textMuted:     '#8888bb'
   danger:        '#e53e3e'
+  success:       '#22c55e'
   darkBg:        '#0a0a18'
   darkSurface:   '#12122a'
+  darkBorder:    '#2a2a50'
+  darkText:      '#e8e8f0'
+  darkTextSub:   '#8080b0'
   galleryBg:     '#0e0e0e'
 
 규칙:

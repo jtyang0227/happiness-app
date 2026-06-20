@@ -183,10 +183,10 @@ UI:
 아이콘: 이모지 또는 유니코드 기호 사용 (외부 아이콘 라이브러리 없음)
 
 현재 컬러 시스템:
-  primary: '#5b6ef5', primaryLight: '#eef0ff'
-  bg: '#f7f7fb', surface: '#ffffff', border: '#e5e5ed'
-  text: '#1a1a2e', textSecondary: '#5c5c7a', textMuted: '#9090b0'
-  danger: '#e53e3e'
+  primary: '#5b6ef5', primaryDark: '#4458e0', primaryLight: '#eef0ff'
+  bg: '#f7f7fb', surface: '#ffffff', surfaceDim: '#ededf4', border: '#e5e5ed'
+  text: '#0f0f1a', textSecondary: '#5555aa', textMuted: '#8888bb'
+  danger: '#e53e3e', success: '#22c55e'
 
 규칙:
 - export default 함수형 컴포넌트 1개
