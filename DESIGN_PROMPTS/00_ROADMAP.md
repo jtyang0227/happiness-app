@@ -4,7 +4,7 @@
 
 ---
 
-## 파일 구성 (전체 26개)
+## 파일 구성 (전체 27개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -37,6 +37,7 @@
 | `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` | 사진 정렬 알고리즘 재설계 — Justified Layout · 4가지 정렬 전략 · IDOR 수정 | 기획 완료 |
 | `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | 기획 완료 |
 | `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | 기획 완료 |
+| `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  
@@ -196,4 +197,4 @@ PC 헤더 (768px 이상):
 3. 모든 컴포넌트: 모바일 375px 테스트 필수
 4. 기존 기능 회귀 없음 — 갤러리/탐색/등록/시리즈/포트폴리오 수동 테스트
 5. 색상 토큰은 반드시 위 **검증된 실제 값** 사용 (구버전 혼용 금지)
-6. 보안: `PUT /api/photos/reorder` IDOR 버그 — `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` Sprint 2에서 수정 필수
+6. 보안: `PUT /api/photos/reorder` IDOR 버그 — ✅ `@AuthenticationPrincipal` + 소유자 확인으로 수정 완료 (2026-06-20)
