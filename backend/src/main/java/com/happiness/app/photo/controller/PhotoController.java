@@ -15,12 +15,14 @@ import com.happiness.app.photo.repository.PhotoSaveRepository;
 import com.happiness.app.photo.repository.PhotoShareRepository;
 import com.happiness.app.photo.repository.PhotoTagRepository;
 import com.happiness.app.photo.service.AutoTagService;
+import com.happiness.app.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -469,16 +471,27 @@ public class PhotoController {
     /**
      * PUT /api/photos/reorder
      * Body: [{"id": 1, "displayOrder": 0}, {"id": 2, "displayOrder": 1}, ...]
+     * IDOR guard: only WM/SA admins may reorder others' photos.
      */
     @PutMapping("/reorder")
-    public ResponseEntity<?> reorderPhotos(@RequestBody List<Map<String, Object>> orders) {
+    public ResponseEntity<?> reorderPhotos(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody List<Map<String, Object>> orders) {
+
+        if (userDetails == null) {
+            return errorResponse(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+        boolean isAdmin = "WM".equals(userDetails.getRole()) || "SA".equals(userDetails.getRole());
+
         for (Map<String, Object> item : orders) {
             try {
                 Long id = ((Number) item.get("id")).longValue();
                 Integer order = ((Number) item.get("displayOrder")).intValue();
                 photoRepository.findById(id).ifPresent(photo -> {
-                    photo.setDisplayOrder(order);
-                    photoRepository.save(photo);
+                    if (isAdmin || userDetails.getId().equals(photo.getMemberId())) {
+                        photo.setDisplayOrder(order);
+                        photoRepository.save(photo);
+                    }
                 });
             } catch (Exception ignored) {}
         }

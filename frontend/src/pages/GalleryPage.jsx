@@ -2,24 +2,18 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
-import { glassDark, GLASS } from '../constants/glass';
+import { glassDark } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 import EmptyState from '../components/common/EmptyState';
 import { SkeletonGalleryCard } from '../components/common/Skeleton';
+import { useGalleryLayout } from '../hooks/useGalleryLayout';
 
+/* ── 색감 정렬 ── */
 const COLOR_ORDER = [
   'WARM', 'ENERGETIC', 'VIBRANT', 'ROMANTIC',
   'NATURAL', 'COOL', 'SERENE',
   'MUTED', 'DRAMATIC', 'CLEAN', 'MONOCHROME',
-];
-
-const SORT_OPTIONS = [
-  { label: '최신순',       value: 'createdAt',   order: 'desc', clientSort: null },
-  { label: '오래된 순',    value: 'createdAt',   order: 'asc',  clientSort: null, key: 'oldest' },
-  { label: '좋아요 순',    value: 'likesCount',  order: 'desc', clientSort: null },
-  { label: '저장 순',      value: 'savesCount',  order: 'desc', clientSort: null },
-  { label: '색상 순',      value: 'color',       order: 'asc',  clientSort: true  },
 ];
 
 function sortByColor(photos) {
@@ -30,17 +24,103 @@ function sortByColor(photos) {
   });
 }
 
+/* ── 정렬 옵션 ── */
+const SORT_OPTIONS = [
+  { label: '최신순',    value: 'createdAt',    order: 'desc', clientSort: null },
+  { label: '오래된 순', value: 'createdAt',    order: 'asc',  clientSort: null, key: 'oldest' },
+  { label: '좋아요 순', value: 'likesCount',   order: 'desc', clientSort: null },
+  { label: '저장 순',   value: 'savesCount',   order: 'desc', clientSort: null },
+  { label: '색상 순',   value: 'color',        order: 'asc',  clientSort: true  },
+  { label: '수동 순',   value: 'displayOrder', order: 'asc',  clientSort: null  },
+];
+
+/* ── 뷰 모드 ── */
+const VIEW_MODES = [
+  { mode: 'justified', icon: '▦', label: 'Justified' },
+  { mode: 'masonry',   icon: '⊞', label: 'Masonry'   },
+  { mode: 'list',      icon: '☰', label: 'List'       },
+];
+
+/* ── Justified Layout 셀 ── */
+function JustifiedPhotoCell({ photo, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      style={{
+        width: photo._displayWidth,
+        height: photo._displayHeight,
+        flexShrink: 0,
+        position: 'relative',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        background: '#1a1a2e',
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <img
+        src={photo.thumbnailUrl || photo.imageUrl}
+        alt={photo.title || '사진'}
+        style={{
+          width: '100%', height: '100%',
+          objectFit: 'cover', display: 'block',
+          transition: 'transform 0.3s ease',
+          transform: hovered ? 'scale(1.03)' : 'scale(1)',
+        }}
+        onError={e => { e.target.style.display = 'none'; }}
+      />
+      {/* Hover 오버레이 */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 55%)',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.25s ease',
+        display: 'flex', alignItems: 'flex-end',
+        padding: '8px 10px',
+        pointerEvents: 'none',
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {photo.title && (
+            <div style={{
+              fontSize: 12, fontWeight: 600, color: '#fff',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              marginBottom: 2,
+            }}>
+              {photo.title}
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', display: 'flex', gap: 8 }}>
+            <span>♡ {photo.likesCount ?? 0}</span>
+            {photo.colorMood && <span style={{ opacity: 0.7 }}>{photo.colorMood}</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── GalleryPage ── */
 export default function GalleryPage() {
   const navigate = useNavigate();
-  const [photos, setPhotos]       = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [selected, setSelected]   = useState(null);
-  const [sortIdx, setSortIdx]     = useState(0);
-  const [viewMode, setViewMode]   = useState('masonry');
+
+  const [photos, setPhotos]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
+  const [selected, setSelected] = useState(null);
+  const [sortIdx, setSortIdx]   = useState(0);
+  const [viewMode, setViewMode] = useState(
+    () => localStorage.getItem('gallery_view') ?? 'justified',
+  );
 
   const currentSort = SORT_OPTIONS[sortIdx];
 
+  // 뷰 모드 localStorage 저장
+  useEffect(() => {
+    localStorage.setItem('gallery_view', viewMode);
+  }, [viewMode]);
+
+  /* ── 데이터 패치 ── */
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -62,14 +142,22 @@ export default function GalleryPage() {
 
   const displayed = useMemo(
     () => currentSort.clientSort ? sortByColor(photos) : photos,
-    [photos, currentSort]
+    [photos, currentSort],
   );
+
+  /* ── Justified Layout 훅 ── */
+  const { containerRef, layout } = useGalleryLayout(displayed, {
+    mode: viewMode,
+    targetRowHeight: 300,
+    gap: 4,
+  });
 
   const handleUpdated = useCallback((updated) => {
     setPhotos(prev => prev.map(p => p.id === updated.id ? updated : p));
     setSelected(prev => (prev?.id === updated.id ? updated : prev));
   }, []);
 
+  /* ── 오류 화면 ── */
   if (error) {
     return (
       <div style={{ ...centerStyle, flexDirection: 'column', gap: 14 }}>
@@ -82,10 +170,10 @@ export default function GalleryPage() {
   return (
     <div style={{ background: COLORS.galleryBg, minHeight: '100vh' }}>
 
-      {/* Toolbar — V2 dark glass + 스펙큘러 */}
+      {/* ── 툴바 ── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 16px', gap: 10, flexWrap: 'wrap',
+        padding: '12px 16px', gap: 10, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 10,
         ...glassDark('dark'),
         borderRadius: 0,
@@ -93,7 +181,7 @@ export default function GalleryPage() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
 
-        {/* Sort chips */}
+        {/* 정렬 칩 */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
           {SORT_OPTIONS.map((opt, idx) => (
             <button
@@ -102,12 +190,13 @@ export default function GalleryPage() {
               style={{
                 padding: '5px 12px', borderRadius: 20, fontSize: 12,
                 fontWeight: sortIdx === idx ? 700 : 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
+                cursor: 'pointer', border: 'none', transition: 'all 0.15s',
                 ...(sortIdx === idx
-                  ? { background: COLORS.primary, color: '#fff', border: 'none',
-                      boxShadow: '0 2px 10px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)' }
-                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', border: 'none' }
+                  ? {
+                      background: COLORS.primary, color: '#fff',
+                      boxShadow: '0 2px 10px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)',
+                    }
+                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }
                 ),
               }}
             >
@@ -116,19 +205,22 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* Right controls */}
+        {/* 우측 컨트롤 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* View toggle */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 10, overflow: 'hidden' }}>
-            {[
-              { mode: 'masonry', icon: '⊞' },
-              { mode: 'list',    icon: '☰' },
-            ].map(({ mode, icon }) => (
+
+          {/* 뷰 모드 3종 토글 */}
+          <div style={{
+            display: 'flex',
+            background: 'rgba(255,255,255,0.06)',
+            borderRadius: 10, overflow: 'hidden',
+          }}>
+            {VIEW_MODES.map(({ mode, icon, label }) => (
               <button
                 key={mode}
+                title={label}
                 onClick={() => setViewMode(mode)}
                 style={{
-                  padding: '6px 11px', border: 'none', cursor: 'pointer', fontSize: 15,
+                  padding: '6px 11px', border: 'none', cursor: 'pointer', fontSize: 14,
                   background: viewMode === mode ? COLORS.primary : 'transparent',
                   color: viewMode === mode ? '#fff' : 'rgba(255,255,255,0.45)',
                   transition: 'all 0.15s',
@@ -139,20 +231,20 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{displayed.length}장</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+            {displayed.length}장
+          </span>
 
           <button onClick={() => navigate('/photo/new')} style={primaryBtn}>+ 등록</button>
         </div>
       </div>
 
+      {/* ── 콘텐츠 ── */}
       {loading ? (
-        /* 스켈레톤 로딩 — 마소닉 */
+        /* 스켈레톤 — masonry로 통일 */
         <>
-          <style>{`
-            .gallery-masonry { columns: 4 200px; }
-            @media (max-width: 600px) { .gallery-masonry { columns: 2; } }
-          `}</style>
-          <div className="gallery-masonry" style={{ columnGap: 3, padding: 3 }}>
+          <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+          <div className="gallery-masonry" style={{ columnGap: 4, padding: 4 }}>
             {Array.from({ length: 12 }).map((_, i) => (
               <SkeletonGalleryCard key={i} dark />
             ))}
@@ -168,23 +260,61 @@ export default function GalleryPage() {
           theme="dark"
           style={{ minHeight: '60vh' }}
         />
+      ) : viewMode === 'justified' ? (
+
+        /* ── Justified Layout ── */
+        <div ref={containerRef} style={{ padding: 4 }}>
+          {layout.length > 0 ? (
+            layout.map((row, rIdx) => (
+              <div
+                key={rIdx}
+                style={{ display: 'flex', gap: 4, marginBottom: 4, alignItems: 'flex-start' }}
+              >
+                {row.photos.map(photo => (
+                  <JustifiedPhotoCell
+                    key={photo.id}
+                    photo={photo}
+                    onClick={() => setSelected(photo)}
+                  />
+                ))}
+                {/* 마지막 행 — 남은 공간 채우기 */}
+                {row.isLastRow && (
+                  <div style={{ flex: 1, background: COLORS.galleryBg }} />
+                )}
+              </div>
+            ))
+          ) : (
+            /* 컨테이너 너비 감지 전 폴백 — masonry로 표시 */
+            <>
+              <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+              <div className="gallery-masonry" style={{ columnGap: 4 }}>
+                {displayed.map(photo => (
+                  <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 4 }}>
+                    <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
       ) : viewMode === 'masonry' ? (
-        /* Masonry grid — PC 4컬럼, 모바일 2컬럼 */
+
+        /* ── Masonry ── */
         <>
-          <style>{`
-            .gallery-masonry { columns: 4 200px; }
-            @media (max-width: 600px) { .gallery-masonry { columns: 2; } }
-          `}</style>
-          <div className="gallery-masonry" style={{ columnGap: 3, padding: 3 }}>
+          <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+          <div className="gallery-masonry" style={{ columnGap: 4, padding: 4 }}>
             {displayed.map(photo => (
-              <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 3 }}>
+              <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 4 }}>
                 <PhotoCard photo={photo} onClick={() => setSelected(photo)} />
               </div>
             ))}
           </div>
         </>
+
       ) : (
-        /* List view */
+
+        /* ── List ── */
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '16px 16px' }}>
           {displayed.map(photo => (
             <div
@@ -226,7 +356,7 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* Detail modal */}
+      {/* ── 상세 모달 ── */}
       {selected && (
         <PhotoModal
           photo={selected}
@@ -238,6 +368,7 @@ export default function GalleryPage() {
   );
 }
 
+/* ── 스타일 상수 ── */
 const centerStyle = {
   display: 'flex', justifyContent: 'center', alignItems: 'center',
   minHeight: '100vh', background: COLORS.galleryBg,

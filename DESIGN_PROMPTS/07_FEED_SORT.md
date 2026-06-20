@@ -1,6 +1,6 @@
-# 07 — 피드 & 정렬 (FeedPage · PhotoSortPage)
+# 07 — 피드 & 정렬 (FeedPage · ~~PhotoSortPage~~)
 
-> P1: PhotoSortPage 드래그 UX 개선 / P2: FeedPage 디자인 개선
+> ✅ FeedPage 구현 완료 / ⚠️ PhotoSortPage 섹션은 폐기됨 — 아래 별도 안내 참조
 
 ---
 
@@ -117,13 +117,27 @@ const loadMore = async () => {
 
 ---
 
-## [2] PhotoSortPage — 드래그 정렬 UX 개선
+## [2] ~~PhotoSortPage — 드래그 정렬 UX 개선~~ (폐기)
 
-### 현재 문제
+> ### ⚠️ DEPRECATED — 이 섹션은 더 이상 유효하지 않음
+>
+> **경위**: `/gallery/sort` (PhotoSortPage) 라우트가 일반 사용자 앱에서 **제거**되었음.
+> 사진 표시 순서 관리 기능은 **어드민 패널** (`/admin/gallery-order`) 로 이관 완료.
+>
+> **신규 정렬 기획** → `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` 참조  
+> (Justified Layout 알고리즘 · 4가지 정렬 전략 · 작가 인라인 정렬 컨트롤 · IDOR 보안 수정)
+>
+> 아래 내용은 **역사적 기록 목적으로만** 보존함. 새 구현에 참조하지 말 것.
 
-`PhotoSortPage`에 `react-beautiful-dnd` 기반 드래그 정렬이 있지만
+---
+
+### [참고용 보존] 기존 PhotoSortPage 기획 (실제 구현: HTML5 DnD 사용, react-beautiful-dnd 아님)
+
+#### 현재 문제 (당시 기준)
+
+`PhotoSortPage`에 HTML5 Drag & Drop 기반 정렬이 있었으나
 드래그 핸들 아이콘, dirty 상태 배너, 저장 확인 UX가 없어
-사용자가 변경 저장 여부를 알기 어려움.
+사용자가 변경 저장 여부를 알기 어려웠음.
 
 ### claude.ai 아티팩트 프롬프트
 
@@ -233,16 +247,15 @@ const handleRevert = () => {
 
 ## 완료 체크리스트
 
-- [ ] FeedCard.jsx 생성 (작가 헤더 + 이미지 4:3 + 액션 바)
-- [ ] FeedCard 좋아요/저장 버튼 aria-label 추가
-- [ ] FeedPage 전체 레이아웃 개선 (max-width 600px 중앙)
-- [ ] FeedPage [더 보기] 페이지네이션 버튼
-- [ ] FeedPage 빈 피드 상태 (팔로우 없음)
-- [ ] FeedPage 빈 피드 상태 (사진 없음)
-- [ ] PhotoSortPage dirty 상태 배너 추가
-- [ ] PhotoSortPage [되돌리기] 버튼 originalOrder 복원
-- [ ] PhotoSortPage 드래그 핸들 아이콘 (⋮⋮) 추가
-- [ ] PhotoSortPage 드래그 중 시각적 피드백 (scale + shadow)
-- [ ] PhotoSortPage 하단 sticky 저장 바
-- [ ] PhotoSortPage 저장 완료 success 피드백
-- [ ] photoApi.reorder(orders) 연동 확인
+- ✅ FeedCard.jsx 생성 (작가 헤더 + 이미지 4:3 + 액션 바) — 구현됨
+- ✅ FeedCard 좋아요/저장 버튼 aria-label — 구현됨
+- ✅ FeedPage 전체 레이아웃 개선 (더 보기 페이지네이션) — 구현됨
+- ✅ FeedPage 빈 피드 상태 (팔로우 없음 / 사진 없음) — 구현됨
+- ~~[ ] PhotoSortPage dirty 상태 배너 추가~~ — 폐기
+- ~~[ ] PhotoSortPage [되돌리기] 버튼 originalOrder 복원~~ — 폐기
+- ~~[ ] PhotoSortPage 드래그 핸들 아이콘 (⋮⋮) 추가~~ — 폐기
+- ~~[ ] PhotoSortPage 드래그 중 시각적 피드백~~ — 폐기
+- ~~[ ] PhotoSortPage 하단 sticky 저장 바~~ — 폐기
+- ~~[ ] PhotoSortPage 저장 완료 success 피드백~~ — 폐기
+
+> **✏️ 정렬 관련 신규 작업** → `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` Sprint 체크리스트 참조
