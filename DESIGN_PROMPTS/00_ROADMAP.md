@@ -4,7 +4,7 @@
 
 ---
 
-## 파일 구성 (전체 27개)
+## 파일 구성 (전체 30개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -35,9 +35,12 @@
 | `22_IOS26_LIQUID_GLASS_REDESIGN.md` | iOS 26 Liquid Glass 전체 재설계 바이블 (54KB · 6가지 소재 변형) | 기획 완료 |
 | `23_IOS26_LIQUID_GLASS_V2.md` | iOS 26 Liquid Glass V2 — specular highlight · vibrancy · aurora 배경 개선 | 기획 완료 |
 | `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` | 사진 정렬 알고리즘 재설계 — Justified Layout · 4가지 정렬 전략 · IDOR 수정 | 기획 완료 |
-| `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | 기획 완료 |
-| `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | 기획 완료 |
-| `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | 기획 완료 |
+| `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | ✅ 구현 완료 |
+| `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | ✅ 구현 완료 |
+| `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | ✅ 구현 완료 |
+| `28_CLIENT_DELIVERY_PORTAL.md` | **클라이언트 납품 포털** — `/proof/:token` 비공개 링크 · 승인 워크플로 · 클라이언트 피드백 | 기획 완료 |
+| `29_VISITOR_ANALYTICS.md` | **방문자 분석 대시보드** — KPI 카드 · Canvas 차트 · 인기 사진 · 장르 분포 · 전환율 퍼널 | 기획 완료 |
+| `30_SHOOT_BOOKING_CALENDAR.md` | **촬영 예약 캘린더** — 3단계 위저드 · 가용 시간 설정 · 작가 예약 관리 대시보드 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  
@@ -87,16 +90,16 @@
 
 ### P3 — 장기 (로드맵 V2, `18_FEATURE_ENHANCEMENT_V2.md`)
 
-| 우선순위 | 아이디어 |
-|---------|---------|
-| **P3-0** | 클라이언트 납품 포털 `/proof/:token` |
-| **P3-1** | 촬영 예약 캘린더 |
-| **P3-1** | 방문자 분석 대시보드 (Canvas 차트) |
-| **P3-1** | AI 스마트 앨범 자동 분류 |
-| **P3-2** | 다크모드 / 테마 전환 (`useTheme`) |
-| **P3-2** | 사진 이야기 스크롤 내러티브 |
-| **P3-2** | 포토북 PDF 내보내기 |
-| **P3-2** | 디지털 명함 카드 `/portfolio/:profileName/card` |
+| 우선순위 | 아이디어 | 설계 문서 |
+|---------|---------|---------|
+| **P3-0** | 클라이언트 납품 포털 `/proof/:token` | `28_CLIENT_DELIVERY_PORTAL.md` ← 기획 완료 |
+| **P3-1** | 방문자 분석 대시보드 (Canvas 차트) | `29_VISITOR_ANALYTICS.md` ← 기획 완료 |
+| **P3-1** | 촬영 예약 캘린더 | `30_SHOOT_BOOKING_CALENDAR.md` ← 기획 완료 |
+| **P3-1** | AI 스마트 앨범 자동 분류 | — |
+| **P3-2** | 다크모드 / 테마 전환 (`useTheme`) | — |
+| **P3-2** | 사진 이야기 스크롤 내러티브 | — |
+| **P3-2** | 포토북 PDF 내보내기 | — |
+| **P3-2** | 디지털 명함 카드 `/portfolio/:profileName/card` | — |
 
 ### 디자인 방향 (대규모 리디자인 검토 중)
 

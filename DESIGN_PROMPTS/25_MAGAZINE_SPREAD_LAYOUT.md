@@ -1,7 +1,7 @@
 # 25 — 매거진 면·판 레이아웃 시스템
 
 > 작성일: 2026-06-20  
-> 상태: 기획 완료 (구현 대기)  
+> 상태: ✅ 구현 완료 (2026-06-20)  
 > 관련 기능: GalleryPage, PhotoDetailPage, SeriesPage, PortfolioPage
 
 ---
