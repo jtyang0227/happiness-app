@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
 import { COLORS } from '../constants/colors';
-import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
+import { glassDark, BG, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -104,14 +104,15 @@ export default function SignUpPage() {
     width: '100%',
     padding: '12px 16px',
     borderRadius: 14,
-    border: `1px solid ${hasError ? COLORS.danger : GLASS.dark.border}`,
-    background: 'rgba(255,255,255,0.07)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+    border: `1.5px solid ${hasError ? COLORS.danger : 'rgba(255,255,255,0.14)'}`,
+    background: 'rgba(8,8,22,0.42)',
+    backdropFilter: 'blur(24px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(160%)',
     color: COLORS.darkText,
     fontSize: 14,
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
+    boxShadow: hasError ? '0 0 0 3px rgba(229,62,62,0.15)' : 'inset 0 1.5px 0 rgba(255,255,255,0.06)',
   });
 
   const Field = ({ label, name, type = 'text', placeholder, onBlur, hint }) => (
@@ -142,7 +143,8 @@ export default function SignUpPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: COLORS.darkBg,
+        background: BG.dark,
+        backgroundAttachment: 'fixed',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -180,14 +182,10 @@ export default function SignUpPage() {
 
         <div
           style={{
-            background: GLASS.dark.surface,
-            backdropFilter: GLASS.dark.blur,
-            WebkitBackdropFilter: GLASS.dark.blur,
-            borderRadius: 24,
+            ...glassDark('dark'),
+            borderRadius: 28,
             padding: 32,
-            border: `1px solid ${GLASS.dark.border}`,
-            boxShadow: GLASS.dark.shadowStrong,
-            animation: 'glassIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+            animation: `glassIn 0.6s ${SPRING} both`,
           }}
         >
           <h2 style={{ color: COLORS.darkText, fontSize: 20, fontWeight: 700, marginBottom: 24 }}>
@@ -256,15 +254,20 @@ export default function SignUpPage() {
               style={{
                 width: '100%',
                 padding: '14px',
-                borderRadius: 10,
+                borderRadius: 14,
                 border: 'none',
-                background: loading ? '#4a4a7a' : COLORS.primary,
+                background: loading
+                  ? 'rgba(91,110,245,0.45)'
+                  : 'linear-gradient(135deg, #5b6ef5 0%, #7c8ff7 100%)',
                 color: '#fff',
                 fontSize: 15,
                 fontWeight: 700,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: 8,
-                transition: 'background 0.2s',
+                transition: `all 0.22s ${SPRING}`,
+                boxShadow: loading
+                  ? 'none'
+                  : '0 4px 16px rgba(91,110,245,0.40), inset 0 1.5px 0 rgba(255,255,255,0.25)',
               }}
             >
               {loading ? '가입 중...' : '가입하기'}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
-import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
+import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -82,15 +82,11 @@ function PhotoCard({ photo, keyword }) {
     <div
       onClick={() => navigate(`/photo/${photo.id}`)}
       style={{
-        background: GLASS.light.surface,
-        backdropFilter: GLASS.light.blur,
-        WebkitBackdropFilter: GLASS.light.blur,
+        ...glass('light'),
         borderRadius: 20, overflow: 'hidden',
-        border: `1px solid ${GLASS.light.border}`,
-        boxShadow: GLASS.light.shadow,
         cursor: 'pointer',
-        transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease',
-        animation: 'glassIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+        transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
+        animation: `glassIn 0.4s ${SPRING} both`,
       }}
       onMouseEnter={e => {
         e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
@@ -288,13 +284,10 @@ export default function ExplorePage() {
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '12px 20px', borderRadius: 50,
-              border: `1px solid ${showDrop && dropItems.length ? COLORS.primary : GLASS.light.border}`,
               fontSize: 14, color: COLORS.text, outline: 'none',
-              background: GLASS.light.surfaceStrong,
-              backdropFilter: GLASS.light.blur,
-              WebkitBackdropFilter: GLASS.light.blur,
-              boxShadow: GLASS.light.shadow,
               transition: 'border-color 0.2s, box-shadow 0.2s',
+              ...glass('strong'),
+              border: `1px solid ${showDrop && dropItems.length ? COLORS.primary : 'rgba(255,255,255,0.65)'}`,
             }}
           />
 
@@ -304,12 +297,9 @@ export default function ExplorePage() {
               ref={dropRef}
               style={{
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
-                background: GLASS.light.surfaceStrong,
-                backdropFilter: GLASS.light.blurStrong,
-                WebkitBackdropFilter: GLASS.light.blurStrong,
+                ...glass('strong'),
                 borderRadius: 20,
-                border: `1px solid ${GLASS.light.border}`,
-                boxShadow: GLASS.light.shadowStrong, overflow: 'hidden',
+                overflow: 'hidden',
               }}
             >
               {dropType === 'history' && (

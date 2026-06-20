@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
-import { GLASS } from '../constants/glass';
+import { glassDark, GLASS } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 import EmptyState from '../components/common/EmptyState';
@@ -82,16 +82,15 @@ export default function GalleryPage() {
   return (
     <div style={{ background: COLORS.galleryBg, minHeight: '100vh' }}>
 
-      {/* Toolbar — dark glass */}
+      {/* Toolbar — V2 dark glass + 스펙큘러 */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 16px', gap: 10, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 10,
-        background: GLASS.dark.surface,
-        backdropFilter: GLASS.dark.blur,
-        WebkitBackdropFilter: GLASS.dark.blur,
-        borderBottom: `1px solid ${GLASS.dark.borderSubtle}`,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        ...glassDark('dark'),
+        borderRadius: 0,
+        borderLeft: 'none', borderRight: 'none', borderTop: 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
 
         {/* Sort chips */}
@@ -101,11 +100,15 @@ export default function GalleryPage() {
               key={opt.key ?? opt.value + opt.order}
               onClick={() => setSortIdx(idx)}
               style={{
-                padding: '5px 12px', borderRadius: 20, border: 'none',
-                cursor: 'pointer', fontSize: 12, fontWeight: sortIdx === idx ? 700 : 500,
-                background: sortIdx === idx ? COLORS.primary : 'rgba(255,255,255,0.08)',
-                color: sortIdx === idx ? '#fff' : 'rgba(255,255,255,0.55)',
+                padding: '5px 12px', borderRadius: 20, fontSize: 12,
+                fontWeight: sortIdx === idx ? 700 : 500,
+                cursor: 'pointer',
                 transition: 'all 0.15s',
+                ...(sortIdx === idx
+                  ? { background: COLORS.primary, color: '#fff', border: 'none',
+                      boxShadow: '0 2px 10px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)' }
+                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', border: 'none' }
+                ),
               }}
             >
               {opt.label}

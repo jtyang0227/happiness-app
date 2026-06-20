@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePhotos } from '../hooks/usePhotos';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
-import { GLASS } from '../constants/glass';
+import { glass, GLASS, SPRING } from '../constants/glass';
 
 export default function ListPage() {
   const { photos, loading, error, refetch } = usePhotos();
@@ -75,14 +75,10 @@ export default function ListPage() {
                   alignItems: 'center',
                   gap: 16,
                   padding: '12px 16px',
-                  background: GLASS.light.surface,
-                  backdropFilter: GLASS.light.blur,
-                  WebkitBackdropFilter: GLASS.light.blur,
+                  ...glass('light'),
                   borderRadius: 16,
                   cursor: 'pointer',
-                  border: `1px solid ${GLASS.light.border}`,
-                  boxShadow: GLASS.light.shadow,
-                  transition: 'box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+                  transition: `box-shadow 0.22s ease, transform 0.22s ${SPRING}`,
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;

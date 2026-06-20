@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
-import { GLASS, GLASS_KEYFRAMES } from '../constants/glass';
+import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 import EmptyState from '../components/common/EmptyState';
 import { SkeletonFeedCard } from '../components/common/Skeleton';
 
@@ -25,15 +25,11 @@ function FeedCard({ photo, onClick }) {
   return (
     <div
       style={{
-        background: GLASS.light.surface,
-        backdropFilter: GLASS.light.blur,
-        WebkitBackdropFilter: GLASS.light.blur,
-        borderRadius: 20,
+        ...glass('light'),
+        borderRadius: 24,
         overflow: 'hidden',
-        border: `1px solid ${GLASS.light.border}`,
-        boxShadow: GLASS.light.shadow,
-        transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease',
-        animation: 'glassIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+        transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
+        animation: `glassIn 0.4s ${SPRING} both`,
       }}
       onMouseEnter={e => {
         e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';

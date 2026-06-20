@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { COLORS } from '../../constants/colors';
-import { GLASS } from '../../constants/glass';
+import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
 import { inquiryApi } from '../../services/api';
 
 const NAV_ITEMS = [
-  { to: '/explore',   label: '탐색'   },
+  { to: '/explore',   label: '탐색'     },
   { to: '/',          label: '갤러리', end: true },
-  { to: '/series',    label: '시리즈' },
-  { to: '/list',      label: '목록'   },
-  { to: '/photo/new', label: '등록'   },
-  { to: '/editor',    label: '✏️ 에디터' },
+  { to: '/series',    label: '시리즈'   },
+  { to: '/list',      label: '목록'     },
+  { to: '/photo/new', label: '등록'     },
+  { to: '/editor',    label: '에디터'   },
   { to: '/inbox',     label: '문의함', badge: true },
-  { to: '/profile',   label: '프로필' },
+  { to: '/profile',   label: '프로필'   },
+];
+
+const BOTTOM_NAV_ITEMS = [
+  { to: '/explore',   label: '탐색',  icon: '⊙',  end: false },
+  { to: '/',          label: '갤러리', icon: '✦',  end: true  },
+  { to: '/photo/new', label: '등록',  icon: '+',  end: false, isCenter: true },
+  { to: '/list',      label: '목록',  icon: '☰',  end: false },
+  { to: '/profile',   label: '프로필', icon: '◎',  end: false },
 ];
 
 export default function Header() {
@@ -43,149 +50,150 @@ export default function Header() {
 
   return (
     <>
-      {/* PC 헤더 — 768px 이상에서만 표시 */}
       <style>{`
-        @media (max-width: 767px) {
-          .happiness-pc-header { display: none !important; }
+        @media (max-width: 767px) { .h-pc { display: none !important; } }
+        @media (min-width: 768px) { .h-mobile { display: none !important; } }
+        .nav-link {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 5px 13px; border-radius: 10px;
+          font-size: 14px; font-weight: 500;
+          color: #5c5c7a; text-decoration: none;
+          transition: background 0.15s, color 0.15s;
+          position: relative;
         }
-        @media (min-width: 768px) {
-          .happiness-bottom-nav { display: none !important; }
+        .nav-link:hover { background: rgba(91,110,245,0.06); color: #1a1a2e; }
+        .nav-link.active {
+          background: rgba(91,110,245,0.12);
+          color: #5b6ef5;
+          font-weight: 700;
+          border: 1px solid rgba(91,110,245,0.20);
+          box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.60), 0 2px 8px rgba(91,110,245,0.12);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
+        .avatar-btn { transition: transform 0.2s ${SPRING}; }
+        .avatar-btn:hover { transform: scale(1.08); }
       `}</style>
 
-      <header className="happiness-pc-header" style={{
-        position: 'sticky', top: 0, zIndex: 100,
+      {/* ── PC Header — V2 glass('strong') 스펙큘러 ──────────── */}
+      <header className="h-pc" style={{
+        position: 'sticky', top: 0, zIndex: 200,
         height: 58,
-        background: GLASS.light.surfaceStrong,
-        backdropFilter: GLASS.light.blur,
-        WebkitBackdropFilter: GLASS.light.blur,
-        borderBottom: `1px solid ${GLASS.light.border}`,
-        boxShadow: '0 1px 0 rgba(91,110,245,0.08), 0 4px 16px rgba(91,110,245,0.04)',
+        ...glass('strong'),
+        borderRadius: 0,
+        borderLeft: 'none', borderRight: 'none', borderTop: 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.50)',
       }}>
         <div style={{
-          maxWidth: 1200, margin: '0 auto',
-          padding: '0 24px', height: '100%',
+          maxWidth: 1280, margin: '0 auto',
+          padding: '0 20px', height: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12,
         }}>
-
           {/* Logo */}
-          <NavLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span style={{ fontSize: 17, color: COLORS.primary }}>✦</span>
-            <span style={{ fontSize: 17, fontWeight: 800, color: COLORS.text, letterSpacing: '-0.5px' }}>
+          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28, borderRadius: 8,
+              background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+              fontSize: 12,
+              boxShadow: '0 4px 12px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.30)',
+            }}>✦</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: '#1a1a2e', letterSpacing: '-0.5px' }}>
               Happiness
             </span>
           </NavLink>
 
           {/* Nav */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
             {NAV_ITEMS.map(({ to, label, end, badge }) => (
               <NavLink
                 key={to} to={to} end={end}
-                style={({ isActive }) => ({
-                  textDecoration: 'none',
-                  fontSize: 14,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? COLORS.primary : COLORS.textSecondary,
-                  padding: '6px 13px',
-                  borderRadius: 10,
-                  background: isActive ? COLORS.primaryLight : 'transparent',
-                  transition: 'all 0.15s',
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                })}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
               >
                 {label}
                 {badge && unreadCount > 0 && (
                   <span style={{
-                    background: COLORS.primary, color: '#fff',
-                    fontSize: 10, fontWeight: 800,
-                    minWidth: 16, height: 16, borderRadius: 8,
+                    background: C.danger, color: '#fff',
+                    fontSize: 9, fontWeight: 800,
+                    minWidth: 15, height: 15, borderRadius: 99,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     padding: '0 4px',
-                  }}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
+                  }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          {/* Avatar Dropdown */}
-          <div ref={dropdownRef} style={{ position: 'relative' }}>
+          {/* Avatar dropdown */}
+          <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
             <button
+              className="avatar-btn"
               onClick={() => setDropdownOpen(v => !v)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                outline: dropdownOpen ? `2px solid ${COLORS.primaryLight}` : 'none',
-                borderRadius: 30,
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}
               aria-label="사용자 메뉴"
-              aria-expanded={dropdownOpen}
             >
               <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: user?.avatarUrl ? 'transparent' : `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.accent})`,
+                width: 32, height: 32, borderRadius: '50%',
+                background: user?.avatarUrl
+                  ? 'transparent'
+                  : 'linear-gradient(135deg, #6c6ef7, #9b7ff7)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 700, color: '#fff',
+                fontSize: 12, fontWeight: 700, color: '#fff',
                 overflow: 'hidden', flexShrink: 0,
-                border: `2px solid ${dropdownOpen ? COLORS.primary : COLORS.border}`,
-                transition: 'border-color 0.15s',
+                border: `1.5px solid ${dropdownOpen ? '#6c6ef7' : 'rgba(255,255,255,0.15)'}`,
+                boxShadow: dropdownOpen ? '0 0 0 3px rgba(108,110,247,0.25)' : 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
               }}>
                 {user?.avatarUrl
                   ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : (user?.name || user?.email || '?').charAt(0).toUpperCase()
                 }
               </div>
-              <span style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1 }}>▾</span>
             </button>
 
             {dropdownOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                background: COLORS.surface,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 14,
-                boxShadow: '0 8px 32px rgba(91,110,245,0.14)',
-                minWidth: 210, zIndex: 200,
+                ...glass('strong'),
+                borderRadius: 16,
+                minWidth: 210, zIndex: 300,
                 overflow: 'hidden',
+                animation: `glassIn 0.28s ${SPRING} both`,
               }}>
-                {/* 사용자 정보 */}
-                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.border}` }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{user?.name || '사용자'}</div>
+                <div style={{
+                  padding: '14px 16px',
+                  borderBottom: `1px solid rgba(255,255,255,0.42)`,
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{user?.name || '사용자'}</div>
                   {user?.profileName && (
-                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>@{user.profileName}</div>
+                    <div style={{ fontSize: 11, color: '#9090b0', marginTop: 2 }}>@{user.profileName}</div>
                   )}
                 </div>
-                {/* 메뉴 항목 */}
-                {[
-                  { icon: '👤', label: '프로필 보기', action: () => { navigate('/profile'); setDropdownOpen(false); } },
-                ].map(({ icon, label, action }) => (
-                  <button key={label} onClick={action} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    width: '100%', padding: '11px 16px', border: 'none',
-                    background: 'none', cursor: 'pointer', fontSize: 14,
-                    color: COLORS.text, textAlign: 'left',
+                <button
+                  onClick={() => { navigate('/profile'); setDropdownOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9,
+                    width: '100%', padding: '11px 16px',
+                    fontSize: 14, color: '#5c5c7a', textAlign: 'left',
+                    transition: 'background 0.12s, color 0.12s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,110,245,0.08)'; e.currentTarget.style.color = '#5b6ef5'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}
+                >
+                  <span>◎</span> 프로필 보기
+                </button>
+                <div style={{ height: 1, background: 'rgba(226,226,238,0.7)', margin: '4px 0' }} />
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9,
+                    width: '100%', padding: '11px 16px',
+                    fontSize: 14, color: '#e53e3e', textAlign: 'left',
                     transition: 'background 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.primaryLight; e.currentTarget.style.color = COLORS.primary; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = COLORS.text; }}
-                  >
-                    <span>{icon}</span> {label}
-                  </button>
-                ))}
-                <div style={{ height: 1, background: COLORS.border, margin: '4px 0' }} />
-                <button onClick={handleLogout} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  width: '100%', padding: '11px 16px', border: 'none',
-                  background: 'none', cursor: 'pointer', fontSize: 14,
-                  color: COLORS.danger, textAlign: 'left',
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#fff0f0'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <span>🚪</span> 로그아웃
                 </button>
@@ -195,32 +203,23 @@ export default function Header() {
         </div>
       </header>
 
-      {/* 모바일 하단 탭바 — 768px 미만에서만 표시 */}
-      <BottomNav onLogout={handleLogout} />
+      {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
+      <BottomNav unreadCount={unreadCount} />
     </>
   );
 }
 
-const BOTTOM_NAV_ITEMS = [
-  { to: '/explore',   label: '탐색',  icon: '🔭', end: false },
-  { to: '/',          label: '갤러리', icon: '✦',  end: true  },
-  { to: '/photo/new', label: '등록',  icon: '+',  end: false, isCenter: true },
-  { to: '/list',      label: '목록',  icon: '☰',  end: false },
-  { to: '/profile',   label: '프로필', icon: '◎',  end: false },
-];
-
-function BottomNav({ onLogout }) {
+function BottomNav({ unreadCount }) {
   return (
-    <nav className="happiness-bottom-nav" style={{
+    <nav className="h-mobile" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
       height: 'calc(60px + env(safe-area-inset-bottom))',
       paddingBottom: 'env(safe-area-inset-bottom)',
-      background: GLASS.dark.surfaceStrong,
-      backdropFilter: GLASS.dark.blur,
-      WebkitBackdropFilter: GLASS.dark.blur,
-      borderTop: `1px solid ${GLASS.dark.border}`,
+      ...glassDark('dark'),
+      borderRadius: 0,
+      borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
+      borderTop: '1px solid rgba(255,255,255,0.10)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-      boxShadow: '0 -8px 32px rgba(0,0,0,0.32)',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
         <NavLink
@@ -228,27 +227,24 @@ function BottomNav({ onLogout }) {
           style={({ isActive }) => ({
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
-            textDecoration: 'none', flex: 1,
-            color: isActive && !isCenter ? '#a0aaff' : 'rgba(255,255,255,0.45)',
-            transition: 'color 0.2s, transform 0.2s',
-            transform: isActive && !isCenter ? 'scale(1.08)' : 'scale(1)',
+            textDecoration: 'none', flex: 1, padding: '6px 0',
+            color: isActive && !isCenter ? '#a8aaff' : C.textHint,
+            transition: `color 0.2s, transform 0.25s ${SPRING}`,
+            transform: isActive && !isCenter ? 'scale(1.1)' : 'scale(1)',
           })}
         >
           {isCenter ? (
             <div style={{
-              width: 48, height: 48, borderRadius: '50%',
-              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              width: 46, height: 46, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6c6ef7, #9b7ff7)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 26, fontWeight: 700,
-              boxShadow: `0 4px 16px rgba(91,110,245,0.45)`,
-              marginBottom: 2,
-            }}>
-              +
-            </div>
+              color: '#fff', fontSize: 22, fontWeight: 700,
+              boxShadow: '0 4px 20px rgba(108,110,247,0.5)',
+            }}>+</div>
           ) : (
             <>
-              <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em' }}>{label}</span>
+              <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span>
+              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em' }}>{label}</span>
             </>
           )}
         </NavLink>

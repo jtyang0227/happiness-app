@@ -1,10 +1,39 @@
 import React, { useState, useEffect } from 'react';
 
+// V2 Glass: 타입별 tinted glass — 스펙큘러 하이라이트 포함
 const CONFIGS = {
-  success: { icon: '✓', bar: '#38a169', bg: 'rgba(240,255,244,0.82)', text: '#276749', border: 'rgba(198,246,213,0.7)' },
-  error:   { icon: '✕', bar: '#e53e3e', bg: 'rgba(255,245,245,0.82)', text: '#9b2c2c', border: 'rgba(254,215,215,0.7)' },
-  warning: { icon: '!', bar: '#dd6b20', bg: 'rgba(255,250,240,0.82)', text: '#7b341e', border: 'rgba(254,235,200,0.7)' },
-  info:    { icon: 'i', bar: '#5b6ef5', bg: 'rgba(240,242,255,0.82)', text: '#3d51cc', border: 'rgba(199,207,254,0.7)' },
+  success: {
+    icon: '✓', bar: '#38a169',
+    bg: 'rgba(240,255,244,0.78)',
+    blur: 'blur(32px) saturate(180%) brightness(103%)',
+    text: '#276749', border: 'rgba(198,246,213,0.72)',
+    specular: 'inset 0 1.5px 0 rgba(255,255,255,0.70), inset 0 -0.5px 0 rgba(0,0,0,0.04)',
+    shadow: '0 8px 32px rgba(56,161,105,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+  },
+  error: {
+    icon: '✕', bar: '#e53e3e',
+    bg: 'rgba(255,245,245,0.80)',
+    blur: 'blur(32px) saturate(180%) brightness(103%)',
+    text: '#9b2c2c', border: 'rgba(254,215,215,0.72)',
+    specular: 'inset 0 1.5px 0 rgba(255,255,255,0.70), inset 0 -0.5px 0 rgba(0,0,0,0.04)',
+    shadow: '0 8px 32px rgba(229,62,62,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+  },
+  warning: {
+    icon: '!', bar: '#dd6b20',
+    bg: 'rgba(255,250,240,0.80)',
+    blur: 'blur(32px) saturate(180%) brightness(103%)',
+    text: '#7b341e', border: 'rgba(254,235,200,0.72)',
+    specular: 'inset 0 1.5px 0 rgba(255,255,255,0.70), inset 0 -0.5px 0 rgba(0,0,0,0.04)',
+    shadow: '0 8px 32px rgba(221,107,32,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+  },
+  info: {
+    icon: 'i', bar: '#5b6ef5',
+    bg: 'rgba(240,242,255,0.80)',
+    blur: 'blur(32px) saturate(200%) brightness(103%)',
+    text: '#3d51cc', border: 'rgba(199,207,254,0.72)',
+    specular: 'inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 -0.5px 0 rgba(0,0,0,0.04)',
+    shadow: '0 8px 32px rgba(91,110,245,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+  },
 };
 
 function ToastItem({ toast, onDismiss }) {
@@ -21,12 +50,12 @@ function ToastItem({ toast, onDismiss }) {
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 0,
       background: cfg.bg,
-      backdropFilter: 'blur(20px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      backdropFilter: cfg.blur,
+      WebkitBackdropFilter: cfg.blur,
       border: `1px solid ${cfg.border}`,
       borderRadius: 16,
       overflow: 'hidden',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+      boxShadow: `${cfg.shadow}, ${cfg.specular}`,
       minWidth: 260, maxWidth: 340,
       transform: visible ? 'translateX(0) scale(1)' : 'translateX(110%) scale(0.95)',
       opacity: visible ? 1 : 0,
@@ -103,9 +132,12 @@ export default function Toast({ toast }) {
       transition: 'all 0.3s ease',
       zIndex: 9999,
       display: 'flex', alignItems: 'center', gap: 8,
-      background: cfg.bg, border: `1px solid ${cfg.border}`,
-      borderRadius: 10, overflow: 'hidden',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      background: cfg.bg,
+      backdropFilter: cfg.blur,
+      WebkitBackdropFilter: cfg.blur,
+      border: `1px solid ${cfg.border}`,
+      borderRadius: 16, overflow: 'hidden',
+      boxShadow: `${cfg.shadow}, ${cfg.specular}`,
       maxWidth: 320,
     }}>
       <div style={{ width: 4, background: cfg.bar, alignSelf: 'stretch' }} />

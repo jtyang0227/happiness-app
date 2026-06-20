@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { GLASS } from '../../constants/glass';
+import { glass, GLASS, BG } from '../../constants/glass';
 
 const NAV_ITEMS = [
   { to: '/admin',               label: '📊 대시보드',     end: true },
@@ -25,16 +25,15 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
   const sidebar = (
     <div style={{
       width: SIDEBAR_W, minHeight: '100vh',
-      background: GLASS.light.surfaceStrong,
-      backdropFilter: GLASS.light.blurStrong,
-      WebkitBackdropFilter: GLASS.light.blurStrong,
-      borderRight: `1px solid ${GLASS.light.border}`,
-      boxShadow: '4px 0 24px rgba(91,110,245,0.06)',
+      ...glass('strong'),
+      borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
+      borderRight: '1px solid rgba(255,255,255,0.50)',
+      boxShadow: '4px 0 24px rgba(91,110,245,0.08), inset -1px 0 0 rgba(255,255,255,0.50)',
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, zIndex: 200,
     }}>
       {/* 로고 */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${GLASS.light.borderSubtle}` }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid rgba(255,255,255,0.38)` }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#5b6ef5' }}>🛠️ Happiness Admin</div>
       </div>
 
@@ -54,7 +53,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       </nav>
 
       {/* 로그아웃 */}
-      <div style={{ padding: '12px 8px', borderTop: `1px solid ${GLASS.light.border}` }}>
+      <div style={{ padding: '12px 8px', borderTop: `1px solid rgba(255,255,255,0.38)` }}>
         <button
           onClick={handleLogout}
           style={{
@@ -73,7 +72,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(160deg, #f0f2ff 0%, #f5f0ff 40%, #eff8ff 100%)', backgroundAttachment: 'fixed' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: BG.light, backgroundAttachment: 'fixed' }}>
       {/* 데스크탑 사이드바 */}
       <style>{`
         @media (max-width: 768px) { .admin-sidebar { display: none !important; } }
@@ -100,14 +99,12 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       <div style={{ flex: 1, marginLeft: 0, display: 'flex', flexDirection: 'column' }}>
         <style>{`@media (min-width: 769px) { .admin-content { margin-left: ${SIDEBAR_W}px !important; } }`}</style>
 
-        {/* 상단바 — glass */}
+        {/* 상단바 — V2 glass('strong') */}
         <div style={{
-          background: GLASS.light.surfaceStrong,
-          backdropFilter: GLASS.light.blur,
-          WebkitBackdropFilter: GLASS.light.blur,
-          borderBottom: `1px solid ${GLASS.light.border}`,
-          boxShadow: '0 2px 12px rgba(91,110,245,0.06)',
-          padding: '0 24px', height: 56, display: 'flex', alignItems: 'center',
+          ...glass('strong'),
+          borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none',
+          borderBottom: '1px solid rgba(255,255,255,0.50)',
+          padding: '0 24px', height: 58, display: 'flex', alignItems: 'center',
           gap: 16, position: 'sticky', top: 0, zIndex: 100,
         }}>
           {/* 모바일 햄버거 */}
