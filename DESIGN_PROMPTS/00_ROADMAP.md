@@ -4,7 +4,7 @@
 
 ---
 
-## 파일 구성 (전체 28개)
+## 파일 구성 (전체 29개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -39,6 +39,7 @@
 | `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | 기획 완료 |
 | `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | 기획 완료 |
 | `28_PORTFOLIO_TEMPLATE_SCRL.md` | **포트폴리오 템플릿 시스템** (SCRL 참조) — 8종 템플릿 · 템플릿 에디터 · 섹션 구성 · 스냅 스크롤 | 기획 완료 |
+| `29_ADMIN_CATEGORY_MANAGEMENT.md` | **어드민 카테고리·장르 관리** — 기존 어드민 강화 + 3종 신규 페이지(카테고리·태그·모더레이션) + 확장 아이디어 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  
