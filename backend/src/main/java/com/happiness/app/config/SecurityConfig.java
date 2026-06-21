@@ -87,6 +87,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/{id}").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/inquiry").permitAll()
+                // Delivery Portal — 공개 클라이언트 엔드포인트
+                .requestMatchers(HttpMethod.GET,  "/api/delivery/**").permitAll()
+                .requestMatchers(HttpMethod.PUT,  "/api/delivery/**").permitAll()
+                // Analytics — 이벤트 추적
+                .requestMatchers(HttpMethod.POST, "/api/analytics/track").permitAll()
+                // Booking — 공개 예약
+                .requestMatchers(HttpMethod.GET,  "/api/booking/*/availability").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/booking/*").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용

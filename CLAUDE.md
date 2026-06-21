@@ -350,7 +350,10 @@ Feature-based package layout:
 - **photo/service/AutoTagService** — 키워드 추출(title+description, stop-word 필터) + MOOD_TAGS 매핑. `POST /api/photos/:id/auto-tags` (max 10 tags).
 - **common/** — `HelloController` (health check), `ImageProcessingUtil` (upload + Thumbnailator resize).
 - **board/** — Placeholder; `Board`/`Content` entities with repositories, no service layer yet.
-- **config/** — `WebConfig` (CORS 설정 포함), `SecurityConfig`, `RedisConfig`, `AsyncConfig`.
+- **config/** — `WebConfig` (CORS 설정 포함), `SecurityConfig`, `RedisConfig`, `AsyncConfig` (@EnableScheduling 추가).
+- **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
+- **analytics/** — 방문자 분석. `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
+- **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. IDOR 검사: findByIdAndMemberId.
 
 #### Spring 프로파일 구성
 
@@ -413,6 +416,74 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS sub_genres VARCHAR(60);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS pan_type         VARCHAR(20) DEFAULT 'EDITORIAL';
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS magazine_caption TEXT;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS image_right      BOOLEAN DEFAULT FALSE;
+-- Module: delivery — 클라이언트 배달 포털
+CREATE TABLE IF NOT EXISTS delivery_sets (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  token          VARCHAR(64) UNIQUE NOT NULL,
+  title          VARCHAR(200) NOT NULL,
+  client_name    VARCHAR(100),
+  status         VARCHAR(20) DEFAULT 'PENDING',
+  password_hash  VARCHAR(255),
+  expires_at     TIMESTAMP NOT NULL,
+  feedback       TEXT,
+  approved_at    TIMESTAMP,
+  viewed_at      TIMESTAMP,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS delivery_set_photos (
+  delivery_set_id BIGINT NOT NULL,
+  photo_id        BIGINT NOT NULL,
+  sort_order      INTEGER DEFAULT 0,
+  liked           BOOLEAN DEFAULT FALSE,
+  PRIMARY KEY (delivery_set_id, photo_id)
+);
+-- Module: analytics — 방문자 분석
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id            BIGSERIAL PRIMARY KEY,
+  event_type    VARCHAR(30) NOT NULL,
+  target_type   VARCHAR(20),
+  target_id     BIGINT,
+  member_id     BIGINT NOT NULL,
+  visitor_token VARCHAR(32),
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_analytics_member_type ON analytics_events (member_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_created_at  ON analytics_events (created_at);
+-- Module: booking — 촬영 예약 캘린더
+CREATE TABLE IF NOT EXISTS booking_availability (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT UNIQUE NOT NULL,
+  weekdays      VARCHAR(20)  DEFAULT '1,2,3,4,5',
+  time_slots    VARCHAR(100) DEFAULT '10:00,14:00',
+  buffer_hours  INTEGER DEFAULT 0,
+  booking_note  TEXT,
+  is_active     BOOLEAN DEFAULT TRUE,
+  updated_at    TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS booking_blocked_dates (
+  id           BIGSERIAL PRIMARY KEY,
+  member_id    BIGINT NOT NULL,
+  blocked_date DATE NOT NULL,
+  reason       VARCHAR(100),
+  UNIQUE (member_id, blocked_date)
+);
+CREATE TABLE IF NOT EXISTS bookings (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  shoot_date     DATE NOT NULL,
+  shoot_time     VARCHAR(10),
+  shoot_type     VARCHAR(20),
+  client_name    VARCHAR(100) NOT NULL,
+  client_phone   VARCHAR(30),
+  client_email   VARCHAR(255),
+  memo           TEXT,
+  status         VARCHAR(20) DEFAULT 'REQUESTED',
+  reject_reason  VARCHAR(200),
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+  confirmed_at   TIMESTAMP,
+  cancelled_at   TIMESTAMP
+);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
