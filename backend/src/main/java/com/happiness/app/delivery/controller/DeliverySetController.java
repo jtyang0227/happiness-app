@@ -35,13 +35,22 @@ public class DeliverySetController {
     }
 
     /**
-     * GET /api/delivery/{token} — 클라이언트 배달 세트 상세 (공개)
-     * 비밀번호 보호된 경우 쿼리 파라미터 또는 바디로 password 전달
+     * GET /api/delivery/{token} — 클라이언트 배달 세트 상세 (공개, 비밀번호 없는 경우)
      */
     @GetMapping("/{token}")
-    public ResponseEntity<DeliverySetDetail> getDetail(
+    public ResponseEntity<DeliverySetDetail> getDetail(@PathVariable String token) {
+        return ResponseEntity.ok(deliverySetService.getDetailForClient(token, null));
+    }
+
+    /**
+     * POST /api/delivery/{token} — 클라이언트 배달 세트 상세 (공개, 비밀번호 바디로 전달)
+     * 비밀번호는 절대 쿼리 파라미터로 받지 않음 (서버 로그 노출 방지)
+     */
+    @PostMapping("/{token}")
+    public ResponseEntity<DeliverySetDetail> getDetailWithPassword(
             @PathVariable String token,
-            @RequestParam(required = false) String password) {
+            @RequestBody(required = false) ClientActionRequest req) {
+        String password = req != null ? req.getPassword() : null;
         return ResponseEntity.ok(deliverySetService.getDetailForClient(token, password));
     }
 

@@ -87,12 +87,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/{id}").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/inquiry").permitAll()
-                // Delivery Portal — 공개 클라이언트 엔드포인트
-                .requestMatchers(HttpMethod.GET,  "/api/delivery/**").permitAll()
+                // Delivery Portal — 공개 클라이언트 엔드포인트 (토큰 기반)
+                // GET /api/delivery는 인증 필요(목록 조회) — 단일 세그먼트 토큰만 공개
+                .requestMatchers(HttpMethod.GET,  "/api/delivery/*").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/delivery/*").permitAll()
                 .requestMatchers(HttpMethod.PUT,  "/api/delivery/**").permitAll()
                 // Analytics — 이벤트 추적
                 .requestMatchers(HttpMethod.POST, "/api/analytics/track").permitAll()
-                // Booking — 공개 예약
+                // Booking — 공개 예약 (인증 필요 엔드포인트를 먼저 명시 — 순서 중요)
+                .requestMatchers(HttpMethod.POST, "/api/booking/blocked-dates").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/booking/*/availability").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/booking/*").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
