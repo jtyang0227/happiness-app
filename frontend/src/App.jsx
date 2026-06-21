@@ -31,6 +31,10 @@ import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
 import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
 import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
+import ClientDeliveryPage    from './pages/ClientDeliveryPage';
+import DeliveriesPage        from './pages/DeliveriesPage';
+import BookingPage           from './pages/BookingPage';
+import BookingDashboard      from './pages/BookingDashboard';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -48,6 +52,8 @@ function AppShell() {
   const isGallery    = location.pathname === '/';
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
+    || location.pathname.startsWith('/proof/')
+    || location.pathname.startsWith('/booking/')
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname);
 
@@ -100,6 +106,14 @@ function AppShell() {
           <Route path="/inbox" element={<ProtectedRoute><InquiryInboxPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
+
+          {/* Delivery & Booking (standalone) */}
+          <Route path="/proof/:token" element={<ClientDeliveryPage />} />
+          <Route path="/booking/:profileName" element={<BookingPage />} />
+
+          {/* Delivery & Booking (protected) */}
+          <Route path="/deliveries" element={<ProtectedRoute><DeliveriesPage /></ProtectedRoute>} />
+          <Route path="/bookings" element={<ProtectedRoute><BookingDashboard /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />

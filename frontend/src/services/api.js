@@ -136,3 +136,8 @@ export const authApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data),
 };
+
+// Re-export new feature APIs for convenience
+export { deliveryApi } from './deliveryApi';
+export { analyticsApi } from './analyticsApi';
+export { bookingApi } from './bookingApi';
