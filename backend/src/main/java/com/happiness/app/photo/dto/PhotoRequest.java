@@ -15,6 +15,9 @@ public class PhotoRequest {
     private String imageRatio;
     private Integer gridColSpan;
     private String colorMood;
+    // 장르
+    private String genre;
+    private String subGenres;  // JSON 배열 문자열 예: '["FASHION","LIFESTYLE"]'
     // EXIF
     private String cameraModel;
     private String lensModel;

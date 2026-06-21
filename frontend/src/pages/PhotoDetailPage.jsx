@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import GenreBadge, { SubGenreBadges } from '../components/photo/GenreBadge';
 import CommentsSection from '../components/photo/CommentsSection';
 import ColorPalette from '../components/photo/ColorPalette';
 import PhotoViewer from '../components/photo/PhotoViewer';
@@ -244,17 +245,21 @@ export default function PhotoDetailPage() {
         {photo.title || '제목 없음'}
       </h1>
 
-      {/* 무드 배지 */}
-      {mood && (
-        <div style={{ marginBottom: 12 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            background: mood.bg, padding: '4px 12px', borderRadius: 20,
-            fontSize: 12, fontWeight: 700,
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-            {mood.label}
-          </span>
+      {/* 장르 + 무드 배지 */}
+      {(photo.genre || mood) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          {photo.genre && <GenreBadge genre={photo.genre} />}
+          {photo.subGenres && <SubGenreBadges subGenres={photo.subGenres} />}
+          {mood && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: mood.bg, padding: '4px 12px', borderRadius: 20,
+              fontSize: 12, fontWeight: 700,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
+              {mood.label}
+            </span>
+          )}
         </div>
       )}
 

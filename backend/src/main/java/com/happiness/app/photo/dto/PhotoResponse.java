@@ -29,6 +29,8 @@ public class PhotoResponse {
     private String colorMood;
     private String colorPalette;
     private Integer displayOrder;
+    private String genre;
+    private String subGenres;
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
@@ -59,6 +61,8 @@ public class PhotoResponse {
                 .colorMood(photo.getColorMood())
                 .colorPalette(photo.getColorPalette())
                 .displayOrder(photo.getDisplayOrder())
+                .genre(photo.getGenre())
+                .subGenres(photo.getSubGenres())
                 .cameraModel(photo.getCameraModel())
                 .lensModel(photo.getLensModel())
                 .aperture(photo.getAperture())

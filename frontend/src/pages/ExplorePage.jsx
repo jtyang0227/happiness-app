@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import GenreTabBar from '../components/common/GenreTabBar';
 import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
@@ -156,10 +157,11 @@ export default function ExplorePage() {
   const [search, setSearch]         = useState('');
   const [mood, setMood]             = useState('');
   const [imageRatio, setImageRatio] = useState('');
+  const [genre, setGenre]           = useState(null);
   const [sortIdx, setSortIdx]       = useState(0);
   const [tagInput, setTagInput]     = useState('');
   const [activeTags, setActiveTags] = useState([]);
-  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', tags: '', sortBy: 'createdAt', order: 'desc' });
+  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', genre: null, tags: '', sortBy: 'createdAt', order: 'desc' });
 
   // autocomplete + history
   const [suggestions, setSuggestions] = useState([]);
@@ -236,11 +238,12 @@ export default function ExplorePage() {
       keyword:    overrides.keyword    ?? search.trim(),
       colorMood:  overrides.colorMood  ?? mood,
       imageRatio: overrides.imageRatio ?? imageRatio,
+      genre:      overrides.genre !== undefined ? overrides.genre : genre,
       tags:       q.tags,
       sortBy:     s.sortBy,
       order:      s.order,
     }));
-  }, [search, mood, imageRatio, sortIdx]);
+  }, [search, mood, imageRatio, genre, sortIdx]);
 
   const commitSearch = useCallback((term) => {
     const t = term.trim();
@@ -248,8 +251,8 @@ export default function ExplorePage() {
     setShowDrop(false);
     if (t) { saveHistory(t); setHistory(loadHistory()); }
     const s = SORT_OPTIONS[sortIdx];
-    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, tags: q.tags, sortBy: s.sortBy, order: s.order }));
-  }, [sortIdx, mood, imageRatio]);
+    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, genre, tags: q.tags, sortBy: s.sortBy, order: s.order }));
+  }, [sortIdx, mood, imageRatio, genre]);
 
   const handleSearch = (e) => { e.preventDefault(); commitSearch(search); };
 
@@ -378,6 +381,14 @@ export default function ExplorePage() {
           검색
         </button>
       </form>
+
+      {/* 장르 필터 탭바 */}
+      <div style={{ marginBottom: 12 }}>
+        <GenreTabBar
+          selected={genre}
+          onChange={(code) => { setGenre(code); applyFilters({ genre: code }); }}
+        />
+      </div>
 
       {/* Mood filter chips */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>

@@ -41,6 +41,23 @@ export const COLORS = {
   galleryBorder: '#1e1e1e',
 };
 
+export const GENRE_META = {
+  PORTRAIT:     { emoji: '🧑', label: '인물',    color: '#5b6ef5', bg: '#eef0ff' },
+  WEDDING:      { emoji: '💍', label: '웨딩',    color: '#e91e63', bg: '#fce4ec' },
+  LANDSCAPE:    { emoji: '🌄', label: '풍경',    color: '#43a047', bg: '#e8f5e9' },
+  NATURE:       { emoji: '🌿', label: '자연',    color: '#2e7d32', bg: '#e8f5e9' },
+  STREET:       { emoji: '🏙️', label: '스트릿',  color: '#37474f', bg: '#eceff1' },
+  ARCHITECTURE: { emoji: '🏛️', label: '건축',    color: '#5d4037', bg: '#efebe9' },
+  FOOD:         { emoji: '🍽️', label: '음식',    color: '#f57c00', bg: '#fff3e0' },
+  TRAVEL:       { emoji: '✈️', label: '여행',    color: '#0288d1', bg: '#e1f5fe' },
+  FASHION:      { emoji: '👗', label: '패션',    color: '#ad1457', bg: '#fce4ec' },
+  LIFESTYLE:    { emoji: '☀️', label: '라이프',  color: '#ffb300', bg: '#fff8e1' },
+  COMMERCIAL:   { emoji: '📦', label: '상업',    color: '#455a64', bg: '#eceff1' },
+  FINE_ART:     { emoji: '🎨', label: '파인아트', color: '#6a1b9a', bg: '#f3e5f5' },
+};
+
+export const GENRE_LIST = Object.entries(GENRE_META).map(([code, meta]) => ({ code, ...meta }));
+
 export const MOOD_COLORS = {
   WARM:       { dot: '#FF7043', bg: '#FFF3E0', label: '따뜻함'    },
   ENERGETIC:  { dot: '#FFB300', bg: '#FFFDE7', label: '에너지'    },

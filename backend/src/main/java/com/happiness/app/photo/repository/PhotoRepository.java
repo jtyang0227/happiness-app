@@ -29,12 +29,14 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
           AND (:colorMood IS NULL OR :colorMood = '' OR p.colorMood = :colorMood)
           AND (:memberId IS NULL OR p.memberId = :memberId)
           AND (:imageRatio IS NULL OR :imageRatio = '' OR p.imageRatio = :imageRatio)
+          AND (:genre IS NULL OR :genre = '' OR p.genre = :genre)
         """)
     List<Photo> search(
             @Param("keyword")    String keyword,
             @Param("colorMood")  String colorMood,
             @Param("memberId")   Long memberId,
             @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre,
             Sort sort
     );
 
@@ -60,6 +62,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         AND (:colorMood = '' OR color_mood = :colorMood)
         AND (:memberId IS NULL OR member_id = :memberId)
         AND (:imageRatio = '' OR image_ratio = :imageRatio)
+        AND (:genre = '' OR genre = :genre)
         ORDER BY GREATEST(
             similarity(LOWER(title),                        LOWER(:kw)),
             similarity(LOWER(COALESCE(description, '')),    LOWER(:kw)),
@@ -71,8 +74,17 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             @Param("kw")         String keyword,
             @Param("colorMood")  String colorMood,
             @Param("memberId")   Long memberId,
-            @Param("imageRatio") String imageRatio
+            @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre
     );
+
+    /** 장르별 사진 수 통계 (genre가 null이 아닌 사진만) */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.genre IS NOT NULL GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenre();
+
+    /** 특정 멤버의 장르별 사진 수 */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.memberId = :memberId AND p.genre IS NOT NULL GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenreForMember(@Param("memberId") Long memberId);
 
     /** 자동완성 — 제목 부분 일치 (최대 5건, JPQL로 H2·PostgreSQL 모두 동작) */
     @Query("SELECT p.title FROM Photo p WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY p.title")

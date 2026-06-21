@@ -8,14 +8,15 @@ export const photoApi = {
   update: (id, data) => apiClient.put(`/photos/${id}`, data).then(r => r.data),
   remove: (id)       => apiClient.delete(`/photos/${id}`).then(r => r.data),
 
-  /** 키워드·무드·멤버·비율 필터 + 정렬. 파라미터 모두 선택적 */
-  search: ({ keyword, colorMood, memberId, imageRatio, sortBy = 'createdAt', order = 'desc' } = {}) =>
+  /** 키워드·무드·멤버·비율·장르 필터 + 정렬. 파라미터 모두 선택적 */
+  search: ({ keyword, colorMood, memberId, imageRatio, genre, sortBy = 'createdAt', order = 'desc' } = {}) =>
     apiClient.get('/photos', {
       params: {
         ...(keyword    ? { keyword }    : {}),
         ...(colorMood  ? { colorMood }  : {}),
         ...(memberId   ? { memberId }   : {}),
         ...(imageRatio ? { imageRatio } : {}),
+        ...(genre      ? { genre }      : {}),
         sortBy,
         order,
       },
@@ -53,6 +54,10 @@ export const photoApi = {
   /** AI 자동 태그 추천 */
   autoTag: (photoId) =>
     apiClient.post(`/photos/${photoId}/auto-tags`).then(r => r.data),
+
+  /** 장르별 사진 수 통계 */
+  getGenreStats: (memberId) =>
+    apiClient.get('/photos/genres/stats', { params: memberId ? { memberId } : {} }).then(r => r.data),
 };
 
 export const followApi = {

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import GridSpanPicker from '../components/common/GridSpanPicker';
+import GenreSelector from '../components/common/GenreSelector';
 import ImageAdjustmentPanel from '../components/photo/ImageAdjustmentPanel';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import {
@@ -94,6 +95,10 @@ export default function PhotoFormPage() {
   const [fetching, setFetching]   = useState(isEdit);
   const [apiError, setApiError]   = useState('');
 
+  // ── 장르 상태 ────────────────────────────────────────────────────────
+  const [genre, setGenre]         = useState(null);
+  const [subGenres, setSubGenres] = useState([]);
+
   // ── 이미지 탭 ────────────────────────────────────────────────────────
   const [imgMode, setImgMode] = useState('file');
   const [urlInput, setUrlInput] = useState('');
@@ -147,6 +152,10 @@ export default function PhotoFormPage() {
             colorMood:   found.colorMood   || '',
             imageRatio:  found.imageRatio  || '4:3',
           });
+          setGenre(found.genre || null);
+          try {
+            setSubGenres(found.subGenres ? JSON.parse(found.subGenres) : []);
+          } catch { setSubGenres([]); }
           setUrlInput(found.imageUrl || '');
           setImgMode('url');
         }
@@ -329,6 +338,7 @@ export default function PhotoFormPage() {
     setLoading(true);
     setApiError('');
     try {
+      const subGenresJson = subGenres.length > 0 ? JSON.stringify(subGenres) : null;
       if (isEdit) {
         await photoApi.update(id, {
           title:       form.title.trim(),
@@ -337,6 +347,8 @@ export default function PhotoFormPage() {
           colorMood:   form.colorMood || null,
           imageRatio:  form.imageRatio,
           imageUrl:    urlInput.trim(),
+          genre:       genre || null,
+          subGenres:   subGenresJson,
         });
       } else if (imgMode === 'file' && imageFile) {
         const blob = await new Promise(resolve =>
@@ -350,6 +362,8 @@ export default function PhotoFormPage() {
         fd.append('gridColSpan', String(form.gridColSpan));
         fd.append('colorMood',   form.colorMood || '');
         fd.append('imageRatio',  form.imageRatio);
+        if (genre)        fd.append('genre',     genre);
+        if (subGenresJson) fd.append('subGenres', subGenresJson);
         await photoApi.uploadFile(fd);
       } else {
         await photoApi.create({
@@ -360,6 +374,8 @@ export default function PhotoFormPage() {
           gridColSpan: form.gridColSpan,
           colorMood:   form.colorMood || null,
           imageRatio:  form.imageRatio,
+          genre:       genre || null,
+          subGenres:   subGenresJson,
         });
       }
       navigate('/');
@@ -776,6 +792,18 @@ export default function PhotoFormPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* 장르 */}
+          <div style={{ marginBottom: 28 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>
+              촬영 장르
+            </label>
+            <GenreSelector
+              primary={genre}
+              subList={subGenres}
+              onChange={({ primary: p, subGenres: s }) => { setGenre(p); setSubGenres(s); }}
+            />
           </div>
 
           {/* 갤러리 너비 */}

@@ -30,6 +30,7 @@ import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
 import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
 import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
+import AdminCategoryPage     from './pages/admin/AdminCategoryPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -105,6 +106,7 @@ function AppShell() {
           <Route path="/admin/gallery-order" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminGalleryOrderPage /></ProtectedRoute>} />
           <Route path="/admin/members" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminMembersPage /></ProtectedRoute>} />
           <Route path="/admin/photos" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminPhotosPage /></ProtectedRoute>} />
+          <Route path="/admin/categories" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCategoryPage /></ProtectedRoute>} />
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
