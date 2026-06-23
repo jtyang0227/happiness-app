@@ -141,6 +141,16 @@ export const authApi = {
     }).then(r => r.data),
 };
 
+export const portfolioApi = {
+  /** 공개 — 포트폴리오 템플릿 설정 조회 */
+  getConfig: (profileName) =>
+    apiClient.get(`/portfolio/${profileName}/config`).then(r => r.data),
+
+  /** 인증 필요 — 포트폴리오 템플릿 저장 */
+  updateTemplate: (profileName, data) =>
+    apiClient.put(`/portfolio/${profileName}/template`, data).then(r => r.data),
+};
+
 // Re-export new feature APIs for convenience
 export { deliveryApi } from './deliveryApi';
 export { analyticsApi } from './analyticsApi';

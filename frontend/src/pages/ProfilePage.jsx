@@ -6,6 +6,18 @@ import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import apiClient from '../api/apiClient';
+
+/* ── 포트폴리오 템플릿 목록 ──────────────────────── */
+const PORTFOLIO_TEMPLATES = [
+  { id: 'EDITORIAL', name: '에디토리얼', desc: '단일 스크롤 · 무드 필터 · 히어로 이미지', preview: '▌▌▌▌▌▌' },
+  { id: 'MINIMAL',   name: '미니멀',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
+  { id: 'SCRL',      name: '스크롤',     desc: '풀스크린 스냅 스크롤 · 몰입형 사진 감상', preview: '━━━━━━' },
+  { id: 'DARK_ROOM', name: '다크룸',     desc: '순수 블랙 · 대형 타일 · 이미지 온리', preview: '░░░░░░' },
+  { id: 'FILM',      name: '필름',       desc: '필름 스트립 · 시네마틱 레터박스', preview: '▐▐▐▐▐▐', disabled: true },
+  { id: 'SPLIT',     name: '스플릿',     desc: '좌우 분할 · 텍스트/이미지 교차', preview: '▌│▐│▌│', disabled: true },
+  { id: 'MOSAIC',    name: '모자이크',   desc: '자유형 콜라주 · 다양한 크기', preview: '▦▦▦▦▦▦', disabled: true },
+];
 
 const TABS = [
   { key: 'photos',    label: '내 작품' },
@@ -182,6 +194,10 @@ export default function ProfilePage() {
 
   const [toast, setToast] = useState('');
 
+  // 포트폴리오 템플릿
+  const [portfolioTemplate, setPortfolioTemplate] = useState('EDITORIAL');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
   const isKakao = user?.provider === 'kakao';
   const avatarLetter = (user?.name || user?.email || '?').charAt(0).toUpperCase();
 
@@ -192,6 +208,25 @@ export default function ProfilePage() {
     if (!user?.id) return;
     authApi.getStats(user.id).then(setStats).catch(() => {});
   }, [user?.id]);
+
+  // 현재 포트폴리오 템플릿 로드
+  useEffect(() => {
+    if (!user?.profileName) return;
+    apiClient.get(`/portfolio/${user.profileName}/config`)
+      .then(res => { if (res.data?.template) setPortfolioTemplate(res.data.template); })
+      .catch(() => {});
+  }, [user?.profileName]);
+
+  const handleTemplateSave = async () => {
+    if (!user?.profileName) { showToast('포트폴리오 주소(profileName)를 먼저 설정해주세요.'); return; }
+    setSavingTemplate(true);
+    try {
+      await apiClient.put(`/portfolio/${user.profileName}/template`, { template: portfolioTemplate });
+      showToast('포트폴리오 템플릿이 저장되었습니다.');
+    } catch (err) {
+      showToast(err?.response?.data?.message || '저장에 실패했습니다.');
+    } finally { setSavingTemplate(false); }
+  };
 
   // 탭별 데이터 로드
   useEffect(() => {
@@ -588,6 +623,75 @@ export default function ProfilePage() {
                   >
                     {savingForm ? '저장 중...' : '레이아웃 저장'}
                   </button>
+                </div>
+
+                {/* 포트폴리오 템플릿 */}
+                <div style={sectionCard}>
+                  <div style={sectionTitle}>포트폴리오 템플릿</div>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, lineHeight: 1.5 }}>
+                    공개 포트폴리오 페이지의 레이아웃 스타일을 선택합니다.
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
+                    {PORTFOLIO_TEMPLATES.map(tpl => {
+                      const isSelected = portfolioTemplate === tpl.id;
+                      return (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          disabled={tpl.disabled}
+                          onClick={() => !tpl.disabled && setPortfolioTemplate(tpl.id)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            border: isSelected
+                              ? `2px solid ${COLORS.primary}`
+                              : `1.5px solid ${COLORS.border}`,
+                            background: isSelected ? COLORS.primaryLight : COLORS.surface,
+                            cursor: tpl.disabled ? 'not-allowed' : 'pointer',
+                            textAlign: 'left',
+                            opacity: tpl.disabled ? 0.45 : 1,
+                            position: 'relative',
+                            transition: 'border-color 0.15s, background 0.15s',
+                          }}
+                        >
+                          {isSelected && (
+                            <span style={{
+                              position: 'absolute', top: 8, right: 10,
+                              fontSize: 12, color: COLORS.primary, fontWeight: 700,
+                            }}>✓</span>
+                          )}
+                          <div style={{
+                            fontSize: 16, letterSpacing: '0.05em', marginBottom: 6,
+                            color: isSelected ? COLORS.primary : COLORS.textSecondary,
+                            fontFamily: 'monospace',
+                          }}>
+                            {tpl.preview}
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? COLORS.primary : COLORS.text, marginBottom: 3 }}>
+                            {tpl.name}
+                            {tpl.disabled && <span style={{ fontSize: 10, marginLeft: 5, color: COLORS.textMuted }}>준비 중</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.4 }}>
+                            {tpl.desc}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {user?.profileName ? (
+                    <button
+                      type="button"
+                      disabled={savingTemplate}
+                      onClick={handleTemplateSave}
+                      style={{ ...primaryBtn(savingTemplate) }}
+                    >
+                      {savingTemplate ? '저장 중...' : '템플릿 저장'}
+                    </button>
+                  ) : (
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, padding: '10px 14px', background: COLORS.bg, borderRadius: 8, lineHeight: 1.5 }}>
+                      템플릿을 저장하려면 먼저 <strong>포트폴리오 주소</strong>를 설정해주세요.
+                    </div>
+                  )}
                 </div>
 
                 {/* 계정 설정 */}

@@ -30,8 +30,6 @@ public class PhotoResponse {
     private String colorMood;
     private String colorPalette;
     private Integer displayOrder;
-    private String genre;
-    private String subGenres;
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
@@ -42,7 +40,7 @@ public class PhotoResponse {
     private String shutterSpeed;
     private Integer iso;
     private String focalLength;
-    // Feature 26 — 장르 분류
+    // Feature 26 — 장르 분류 (subGenres는 List로 직렬화)
     private String genre;
     private List<String> subGenres;
     // Feature 25 — 매거진 판 타입
@@ -70,15 +68,13 @@ public class PhotoResponse {
                 .colorPalette(photo.getColorPalette())
                 .displayOrder(photo.getDisplayOrder())
                 .genre(photo.getGenre())
-                .subGenres(photo.getSubGenres())
+                .subGenres(parseSubGenres(photo.getSubGenres()))
                 .cameraModel(photo.getCameraModel())
                 .lensModel(photo.getLensModel())
                 .aperture(photo.getAperture())
                 .shutterSpeed(photo.getShutterSpeed())
                 .iso(photo.getIso())
                 .focalLength(photo.getFocalLength())
-                .genre(photo.getGenre())
-                .subGenres(parseSubGenres(photo.getSubGenres()))
                 .panType(photo.getPanType() != null ? photo.getPanType() : "EDITORIAL")
                 .magazineCaption(photo.getMagazineCaption())
                 .imageRight(photo.getImageRight() != null ? photo.getImageRight() : false)

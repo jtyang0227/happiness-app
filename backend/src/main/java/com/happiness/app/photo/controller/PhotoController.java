@@ -62,8 +62,7 @@ public class PhotoController {
             @RequestParam(required = false) String genre,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String order,
-            @RequestParam(required = false) String tags,
-            @RequestParam(required = false) String genre
+            @RequestParam(required = false) String tags
     ) {
         String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
@@ -121,19 +120,6 @@ public class PhotoController {
         }
         List<String> suggestions = photoRepository.findTitleSuggestions(q, PageRequest.of(0, 5));
         return ResponseEntity.ok(Map.of("status", "success", "data", suggestions));
-    }
-
-    /** GET /api/photos/genres/stats?memberId= — 장르별 사진 수 통계 */
-    @GetMapping("/genres/stats")
-    public ResponseEntity<?> getGenreStats(@RequestParam(required = false) Long memberId) {
-        List<Object[]> raw = photoRepository.countByGenre(memberId);
-        List<Map<String, Object>> data = raw.stream().map(row -> {
-            Map<String, Object> m = new HashMap<>();
-            m.put("genre", row[0]);
-            m.put("count", row[1]);
-            return m;
-        }).collect(Collectors.toList());
-        return ResponseEntity.ok(Map.of("status", "success", "data", data));
     }
 
     @GetMapping("/{id}")

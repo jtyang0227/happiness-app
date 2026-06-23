@@ -15,9 +15,6 @@ public class PhotoRequest {
     private String imageRatio;
     private Integer gridColSpan;
     private String colorMood;
-    // 장르
-    private String genre;
-    private String subGenres;  // JSON 배열 문자열 예: '["FASHION","LIFESTYLE"]'
     // EXIF
     private String cameraModel;
     private String lensModel;
@@ -27,7 +24,7 @@ public class PhotoRequest {
     private String focalLength;
     // Feature 26 — 장르 분류
     private String genre;
-    private String subGenres;
+    private String subGenres;  // JSON 배열 문자열 예: '["FASHION","LIFESTYLE"]'
     // Feature 25 — 매거진 판 타입
     private String panType;
     private String magazineCaption;

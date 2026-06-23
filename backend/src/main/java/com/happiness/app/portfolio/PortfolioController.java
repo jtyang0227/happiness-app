@@ -2,10 +2,13 @@ package com.happiness.app.portfolio;
 
 import com.happiness.app.follow.FollowRepository;
 import com.happiness.app.member.dto.MemberResponse;
+import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.repository.PhotoRepository;
+import com.happiness.app.portfolio.dto.PortfolioConfigResponse;
+import com.happiness.app.security.auth.CustomUserDetails;
 import com.happiness.app.series.dto.SeriesResponse;
 import com.happiness.app.series.entity.Series;
 import com.happiness.app.series.entity.SeriesPhoto;
@@ -14,7 +17,9 @@ import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -84,5 +89,62 @@ public class PortfolioController {
         response.put("totalLikes",     totalLikes);
 
         return ResponseEntity.ok(response);
+    }
+
+    /* ── GET /api/portfolio/{profileName}/config  ── 공개, 인증 불필요 */
+    @GetMapping("/{profileName}/config")
+    public ResponseEntity<PortfolioConfigResponse> getPortfolioConfig(@PathVariable String profileName) {
+        Member member = memberRepository.findByProfileName(profileName)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "포트폴리오를 찾을 수 없습니다."));
+
+        PortfolioConfigResponse config = PortfolioConfigResponse.builder()
+                .template(member.getPortfolioTemplate() != null ? member.getPortfolioTemplate() : "EDITORIAL")
+                .styleJson(member.getPortfolioStyleJson())
+                .sectionsJson(member.getPortfolioSectionsJson())
+                .build();
+
+        return ResponseEntity.ok(config);
+    }
+
+    /* ── PUT /api/portfolio/{profileName}/template  ── 본인 또는 ADMIN 만 */
+    @PutMapping("/{profileName}/template")
+    public ResponseEntity<?> updatePortfolioTemplate(
+            @PathVariable String profileName,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody Map<String, Object> body) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Member member = memberRepository.findByProfileName(profileName)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "포트폴리오를 찾을 수 없습니다."));
+
+        // IDOR 방지: 본인 또는 ADMIN(WM/SA) 만 수정 가능
+        boolean isAdmin = Authority.WM.name().equals(userDetails.getRole())
+                || Authority.SA.name().equals(userDetails.getRole());
+        if (!isAdmin && !member.getId().equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인의 포트폴리오만 수정할 수 있습니다."));
+        }
+
+        // 템플릿 화이트리스트 검증
+        String template = (String) body.get("template");
+        if (template != null) {
+            List<String> allowed = List.of("SCRL", "EDITORIAL", "FILM", "SPLIT", "MOSAIC", "MAGAZINE", "MINIMAL", "DARK_ROOM");
+            if (!allowed.contains(template)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "유효하지 않은 템플릿입니다."));
+            }
+            member.setPortfolioTemplate(template);
+        }
+
+        if (body.containsKey("styleJson")) {
+            member.setPortfolioStyleJson((String) body.get("styleJson"));
+        }
+        if (body.containsKey("sectionsJson")) {
+            member.setPortfolioSectionsJson((String) body.get("sectionsJson"));
+        }
+
+        memberRepository.save(member);
+        return ResponseEntity.ok(Map.of("status", "success", "template", member.getPortfolioTemplate()));
     }
 }
