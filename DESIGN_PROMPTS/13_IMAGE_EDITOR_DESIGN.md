@@ -20,10 +20,10 @@
 ## 컬러 시스템 (에디터 다크 테마)
 
 ```
-배경       darkBg       #0a0a18  — 전체 배경, 갤러리 영역
-패널       darkSurface  #12122a  — 좌·우 패널 배경
+배경       darkBg       #080810  — 전체 배경, 갤러리 영역
+패널       darkSurface  #0c0c18  — 좌·우 패널 배경
 카드       darkElevated #1a1a3a  — 버튼·드롭다운 배경
-구분선     darkBorder   #2a2a50  — 패널 경계, 섹션 구분
+구분선     darkBorder   rgba(255,255,255,0.06)  — 패널 경계, 섹션 구분
 텍스트     darkText     #eeeeff  — 기본 텍스트
 보조텍스트 darkTextSub  #8888cc  — 레이블, 힌트
 힌트       darkTextHint #5555aa  — 비활성, 플레이스홀더

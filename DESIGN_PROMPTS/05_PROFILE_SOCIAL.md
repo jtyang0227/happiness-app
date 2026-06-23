@@ -162,7 +162,7 @@ const handleAvatarUpload = async (file) => {
 컬러: primary '#5b6ef5' primaryDark '#4458e0' primaryLight '#eef0ff' accent '#a78bfa'
       bg '#f7f7fb' surface '#fff' surfaceDim '#ededf4' border '#e5e5ed'
       text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb'
-      danger '#e53e3e' success '#22c55e' darkBg '#0a0a18' darkSurface '#12122a'
+      danger '#e53e3e' success '#22c55e' editorBg '#080810' editorPanel '#0c0c18'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, react+react-router-dom만 허용, 한국어 UI
 
 ProfilePage 컴포넌트를 만들어주세요. 더미 데이터 사용.
@@ -281,9 +281,9 @@ ProfilePage 컴포넌트를 만들어주세요. 더미 데이터 사용.
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: primary '#5b6ef5' primaryDark '#4458e0' primaryLight '#eef0ff'
-      bg '#0a0a18' surface '#12122a' border 'rgba(42,42,80,1)'
-      text '#e8e8f0' textSecondary '#8080b0' textMuted '#5555aa' danger '#e53e3e'
+컬러: primary '#5b6ef5' accent '#a78bfa'
+      bg '#090909' surface '#0f0f0f' elevated '#161616' divider 'rgba(255,255,255,0.07)'
+      text '#ffffff' textSecondary 'rgba(255,255,255,0.60)' textMuted 'rgba(255,255,255,0.35)' danger '#e53e3e'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
 FollowListModal 컴포넌트를 만들어주세요 (다크 테마 — PortfolioPage 전용).
@@ -299,7 +299,7 @@ Props:
   isOpen=false → null 반환
   오버레이: position fixed inset 0 bg 'rgba(0,0,0,0.88)' z-index 2000
   모달 패널: position fixed top '50%' left '50%' transform 'translate(-50%,-50%)'
-    width 360px, max-height 560px, bg '#12122a', border 'rgba(42,42,80,1)', radius 16px
+    width 360px, max-height 560px, bg '#0f0f0f', border '1px solid rgba(255,255,255,0.07)', radius 16px
 
   모달 헤더:
     "팔로워" · "팔로잉" 2탭
@@ -360,8 +360,8 @@ const [followModal, setFollowModal] = useState({ open: false, tab: 'followers' }
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: darkBg '#0a0a18' darkSurface '#12122a' darkBorder '#2a2a50'
-      darkText '#e8e8f0' darkTextSub '#8080b0' primary '#5b6ef5' accent '#a78bfa'
+컬러: bg '#090909' surface '#0f0f0f' elevated '#161616' border 'rgba(255,255,255,0.07)'
+      text '#ffffff' textSub 'rgba(255,255,255,0.60)' textMuted 'rgba(255,255,255,0.35)' primary '#5b6ef5' accent '#a78bfa'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, react+react-router-dom만 허용, 한국어 UI
 
 PortfolioPage 개선 컴포넌트를 만들어주세요. 더미 데이터 사용.
@@ -370,11 +370,11 @@ PortfolioPage 개선 컴포넌트를 만들어주세요. 더미 데이터 사용
 
 1. 히어로 커버 섹션 (height 240px, position relative):
    coverUrl 있으면 이미지(blur-down gradient 오버레이) / 없으면 dark gradient
-   하단에서 위로 fade: 'linear-gradient(to top, #0a0a18 0%, transparent 60%)'
+   하단에서 위로 fade: 'linear-gradient(to top, #090909 0%, transparent 60%)'
 
 2. 프로필 카드 (margin-top -80px, max-width 900px, margin-x auto, padding 0 24px):
    flex row gap 24px align-items flex-end:
-   좌: 아바타 96px (editable=false, 테두리 '3px solid #12122a')
+   좌: 아바타 96px (editable=false, 테두리 '3px solid #090909')
    중(flex 1):
      이름 24px 700 darkText / @profileName 14px darkTextSub
      bio 14px darkTextSub margin-top 8px (있을 때)
@@ -387,7 +387,7 @@ PortfolioPage 개선 컴포넌트를 만들어주세요. 더미 데이터 사용
      비로그인: [로그인하여 팔로우] ghost
      [문의하기] accent 버튼 → /inquiry/:profileName
 
-3. 탭 바 (border-bottom '#2a2a50', margin-top 24px):
+3. 탭 바 (border-bottom 'rgba(255,255,255,0.07)', margin-top 24px):
    "사진 N" · "시리즈 M" · "저장됨" (disabled, textMuted)
    활성: primary 색 border-bottom 2px
 

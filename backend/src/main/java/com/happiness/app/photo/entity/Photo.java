@@ -64,6 +64,14 @@ public class Photo {
     @Column(nullable = true)
     private Integer displayOrder;
 
+    /** 촬영 장르 (PORTRAIT/WEDDING/LANDSCAPE/NATURE/STREET/ARCHITECTURE/FOOD/TRAVEL/FASHION/LIFESTYLE/COMMERCIAL/FINE_ART) */
+    @Column(nullable = true, length = 20)
+    private String genre;
+
+    /** 서브 장르 목록 (JSON 배열 문자열, 최대 2개 예: '["FASHION","LIFESTYLE"]') */
+    @Column(nullable = true, length = 60)
+    private String subGenres;
+
     // ── EXIF 메타데이터 ─────────────────────────────────
     @Column(nullable = true, length = 100) private String cameraModel;
     @Column(nullable = true, length = 100) private String lensModel;

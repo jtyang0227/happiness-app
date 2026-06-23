@@ -1,3 +1,4 @@
+import React from 'react';
 import { GENRE_LIST } from '../../constants/colors';
 
 export default function GenreTabBar({ selected, onChange, showAll = true, counts, genres, theme = 'light' }) {
@@ -10,7 +11,7 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
   const unselectedBg = isDark ? 'rgba(255,255,255,0.1)' : '#ededf4';
   const unselectedColor = isDark ? 'rgba(255,255,255,0.55)' : '#5c5c7a';
   const fadeGradient = isDark
-    ? 'linear-gradient(to left, #0e0e0e, transparent)'
+    ? 'linear-gradient(to left, #090909, transparent)'
     : 'linear-gradient(to left, #f5f5fa, transparent)';
 
   return (

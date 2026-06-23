@@ -78,6 +78,14 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             @Param("genre")      String genre
     );
 
+    /** 장르별 사진 수 통계 (genre가 null이 아닌 사진만) */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.genre IS NOT NULL GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenre();
+
+    /** 특정 멤버의 장르별 사진 수 */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.memberId = :memberId AND p.genre IS NOT NULL GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenreForMember(@Param("memberId") Long memberId);
+
     /** 자동완성 — 제목 부분 일치 (최대 5건, JPQL로 H2·PostgreSQL 모두 동작) */
     @Query("SELECT p.title FROM Photo p WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY p.title")
     List<String> findTitleSuggestions(@Param("q") String q, Pageable pageable);

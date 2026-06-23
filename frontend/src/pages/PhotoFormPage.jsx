@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import GridSpanPicker from '../components/common/GridSpanPicker';
+import GenreSelector from '../components/common/GenreSelector';
 import ImageAdjustmentPanel from '../components/photo/ImageAdjustmentPanel';
-import GenreSelector from '../components/photo/GenreSelector';
 import PanSelector from '../components/magazine/PanSelector';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import {
@@ -174,6 +174,10 @@ export default function PhotoFormPage() {
             colorMood:   found.colorMood   || '',
             imageRatio:  found.imageRatio  || '4:3',
           });
+          setGenre(found.genre || null);
+          try {
+            setSubGenres(found.subGenres ? JSON.parse(found.subGenres) : []);
+          } catch { setSubGenres([]); }
           setUrlInput(found.imageUrl || '');
           setImgMode('url');
           if (found.genre) setPrimaryGenre(found.genre);
@@ -375,6 +379,7 @@ export default function PhotoFormPage() {
     setLoading(true);
     setApiError('');
     try {
+      const subGenresJson = subGenres.length > 0 ? JSON.stringify(subGenres) : null;
       if (isEdit) {
         await photoApi.update(id, {
           title:       form.title.trim(),

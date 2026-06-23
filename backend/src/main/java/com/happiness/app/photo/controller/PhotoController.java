@@ -59,6 +59,7 @@ public class PhotoController {
             @RequestParam(required = false) String colorMood,
             @RequestParam(required = false) Long memberId,
             @RequestParam(required = false) String imageRatio,
+            @RequestParam(required = false) String genre,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String order,
             @RequestParam(required = false) String tags,
@@ -86,8 +87,8 @@ public class PhotoController {
             try {
                 String cm = colorMood != null ? colorMood : "";
                 String ir = imageRatio != null ? imageRatio : "";
-                String gr = genre != null ? genre : "";
-                photos = photoRepository.searchFuzzy(keyword, cm, memberId, ir, gr)
+                String gn = genre != null ? genre : "";
+                photos = photoRepository.searchFuzzy(keyword, cm, memberId, ir, gn)
                         .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
             } catch (DataAccessException e) {
                 photos = photoRepository.search(keyword, colorMood, memberId, imageRatio, genre, sort)
@@ -157,6 +158,8 @@ public class PhotoController {
             @RequestParam(required = false) String imageRatio,
             @RequestParam(required = false, defaultValue = "6") Integer gridColSpan,
             @RequestParam(required = false) String colorMood,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) String subGenres,
             @RequestParam MultipartFile file) {
         try {
             ImageProcessingUtil.ImageUploadResult upload = imageProcessingUtil.uploadAndResizeImage(file, imageRatio);
@@ -175,6 +178,8 @@ public class PhotoController {
                     .dominantColor(upload.dominantColor())
                     .colorMood(mood)
                     .colorPalette(upload.colorPalette())
+                    .genre(genre)
+                    .subGenres(subGenres)
                     .likesCount(0)
                     .savesCount(0)
                     .sharesCount(0)
@@ -217,6 +222,15 @@ public class PhotoController {
                 .description(request.getDescription())
                 .imageRatio(request.getImageRatio() != null ? request.getImageRatio() : "1:1")
                 .gridColSpan(colSpan)
+                .colorMood(request.getColorMood())
+                .genre(request.getGenre())
+                .subGenres(request.getSubGenres())
+                .cameraModel(request.getCameraModel())
+                .lensModel(request.getLensModel())
+                .aperture(request.getAperture())
+                .shutterSpeed(request.getShutterSpeed())
+                .iso(request.getIso())
+                .focalLength(request.getFocalLength())
                 .likesCount(0)
                 .savesCount(0)
                 .sharesCount(0)
@@ -262,8 +276,14 @@ public class PhotoController {
                         photo.setGenre(request.getGenre().isBlank() ? null : request.getGenre());
                     }
                     if (request.getSubGenres() != null) {
-                        photo.setSubGenres(request.getSubGenres());
+                        photo.setSubGenres(request.getSubGenres().isBlank() ? null : request.getSubGenres());
                     }
+                    if (request.getCameraModel() != null) photo.setCameraModel(request.getCameraModel());
+                    if (request.getLensModel()   != null) photo.setLensModel(request.getLensModel());
+                    if (request.getAperture()    != null) photo.setAperture(request.getAperture());
+                    if (request.getShutterSpeed()!= null) photo.setShutterSpeed(request.getShutterSpeed());
+                    if (request.getIso()         != null) photo.setIso(request.getIso());
+                    if (request.getFocalLength() != null) photo.setFocalLength(request.getFocalLength());
                     if (request.getPanType() != null && !request.getPanType().isBlank()) {
                         photo.setPanType(request.getPanType());
                     }
@@ -534,6 +554,24 @@ public class PhotoController {
         result.put("status", "success");
         result.put("message", "순서가 저장되었습니다.");
         return ResponseEntity.ok(result);
+    }
+
+    // ── 장르 통계 ──────────────────────────────────────────────────────
+
+    /** GET /api/photos/genres/stats — 전체 장르별 사진 수 통계 */
+    @GetMapping("/genres/stats")
+    public ResponseEntity<?> getGenreStats(
+            @RequestParam(required = false) Long memberId) {
+        List<Object[]> rows = memberId != null
+                ? photoRepository.countByGenreForMember(memberId)
+                : photoRepository.countByGenre();
+        List<Map<String, Object>> stats = rows.stream().map(row -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("genre", row[0]);
+            m.put("count", row[1]);
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(Map.of("status", "success", "data", stats));
     }
 
     // ── AI 자동 태그 추천 ──────────────────────────────────────────────

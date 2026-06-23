@@ -1,39 +1,47 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GENRE_META } from '../../constants/colors';
+import { GENRE_META, COLORS } from '../../constants/colors';
 
-export default function GenreBadge({ genre, subGenres = [], onClick, size = 'md' }) {
+export default function GenreBadge({ genre, size = 'md', onClick }) {
   const navigate = useNavigate();
-  const meta = GENRE_META[genre];
-  if (!meta) return null;
-
-  const padding = size === 'sm' ? '2px 8px' : '4px 12px';
-  const fontSize = size === 'sm' ? 11 : 13;
-
-  const handleClick = (g) => {
-    if (onClick) { onClick(g); return; }
-    navigate(`/explore?genre=${g}`);
+  if (!genre || !GENRE_META[genre]) return null;
+  const { emoji, label, color } = GENRE_META[genre];
+  const bg = color + '20';
+  const sm = size === 'sm';
+  const handleClick = () => {
+    if (onClick) { onClick(genre); return; }
+    navigate(`/explore?genre=${genre}`);
   };
-
-  const badgeStyle = (g, isMain) => ({
-    display: 'inline-flex', alignItems: 'center', gap: 4,
-    padding, fontSize, borderRadius: 20, cursor: 'pointer',
-    fontWeight: isMain ? 600 : 400,
-    background: isMain ? GENRE_META[g]?.color + '20' : 'transparent',
-    color: GENRE_META[g]?.color || '#5c5c7a',
-    border: `1px solid ${GENRE_META[g]?.color || '#e2e2ee'}`,
-    transition: 'opacity 0.15s',
-    userSelect: 'none',
-  });
-
   return (
-    <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
-      <span style={badgeStyle(genre, true)} onClick={() => handleClick(genre)}>
-        {meta.emoji} {meta.label}
-      </span>
-      {subGenres.filter(g => g && GENRE_META[g]).map(g => (
-        <span key={g} style={badgeStyle(g, false)} onClick={() => handleClick(g)}>
-          {GENRE_META[g].emoji} {GENRE_META[g].label}
-        </span>
+    <span
+      onClick={handleClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: sm ? 3 : 4,
+        padding: sm ? '2px 7px' : '3px 10px',
+        borderRadius: 12,
+        background: bg,
+        color,
+        fontSize: sm ? 11 : 12,
+        fontWeight: 600,
+        border: `1px solid ${color}30`,
+        letterSpacing: '0.01em',
+        cursor: 'pointer',
+      }}>
+      <span style={{ fontSize: sm ? 10 : 12 }}>{emoji}</span>
+      {label}
+    </span>
+  );
+}
+
+export function SubGenreBadges({ subGenres, size = 'sm' }) {
+  if (!subGenres) return null;
+  let codes;
+  try { codes = JSON.parse(subGenres); } catch { return null; }
+  if (!Array.isArray(codes) || codes.length === 0) return null;
+  return (
+    <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
+      {codes.map(code => (
+        <GenreBadge key={code} genre={code} size={size} />
       ))}
     </span>
   );

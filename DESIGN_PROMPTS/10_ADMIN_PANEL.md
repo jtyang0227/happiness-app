@@ -45,8 +45,8 @@
   textSecondary: '#5555aa'
   textMuted:     '#8888bb'
   danger:        '#e53e3e'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
+  bg:        '#090909'
+  surface:   '#0f0f0f'
 
 규칙:
 - export default 함수형 컴포넌트 1개만 반환

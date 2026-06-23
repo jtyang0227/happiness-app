@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import GenreBadge, { SubGenreBadges } from '../components/photo/GenreBadge';
 import CommentsSection from '../components/photo/CommentsSection';
 import ColorPalette from '../components/photo/ColorPalette';
 import PhotoViewer from '../components/photo/PhotoViewer';
 import PhotoNavigation from '../components/photo/PhotoNavigation';
 import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
-import GenreBadge from '../components/photo/GenreBadge';
 import useColorExtraction from '../hooks/useColorExtraction';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 
@@ -262,7 +262,10 @@ export default function PhotoDetailPage() {
             </span>
           )}
           {photo.genre && (
-            <GenreBadge genre={photo.genre} subGenres={photo.subGenres || []} />
+            <GenreBadge genre={photo.genre} />
+          )}
+          {photo.subGenres && (
+            <SubGenreBadges subGenres={photo.subGenres} />
           )}
         </div>
       )}

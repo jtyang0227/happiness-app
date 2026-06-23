@@ -146,6 +146,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
+5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
+
+### 현재 디자인 방향 (2026-06-23 기준)
+
+> **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
+> iOS 26 Liquid Glass 컨셉 제거 (`21_IOS26_LIQUID_GLASS_DESIGN.md` 등 deprecated)  
+> 참고: `DESIGN_PROMPTS/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
+
+**핵심 원칙:**
+- **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중
+- **이미지 온리**: 카드에 테두리·그림자 없음, 이미지가 배경에 직접 얹힘
+- **마소닉 그리드**: 2(모바일) → 3(태블릿) → 4컬럼(데스크탑), 가변 높이
+- **보드 시스템**: 시리즈 = 보드 카드 (3개 썸네일 콜라주 + 제목 + @handle)
+- **미니멀 네비**: 하단 탭바 3-4 아이콘, Cosmos 스타일
+- **에디터 예외**: 이미지 에디터는 짙은 네이비-블랙 (`#080810`), 프리미엄 다크
+- **어드민 예외**: 어드민 패널은 glass.js light 계열 유지 (운영 편의성)
+
+**Cosmos 앱 분석 (참고 앱):**
+- 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
+- 검색바: pill 형태 (`#1c1c1c`), 카테고리 탭: 수평 스크롤 + 하단 흰선
+- 보드 카드: 3이미지 콜라주 + 메타 (verified 배지, element 수)
+- 마소닉 그리드: 대형+소형 혼합, 편집적 레이아웃
+- 하단 네비: 3 아이콘만 (홈/탐색/프로필)
 
 ### 디자인 작업 우선순위 로드맵
 
@@ -409,7 +432,7 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS aperture      VARCHAR(20);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS shutter_speed VARCHAR(20);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso           INTEGER;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length  VARCHAR(20);
--- Feature 26 — 장르 분류
+-- Phase 5 — 장르 분류 (26_GENRE_CLASSIFICATION)
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS genre      VARCHAR(20);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS sub_genres VARCHAR(60);
 -- Feature 25 — 매거진 면·판 레이아웃
@@ -489,14 +512,16 @@ CREATE TABLE IF NOT EXISTS bookings (
 #### PhotoRepository 주요 쿼리 메서드
 
 ```java
-findByMemberIdOrderByCreatedAtDesc(Long memberId)   // 멤버별 사진
-findByColorMoodOrderByCreatedAtDesc(String mood)     // 무드별 사진
+findByMemberIdOrderByCreatedAtDesc(Long memberId)        // 멤버별 사진
+findByColorMoodOrderByCreatedAtDesc(String mood)          // 무드별 사진
 search(keyword, colorMood, memberId, imageRatio, genre, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
-searchFuzzy(kw, colorMood, memberId, imageRatio, genre) // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
-findTitleSuggestions(q, Pageable)                   // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
+searchFuzzy(kw, colorMood, memberId, imageRatio, genre)   // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
+countByGenre()                                            // 전체 장르별 사진 수 통계
+countByGenreForMember(Long memberId)                      // 멤버별 장르 통계
+findTitleSuggestions(q, Pageable)                        // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
 findByMemberIdInOrderByCreatedAtDesc(List<Long>, Pageable) // 피드 — 팔로우 유저 최신순
-findIdsByMemberId(Long memberId)                     // 계정 삭제 cascade용 photo ID 목록
-deleteByMemberId(Long memberId)                      // 회원 탈퇴 시 cascade
+findIdsByMemberId(Long memberId)                          // 계정 삭제 cascade용 photo ID 목록
+deleteByMemberId(Long memberId)                           // 회원 탈퇴 시 cascade
 ```
 
 **검색 fallback 전략** (`PhotoController.getAllPhotos`):
@@ -534,7 +559,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 강제삭제).
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Phase 4 재설계): lisamicheleburns.com 참조 — 에디토리얼 단일 스크롤 레이아웃. ① 80vh 풀블리드 Hero(커버 이미지 or 다크 그라디언트 + 오버레이 텍스트) ② Stats Bar(backdrop-blur 반투명 바, 팔로워/팔로잉 클릭 모달) ③ Bio 섹션(이탤릭 인용) ④ Sticky 무드 필터 ⑤ CSS columns 마소닉 갤러리(4→3→2컬럼 반응형, hover 오버레이) ⑥ 시리즈 수평 스크롤 섹션 ⑦ Footer CTA("함께 작업하고 싶으신가요?"). 탭 구조 제거, 전문 포트폴리오 사이트 무드. **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약).
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount). **LangSwitcher** 컴포넌트 — 드롭다운 언어 선택 (🌐 버튼, 국기+원어 레이블, 현재 언어 체크마크)
 - **components/magazine/MagazineViewer** — 풀스크린 오버레이 뷰어: 상단바(닫기/제목/TOC☰/공유↗/인쇄🖨), 슬라이드 전환(translateX+opacity 320ms), ←→키보드+화살표버튼, TOC 사이드패널(240px 슬라이드인), 하단 썸네일 스트립(active 자동스크롤)+도트 인디케이터(≤7개)+페이지 번호, body 스크롤 잠금
 - **components/magazine/MagazineSpread** — panType별 스프레드 라우터 (7종 → spreads/ 하위 컴포넌트 디스패치)
@@ -546,6 +571,9 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
 - **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
+- **components/common/GenreSelector** — 주 장르(1개) + 서브 장르(최대 2개) 선택 컴포넌트 (PhotoForm 사용)
+- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용)
+- **components/photo/GenreBadge** — 단일 장르 뱃지 + SubGenreBadges (PhotoDetail 사용)
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
 - **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비)
@@ -561,7 +589,8 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi + inquiryApi + seriesApi
-  - `photoApi.search({ keyword, colorMood, memberId, imageRatio, sortBy, order })` — 복합 필터+정렬 (GET /photos)
+  - `photoApi.search({ keyword, colorMood, memberId, imageRatio, genre, sortBy, order })` — 복합 필터+정렬 (GET /photos)
+  - `photoApi.getGenreStats(memberId?)` — GET /photos/genres/stats (장르별 사진 수 통계)
   - `photoApi.getAll({ sortBy, order })` — 전체 사진 목록 (정렬 지원)
   - `photoApi.getByMember(memberId, { sortBy, order })` — 멤버별 사진 목록
   - `photoApi.reorder(orders)` — 순서 일괄 저장 `[{id, displayOrder}]`
@@ -610,10 +639,11 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/bookings` — BookingDashboard (예약 수신함 + 가용 시간 설정)
 
 **어드민 라우트** (ADMIN 권한 필요, `ProtectedRoute requiredRoles=['ADMIN']`):
-- `/admin` — AdminDashboardPage (통계 카드 + 빠른 접근)
+- `/admin` — AdminDashboardPage (통계 카드 + 장르 도넛 차트 + 미분류 경고)
 - `/admin/gallery-order` — AdminGalleryOrderPage (멤버 선택 + 드래그 순서 관리)
 - `/admin/members` — AdminMembersPage (회원 목록, 권한 변경, 삭제)
-- `/admin/photos` — AdminPhotosPage (전체 사진 목록, 강제 삭제)
+- `/admin/photos` — AdminPhotosPage (전체 사진 목록, 인라인 장르 편집, 강제 삭제)
+- `/admin/categories` — AdminCategoryPage (장르별 분포 통계 테이블, 미분류 경고)
 
 > ⚠️ `/gallery/sort` (PhotoSortPage) 는 일반 사용자 앱에서 **제거**됨.  
 > 사진 표시 순서 관리는 어드민 패널(`/admin/gallery-order`)로 이관. `10_ADMIN_PANEL.md` 참조.

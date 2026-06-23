@@ -76,7 +76,7 @@
 
 ### HeroSection
 - 커버 이미지 있으면: objectFit cover, 80vh
-- 커버 없으면: 다크 그라디언트 (`linear-gradient(160deg, #12122a, #0a0a18, #0e0e0e)`)
+- 커버 없으면: 다크 그라디언트 (`linear-gradient(160deg, #0f0f0f, #090909, #0e0e0e)`)
 - 오버레이: `linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.85) 100%)`
 - 작가명: fontSize 42px, fontWeight 900, letterSpacing '-0.02em'
 - 전문 분야: 쉼표 구분 → 인라인 표시
@@ -103,7 +103,7 @@
 - 클릭 → navigate(`/photo/${firstPhotoId}`)
 
 ### FooterCTA
-- 배경: `linear-gradient(135deg, #12122a, #0e0e0e)`
+- 배경: `linear-gradient(135deg, #0f0f0f, #0e0e0e)`
 - CTA: "함께 작업하고 싶으신가요?"
 - 버튼: [촬영 문의하기] (primary color)
 
@@ -128,12 +128,12 @@
   textMuted:     '#8888bb'
   danger:        '#e53e3e'
   success:       '#22c55e'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
-  darkBorder:    '#2a2a50'
-  darkText:      '#e8e8f0'
-  darkTextSub:   '#8080b0'
-  galleryBg:     '#0e0e0e'
+  bg:        '#090909'
+  surface:   '#0f0f0f'
+  border:    'rgba(255,255,255,0.07)'
+  text:      '#e8e8f0'
+  textSub:   '#8080b0'
+  galleryBg:     '#090909'
 
 규칙:
 - export default 함수형 컴포넌트 1개만 반환

@@ -1,10 +1,20 @@
 # Happiness — 디자인 작업 로드맵
 
-최초 작성: 2026-06-19 | 마지막 업데이트: 2026-06-20
+최초 작성: 2026-06-19 | 마지막 업데이트: 2026-06-23
 
 ---
 
-## 파일 구성 (전체 30개)
+## 🆕 디자인 방향 전환 (2026-06-23)
+
+> iOS 26 Liquid Glass → **Cosmos × Pinterest 다크 에디토리얼** 방향으로 전환  
+> - 21/22/23번 파일: DEPRECATED (어드민/인증 페이지에서만 glass.js 계속 사용)  
+> - 신규: `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md` — 전체 앱 Cosmos 스타일 기획서  
+> - 신규: `DESIGN_PROMPT_COSMOS_GALLERY.md` — Cosmos 스타일 Claude 디자인 프롬프트 5종  
+> - 에디터 UI 개선: CurveEditor·EditorShell·ImageAdjustmentPanel 프리미엄 업그레이드 완료
+
+---
+
+## 파일 구성 (전체 40개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -31,16 +41,21 @@
 | `18_FEATURE_ENHANCEMENT_V2.md` | 기능 고도화 로드맵 V2 — 8가지 차별화 아이디어 (클라이언트 납품 포털 등) | 기획 완료 |
 | `19_PORTFOLIO_META_SEO.md` | 포트폴리오 메타 · Open Graph · Schema.org · 사이트맵 · 서버 SSR | 기획 완료 |
 | `20_PHOTO_FORM_DETAIL_GALLERY_V2.md` | PhotoForm 스튜디오 레이아웃 V2 · 갤러리 4종 뷰 모드 · 멀티 선택 | 기획 완료 |
-| `21_IOS26_LIQUID_GLASS_DESIGN.md` | iOS 26 Liquid Glass 디자인 시스템 기초 · 글래스 토큰 5레벨 · 페이지별 명세 | 기획 완료 |
-| `22_IOS26_LIQUID_GLASS_REDESIGN.md` | iOS 26 Liquid Glass 전체 재설계 바이블 (54KB · 6가지 소재 변형) | 기획 완료 |
-| `23_IOS26_LIQUID_GLASS_V2.md` | iOS 26 Liquid Glass V2 — specular highlight · vibrancy · aurora 배경 개선 | 기획 완료 |
+| `21_IOS26_LIQUID_GLASS_DESIGN.md` | ~~iOS 26 Liquid Glass 기초~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
+| `22_IOS26_LIQUID_GLASS_REDESIGN.md` | ~~iOS 26 Liquid Glass 재설계 바이블~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
+| `23_IOS26_LIQUID_GLASS_V2.md` | ~~iOS 26 Liquid Glass V2~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
 | `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` | 사진 정렬 알고리즘 재설계 — Justified Layout · 4가지 정렬 전략 · IDOR 수정 | 기획 완료 |
-| `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | ✅ 구현 완료 |
-| `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | ✅ 구현 완료 |
-| `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | ✅ 구현 완료 |
+| `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | 기획 완료 |
+| `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | 기획 완료 |
+| `27_MULTILINGUAL.md` | **다국어(i18n) 시스템** — 4개 언어(ko/en/ja/zh) · LanguageContext · 이중언어 콘텐츠 · 헤더 토글 | 기획 완료 |
+| `28_PORTFOLIO_TEMPLATE_SCRL.md` | **포트폴리오 템플릿 시스템** (SCRL 참조) — 8종 템플릿 · 템플릿 에디터 · 섹션 구성 · 스냅 스크롤 | 기획 완료 |
+| `29_ADMIN_CATEGORY_MANAGEMENT.md` | **어드민 카테고리·장르 관리** — 기존 어드민 강화 + 3종 신규 페이지(카테고리·태그·모더레이션) + 확장 아이디어 | 기획 완료 |
+| `30_PHOTO_EDITOR_ENHANCEMENT.md` | **보정 엔진 강화 v2** — Camera Calibration · Y2K 필름 스냅 프리셋 · XMP 내보내기 · Color Grading Balance | 기획 완료 |
 | `28_CLIENT_DELIVERY_PORTAL.md` | **클라이언트 납품 포털** — `/proof/:token` 비공개 링크 · 승인 워크플로 · 클라이언트 피드백 | 기획 완료 |
 | `29_VISITOR_ANALYTICS.md` | **방문자 분석 대시보드** — KPI 카드 · Canvas 차트 · 인기 사진 · 장르 분포 · 전환율 퍼널 | 기획 완료 |
 | `30_SHOOT_BOOKING_CALENDAR.md` | **촬영 예약 캘린더** — 3단계 위저드 · 가용 시간 설정 · 작가 예약 관리 대시보드 | 기획 완료 |
+| `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md` | **Cosmos × Pinterest 디자인 시스템** — 다크 에디토리얼, 보드 카드, 마소닉 그리드, 전체 마이그레이션 스펙 | 기획 완료 |
+| `DESIGN_PROMPT_COSMOS_GALLERY.md` | **Claude 디자인 프롬프트** — Cosmos 갤러리 홈·보드카드·탐색·에디터 패널·포토카드 5종 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  
@@ -161,9 +176,9 @@ primary:       '#5b6ef5'     primaryDark:  '#4458e0'    primaryLight: '#eef0ff'
 accent:        '#a78bfa'     bg:           '#f7f7fb'    surface:      '#ffffff'
 surfaceDim:    '#ededf4'     border:       '#e5e5ed'    text:         '#0f0f1a'
 textSecondary: '#5555aa'     textMuted:    '#8888bb'    danger:       '#e53e3e'
-success:       '#22c55e'     darkBg:       '#0a0a18'    darkSurface:  '#12122a'
-darkBorder:    '#2a2a50'     darkText:     '#e8e8f0'    darkTextSub:  '#8080b0'
-galleryBg:     '#0e0e0e'
+success:       '#22c55e'     bg:       '#090909'    surface:  '#0f0f0f'
+border:    'rgba(255,255,255,0.07)'     text:     '#e8e8f0'    textSub:  '#8080b0'
+galleryBg:     '#090909'
 
 // ⚠️ 아래는 구버전 — 사용 금지 (일부 오래된 파일에 잔존)
 // bg '#f5f5fa', text '#1a1a2e', textSecondary '#5c5c7a', textMuted '#9090b0', border '#e2e2ee'

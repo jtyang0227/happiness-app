@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/admin/gallery-order', label: '🖼️ 갤러리 순서' },
   { to: '/admin/members',       label: '👥 회원 관리' },
   { to: '/admin/photos',        label: '📷 사진 관리' },
+  { to: '/admin/categories',    label: '🏷️ 카테고리' },
 ];
 
 const SIDEBAR_W = 220;

@@ -88,7 +88,7 @@ colors: HEX 색상 5개 배열 (예: ['#1a1a2e', '#4a0e8f', ...])
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호
 컬러: primary '#5b6ef5' text '#0f0f1a' textMuted '#8888bb' surface '#ffffff'
-      border '#e5e5ed' darkSurface '#12122a' darkBorder '#2a2a50' darkText '#e8e8f0'
+      border '#e5e5ed' darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)' darkText '#e8e8f0'
 규칙: export default 함수형 컴포넌트 1개, style inline object, 외부 라이브러리 없음, 한국어 UI
 
 ColorPalette 컴포넌트를 만들어주세요.
@@ -139,7 +139,7 @@ Props:
 [시스템 컨텍스트]
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, React Router v6, inline style
-컬러: galleryBg '#0e0e0e' surface '#ffffff' text '#0f0f1a' textMuted '#8888bb'
+컬러: galleryBg '#090909' surface '#ffffff' text '#0f0f1a' textMuted '#8888bb'
       primary '#5b6ef5'
 규칙: export default 함수형 컴포넌트, style inline object, 외부 라이브러리 없음
 
@@ -331,7 +331,7 @@ UI:
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18, React Router v6, inline style
 컬러: primary '#5b6ef5' primaryLight '#eef0ff' text '#0f0f1a' accent '#a78bfa'
-      darkSurface '#12122a' darkBorder '#2a2a50' darkText '#e8e8f0'
+      darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)' darkText '#e8e8f0'
 규칙: export default 함수형 컴포넌트, 외부 라이브러리 없음, 한국어 UI
 
 SeriesBadge 컴포넌트를 만들어주세요.

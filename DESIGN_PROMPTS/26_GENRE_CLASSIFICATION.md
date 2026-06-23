@@ -629,8 +629,8 @@ export const GENRE_LIST = Object.entries(GENRE_META).map(([code, meta]) => ({
   bg: '#f7f7fb', surface: '#ffffff', surfaceDim: '#ededf4', border: '#e5e5ed'
   text: '#0f0f1a', textSecondary: '#5555aa', textMuted: '#8888bb'
   danger: '#e53e3e', success: '#22c55e'
-  darkBg: '#0a0a18', darkSurface: '#12122a'
-  galleryBg: '#0e0e0e'
+  bg: '#090909', surface: '#0f0f0f'
+  galleryBg: '#090909'
 
 규칙:
 - export default 함수형 컴포넌트 1개

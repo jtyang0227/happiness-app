@@ -58,6 +58,10 @@ export const photoApi = {
   /** AI 자동 태그 추천 */
   autoTag: (photoId) =>
     apiClient.post(`/photos/${photoId}/auto-tags`).then(r => r.data),
+
+  /** 장르별 사진 수 통계 */
+  getGenreStats: (memberId) =>
+    apiClient.get('/photos/genres/stats', { params: memberId ? { memberId } : {} }).then(r => r.data),
 };
 
 export const followApi = {

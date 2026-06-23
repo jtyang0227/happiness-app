@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
-import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 import GenreTabBar from '../components/common/GenreTabBar';
+import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -158,6 +158,7 @@ export default function ExplorePage() {
   const [search, setSearch]         = useState('');
   const [mood, setMood]             = useState('');
   const [imageRatio, setImageRatio] = useState('');
+  const [genre, setGenre]           = useState(null);
   const [sortIdx, setSortIdx]       = useState(0);
   const [tagInput, setTagInput]     = useState('');
   const [activeTags, setActiveTags] = useState([]);
@@ -239,6 +240,7 @@ export default function ExplorePage() {
       keyword:    overrides.keyword    ?? search.trim(),
       colorMood:  overrides.colorMood  ?? mood,
       imageRatio: overrides.imageRatio ?? imageRatio,
+      genre:      overrides.genre !== undefined ? overrides.genre : genre,
       tags:       q.tags,
       genre:      overrides.genre !== undefined ? overrides.genre : selectedGenre,
       sortBy:     s.sortBy,

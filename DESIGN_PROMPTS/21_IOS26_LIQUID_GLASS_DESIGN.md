@@ -1,8 +1,15 @@
-# 21 — iOS 26 Liquid Glass 디자인 시스템 — 전체 앱 적용
+# ~~21 — iOS 26 Liquid Glass 디자인 시스템 — 전체 앱 적용~~
 
-> 작성일: 2026-06-19  
-> 영감: Apple iOS 26 "Liquid Glass" (WWDC 2025) + Instagram iOS 26 리디자인  
-> 적용 범위: Happiness 앱 전체 페이지 — 라이트/다크 양쪽 테마
+> ⚠️ **DEPRECATED (2026-06-23)**: 이 기획서는 폐기됩니다.  
+> 대체 문서: **`31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`**  
+> 이유: iOS 컨셉 제거, Cosmos × Pinterest 다크 에디토리얼 방향으로 전환  
+> 단, `constants/glass.js`는 어드민 패널·인증 페이지에서 계속 사용됩니다.
+
+---
+
+> ~~작성일: 2026-06-19~~  
+> ~~영감: Apple iOS 26 "Liquid Glass" (WWDC 2025) + Instagram iOS 26 리디자인~~  
+> ~~적용 범위: Happiness 앱 전체 페이지 — 라이트/다크 양쪽 테마~~
 
 ---
 
