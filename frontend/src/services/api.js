@@ -22,6 +22,10 @@ export const photoApi = {
       },
     }).then(r => r.data),
 
+  /** 장르별 사진 수 통계 */
+  getGenreStats: (memberId) =>
+    apiClient.get('/photos/genres/stats', { params: memberId ? { memberId } : {} }).then(r => r.data),
+
   /** 특정 멤버의 사진 목록 */
   getByMember: (memberId, { sortBy = 'createdAt', order = 'desc' } = {}) =>
     apiClient.get('/photos', { params: { memberId, sortBy, order } }).then(r => r.data),
@@ -136,3 +140,8 @@ export const authApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data),
 };
+
+// Re-export new feature APIs for convenience
+export { deliveryApi } from './deliveryApi';
+export { analyticsApi } from './analyticsApi';
+export { bookingApi } from './bookingApi';

@@ -4,9 +4,10 @@ import { seriesApi, photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { glass, GLASS, SPRING } from '../constants/glass';
+import MagazineViewer from '../components/magazine/MagazineViewer';
 
 /* ─── 시리즈 카드 ─────────────────────────────────────────── */
-function SeriesCard({ series, onEdit, onDelete, onManagePhotos }) {
+function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
   return (
     <div style={{
       ...glass('light'),
@@ -58,7 +59,7 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos }) {
             {series.description}
           </p>
         )}
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
           <button
             onClick={() => onManagePhotos(series)}
             style={{
@@ -68,6 +69,16 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos }) {
             }}
           >
             사진 관리
+          </button>
+          <button
+            onClick={() => onMagazineView(series)}
+            style={{
+              padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+              border: `1px solid #a78bfa`, background: '#f3f0ff',
+              color: '#7c3aed', cursor: 'pointer',
+            }}
+          >
+            ⊟ 매거진
           </button>
           <button
             onClick={() => onEdit(series)}
@@ -351,6 +362,17 @@ export default function SeriesPage() {
   const [loading, setLoading]       = useState(true);
   const [modal, setModal]           = useState(null); // null | 'create' | { editing: series }
   const [photoPicker, setPhotoPicker] = useState(null); // null | series
+  const [magazineTarget, setMagazineTarget] = useState(null); // { series, photos }
+
+  const handleMagazineView = useCallback(async (series) => {
+    try {
+      const detail = await seriesApi.getOne(series.id);
+      const photos = Array.isArray(detail?.photos) ? detail.photos : [];
+      setMagazineTarget({ series, photos: photos.length > 0 ? photos : allPhotos.slice(0, 10) });
+    } catch {
+      setMagazineTarget({ series, photos: allPhotos.slice(0, 10) });
+    }
+  }, [allPhotos]);
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -476,6 +498,7 @@ export default function SeriesPage() {
               onEdit={(s) => setModal({ editing: s })}
               onDelete={handleDelete}
               onManagePhotos={(s) => setPhotoPicker(s)}
+              onMagazineView={handleMagazineView}
             />
           ))}
         </div>
@@ -498,6 +521,15 @@ export default function SeriesPage() {
           allPhotos={allPhotos}
           onClose={() => setPhotoPicker(null)}
           onSave={() => { setPhotoPicker(null); fetchData(); }}
+        />
+      )}
+
+      {/* 매거진 뷰어 */}
+      {magazineTarget && magazineTarget.photos.length > 0 && (
+        <MagazineViewer
+          photos={magazineTarget.photos}
+          title={magazineTarget.series.title}
+          onClose={() => setMagazineTarget(null)}
         />
       )}
     </div>

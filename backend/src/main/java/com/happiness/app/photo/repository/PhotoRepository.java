@@ -112,4 +112,8 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     /** 피드 — 팔로우한 유저들의 사진 최신순 (Pageable 지원) */
     @Query("SELECT p FROM Photo p WHERE p.memberId IN :memberIds ORDER BY p.createdAt DESC")
     List<Photo> findByMemberIdInOrderByCreatedAtDesc(@Param("memberIds") List<Long> memberIds, Pageable pageable);
+
+    /** 장르별 사진 수 통계 */
+    @Query("SELECT p.genre, COUNT(p) FROM Photo p WHERE p.genre IS NOT NULL AND (:memberId IS NULL OR p.memberId = :memberId) GROUP BY p.genre ORDER BY COUNT(p) DESC")
+    List<Object[]> countByGenre(@Param("memberId") Long memberId);
 }

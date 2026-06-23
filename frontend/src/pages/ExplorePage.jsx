@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
@@ -151,6 +151,7 @@ function PhotoCard({ photo, keyword }) {
 /* ── ExplorePage ─────────────────────────────────────── */
 
 export default function ExplorePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [photos, setPhotos]         = useState([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
@@ -161,7 +162,8 @@ export default function ExplorePage() {
   const [sortIdx, setSortIdx]       = useState(0);
   const [tagInput, setTagInput]     = useState('');
   const [activeTags, setActiveTags] = useState([]);
-  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', genre: null, tags: '', sortBy: 'createdAt', order: 'desc' });
+  const [selectedGenre, setSelectedGenre] = useState(() => searchParams.get('genre') || '');
+  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', tags: '', genre: searchParams.get('genre') || '', sortBy: 'createdAt', order: 'desc' });
 
   // autocomplete + history
   const [suggestions, setSuggestions] = useState([]);
@@ -240,10 +242,11 @@ export default function ExplorePage() {
       imageRatio: overrides.imageRatio ?? imageRatio,
       genre:      overrides.genre !== undefined ? overrides.genre : genre,
       tags:       q.tags,
+      genre:      overrides.genre !== undefined ? overrides.genre : selectedGenre,
       sortBy:     s.sortBy,
       order:      s.order,
     }));
-  }, [search, mood, imageRatio, genre, sortIdx]);
+  }, [search, mood, imageRatio, sortIdx, selectedGenre]);
 
   const commitSearch = useCallback((term) => {
     const t = term.trim();
@@ -251,8 +254,16 @@ export default function ExplorePage() {
     setShowDrop(false);
     if (t) { saveHistory(t); setHistory(loadHistory()); }
     const s = SORT_OPTIONS[sortIdx];
-    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, genre, tags: q.tags, sortBy: s.sortBy, order: s.order }));
-  }, [sortIdx, mood, imageRatio, genre]);
+    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, tags: q.tags, genre: selectedGenre, sortBy: s.sortBy, order: s.order }));
+  }, [sortIdx, mood, imageRatio, selectedGenre]);
+
+  const handleGenreChange = useCallback((genre) => {
+    setSelectedGenre(genre);
+    const newParams = new URLSearchParams(searchParams);
+    if (genre) { newParams.set('genre', genre); } else { newParams.delete('genre'); }
+    setSearchParams(newParams, { replace: true });
+    applyFilters({ genre });
+  }, [searchParams, setSearchParams, applyFilters]);
 
   const handleSearch = (e) => { e.preventDefault(); commitSearch(search); };
 
@@ -382,11 +393,11 @@ export default function ExplorePage() {
         </button>
       </form>
 
-      {/* 장르 필터 탭바 */}
+      {/* Genre tab bar */}
       <div style={{ marginBottom: 12 }}>
         <GenreTabBar
-          selected={genre}
-          onChange={(code) => { setGenre(code); applyFilters({ genre: code }); }}
+          selected={selectedGenre}
+          onChange={handleGenreChange}
         />
       </div>
 

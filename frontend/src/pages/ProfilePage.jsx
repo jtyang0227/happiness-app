@@ -5,12 +5,15 @@ import { photoApi, authApi, seriesApi } from '../services/api';
 import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
+import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
 
 const TABS = [
-  { key: 'photos',   label: '내 작품' },
-  { key: 'saved',    label: '저장함' },
-  { key: 'series',   label: '시리즈' },
-  { key: 'settings', label: '설정' },
+  { key: 'photos',    label: '내 작품' },
+  { key: 'saved',     label: '저장함' },
+  { key: 'series',    label: '시리즈' },
+  { key: 'analytics', label: '분석' },
+  { key: 'bookings',  label: '예약' },
+  { key: 'settings',  label: '설정' },
 ];
 
 const PHOTO_SORTS = [
@@ -485,6 +488,32 @@ export default function ProfilePage() {
             {activeTab === 'series' && (
               <div style={{ paddingTop: 8 }}>
                 <SeriesList series={seriesList} onSeriesClick={() => navigate('/series')} />
+              </div>
+            )}
+
+            {/* ── 분석 ── */}
+            {activeTab === 'analytics' && (
+              <div>
+                <AnalyticsDashboard memberId={user?.id} />
+              </div>
+            )}
+
+            {/* ── 예약 ── */}
+            {activeTab === 'bookings' && (
+              <div style={{ padding: '20px 16px' }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>📅</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>촬영 예약 관리</div>
+                  <div style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 20, lineHeight: 1.6 }}>
+                    들어온 예약 요청을 확인하고 가용 시간을 설정하세요.
+                  </div>
+                  <button
+                    onClick={() => navigate('/bookings')}
+                    style={{ display: 'inline-block', padding: '12px 28px', borderRadius: 12, border: 'none', background: COLORS.primary, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    예약 관리 페이지로 이동
+                  </button>
+                </div>
               </div>
             )}
 

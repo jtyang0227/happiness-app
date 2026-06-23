@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLang } from '../../contexts/LanguageContext';
 import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
 import { inquiryApi } from '../../services/api';
+import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
 
 const NAV_ITEMS = [
   { to: '/explore',   label: '탐색'     },
@@ -22,6 +24,83 @@ const BOTTOM_NAV_ITEMS = [
   { to: '/list',      label: '목록',  icon: '☰',  end: false },
   { to: '/profile',   label: '프로필', icon: '◎',  end: false },
 ];
+
+function LangSwitcher() {
+  const { lang, changeLang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          height: 34, padding: '0 12px', borderRadius: 10,
+          background: open ? '#eef0ff' : 'transparent',
+          border: `1px solid ${open ? '#5b6ef5' : 'rgba(92,92,122,0.2)'}`,
+          color: open ? '#5b6ef5' : '#5c5c7a',
+          fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = '#eef0ff'; e.currentTarget.style.borderColor = '#5b6ef5'; e.currentTarget.style.color = '#5b6ef5'; }}}
+        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(92,92,122,0.2)'; e.currentTarget.style.color = '#5c5c7a'; }}}
+      >
+        🌐 {lang.toUpperCase()} ▾
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          width: 160, background: '#fff',
+          border: '1px solid #e2e2ee', borderRadius: 14,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          padding: 6, zIndex: 300,
+        }}>
+          <p style={{
+            margin: 0, padding: '6px 10px 4px',
+            fontSize: 11, fontWeight: 600, color: '#9090b0',
+            letterSpacing: '0.5px', textTransform: 'uppercase',
+          }}>
+            언어 선택
+          </p>
+          {SUPPORTED_LANGS.map(code => {
+            const meta = LANG_META[code];
+            const isActive = lang === code;
+            return (
+              <button
+                key={code}
+                onClick={() => { changeLang(code); setOpen(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', padding: '9px 10px', borderRadius: 10,
+                  border: 'none', cursor: 'pointer', textAlign: 'left',
+                  background: isActive ? '#eef0ff' : 'transparent',
+                  color: isActive ? '#5b6ef5' : '#1a1a2e',
+                  fontSize: 14, transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#ededf4'; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span style={{ fontSize: 18 }}>{meta.flag}</span>
+                <span style={{ flex: 1 }}>{meta.nativeLabel}</span>
+                {isActive && <span style={{ fontSize: 14, color: '#5b6ef5', fontWeight: 700 }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Header() {
   const { logout, user } = useAuth();
@@ -124,6 +203,9 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
+
+          {/* Language Switcher */}
+          <LangSwitcher />
 
           {/* Avatar dropdown */}
           <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>

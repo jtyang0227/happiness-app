@@ -14,7 +14,7 @@
 
 ---
 
-## 파일 구성 (전체 32개)
+## 파일 구성 (전체 40개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -51,6 +51,9 @@
 | `28_PORTFOLIO_TEMPLATE_SCRL.md` | **포트폴리오 템플릿 시스템** (SCRL 참조) — 8종 템플릿 · 템플릿 에디터 · 섹션 구성 · 스냅 스크롤 | 기획 완료 |
 | `29_ADMIN_CATEGORY_MANAGEMENT.md` | **어드민 카테고리·장르 관리** — 기존 어드민 강화 + 3종 신규 페이지(카테고리·태그·모더레이션) + 확장 아이디어 | 기획 완료 |
 | `30_PHOTO_EDITOR_ENHANCEMENT.md` | **보정 엔진 강화 v2** — Camera Calibration · Y2K 필름 스냅 프리셋 · XMP 내보내기 · Color Grading Balance | 기획 완료 |
+| `28_CLIENT_DELIVERY_PORTAL.md` | **클라이언트 납품 포털** — `/proof/:token` 비공개 링크 · 승인 워크플로 · 클라이언트 피드백 | 기획 완료 |
+| `29_VISITOR_ANALYTICS.md` | **방문자 분석 대시보드** — KPI 카드 · Canvas 차트 · 인기 사진 · 장르 분포 · 전환율 퍼널 | 기획 완료 |
+| `30_SHOOT_BOOKING_CALENDAR.md` | **촬영 예약 캘린더** — 3단계 위저드 · 가용 시간 설정 · 작가 예약 관리 대시보드 | 기획 완료 |
 | `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md` | **Cosmos × Pinterest 디자인 시스템** — 다크 에디토리얼, 보드 카드, 마소닉 그리드, 전체 마이그레이션 스펙 | 기획 완료 |
 | `DESIGN_PROMPT_COSMOS_GALLERY.md` | **Claude 디자인 프롬프트** — Cosmos 갤러리 홈·보드카드·탐색·에디터 패널·포토카드 5종 | 기획 완료 |
 
@@ -102,16 +105,16 @@
 
 ### P3 — 장기 (로드맵 V2, `18_FEATURE_ENHANCEMENT_V2.md`)
 
-| 우선순위 | 아이디어 |
-|---------|---------|
-| **P3-0** | 클라이언트 납품 포털 `/proof/:token` |
-| **P3-1** | 촬영 예약 캘린더 |
-| **P3-1** | 방문자 분석 대시보드 (Canvas 차트) |
-| **P3-1** | AI 스마트 앨범 자동 분류 |
-| **P3-2** | 다크모드 / 테마 전환 (`useTheme`) |
-| **P3-2** | 사진 이야기 스크롤 내러티브 |
-| **P3-2** | 포토북 PDF 내보내기 |
-| **P3-2** | 디지털 명함 카드 `/portfolio/:profileName/card` |
+| 우선순위 | 아이디어 | 설계 문서 |
+|---------|---------|---------|
+| **P3-0** | 클라이언트 납품 포털 `/proof/:token` | `28_CLIENT_DELIVERY_PORTAL.md` ← 기획 완료 |
+| **P3-1** | 방문자 분석 대시보드 (Canvas 차트) | `29_VISITOR_ANALYTICS.md` ← 기획 완료 |
+| **P3-1** | 촬영 예약 캘린더 | `30_SHOOT_BOOKING_CALENDAR.md` ← 기획 완료 |
+| **P3-1** | AI 스마트 앨범 자동 분류 | — |
+| **P3-2** | 다크모드 / 테마 전환 (`useTheme`) | — |
+| **P3-2** | 사진 이야기 스크롤 내러티브 | — |
+| **P3-2** | 포토북 PDF 내보내기 | — |
+| **P3-2** | 디지털 명함 카드 `/portfolio/:profileName/card` | — |
 
 ### 디자인 방향 (대규모 리디자인 검토 중)
 

@@ -62,7 +62,8 @@ public class PhotoController {
             @RequestParam(required = false) String genre,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String order,
-            @RequestParam(required = false) String tags
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) String genre
     ) {
         String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
@@ -120,6 +121,19 @@ public class PhotoController {
         }
         List<String> suggestions = photoRepository.findTitleSuggestions(q, PageRequest.of(0, 5));
         return ResponseEntity.ok(Map.of("status", "success", "data", suggestions));
+    }
+
+    /** GET /api/photos/genres/stats?memberId= — 장르별 사진 수 통계 */
+    @GetMapping("/genres/stats")
+    public ResponseEntity<?> getGenreStats(@RequestParam(required = false) Long memberId) {
+        List<Object[]> raw = photoRepository.countByGenre(memberId);
+        List<Map<String, Object>> data = raw.stream().map(row -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("genre", row[0]);
+            m.put("count", row[1]);
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(Map.of("status", "success", "data", data));
     }
 
     @GetMapping("/{id}")
@@ -220,6 +234,11 @@ public class PhotoController {
                 .likesCount(0)
                 .savesCount(0)
                 .sharesCount(0)
+                .genre(request.getGenre())
+                .subGenres(request.getSubGenres())
+                .panType(request.getPanType() != null ? request.getPanType() : "EDITORIAL")
+                .magazineCaption(request.getMagazineCaption())
+                .imageRight(request.getImageRight() != null ? request.getImageRight() : false)
                 .build();
         Photo saved = photoRepository.save(photo);
 
@@ -265,6 +284,15 @@ public class PhotoController {
                     if (request.getShutterSpeed()!= null) photo.setShutterSpeed(request.getShutterSpeed());
                     if (request.getIso()         != null) photo.setIso(request.getIso());
                     if (request.getFocalLength() != null) photo.setFocalLength(request.getFocalLength());
+                    if (request.getPanType() != null && !request.getPanType().isBlank()) {
+                        photo.setPanType(request.getPanType());
+                    }
+                    if (request.getMagazineCaption() != null) {
+                        photo.setMagazineCaption(request.getMagazineCaption());
+                    }
+                    if (request.getImageRight() != null) {
+                        photo.setImageRight(request.getImageRight());
+                    }
                     Photo updated = photoRepository.save(photo);
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");

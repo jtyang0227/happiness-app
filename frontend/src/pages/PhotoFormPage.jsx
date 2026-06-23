@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import GridSpanPicker from '../components/common/GridSpanPicker';
 import GenreSelector from '../components/common/GenreSelector';
 import ImageAdjustmentPanel from '../components/photo/ImageAdjustmentPanel';
+import PanSelector from '../components/magazine/PanSelector';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import {
   DEFAULT_ADJUSTMENTS,
@@ -25,6 +26,23 @@ import {
 const MOOD_OPTIONS = Object.entries(MOOD_COLORS).map(([key, val]) => ({
   key, label: val.label, dot: val.dot, bg: val.bg,
 }));
+
+const GENRE_KEYWORDS_FE = {
+  '인물': 'PORTRAIT', 'portrait': 'PORTRAIT', '사람': 'PORTRAIT', '얼굴': 'PORTRAIT',
+  '웨딩': 'WEDDING', '결혼': 'WEDDING', '풍경': 'LANDSCAPE', '바다': 'LANDSCAPE',
+  '꽃': 'NATURE', '자연': 'NATURE', '거리': 'STREET', '도시': 'STREET',
+  '건물': 'ARCHITECTURE', '건축': 'ARCHITECTURE', '음식': 'FOOD', '카페': 'FOOD',
+  '여행': 'TRAVEL', 'travel': 'TRAVEL', '패션': 'FASHION', 'fashion': 'FASHION',
+  '일상': 'LIFESTYLE', '제품': 'COMMERCIAL', '예술': 'FINE_ART', '추상': 'FINE_ART',
+};
+
+function suggestGenre(title, desc) {
+  const combined = ((title || '') + ' ' + (desc || '')).toLowerCase();
+  for (const [kw, genre] of Object.entries(GENRE_KEYWORDS_FE)) {
+    if (combined.includes(kw)) return genre;
+  }
+  return null;
+}
 
 const RATIO_OPTIONS = [
   { value: '16:9', label: '16:9', hint: '와이드' },
@@ -96,8 +114,12 @@ export default function PhotoFormPage() {
   const [apiError, setApiError]   = useState('');
 
   // ── 장르 상태 ────────────────────────────────────────────────────────
-  const [genre, setGenre]         = useState(null);
-  const [subGenres, setSubGenres] = useState([]);
+  const [primaryGenre, setPrimaryGenre]   = useState('');
+  const [subGenres, setSubGenres]         = useState([]);
+  const [suggestedGenre, setSuggestedGenre] = useState(null);
+
+  // ── 매거진 판 타입 ────────────────────────────────────────────────────
+  const [panType, setPanType] = useState('EDITORIAL');
 
   // ── 이미지 탭 ────────────────────────────────────────────────────────
   const [imgMode, setImgMode] = useState('file');
@@ -158,6 +180,16 @@ export default function PhotoFormPage() {
           } catch { setSubGenres([]); }
           setUrlInput(found.imageUrl || '');
           setImgMode('url');
+          if (found.genre) setPrimaryGenre(found.genre);
+          if (found.subGenres) {
+            try {
+              const subs = typeof found.subGenres === 'string'
+                ? JSON.parse(found.subGenres)
+                : found.subGenres;
+              if (Array.isArray(subs)) setSubGenres(subs);
+            } catch {}
+          }
+          if (found.panType) setPanType(found.panType);
         }
       } catch {
         setApiError('사진 정보를 불러오는데 실패했습니다.');
@@ -313,9 +345,18 @@ export default function PhotoFormPage() {
   // ── 폼 핸들러 ─────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const nextForm = { ...form, [name]: value };
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
     setApiError('');
+    // 장르 자동 추천 (주 장르가 아직 미선택 상태일 때만)
+    if (!primaryGenre && (name === 'title' || name === 'description')) {
+      const suggested = suggestGenre(
+        name === 'title' ? value : nextForm.title,
+        name === 'description' ? value : nextForm.description,
+      );
+      setSuggestedGenre(suggested);
+    }
   };
 
   const validate = () => {
@@ -347,8 +388,9 @@ export default function PhotoFormPage() {
           colorMood:   form.colorMood || null,
           imageRatio:  form.imageRatio,
           imageUrl:    urlInput.trim(),
-          genre:       genre || null,
-          subGenres:   subGenresJson,
+          genre:       primaryGenre || null,
+          subGenres:   subGenres.length > 0 ? JSON.stringify(subGenres) : null,
+          panType:     panType || 'EDITORIAL',
         });
       } else if (imgMode === 'file' && imageFile) {
         const blob = await new Promise(resolve =>
@@ -362,8 +404,9 @@ export default function PhotoFormPage() {
         fd.append('gridColSpan', String(form.gridColSpan));
         fd.append('colorMood',   form.colorMood || '');
         fd.append('imageRatio',  form.imageRatio);
-        if (genre)        fd.append('genre',     genre);
-        if (subGenresJson) fd.append('subGenres', subGenresJson);
+        if (primaryGenre) fd.append('genre', primaryGenre);
+        if (subGenres.length > 0) fd.append('subGenres', JSON.stringify(subGenres));
+        fd.append('panType', panType || 'EDITORIAL');
         await photoApi.uploadFile(fd);
       } else {
         await photoApi.create({
@@ -374,8 +417,9 @@ export default function PhotoFormPage() {
           gridColSpan: form.gridColSpan,
           colorMood:   form.colorMood || null,
           imageRatio:  form.imageRatio,
-          genre:       genre || null,
-          subGenres:   subGenresJson,
+          genre:       primaryGenre || null,
+          subGenres:   subGenres.length > 0 ? JSON.stringify(subGenres) : null,
+          panType:     panType || 'EDITORIAL',
         });
       }
       navigate('/');
@@ -794,16 +838,20 @@ export default function PhotoFormPage() {
             </div>
           </div>
 
-          {/* 장르 */}
-          <div style={{ marginBottom: 28 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>
-              촬영 장르
-            </label>
+          {/* 장르 선택 */}
+          <div style={{ marginBottom: 20, padding: 16, background: '#f5f5fa', borderRadius: 12 }}>
             <GenreSelector
-              primary={genre}
-              subList={subGenres}
-              onChange={({ primary: p, subGenres: s }) => { setGenre(p); setSubGenres(s); }}
+              primaryGenre={primaryGenre}
+              subGenres={subGenres}
+              onChangePrimary={setPrimaryGenre}
+              onChangeSubGenres={setSubGenres}
+              suggestedGenre={suggestedGenre}
             />
+          </div>
+
+          {/* 매거진 판 타입 */}
+          <div style={{ marginBottom: 20, padding: 16, background: '#f5f5fa', borderRadius: 12 }}>
+            <PanSelector selected={panType} onChange={setPanType} />
           </div>
 
           {/* 갤러리 너비 */}

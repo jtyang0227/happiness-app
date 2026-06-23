@@ -589,25 +589,46 @@ export default function PortfolioPage() {
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28, lineHeight: 1.7 }}>
           촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.
         </p>
-        <button
-          onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
-          style={{
-            padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700,
-            border: 'none', background: '#5b6ef5', color: '#fff', cursor: 'pointer',
-            boxShadow: '0 4px 24px rgba(91,110,245,0.4)',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(91,110,245,0.5)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 24px rgba(91,110,245,0.4)';
-          }}
-        >
-          ✉ 촬영 문의하기
-        </button>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => navigate(`/inquiry/${profileName}?memberId=${member?.id ?? ''}`)}
+            style={{
+              padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700,
+              border: 'none', background: '#5b6ef5', color: '#fff', cursor: 'pointer',
+              boxShadow: '0 4px 24px rgba(91,110,245,0.4)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(91,110,245,0.5)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 24px rgba(91,110,245,0.4)';
+            }}
+          >
+            ✉ 촬영 문의하기
+          </button>
+          <a
+            href={`/booking/${member?.profileName || profileName}`}
+            style={{
+              padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700,
+              border: '1px solid #a78bfa', background: 'rgba(167,139,250,0.12)', color: '#a78bfa',
+              cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
+              transition: 'transform 0.2s, background 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.background = 'rgba(167,139,250,0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.background = 'rgba(167,139,250,0.12)';
+            }}
+          >
+            📅 촬영 예약
+          </a>
+        </div>
         <div style={{ marginTop: 40, fontSize: 11, color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em' }}>
           ✦ Happiness — 포트폴리오 갤러리
         </div>

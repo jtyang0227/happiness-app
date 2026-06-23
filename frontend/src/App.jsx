@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import Header from './components/layout/Header';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import useAuthStore from './store/authStore';
@@ -31,6 +32,10 @@ import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
 import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
 import AdminCategoryPage     from './pages/admin/AdminCategoryPage';
+import ClientDeliveryPage    from './pages/ClientDeliveryPage';
+import DeliveriesPage        from './pages/DeliveriesPage';
+import BookingPage           from './pages/BookingPage';
+import BookingDashboard      from './pages/BookingDashboard';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -48,6 +53,8 @@ function AppShell() {
   const isGallery    = location.pathname === '/';
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
+    || location.pathname.startsWith('/proof/')
+    || location.pathname.startsWith('/booking/')
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname);
 
@@ -101,6 +108,14 @@ function AppShell() {
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
 
+          {/* Delivery & Booking (standalone) */}
+          <Route path="/proof/:token" element={<ClientDeliveryPage />} />
+          <Route path="/booking/:profileName" element={<BookingPage />} />
+
+          {/* Delivery & Booking (protected) */}
+          <Route path="/deliveries" element={<ProtectedRoute><DeliveriesPage /></ProtectedRoute>} />
+          <Route path="/bookings" element={<ProtectedRoute><BookingDashboard /></ProtectedRoute>} />
+
           {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />
           <Route path="/admin/gallery-order" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminGalleryOrderPage /></ProtectedRoute>} />
@@ -123,9 +138,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppShell />
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

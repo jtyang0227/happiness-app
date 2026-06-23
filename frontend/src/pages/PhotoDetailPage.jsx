@@ -11,6 +11,7 @@ import PhotoNavigation from '../components/photo/PhotoNavigation';
 import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
 import useColorExtraction from '../hooks/useColorExtraction';
+import MagazineViewer from '../components/magazine/MagazineViewer';
 
 function buildAdjSummary(adj, effects) {
   const items = [];
@@ -44,6 +45,8 @@ export default function PhotoDetailPage() {
 
   // 전체화면 뷰어
   const [viewerOpen, setViewerOpen] = useState(false);
+  // 매거진 뷰어
+  const [magazineOpen, setMagazineOpen] = useState(false);
 
   // 같은 작가 사진 목록 (네비게이션 + 관련사진)
   const [photoList, setPhotoList] = useState([]);
@@ -245,11 +248,9 @@ export default function PhotoDetailPage() {
         {photo.title || '제목 없음'}
       </h1>
 
-      {/* 장르 + 무드 배지 */}
-      {(photo.genre || mood) && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-          {photo.genre && <GenreBadge genre={photo.genre} />}
-          {photo.subGenres && <SubGenreBadges subGenres={photo.subGenres} />}
+      {/* 무드 배지 + 장르 배지 */}
+      {(mood || photo.genre) && (
+        <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {mood && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -259,6 +260,12 @@ export default function PhotoDetailPage() {
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
               {mood.label}
             </span>
+          )}
+          {photo.genre && (
+            <GenreBadge genre={photo.genre} />
+          )}
+          {photo.subGenres && (
+            <SubGenreBadges subGenres={photo.subGenres} />
           )}
         </div>
       )}
@@ -291,6 +298,15 @@ export default function PhotoDetailPage() {
           {saved ? '★' : '☆'} 저장 {photo.saveCount > 0 && photo.saveCount}
         </button>
         <ShareButton url={window.location.href} title={photo.title} theme="light" />
+        <button
+          onClick={() => setMagazineOpen(true)}
+          style={{
+            height: 40, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+            border: `1.5px solid ${COLORS.primary}`, background: COLORS.primaryLight,
+            color: COLORS.primary, cursor: 'pointer',
+          }}
+          className="no-print"
+        >⊟ 매거진</button>
         <button
           onClick={() => window.print()}
           style={{
@@ -403,6 +419,16 @@ export default function PhotoDetailPage() {
         hasPrev={!!viewerPrev}
         hasNext={!!viewerNext}
       />
+
+      {/* 매거진 뷰어 */}
+      {magazineOpen && (
+        <MagazineViewer
+          photos={photoList.length > 0 ? photoList : [photo]}
+          initialIndex={Math.max(0, photoList.findIndex(p => String(p.id) === String(photo.id)))}
+          title={photo.title}
+          onClose={() => setMagazineOpen(false)}
+        />
+      )}
     </div>
   );
 }

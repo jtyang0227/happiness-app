@@ -8,6 +8,8 @@ import PhotoModal from '../components/photo/PhotoModal';
 import EmptyState from '../components/common/EmptyState';
 import { SkeletonGalleryCard } from '../components/common/Skeleton';
 import { useGalleryLayout } from '../hooks/useGalleryLayout';
+import GenreTabBar from '../components/common/GenreTabBar';
+import MagazineViewer from '../components/magazine/MagazineViewer';
 
 /* ── 색감 정렬 ── */
 const COLOR_ORDER = [
@@ -39,6 +41,7 @@ const VIEW_MODES = [
   { mode: 'justified', icon: '▦', label: 'Justified' },
   { mode: 'masonry',   icon: '⊞', label: 'Masonry'   },
   { mode: 'list',      icon: '☰', label: 'List'       },
+  { mode: 'magazine',  icon: '⊟', label: '매거진'    },
 ];
 
 /* ── Justified Layout 셀 ── */
@@ -104,11 +107,12 @@ function JustifiedPhotoCell({ photo, onClick }) {
 export default function GalleryPage() {
   const navigate = useNavigate();
 
-  const [photos, setPhotos]     = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [selected, setSelected] = useState(null);
-  const [sortIdx, setSortIdx]   = useState(0);
+  const [photos, setPhotos]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [selected, setSelected]     = useState(null);
+  const [sortIdx, setSortIdx]       = useState(0);
+  const [selectedGenre, setSelectedGenre] = useState('');
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem('gallery_view') ?? 'justified',
   );
@@ -140,10 +144,17 @@ export default function GalleryPage() {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  const displayed = useMemo(
-    () => currentSort.clientSort ? sortByColor(photos) : photos,
-    [photos, currentSort],
+  // 해당 갤러리에 있는 장르 코드만 동적으로 추출
+  const genresInGallery = useMemo(
+    () => [...new Set(photos.map(p => p.genre).filter(Boolean))],
+    [photos],
   );
+
+  const displayed = useMemo(() => {
+    const sorted = currentSort.clientSort ? sortByColor(photos) : photos;
+    if (!selectedGenre) return sorted;
+    return sorted.filter(p => p.genre === selectedGenre || (p.subGenres && p.subGenres.includes(selectedGenre)));
+  }, [photos, currentSort, selectedGenre]);
 
   /* ── Justified Layout 훅 ── */
   const { containerRef, layout } = useGalleryLayout(displayed, {
@@ -239,6 +250,23 @@ export default function GalleryPage() {
         </div>
       </div>
 
+      {/* ── 장르 탭바 (해당 갤러리 장르만 표시) ── */}
+      {!loading && genresInGallery.length > 0 && (
+        <div style={{
+          padding: '8px 16px',
+          background: 'rgba(255,255,255,0.04)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <GenreTabBar
+            selected={selectedGenre}
+            onChange={setSelectedGenre}
+            genres={genresInGallery}
+            showAll
+            theme="dark"
+          />
+        </div>
+      )}
+
       {/* ── 콘텐츠 ── */}
       {loading ? (
         /* 스켈레톤 — masonry로 통일 */
@@ -312,6 +340,13 @@ export default function GalleryPage() {
           </div>
         </>
 
+      ) : viewMode === 'magazine' ? (
+
+        /* ── Magazine — MagazineViewer 오버레이가 처리 ── */
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+          매거진 뷰어 로딩 중...
+        </div>
+
       ) : (
 
         /* ── List ── */
@@ -357,11 +392,20 @@ export default function GalleryPage() {
       )}
 
       {/* ── 상세 모달 ── */}
-      {selected && (
+      {selected && viewMode !== 'magazine' && (
         <PhotoModal
           photo={selected}
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
+        />
+      )}
+
+      {/* ── 매거진 뷰어 ── */}
+      {viewMode === 'magazine' && displayed.length > 0 && (
+        <MagazineViewer
+          photos={displayed}
+          title="매거진 뷰"
+          onClose={() => setViewMode('justified')}
         />
       )}
     </div>

@@ -1,72 +1,65 @@
-import React, { useRef } from 'react';
-import { GENRE_META, COLORS } from '../../constants/colors';
+import React from 'react';
+import { GENRE_LIST } from '../../constants/colors';
 
-/**
- * 장르 필터 탭바 (수평 스크롤)
- * Props:
- *   selected   {string|null}  — 현재 선택 장르 코드 (null = 전체)
- *   genres     {string[]}     — 표시할 장르 코드 목록 (없으면 전체 12종)
- *   onChange   (code|null) => void
- */
-export default function GenreTabBar({ selected, genres, onChange }) {
-  const scrollRef = useRef(null);
-  const list = genres
-    ? genres.map(code => ({ code, ...GENRE_META[code] })).filter(g => g.label)
-    : Object.entries(GENRE_META).map(([code, meta]) => ({ code, ...meta }));
+export default function GenreTabBar({ selected, onChange, showAll = true, counts, genres, theme = 'light' }) {
+  const filteredList = genres ? GENRE_LIST.filter(g => genres.includes(g.code)) : GENRE_LIST;
+  const tabs = showAll
+    ? [{ code: '', emoji: '✦', label: '전체' }, ...filteredList]
+    : filteredList;
+
+  const isDark = theme === 'dark';
+  const unselectedBg = isDark ? 'rgba(255,255,255,0.1)' : '#ededf4';
+  const unselectedColor = isDark ? 'rgba(255,255,255,0.55)' : '#5c5c7a';
+  const fadeGradient = isDark
+    ? 'linear-gradient(to left, #090909, transparent)'
+    : 'linear-gradient(to left, #f5f5fa, transparent)';
 
   return (
-    <div
-      ref={scrollRef}
-      style={{
+    <div style={{ position: 'relative' }}>
+      <div style={{
         display: 'flex', gap: 8, overflowX: 'auto',
-        padding: '4px 0 8px',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}
-    >
-      <TabItem
-        label="전체"
-        emoji="📷"
-        selected={selected === null}
-        color={COLORS.primary}
-        bg={COLORS.primaryLight}
-        onClick={() => onChange(null)}
-      />
-      {list.map(({ code, emoji, label, color, bg }) => (
-        <TabItem
-          key={code}
-          label={label}
-          emoji={emoji}
-          selected={selected === code}
-          color={color}
-          bg={bg}
-          onClick={() => onChange(code)}
-        />
-      ))}
+        padding: '4px 2px 8px',
+        scrollbarWidth: 'none', msOverflowStyle: 'none',
+      }}>
+        {tabs.map(tab => {
+          const isSelected = selected === tab.code;
+          return (
+            <button
+              key={tab.code}
+              onClick={() => onChange(tab.code)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '7px 14px', borderRadius: 24, cursor: 'pointer',
+                whiteSpace: 'nowrap', fontSize: 13, fontWeight: isSelected ? 600 : 400,
+                border: 'none',
+                background: isSelected ? '#5b6ef5' : unselectedBg,
+                color: isSelected ? '#fff' : unselectedColor,
+                boxShadow: isSelected ? '0 2px 8px rgba(91,110,245,0.3)' : 'none',
+                transition: 'all 0.15s',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 15 }}>{tab.emoji}</span>
+              <span>{tab.label}</span>
+              {counts && counts[tab.code] != null && (
+                <span style={{
+                  fontSize: 11, background: isSelected ? 'rgba(255,255,255,0.25)' : (isDark ? 'rgba(255,255,255,0.15)' : '#d0d0e8'),
+                  color: isSelected ? '#fff' : unselectedColor,
+                  borderRadius: 10, padding: '1px 6px', marginLeft: 2,
+                }}>
+                  {counts[tab.code]}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {/* 우측 페이드 힌트 */}
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 40,
+        background: fadeGradient,
+        pointerEvents: 'none',
+      }} />
     </div>
-  );
-}
-
-function TabItem({ label, emoji, selected, color, bg, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 5,
-        padding: '6px 14px', borderRadius: 20,
-        border: `1.5px solid ${selected ? color : COLORS.border}`,
-        background: selected ? bg : COLORS.surface,
-        color: selected ? color : COLORS.textSecondary,
-        fontWeight: selected ? 700 : 400,
-        fontSize: 13, cursor: 'pointer',
-        transition: 'all 0.15s',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <span>{emoji}</span>
-      <span>{label}</span>
-    </button>
   );
 }
