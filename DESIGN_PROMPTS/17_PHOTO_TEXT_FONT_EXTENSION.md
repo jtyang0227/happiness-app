@@ -232,12 +232,12 @@ CropPanel 신규 컴포넌트:
 
 현재 컬러 시스템 (다크 테마 기준 — 에디터는 다크):
   primary:       '#5b6ef5'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
+  bg:        '#090909'
+  surface:   '#0f0f0f'
   darkElevated:  '#1e1e3a'
-  darkBorder:    '#2a2a50'
-  darkText:      '#e8e8f0'
-  darkTextSub:   '#8080b0'
+  border:    'rgba(255,255,255,0.07)'
+  text:      '#e8e8f0'
+  textSub:   '#8080b0'
   darkTextHint:  '#4a4a70'
   danger:        '#e53e3e'
 

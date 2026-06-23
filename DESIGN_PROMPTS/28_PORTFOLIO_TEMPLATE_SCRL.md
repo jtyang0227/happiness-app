@@ -899,7 +899,7 @@ const spotlightStyle = {
   primary: '#5b6ef5'  primaryDark: '#4458e0'  primaryLight: '#eef0ff'
   bg: '#f5f5fa'  surface: '#ffffff'  border: '#e2e2ee'
   text: '#1a1a2e'  textSecondary: '#5c5c7a'
-  darkBg: '#0a0a18'  darkSurface: '#12122a'  galleryBg: '#0e0e0e'
+  bg: '#090909'  surface: '#0f0f0f'  galleryBg: '#090909'
 
 [작업 요청]
 포트폴리오 템플릿 에디터 페이지를 단일 React 컴포넌트로 만들어 주세요.

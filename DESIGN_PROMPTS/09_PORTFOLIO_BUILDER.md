@@ -77,7 +77,7 @@ PortfolioPage → "슬라이드쇼 보기" 버튼 클릭
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, React Router v6, inline style
 아이콘: 이모지 또는 유니코드 기호
-컬러: darkBg '#0a0a18' darkSurface '#12122a' darkText '#e8e8f0'
+컬러: darkBg '#090909' darkSurface '#0f0f0f' darkText '#e8e8f0'
       darkTextSub '#8080b0' primary '#5b6ef5' accent '#a78bfa'
 규칙: export default 함수형 컴포넌트 1개, style inline object, 외부 라이브러리 없음, 한국어 UI
 
@@ -126,7 +126,7 @@ mock 데이터: 20장, 가로/세로 혼합, 제목/무드 포함
 [시스템 컨텍스트]
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style
-컬러: darkBg '#0a0a18' darkText '#e8e8f0' primary '#5b6ef5' accent '#a78bfa'
+컬러: darkBg '#090909' darkText '#e8e8f0' primary '#5b6ef5' accent '#a78bfa'
 규칙: export default 함수형 컴포넌트, 외부 라이브러리 없음, 한국어 UI
 
 PortfolioCoverPage 슬라이드쇼 첫 번째 커버 슬라이드를 만들어주세요.
@@ -146,7 +146,7 @@ Props:
 배경:
   coverImageUrl 있음: <img> 100% fill, object-fit cover
     + 전체 위에 linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.65))
-  없음: linear-gradient(135deg, #0a0a18 0%, #12122a 60%, #1e1040 100%)
+  없음: linear-gradient(135deg, #090909 0%, #0f0f0f 60%, #1e1040 100%)
 
 중앙 텍스트 블록 (absolute, bottom 20%, left 10%):
   - 이름: 48px 800 #fff, letter-spacing -1px, text-shadow 0 2px 20px #0008
@@ -175,8 +175,8 @@ Props:
 [시스템 컨텍스트]
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18, React Router v6, inline style
-컬러: darkBg '#0a0a18' darkSurface '#12122a' darkText '#e8e8f0'
-      primary '#5b6ef5' primaryDark '#4458e0' border '#2a2a50'
+컬러: darkBg '#090909' darkSurface '#0f0f0f' darkText '#e8e8f0'
+      primary '#5b6ef5' primaryDark '#4458e0' border 'rgba(255,255,255,0.07)'
 규칙: 컴포넌트 1개, style inline object, 외부 라이브러리 없음, 한국어 UI
 
 기존 PortfolioPage의 프로필 카드 액션 버튼 영역에
@@ -228,7 +228,7 @@ Props:
 
   /* 커버 페이지 */
   .cover-page {
-    background: #0a0a18 !important;
+    background: #090909 !important;
     color: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -285,7 +285,7 @@ UI: 버튼 height 36px, border-radius 10px, padding 0 14px
 [시스템 컨텍스트]
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style
-컬러: darkSurface '#12122a' darkBorder '#2a2a50' darkText '#e8e8f0'
+컬러: darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)' darkText '#e8e8f0'
       primary '#5b6ef5' primaryLight '#eef0ff'
 규칙: export default 함수형 컴포넌트, 외부 라이브러리 없음, 한국어 UI
 
@@ -363,7 +363,7 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_cover_photo_id BIGINT;
 기술 스택: React 18 SPA, inline style
 컬러: bg '#f7f7fb' surface '#fff' border '#e5e5ed' text '#0f0f1a'
       textMuted '#8888bb' primary '#5b6ef5' primaryLight '#eef0ff'
-      darkSurface '#12122a' darkBorder '#2a2a50'
+      darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)'
 규칙: export default 함수형 컴포넌트, 외부 라이브러리 없음, 한국어 UI
 
 PortfolioLayoutPicker 컴포넌트를 만들어주세요.
@@ -423,7 +423,7 @@ UI:
 [시스템 컨텍스트]
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style
-컬러: darkBg '#0a0a18' darkSurface '#12122a' galleryBg '#0e0e0e'
+컬러: darkBg '#090909' darkSurface '#0f0f0f' galleryBg '#090909'
 규칙: export default 함수형 컴포넌트, 외부 라이브러리 없음, 한국어 UI
 
 MagazineGrid 컴포넌트를 만들어주세요.

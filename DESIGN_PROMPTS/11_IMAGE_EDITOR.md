@@ -33,10 +33,10 @@ constants/colors.js → COLORS  ← 디자인 토큰
 
 ```js
 // 에디터 UI는 darkBg 계열 사용 (constants/colors.js COLORS 참조)
-bg:        COLORS.darkBg       // #0a0a18  — 전체 배경
-surface:   COLORS.darkSurface  // #12122a  — 패널 배경
+bg:        COLORS.darkBg       // #080810  — 전체 배경
+surface:   COLORS.darkSurface  // #0c0c18  — 패널 배경
 elevated:  COLORS.darkElevated // #1a1a3a  — 카드·드롭다운
-border:    COLORS.darkBorder   // #2a2a50  — 구분선
+border:    COLORS.darkBorder   // rgba(255,255,255,0.06)  — 구분선
 text:      COLORS.darkText     // #eeeeff  — 기본 텍스트
 textSub:   COLORS.darkTextSub  // #8888cc  — 보조 텍스트
 textHint:  COLORS.darkTextHint // #5555aa  — 힌트

@@ -1,6 +1,12 @@
 # 02 — 갤러리 & 탐색 개선
 
-> P0: 갤러리 모바일 반응형 / P1: 뷰토글·정렬·탐색 필터 전체 / P2: 무한스크롤
+> P0: 갤러리 모바일 반응형 / P1: 뷰토글·정렬·탐색 필터 전체 / P2: 무한스크롤  
+> **⚠️ 디자인 방향 업데이트 (2026-06-23)**: Cosmos × Pinterest 다크 에디토리얼 스타일 적용  
+> 참조: `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`  
+> - GalleryPage / ExplorePage 배경: `#090909` (Cosmos 순수 블랙)  
+> - 카드: 테두리·그림자 없음, 이미지 직접 배치  
+> - ExplorePage 검색바: pill 형태 `#1c1c1c`, 카테고리 탭: 수평 스크롤 + 하단 흰선  
+> - 어드민/인증 페이지만 glass.js light 유지
 
 **누락 확인 (2026-06-14 재검증):**
 - GalleryPage: 뷰 모드 토글(마소닉/리스트), 6가지 정렬 옵션 — 디자인 문서 미반영 → 추가
@@ -33,7 +39,7 @@ frontend/src/
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: primary '#5b6ef5' primaryLight '#eef0ff' galleryBg '#0e0e0e'
+컬러: primary '#5b6ef5' primaryLight '#eef0ff' galleryBg '#090909'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
 두 가지를 만들어주세요.
@@ -80,48 +86,54 @@ const gap = isMobile ? 2 : 3
 
 ```
 [시스템 컨텍스트]
-앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱 (Cosmos × Pinterest 다크 에디토리얼)
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: primary '#5b6ef5' primaryLight '#eef0ff' bg '#f5f5fa' surface '#fff'
-      border '#e2e2ee' text '#1a1a2e' textSecondary '#5c5c7a' textMuted '#9090b0'
-MOOD_COLORS:
-  WARM {dot:'#FF7043' bg:'#FFF3E0' label:'따뜻함'} ENERGETIC {dot:'#FFB300' bg:'#FFFDE7' label:'활기참'}
-  VIBRANT {dot:'#FF4081' bg:'#FFF9C4' label:'생동감'} ROMANTIC {dot:'#E91E63' bg:'#FCE4EC' label:'로맨틱'}
-  NATURAL {dot:'#43A047' bg:'#E8F5E9' label:'자연스러움'} COOL {dot:'#1E88E5' bg:'#E3F2FD' label:'시원함'}
-  SERENE {dot:'#5E35B1' bg:'#EDE7F6' label:'고요함'} MUTED {dot:'#9E9E9E' bg:'#F5F5F5' label:'차분함'}
-  DRAMATIC {dot:'#37474F' bg:'#ECEFF1' label:'드라마틱'} CLEAN {dot:'#90A4AE' bg:'#F8F9FA' label:'깔끔함'}
-  MONOCHROME {dot:'#607D8B' bg:'#ECEFF1' label:'흑백'}
+
+컬러 시스템 (Cosmos 다크):
+  bg '#090909' surface '#0f0f0f' elevated '#161616'
+  searchBar '#1c1c1c' divider 'rgba(255,255,255,0.07)'
+  text '#ffffff' textSub 'rgba(255,255,255,0.65)' textMuted 'rgba(255,255,255,0.35)'
+  primary '#5b6ef5' accent '#a78bfa'
+MOOD_COLORS (칩 dot 색상만 사용, 배경은 항상 다크):
+  WARM '#FF7043' ENERGETIC '#FFB300' VIBRANT '#FF4081' ROMANTIC '#E91E63'
+  NATURAL '#43A047' COOL '#1E88E5' SERENE '#5E35B1' MUTED '#9E9E9E'
+  DRAMATIC '#37474F' CLEAN '#90A4AE' MONOCHROME '#607D8B'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
-ExplorePage 상단 필터/정렬 영역 + 결과 그리드를 만들어주세요 (목 데이터 9개).
+ExplorePage (Cosmos 다크 스타일) 상단 필터/정렬 + 결과 그리드를 만들어주세요 (목 데이터 9개).
 
 상태: search, selectedMood, sortBy('latest'|'popular'|'saved'), debouncedSearch(300ms)
 
-1. 검색바 행
-   전체 너비 input (좌측 🔍 아이콘, 우측 × 클리어, height 42px, radius 10px)
-   + 우측 정렬 드롭다운 (최신순/인기순/저장순, height 42px, radius 8px)
-   bg surface, border-bottom 1px, padding 16px 24px sticky top
+1. Cosmos 검색바 (pill 형태)
+   width 100%, padding 0 16px, position sticky top 0
+   배경 '#1c1c1c', border-radius 9999px, height 44px
+   좌: 🔍 아이콘 (rgba(255,255,255,0.45)), 중: input placeholder "사진·작가·테마 검색"
+   우: × 클리어 아이콘 / ⊞ 필터 아이콘 (각각 rgba(255,255,255,0.50))
+   포커스 시 배경 '#242424', 외곽선 rgba(255,255,255,0.15)
 
-2. 분위기 필터 칩 행 (가로 스크롤, scrollbar 숨김)
-   "전체" 칩 + 11개 분위기 칩
-   각 칩: colored dot(6px) + 이름
-   비활성: bg surface border '#e2e2ee' color textSecondary
-   활성: bg primary border primary color white
-   height 32px radius 99px padding 0 12px gap 8px
+2. 정렬 드롭다운 (검색바 우측 아이콘 클릭 or 별도 행)
+   배경 '#161616', border 'rgba(255,255,255,0.07)', radius 10px
+   옵션: 최신순/인기순/저장순 (텍스트 흰색, 활성 항목 primary 색)
 
-3. 결과 헤더 행
-   좌: "{n}개의 사진" 14px textSecondary
-   우: 활성 필터 배지들 (primaryLight bg, primary text, radius 99px, × 버튼)
-       [모두 초기화] textMuted 텍스트 버튼
+3. 카테고리/무드 필터 탭 행 (Cosmos 스타일 수평 스크롤)
+   "전체" + 11개 무드 탭
+   각 탭: colored dot(5px 원형) + 무드명
+   비활성: textMuted, 활성: text '#fff' + 하단 2px 흰색 라인
+   gap 20px, scrollbar 숨김
 
-4. 그리드 (auto-fill minmax(260px,1fr), gap 16px)
-   목 카드 9개, sortBy에 따라 정렬
-   각 카드: 이미지(aspect-ratio 4/3 bg surfaceDim) + 배지 + 제목 + 좋아요수
+4. 결과 헤더
+   "{n}개의 사진" (textMuted, 12px) + 활성 필터 배지 (배경 rgba(255,255,255,0.08))
+   [모두 초기화] rgba(255,255,255,0.35) 버튼
 
-5. 결과 없음: 🔍 + "검색 결과가 없습니다" + [필터 초기화] 버튼
+5. 마소닉 이미지 그리드 (Cosmos 스타일)
+   배경 '#090909', 2컬럼(모바일) → 3컬럼(태블릿) → 4컬럼(데스크탑)
+   gap 2px, 카드: 테두리·그림자 없음, border-radius 4px overflow hidden
+   각 카드 hover: 하단 오버레이 + 작가명 + 저장 버튼
 
-모바일(375px): 분위기 칩 가로 스크롤, 검색바+드롭다운 세로 스택
+6. 결과 없음: "검색 결과가 없습니다" (textMuted 중앙)
+
+전체 배경: '#090909', 폰트 색: '#ffffff'
 ```
 
 ### 통합 방법
@@ -210,39 +222,43 @@ GalleryPage에 이미 구현된 기능:
 
 ```
 [시스템 컨텍스트]
-앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱 (Cosmos × Pinterest 다크 에디토리얼)
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: primary '#5b6ef5' primaryLight '#eef0ff' bg '#f7f7fb' surface '#fff'
-      border '#e5e5ed' text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb'
-      galleryBg '#0e0e0e'
+
+컬러 시스템 (Cosmos 다크):
+  bg '#090909' surface '#0f0f0f' elevated '#161616'
+  text '#ffffff' textSub 'rgba(255,255,255,0.65)' textMuted 'rgba(255,255,255,0.35)'
+  primary '#5b6ef5' divider 'rgba(255,255,255,0.07)'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
-GalleryPage 상단 컨트롤 바를 만들어주세요.
+GalleryPage Cosmos 스타일 컨트롤 바를 만들어주세요.
 
-컨트롤 바 구조 (height 48px, bg surface, border-bottom, sticky top 56px):
-flex row, padding '0 20px', gap 12px, align-items center
+컨트롤 바 구조 (height 44px, bg 'rgba(9,9,9,0.92)', backdrop-filter blur(12px), sticky top 0):
+flex row, padding '0 16px', gap 12px, align-items center
+border-bottom '1px solid rgba(255,255,255,0.07)'
 
 좌측: 정렬 드롭다운
-  현재 정렬명 표시 (14px) + ▾ 아이콘
-  클릭 시 드롭다운: 6가지 옵션
-    ⏰ 최신순 / 🕰 오래된순 / ❤️ 좋아요순 / 🔖 저장순 / 🎨 색상순 / ↕ 표시순서
+  현재 정렬명 표시 (13px rgba(255,255,255,0.70)) + ▾ 아이콘
+  클릭 시 드롭다운 (배경 '#161616', border 'rgba(255,255,255,0.10)', radius 10px):
+    ⏰ 최신순 / 🕰 오래된순 / ❤ 좋아요순 / 🔖 저장순 / 🎨 색상순 / ↕ 표시순서
   선택된 항목: primary 색상 + ✓ 체크마크
   외부 클릭 닫기
 
-중앙 (flex 1): 사진 수 텍스트 "N개의 사진" textMuted 13px 중앙정렬
+중앙 (flex 1): "N개의 사진" (textMuted, 12px 중앙정렬)
 
 우측: 뷰 토글 버튼 그룹
-  [▦ 그리드] [☰ 리스트] 두 버튼 붙어있는 pill
-  활성: primary bg white text
-  비활성: surface bg textSecondary text
-  각 버튼 height 32px width 40px
+  [▦ 그리드] [☰ 리스트] pill 그룹 (border-radius 8px overflow hidden)
+  활성: bg 'rgba(255,255,255,0.12)' color '#fff'
+  비활성: bg transparent color 'rgba(255,255,255,0.35)'
+  각 버튼 height 32px width 36px
 
 데모:
-- 다크 갤러리 배경 (#0e0e0e) 위에 컨트롤 바 표시
-- 정렬 드롭다운 열린 상태
-- 그리드 / 리스트 각 뷰 모드 미리보기 (더미 카드 6개)
-  리스트 뷰: 썸네일(72×72) | 제목+설명 | 무드배지+좋아요수 행 형태
+- 다크 갤러리 배경 (#090909) 위에 컨트롤 바 표시
+- 정렬 드롭다운 열린 상태 (드롭다운 패널 '#161616')
+- 그리드 / 리스트 각 뷰 모드 미리보기 (더미 카드 6개, 카드 테두리 없음)
+  리스트 뷰: 썸네일(72×72 radius 6px) | 제목+설명 | 무드배지+좋아요수
+  카드 배경: '#0f0f0f'
 ```
 
 ---
@@ -260,15 +276,18 @@ flex row, padding '0 20px', gap 12px, align-items center
 
 ```
 [시스템 컨텍스트]
-앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
+앱 이름: Happiness — 포트폴리오 사진 갤러리 앱 (Cosmos × Pinterest 다크 에디토리얼)
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: primary '#5b6ef5' primaryLight '#eef0ff' bg '#f7f7fb' surface '#fff'
-      border '#e5e5ed' text '#0f0f1a' textSecondary '#5555aa' textMuted '#8888bb'
-      accent '#a78bfa'
+
+컬러 시스템 (Cosmos 다크):
+  bg '#090909' surface '#0f0f0f' elevated '#161616' searchBar '#1c1c1c'
+  divider 'rgba(255,255,255,0.07)'
+  text '#ffffff' textSub 'rgba(255,255,255,0.65)' textMuted 'rgba(255,255,255,0.35)'
+  primary '#5b6ef5' accent '#a78bfa'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
-ExplorePage의 고급 검색 UI를 만들어주세요.
+ExplorePage의 Cosmos 스타일 고급 검색 UI를 만들어주세요.
 
 상태:
 - keyword: string, debouncedKeyword(300ms)
@@ -280,39 +299,44 @@ ExplorePage의 고급 검색 UI를 만들어주세요.
 - tags: string[] (현재 선택된 태그들)
 - tagInput: string
 
-1. 검색바 (자동완성 포함)
-   position relative 컨테이너
-   input: 🔍 아이콘, "제목, 작가로 검색...", height 44px, radius 10px
-   우측: 검색어 있을 때 × 클리어, 비어있을 때 🕐 히스토리 아이콘
+1. Cosmos 검색바 (자동완성 포함)
+   position relative 컨테이너, padding 12px 16px
+   input: pill 형태(radius 9999px, bg '#1c1c1c', height 44px)
+   좌: 🔍 아이콘 (rgba(255,255,255,0.45))
+   우: 검색어 있을 때 × 클리어, 없을 때 🕐 히스토리 아이콘 (rgba(255,255,255,0.35))
+   포커스 시 bg '#242424', outline 'rgba(255,255,255,0.15)'
 
    자동완성 드롭다운 (showSuggestions=true):
-     position absolute, width 100%, bg surface, border, radius 8px, shadow md
+     position absolute, width 100%, bg '#161616', border 'rgba(255,255,255,0.07)', radius 12px
      z-index 200, max-height 240px overflow-y auto
+     검색어 있을 때: suggestions 항목 (hover bg 'rgba(255,255,255,0.06)', 텍스트 흰색)
+     검색어 없을 때: "최근 검색" 라벨(textMuted) + history 목록 + [전체 삭제] 버튼
+     각 히스토리 항목: 🕐 아이콘(textMuted) + 텍스트(textSub) + × 삭제
 
-     검색어 있을 때: suggestions 목록 (각 항목 hover 시 primaryLight)
-     검색어 없을 때: "최근 검색" 섹션 + history 목록 + [전체 삭제] 버튼
-     각 히스토리 항목: 🕐 아이콘 + 텍스트 + × 개별 삭제
+2. 카테고리/무드 탭 행 (Cosmos 스타일)
+   수평 스크롤, scrollbar 숨김, gap 20px, padding 0 16px 8px
+   "전체" + 11개 무드 탭
+   비활성: textMuted + 좌측 colored dot 5px 원형
+   활성: text '#fff' + 하단 2px solid '#fff' 라인
 
-2. 무드 필터 칩 행 (기존 + 스타일 개선)
-   가로 스크롤, 칩 height 32px radius 99px
-   "전체" + 11개 무드 칩 (colored dot 6px 포함)
+3. 이미지 비율 필터 (신규, 다크 스타일)
+   padding 0 16px, flex row gap 8px
+   "비율" 라벨(textMuted 11px) + 6개 버튼
+   각 버튼: bg 'rgba(255,255,255,0.06)' border 'rgba(255,255,255,0.07)' radius 6px, 텍스트 textSub
+   활성: bg 'rgba(91,110,245,0.20)' border primary color '#fff'
+   height 32px
 
-3. 이미지 비율 필터 (신규)
-   "비율" 라벨 + 6개 버튼: 전체 | □ 1:1 | ▭ 4:3 | ▯ 3:4 | ▬ 16:9 | ▮ 9:16
-   각 버튼: 비율 모양 시각적 아이콘(CSS로 구현) + 텍스트
-   활성: primary 테두리 + primaryLight bg
-   height 36px, radius 6px, border '#e5e5ed'
+4. 태그 검색 (신규, 다크 스타일)
+   "#" prefix + input(bg 'rgba(255,255,255,0.05)' radius 8px) + 선택된 태그 칩들
+   태그 칩: bg 'rgba(91,110,245,0.15)' color primary, × 삭제, radius 99px
+   Enter 시 tags 배열 추가
 
-4. 태그 검색 (신규)
-   "#" 아이콘 + input ("태그 입력 후 Enter") + 선택된 태그 칩들
-   태그 칩: primaryLight bg, primary text, × 삭제 버튼, radius 99px
-   Enter 시 tags 배열에 추가
+5. 활성 필터 요약 행
+   "{N}개의 사진" (textMuted 12px) + 배지들 (bg 'rgba(255,255,255,0.08)' color textSub, radius 99px)
+   [전체 초기화] (textMuted 버튼)
 
-5. 활성 필터 요약 행 (기존 개선)
-   "N개의 사진" + 활성 필터 배지들 (무드/비율/태그)
-   [전체 초기화] 버튼 (활성 필터 있을 때만)
-
-데모: 검색어+무드+비율+태그 모두 설정된 상태와 초기 상태 비교
+전체 배경: '#090909', 폰트: '#ffffff' 계열
+데모: 검색어+무드+비율+태그 설정된 상태 vs 초기 상태 비교
 ```
 
 ### 통합 방법

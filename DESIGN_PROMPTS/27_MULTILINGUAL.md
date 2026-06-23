@@ -992,9 +992,9 @@ export function formatDate(dateStr, lang = 'ko') {
   bg: '#f7f7fb', surface: '#ffffff', surfaceDim: '#ededf4', border: '#e5e5ed'
   text: '#0f0f1a', textSecondary: '#5555aa', textMuted: '#8888bb'
   danger: '#e53e3e', success: '#22c55e'
-  darkBg: '#0a0a18', darkSurface: '#12122a', darkBorder: '#2a2a50'
-  darkText: '#e8e8f0', darkTextSub: '#8080b0'
-  galleryBg: '#0e0e0e'
+  bg: '#090909', surface: '#0f0f0f', border: 'rgba(255,255,255,0.07)'
+  text: '#e8e8f0', textSub: '#8080b0'
+  galleryBg: '#090909'
 
 Liquid Glass 스타일:
   light: background rgba(255,255,255,0.72) + backdrop-filter blur(20px)

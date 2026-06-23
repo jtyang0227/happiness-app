@@ -37,13 +37,13 @@
 
 ### PortfolioCoverPage (슬라이드 0 — 작가 소개)
 
-- 다크 배경(darkBg #0a0a18) 위에 작가 아바타 + 이름 + bio + 사진 수/팔로워 통계
+- 다크 배경(darkBg #090909) 위에 작가 아바타 + 이름 + bio + 사진 수/팔로워 통계
 - 중앙 정렬 세로 배치
 - 아바타: 96px 원형 (없으면 이름 첫 글자)
 
 ### EmbedCodeModal
 
-- 다크 테마(darkSurface #12122a) 모달
+- 다크 테마(darkSurface #0f0f0f) 모달
 - 크기 선택 탭: `600×400` / `800×500` / `전체화면(100%×600)`
 - `<iframe src="...">` 코드 박스 (monospace, `#a0d0ff` 텍스트)
 - "📋 코드 복사" 버튼 → 클립보드 복사 → "✓ 복사됨" 피드백
@@ -69,8 +69,8 @@
   primaryLight:  '#eef0ff'
   text:          '#1a1a2e'
   textMuted:     '#9090b0'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
+  bg:        '#090909'
+  surface:   '#0f0f0f'
 
 규칙:
 - export default 함수형 컴포넌트 1개만 반환
@@ -122,7 +122,7 @@ UI 구조:
 props: isOpen, onClose, profileName
 
 UI:
-- 다크 모달 (background: #12122a, border: 1px solid rgba(255,255,255,0.1))
+- 다크 모달 (background: #0f0f0f, border: 1px solid rgba(255,255,255,0.1))
 - 모달 배경: rgba(0,0,0,0.8)
 - 헤더: "임베드 코드" 제목 + × 닫기 버튼
 - 크기 선택 탭 3개: "600×400" / "800×500" / "전체화면"

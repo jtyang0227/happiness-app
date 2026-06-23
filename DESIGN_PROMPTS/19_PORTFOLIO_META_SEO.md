@@ -420,7 +420,7 @@ public/
   "description": "사진작가 포트폴리오 갤러리",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a18",
+  "background_color": "#090909",
   "theme_color": "#5b6ef5",
   "icons": [
     { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png" },

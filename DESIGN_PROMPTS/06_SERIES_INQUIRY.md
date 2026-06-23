@@ -131,7 +131,7 @@ const handleAddPhotos = async (selectedIds) => {
 기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
 컬러: primary '#5b6ef5' primaryDark '#4458e0' primaryLight '#eef0ff' accent '#a78bfa'
-      darkBg '#0a0a18' darkSurface '#12122a' darkBorder '#2a2a50'
+      darkBg '#090909' darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)'
       darkText '#e8e8f0' darkTextSub '#8080b0' success '#22c55e'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, react+react-router-dom만 허용, 한국어 UI
 

@@ -170,7 +170,7 @@ photos.length === 0 → null 반환
   primary: '#5b6ef5', primaryLight: '#eef0ff', accent: '#a78bfa'
   bg: '#f5f5fa', surface: '#ffffff', border: '#e2e2ee'
   text: '#1a1a2e', textSecondary: '#5c5c7a', textMuted: '#9090b0'
-  danger: '#e53e3e', galleryBg: '#0e0e0e', darkSurface: '#12122a'
+  danger: '#e53e3e', galleryBg: '#090909', surface: '#0f0f0f'
 
 규칙:
 - export default 함수형 컴포넌트

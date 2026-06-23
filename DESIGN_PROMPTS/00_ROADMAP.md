@@ -173,9 +173,9 @@ primary:       '#5b6ef5'     primaryDark:  '#4458e0'    primaryLight: '#eef0ff'
 accent:        '#a78bfa'     bg:           '#f7f7fb'    surface:      '#ffffff'
 surfaceDim:    '#ededf4'     border:       '#e5e5ed'    text:         '#0f0f1a'
 textSecondary: '#5555aa'     textMuted:    '#8888bb'    danger:       '#e53e3e'
-success:       '#22c55e'     darkBg:       '#0a0a18'    darkSurface:  '#12122a'
-darkBorder:    '#2a2a50'     darkText:     '#e8e8f0'    darkTextSub:  '#8080b0'
-galleryBg:     '#0e0e0e'
+success:       '#22c55e'     bg:       '#090909'    surface:  '#0f0f0f'
+border:    'rgba(255,255,255,0.07)'     text:     '#e8e8f0'    textSub:  '#8080b0'
+galleryBg:     '#090909'
 
 // ⚠️ 아래는 구버전 — 사용 금지 (일부 오래된 파일에 잔존)
 // bg '#f5f5fa', text '#1a1a2e', textSecondary '#5c5c7a', textMuted '#9090b0', border '#e2e2ee'

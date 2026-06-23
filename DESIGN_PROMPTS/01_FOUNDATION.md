@@ -60,7 +60,7 @@ size (height / padding / fontSize / borderRadius):
       loading: children 앞에 회전 스피너(border 원형 CSS) 표시, pointer-events none
 
 모든 variant × size 조합 표, loading/disabled/fullWidth/icon 버튼 데모 보여주세요.
-다크 배경 #0a0a18 위에서 secondary/ghost가 어떻게 보이는지도 포함.
+다크 배경 #090909 위에서 secondary/ghost가 어떻게 보이는지도 포함.
 ```
 
 ### 통합 위치
@@ -81,7 +81,7 @@ size (height / padding / fontSize / borderRadius):
 컬러: primary '#5b6ef5' bg '#f5f5fa' surface '#fff' border '#e2e2ee'
       text '#1a1a2e' textSecondary '#5c5c7a' textMuted '#9090b0'
       danger '#e53e3e'
-      darkBg '#0a0a18' darkSurface '#12122a' darkBorder '#2a2a50' darkText '#eeeeff'
+      darkBg '#090909' darkSurface '#0f0f0f' darkBorder 'rgba(255,255,255,0.07)' darkText '#eeeeff'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
 Input 컴포넌트를 만들어주세요.
@@ -100,7 +100,7 @@ Props:
   light 기본: height 42px, padding 0 14px, border '1.5px solid #e2e2ee', borderRadius 8, bg '#fff', fontSize 14px
   light 포커스: border-color '#5b6ef5', box-shadow '0 0 0 3px rgba(91,110,245,0.15)'
   light 에러: border-color '#e53e3e', bg '#fff0f0', 포커스 시 shadow rgba(229,62,62,0.15)
-  dark: bg 'rgba(255,255,255,0.06)' color '#eeeeff' border '1.5px solid #2a2a50'
+  dark: bg 'rgba(255,255,255,0.06)' color '#eeeeff' border '1.5px solid rgba(255,255,255,0.07)'
   dark 포커스: border-color '#5b6ef5' shadow '0 0 0 3px rgba(91,110,245,0.25)'
   disabled: opacity 0.5 cursor not-allowed
   레이블: 12px 500 textSecondary (dark: '#8888cc') display block margin-bottom 6px
@@ -185,7 +185,7 @@ Props:
 앱 이름: Happiness — 포트폴리오 사진 갤러리 앱
 기술 스택: React 18 SPA, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 (외부 라이브러리 없음)
-컬러: bg '#f5f5fa' surface '#fff' galleryBg '#0e0e0e'
+컬러: bg '#f5f5fa' surface '#fff' galleryBg '#090909'
 규칙: export default 함수형 컴포넌트 1개, style은 inline object, 외부 라이브러리 없음, 한국어 UI
 
 스켈레톤 로딩 시스템을 만들어주세요.

@@ -510,12 +510,12 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS image_height INTEGER;
   textMuted:     '#8888bb'
   danger:        '#e53e3e'
   success:       '#22c55e'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
-  darkBorder:    '#2a2a50'
-  darkText:      '#e8e8f0'
-  darkTextSub:   '#8080b0'
-  galleryBg:     '#0e0e0e'
+  bg:        '#090909'
+  surface:   '#0f0f0f'
+  border:    'rgba(255,255,255,0.07)'
+  text:      '#e8e8f0'
+  textSub:   '#8080b0'
+  galleryBg:     '#090909'
 
 규칙:
 - export default 함수형 컴포넌트 1개만 반환
