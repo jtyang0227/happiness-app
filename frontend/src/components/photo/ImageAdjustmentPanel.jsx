@@ -225,6 +225,7 @@ function CGZone({ label, value, onChange }) {
  *   colorGrading, onColorGradingChange
  *   sharpening, onSharpeningChange
  *   noiseReduction, onNoiseReductionChange
+ *   calibration, onCalibrationChange
  *   histogram
  *   onApplyPreset
  *   onFullReset
@@ -244,6 +245,8 @@ export default function ImageAdjustmentPanel({
   onSharpeningChange,
   noiseReduction,
   onNoiseReductionChange,
+  calibration,
+  onCalibrationChange,
   histogram,
   onApplyPreset,
   onFullReset,
@@ -428,6 +431,7 @@ export default function ImageAdjustmentPanel({
           colorGrading={colorGrading}
           sharpening={sharpening}
           noiseReduction={noiseReduction}
+          calibration={calibration}
           onApply={onApplyPreset}
         />
       </Section>

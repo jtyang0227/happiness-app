@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { to: '/admin/members',       label: '👥 회원 관리' },
   { to: '/admin/photos',        label: '📷 사진 관리' },
   { to: '/admin/categories',    label: '🏷️ 카테고리' },
+  { to: '/admin/tags',          label: '🔖 태그 관리' },
+  { to: '/admin/moderation',    label: '🚨 신고 관리' },
 ];
 
 const SIDEBAR_W = 220;

@@ -32,6 +32,8 @@ import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
 import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
 import AdminCategoryPage     from './pages/admin/AdminCategoryPage';
+import AdminTagsPage         from './pages/admin/AdminTagsPage';
+import AdminModerationPage   from './pages/admin/AdminModerationPage';
 import ClientDeliveryPage    from './pages/ClientDeliveryPage';
 import DeliveriesPage        from './pages/DeliveriesPage';
 import BookingPage           from './pages/BookingPage';
@@ -58,8 +60,8 @@ function AppShell() {
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname);
 
-  // Background: dark aurora for login/signup, gallery bg for gallery, default (CSS) for rest
-  const bg = isDark ? BG.dark : isGallery ? BG.gallery : undefined;
+  // Background: dark aurora for login/signup, dark editorial for everything else
+  const bg = isDark ? BG.dark : '#090909';
 
   return (
     <div style={{
@@ -122,6 +124,8 @@ function AppShell() {
           <Route path="/admin/members" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminMembersPage /></ProtectedRoute>} />
           <Route path="/admin/photos" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminPhotosPage /></ProtectedRoute>} />
           <Route path="/admin/categories" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCategoryPage /></ProtectedRoute>} />
+          <Route path="/admin/tags" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminTagsPage /></ProtectedRoute>} />
+          <Route path="/admin/moderation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminModerationPage /></ProtectedRoute>} />
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

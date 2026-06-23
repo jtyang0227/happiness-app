@@ -36,7 +36,7 @@ export function usePresets() {
     });
   }, []);
 
-  const addPreset = useCallback((name, adjustments, channelCurves, effects, hslAdj = null, colorGrading = null, sharpening = null, noiseReduction = null) => {
+  const addPreset = useCallback((name, adjustments, channelCurves, effects, hslAdj = null, colorGrading = null, sharpening = null, noiseReduction = null, calibration = null) => {
     mutate(prev => {
       if (prev.length >= MAX_PRESETS) return prev;
       const preset = {
@@ -50,6 +50,7 @@ export function usePresets() {
         colorGrading:    colorGrading  ? JSON.parse(JSON.stringify(colorGrading))  : null,
         sharpening:      sharpening    ? { ...sharpening }                         : null,
         noiseReduction:  noiseReduction ? { ...noiseReduction }                    : null,
+        calibration:     calibration   ? JSON.parse(JSON.stringify(calibration))   : null,
       };
       return [...prev, preset];
     });

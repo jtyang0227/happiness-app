@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
-import { MOOD_COLORS, COLORS } from '../constants/colors';
+import { MOOD_COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
-import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
+import { GLASS_KEYFRAMES } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -65,7 +65,7 @@ function Highlight({ text, keyword }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: '#fff3a3', color: COLORS.text, borderRadius: 2, padding: '0 1px' }}>
+      <mark style={{ background: '#fff3a3', color: '#1a1a2e', borderRadius: 2, padding: '0 1px' }}>
         {text.slice(idx, idx + keyword.length)}
       </mark>
       {text.slice(idx + keyword.length)}
@@ -73,75 +73,71 @@ function Highlight({ text, keyword }) {
   );
 }
 
-/* ── PhotoCard ───────────────────────────────────────── */
+/* ── ExplorePhotoCard — Cosmos dark editorial ───────── */
 
-function PhotoCard({ photo, keyword }) {
+function ExplorePhotoCard({ photo, keyword }) {
   const navigate = useNavigate();
+  const [hovered, setHovered] = useState(false);
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
 
   return (
     <div
       onClick={() => navigate(`/photo/${photo.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        ...glass('light'),
-        borderRadius: 20, overflow: 'hidden',
-        cursor: 'pointer',
-        transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
-        animation: `glassIn 0.4s ${SPRING} both`,
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
-        e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = GLASS.light.shadow;
+        borderRadius: 8, overflow: 'hidden',
+        cursor: 'pointer', position: 'relative',
+        background: '#0f0f0f',
+        transform: hovered ? 'scale(1.01)' : 'scale(1)',
+        transition: `transform 0.3s cubic-bezier(0.4,0,0.2,1)`,
       }}
     >
-      <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: '#f0f0f0' }}>
-        <img
-          src={photo.thumbnailUrl || photo.imageUrl}
-          alt={photo.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          onError={e => { e.target.style.display = 'none'; }}
-        />
-        {mood && (
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            display: 'flex', alignItems: 'center', gap: 4,
-            background: mood.bg, padding: '3px 9px', borderRadius: 10,
-            fontSize: 11, fontWeight: 700,
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-            {mood.label}
-          </div>
-        )}
-        {photo.dominantColor && (
-          <div style={{
-            position: 'absolute', bottom: 8, left: 8,
-            width: 14, height: 14, borderRadius: '50%',
-            background: photo.dominantColor,
-            border: '2px solid rgba(255,255,255,0.8)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-          }} />
-        )}
-      </div>
+      <img
+        src={photo.thumbnailUrl || photo.imageUrl}
+        alt={photo.title || '사진'}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+        onError={e => { e.target.style.display = 'none'; }}
+      />
 
-      <div style={{ padding: 14 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 6, lineHeight: 1.4 }}>
+      {/* Mood badge */}
+      {mood && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          padding: '3px 9px', borderRadius: 10,
+          fontSize: 11, fontWeight: 600, color: '#fff',
+        }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
+          {mood.label}
+        </div>
+      )}
+
+      {/* Author + title overlay */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 100%)',
+        padding: '32px 12px 12px',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.25s ease',
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.3, marginBottom: 4 }}>
           <Highlight text={photo.title || '제목 없음'} keyword={keyword} />
-        </h3>
+        </div>
         {photo.description && (
-          <p style={{
-            fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.5, marginBottom: 10,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          <div style={{
+            fontSize: 11, color: 'rgba(255,255,255,0.65)', lineHeight: 1.4,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             <Highlight text={photo.description} keyword={keyword} />
-          </p>
+          </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-          <span style={{ fontSize: 11, color: COLORS.textMuted }}>{photo.imageRatio}</span>
-          <span style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 600 }}>♡ {photo.likesCount ?? 0}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{photo.imageRatio}</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>♡ {photo.likesCount ?? 0}</span>
         </div>
       </div>
     </div>
@@ -273,19 +269,23 @@ export default function ExplorePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg, #f0f2ff 0%, #f8f5ff 50%, #eff8ff 100%)',
+      background: '#090909',
     }}>
-    <style>{GLASS_KEYFRAMES}</style>
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px' }}>
+    <style>{GLASS_KEYFRAMES}{`
+      .explore-masonry { columns: 4 200px; }
+      @media(max-width:1024px) { .explore-masonry { columns: 3; } }
+      @media(max-width:640px)  { .explore-masonry { columns: 2; } }
+    `}</style>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>탐색</h1>
-        <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>{photos.length}장의 사진을 둘러보세요</p>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', marginBottom: 4 }}>탐색</h1>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>{photos.length}장의 사진을 둘러보세요</p>
       </div>
 
       {/* Search form + sort */}
       <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        {/* Glass search pill */}
+        {/* Dark pill search bar */}
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             ref={inputRef}
@@ -297,11 +297,11 @@ export default function ExplorePage() {
             placeholder="제목, 설명 검색... (유사어 포함)"
             style={{
               width: '100%', boxSizing: 'border-box',
-              padding: '12px 20px', borderRadius: 50,
-              fontSize: 14, color: COLORS.text, outline: 'none',
-              transition: 'border-color 0.2s, box-shadow 0.2s',
-              ...glass('strong'),
-              border: `1px solid ${showDrop && dropItems.length ? COLORS.primary : 'rgba(255,255,255,0.65)'}`,
+              padding: '12px 20px', borderRadius: 9999,
+              fontSize: 14, color: '#ffffff', outline: 'none',
+              background: '#1c1c1c',
+              border: `1px solid ${showDrop && dropItems.length ? '#5b6ef5' : 'rgba(255,255,255,0.10)'}`,
+              transition: 'border-color 0.2s',
             }}
           />
 
@@ -311,13 +311,15 @@ export default function ExplorePage() {
               ref={dropRef}
               style={{
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
-                ...glass('strong'),
+                background: '#161616',
+                border: '1px solid rgba(255,255,255,0.10)',
                 borderRadius: 20,
                 overflow: 'hidden',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
               }}
             >
               {dropType === 'history' && (
-                <div style={{ padding: '8px 12px 4px', fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>
+                <div style={{ padding: '8px 12px 4px', fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
                   최근 검색어
                 </div>
               )}
@@ -328,9 +330,9 @@ export default function ExplorePage() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '9px 14px', cursor: 'pointer', fontSize: 14,
-                    color: COLORS.text, transition: 'background 0.1s',
+                    color: 'rgba(255,255,255,0.80)', transition: 'background 0.1s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = COLORS.bg}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <span>
@@ -344,7 +346,7 @@ export default function ExplorePage() {
                         removeHistory(item);
                         setHistory(loadHistory());
                       }}
-                      style={{ fontSize: 12, color: COLORS.textMuted, padding: '2px 6px' }}
+                      style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '2px 6px' }}
                     >
                       ✕
                     </span>
@@ -363,13 +365,10 @@ export default function ExplorePage() {
             applyFilters({ sortIdx: idx });
           }}
           style={{
-            padding: '12px 14px', borderRadius: 50,
-            border: `1px solid ${GLASS.light.border}`, fontSize: 13, color: COLORS.text,
-            background: GLASS.light.surfaceStrong,
-            backdropFilter: GLASS.light.blur,
-            WebkitBackdropFilter: GLASS.light.blur,
+            padding: '12px 14px', borderRadius: 9999,
+            border: '1px solid rgba(255,255,255,0.10)', fontSize: 13, color: 'rgba(255,255,255,0.70)',
+            background: '#1c1c1c',
             cursor: 'pointer', outline: 'none',
-            boxShadow: GLASS.light.shadow,
           }}
         >
           {SORT_OPTIONS.map((opt, idx) => (
@@ -379,8 +378,8 @@ export default function ExplorePage() {
         <button
           type="submit"
           style={{
-            padding: '12px 24px', borderRadius: 50,
-            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+            padding: '12px 24px', borderRadius: 9999,
+            background: `linear-gradient(135deg, #5b6ef5, #a78bfa)`,
             color: '#fff', border: 'none',
             fontWeight: 700, fontSize: 14, cursor: 'pointer',
             boxShadow: '0 4px 16px rgba(91,110,245,0.35)',
@@ -398,6 +397,7 @@ export default function ExplorePage() {
         <GenreTabBar
           selected={selectedGenre}
           onChange={handleGenreChange}
+          theme="dark"
         />
       </div>
 
@@ -413,8 +413,8 @@ export default function ExplorePage() {
               style={{
                 padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
                 fontWeight: active ? 700 : 500,
-                background: active ? (moodInfo?.bg ?? COLORS.primary) : COLORS.border,
-                color: active ? (moodInfo?.dot ?? '#fff') : COLORS.textSecondary,
+                background: active ? (moodInfo?.bg ?? '#5b6ef5') : 'rgba(255,255,255,0.07)',
+                color: active ? (moodInfo?.dot ?? '#fff') : 'rgba(255,255,255,0.55)',
                 transition: 'all 0.15s',
               }}
             >
@@ -434,9 +434,9 @@ export default function ExplorePage() {
               onClick={() => { const next = imageRatio === r.value ? '' : r.value; setImageRatio(next); applyFilters({ imageRatio: next }); }}
               style={{
                 padding: '4px 11px', borderRadius: 20,
-                border: `1.5px solid ${active ? COLORS.primary : COLORS.border}`,
-                background: active ? COLORS.primaryLight : COLORS.surface,
-                color: active ? COLORS.primary : COLORS.textSecondary,
+                border: `1.5px solid ${active ? '#5b6ef5' : 'rgba(255,255,255,0.12)'}`,
+                background: active ? 'rgba(91,110,245,0.18)' : 'transparent',
+                color: active ? '#a78bfa' : 'rgba(255,255,255,0.50)',
                 fontSize: 12, fontWeight: active ? 700 : 500,
                 cursor: 'pointer', transition: 'all 0.15s',
               }}
@@ -449,7 +449,7 @@ export default function ExplorePage() {
 
       {/* Tag filter */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: 600, marginBottom: 6 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginBottom: 6 }}>
           태그 검색 (사진에 태그된 이름)
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -457,7 +457,7 @@ export default function ExplorePage() {
             <span key={tag} style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '4px 10px', borderRadius: 20,
-              background: COLORS.primary, color: '#fff', fontSize: 12, fontWeight: 700,
+              background: '#5b6ef5', color: '#fff', fontSize: 12, fontWeight: 700,
             }}>
               #{tag}
               <span onClick={() => removeTag(tag)} style={{ cursor: 'pointer', opacity: 0.8, fontSize: 11 }}>✕</span>
@@ -470,7 +470,8 @@ export default function ExplorePage() {
               placeholder="태그 입력 후 Enter"
               style={{
                 padding: '5px 10px', borderRadius: 20, fontSize: 12,
-                border: `1.5px solid ${COLORS.border}`, outline: 'none', color: COLORS.text,
+                border: '1.5px solid rgba(255,255,255,0.12)', outline: 'none',
+                color: '#ffffff', background: 'rgba(255,255,255,0.05)',
                 width: 140,
               }}
             />
@@ -481,11 +482,11 @@ export default function ExplorePage() {
       {/* Active keyword badge */}
       {query.keyword && (
         <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: COLORS.textSecondary }}>검색:</span>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>검색:</span>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '4px 12px', borderRadius: 20,
-            background: COLORS.primaryLight, color: COLORS.primary, fontSize: 13, fontWeight: 700,
+            background: 'rgba(91,110,245,0.18)', color: '#a78bfa', fontSize: 13, fontWeight: 700,
           }}>
             {query.keyword}
             <span
@@ -498,17 +499,19 @@ export default function ExplorePage() {
 
       {/* Results */}
       {loading ? (
-        <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '60px 0' }}>불러오는 중...</div>
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', padding: '60px 0' }}>불러오는 중...</div>
       ) : error ? (
-        <div style={{ textAlign: 'center', color: COLORS.danger, padding: '60px 0' }}>{error}</div>
+        <div style={{ textAlign: 'center', color: '#e53e3e', padding: '60px 0' }}>{error}</div>
       ) : photos.length === 0 ? (
-        <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '60px 0', fontSize: 15 }}>
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', padding: '60px 0', fontSize: 15 }}>
           {query.keyword || query.colorMood || query.imageRatio ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div className="explore-masonry" style={{ columnGap: 8 }}>
           {photos.map(photo => (
-            <PhotoCard key={photo.id} photo={photo} keyword={query.keyword} />
+            <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 8 }}>
+              <ExplorePhotoCard photo={photo} keyword={query.keyword} />
+            </div>
           ))}
         </div>
       )}

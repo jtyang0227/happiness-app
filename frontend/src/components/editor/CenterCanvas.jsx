@@ -110,7 +110,7 @@ export default function CenterCanvas() {
 
       const luts = buildChannelLUTs(es.adjustments, es.channelCurves);
       renderWithChannelLUTs(tmp, tCtx.getImageData(0, 0, sw, sh).data, sw, sh, luts);
-      applyEffects(tmp, es.effects, grainTileRef.current, es.hslAdj, es.colorGrading, es.sharpening, es.noiseReduction);
+      applyEffects(tmp, es.effects, grainTileRef.current, es.hslAdj, es.colorGrading, es.sharpening, es.noiseReduction, es.calibration);
 
       ctx.drawImage(tmp, -sw * zv / 2, -sh * zv / 2, sw * zv, sh * zv);
       ctx.restore();

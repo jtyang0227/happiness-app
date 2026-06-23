@@ -8,6 +8,7 @@ import {
   DEFAULT_COLOR_GRADING,
   DEFAULT_SHARPENING,
   DEFAULT_NOISE_REDUCTION,
+  DEFAULT_CALIBRATION,
 } from '../../hooks/useImageAdjustments';
 
 // ── 8 built-in style presets ────────────────────────────────────────
@@ -61,16 +62,120 @@ const BUILTIN_PRESETS = [
     adjustments: { exposure: 0.05, contrast: 25, highlights: -5, shadows: 5, whites: 5, blacks: -5, temperature: 5, tint: 0 },
     effects: { ...DEFAULT_EFFECTS, saturation: 30, vibrance: 40 },
   },
+  {
+    id: '__y2k-film-snap',
+    name: 'Y2K 필름 스냅',
+    adjustments: { exposure: -0.20, contrast: 25, highlights: -20, shadows: 20, whites: 35, blacks: -30, temperature: -12, tint: 0 },
+    effects: { ...DEFAULT_EFFECTS, vibrance: 30, saturation: 5, texture: -10, clarity: 5, dehaze: -5, vignette: -10, grainAmount: 30, grainSize: 28, grainRoughness: 55 },
+    hslAdj: {
+      red:     { hue: 15, saturation: 15, luminance: 5 },
+      orange:  { hue: -10, saturation: -20, luminance: 15 },
+      yellow:  { hue: -35, saturation: -25, luminance: 10 },
+      green:   { hue: -60, saturation: -10, luminance: 10 },
+      aqua:    { hue: -20, saturation: 25, luminance: -10 },
+      blue:    { hue: -15, saturation: 35, luminance: -20 },
+      purple:  { hue: 0, saturation: 20, luminance: 0 },
+      magenta: { hue: 20, saturation: 20, luminance: 0 },
+    },
+    colorGrading: {
+      shadows:    { hue: 205, saturation: 15 },
+      midtones:   { hue: 330, saturation: 8 },
+      highlights: { hue: 45,  saturation: 10 },
+      blending: 50, balance: -10,
+    },
+    sharpening: { amount: 35, radius: 1.0, detail: 40 },
+    noiseReduction: { luminance: 10, color: 20 },
+    calibration: {
+      red:   { hue: 20, saturation: 10 },
+      green: { hue: -15, saturation: 10 },
+      blue:  { hue: -35, saturation: 35 },
+    },
+  },
 ];
 
 const makeBuiltinFull = (p) => ({
   ...p,
   channelCurves:  { ...DEFAULT_CHANNEL_CURVES, rgb: [...DEFAULT_CHANNEL_CURVES.rgb], r: [...DEFAULT_CHANNEL_CURVES.r], g: [...DEFAULT_CHANNEL_CURVES.g], b: [...DEFAULT_CHANNEL_CURVES.b] },
-  hslAdj:         JSON.parse(JSON.stringify(DEFAULT_HSL_ADJUSTMENTS)),
-  colorGrading:   JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)),
-  sharpening:     { ...DEFAULT_SHARPENING },
-  noiseReduction: { ...DEFAULT_NOISE_REDUCTION },
+  hslAdj:         p.hslAdj        ? JSON.parse(JSON.stringify(p.hslAdj))        : JSON.parse(JSON.stringify(DEFAULT_HSL_ADJUSTMENTS)),
+  colorGrading:   p.colorGrading  ? JSON.parse(JSON.stringify(p.colorGrading))  : JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)),
+  sharpening:     p.sharpening    ? { ...p.sharpening }                         : { ...DEFAULT_SHARPENING },
+  noiseReduction: p.noiseReduction ? { ...p.noiseReduction }                    : { ...DEFAULT_NOISE_REDUCTION },
+  calibration:    p.calibration   ? JSON.parse(JSON.stringify(p.calibration))   : JSON.parse(JSON.stringify(DEFAULT_CALIBRATION)),
 });
+
+// ── XMP Export ──────────────────────────────────────────────────────
+
+function exportAsXmp(preset) {
+  const adj = preset.adjustments || {};
+  const eff = preset.effects || {};
+  const hsl = preset.hslAdj || {};
+  const cal = preset.calibration || {};
+
+  const xmp = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+      crs:PresetType="Normal"
+      crs:Exposure2012="${(adj.exposure || 0).toFixed(2)}"
+      crs:Contrast2012="${(adj.contrast || 0).toFixed(0)}"
+      crs:Highlights2012="${(adj.highlights || 0).toFixed(0)}"
+      crs:Shadows2012="${(adj.shadows || 0).toFixed(0)}"
+      crs:Whites2012="${(adj.whites || 0).toFixed(0)}"
+      crs:Blacks2012="${(adj.blacks || 0).toFixed(0)}"
+      crs:Temperature="${Math.round(5500 + (adj.temperature || 0) * 100)}"
+      crs:Tint="${Math.round((adj.tint || 0) * 1.5)}"
+      crs:Vibrance="${(eff.vibrance || 0).toFixed(0)}"
+      crs:Saturation="${(eff.saturation || 0).toFixed(0)}"
+      crs:Texture="${(eff.texture || 0).toFixed(0)}"
+      crs:Clarity2012="${(eff.clarity || 0).toFixed(0)}"
+      crs:Dehaze="${(eff.dehaze || 0).toFixed(0)}"
+      crs:VignetteAmount="${(eff.vignette || 0).toFixed(0)}"
+      crs:GrainAmount="${(eff.grainAmount || 0).toFixed(0)}"
+      crs:GrainSize="${(eff.grainSize || 0).toFixed(0)}"
+      crs:GrainFrequency="${(eff.grainRoughness || 0).toFixed(0)}"
+      crs:HueAdjustmentRed="${(hsl.red?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentRed="${(hsl.red?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentRed="${(hsl.red?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentOrange="${(hsl.orange?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentOrange="${(hsl.orange?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentOrange="${(hsl.orange?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentYellow="${(hsl.yellow?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentYellow="${(hsl.yellow?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentYellow="${(hsl.yellow?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentGreen="${(hsl.green?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentGreen="${(hsl.green?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentGreen="${(hsl.green?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentAqua="${(hsl.aqua?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentAqua="${(hsl.aqua?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentAqua="${(hsl.aqua?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentBlue="${(hsl.blue?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentBlue="${(hsl.blue?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentBlue="${(hsl.blue?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentPurple="${(hsl.purple?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentPurple="${(hsl.purple?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentPurple="${(hsl.purple?.luminance || 0).toFixed(0)}"
+      crs:HueAdjustmentMagenta="${(hsl.magenta?.hue || 0).toFixed(0)}"
+      crs:SaturationAdjustmentMagenta="${(hsl.magenta?.saturation || 0).toFixed(0)}"
+      crs:LuminanceAdjustmentMagenta="${(hsl.magenta?.luminance || 0).toFixed(0)}"
+      crs:RedHue="${(cal.red?.hue || 0).toFixed(0)}"
+      crs:RedSaturation="${(cal.red?.saturation || 0).toFixed(0)}"
+      crs:GreenHue="${(cal.green?.hue || 0).toFixed(0)}"
+      crs:GreenSaturation="${(cal.green?.saturation || 0).toFixed(0)}"
+      crs:BlueHue="${(cal.blue?.hue || 0).toFixed(0)}"
+      crs:BlueSaturation="${(cal.blue?.saturation || 0).toFixed(0)}"
+    />
+  </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end="w"?>`;
+
+  const blob = new Blob([xmp], { type: 'application/xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${preset.name || 'preset'}.xmp`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ── Styles ──────────────────────────────────────────────────────────
 
@@ -136,7 +241,7 @@ const S = {
 
 export default function PresetManager({
   adjustments, channelCurves, effects,
-  hslAdj, colorGrading, sharpening, noiseReduction,
+  hslAdj, colorGrading, sharpening, noiseReduction, calibration,
   onApply,
 }) {
   const { presets, addPreset, removePreset, renamePreset, importPresets, exportPresets } = usePresets();
@@ -171,7 +276,7 @@ export default function PresetManager({
 
   const handleConfirmSave = () => {
     if (!newName.trim()) return;
-    addPreset(newName, adjustments, channelCurves, effects, hslAdj, colorGrading, sharpening, noiseReduction);
+    addPreset(newName, adjustments, channelCurves, effects, hslAdj, colorGrading, sharpening, noiseReduction, calibration);
     setSaving(false);
     setNewName('');
     setToast('프리셋이 저장되었습니다.');
@@ -203,6 +308,7 @@ export default function PresetManager({
       colorGrading:   preset.colorGrading  ? JSON.parse(JSON.stringify(preset.colorGrading))  : null,
       sharpening:     preset.sharpening    ? { ...preset.sharpening }                         : null,
       noiseReduction: preset.noiseReduction ? { ...preset.noiseReduction }                    : null,
+      calibration:    preset.calibration   ? JSON.parse(JSON.stringify(preset.calibration))   : null,
     });
     setToast(`"${preset.name}" 적용됨`);
   };
@@ -314,6 +420,11 @@ export default function PresetManager({
             onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = '#fff'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.primary; }}
           >적용</button>
+          <button type="button" onClick={() => exportAsXmp(preset)} title="XMP로 내보내기"
+            style={{ padding: '3px 6px', borderRadius: 5, border: '1px solid #222248', background: 'transparent', color: '#555580', fontSize: 10, cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#8080c0'; e.currentTarget.style.borderColor = '#4040a0'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#555580'; e.currentTarget.style.borderColor = '#222248'; }}
+          >.xmp</button>
           <button type="button" onClick={() => removePreset(preset.id)} style={S.deleteBtn} title="삭제"
             onMouseEnter={e => { e.currentTarget.style.color = '#e53e3e'; e.currentTarget.style.borderColor = '#e53e3e'; }}
             onMouseLeave={e => { e.currentTarget.style.color = '#555580'; e.currentTarget.style.borderColor = '#222248'; }}

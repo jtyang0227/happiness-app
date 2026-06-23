@@ -155,13 +155,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > 참고: `DESIGN_PROMPTS/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
 
 **핵심 원칙:**
-- **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중
-- **이미지 온리**: 카드에 테두리·그림자 없음, 이미지가 배경에 직접 얹힘
+- **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중 — **구현 완료** (global.css body + App.jsx bg)
+- **이미지 온리**: 카드에 테두리·그림자 없음, 이미지가 배경에 직접 얹힘 — **구현 완료** (PhotoCard, ExplorePage)
 - **마소닉 그리드**: 2(모바일) → 3(태블릿) → 4컬럼(데스크탑), 가변 높이
 - **보드 시스템**: 시리즈 = 보드 카드 (3개 썸네일 콜라주 + 제목 + @handle)
-- **미니멀 네비**: 하단 탭바 3-4 아이콘, Cosmos 스타일
+- **미니멀 네비**: 하단 탭바 3-4 아이콘, Cosmos 스타일 — **구현 완료** (BottomNav dark blur + active accent line)
 - **에디터 예외**: 이미지 에디터는 짙은 네이비-블랙 (`#080810`), 프리미엄 다크
 - **어드민 예외**: 어드민 패널은 glass.js light 계열 유지 (운영 편의성)
+
+**구현 완료 (Feature 31 — Cosmos 디자인 마이그레이션):**
+- `styles/global.css`: body bg `#090909`, scrollbar 다크(4px rgba(255,255,255,0.15))
+- `Header.jsx`: PC헤더 solid #090909 + white nav links, BottomNav blur + active top-accent
+- `GalleryPage.jsx`: 배경 `#090909`, 플레이스홀더 `#0f0f0f`
+- `PhotoCard.jsx`: border-radius 8px, no border/shadow, hover scale(1.01) + author overlay + 🔖 저장 버튼
+- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, radius 9999px), 마소닉 CSS columns 2→3→4컬럼
 
 **Cosmos 앱 분석 (참고 앱):**
 - 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
@@ -564,7 +571,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + **포트폴리오 템플릿 선택 UI**(7종 카드 그리드, PUT /api/portfolio/{profileName}/template 저장, profileName 없을 때 안내 메시지) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Feature 28 — 템플릿 시스템): GET /api/portfolio/{profileName}/config 로 template 로드 후 컴포넌트 분기 렌더링. `EDITORIAL`(기본) → TemplateEditorial, `SCRL` → TemplateScrl, `MINIMAL` → TemplateMinimal, `DARK_ROOM` → TemplateDarkRoom, 나머지(FILM/SPLIT/MOSAIC/MAGAZINE)는 EDITORIAL 폴백 + "준비 중" 배너. 모든 데이터(photos/series/member/stats)는 PortfolioPage가 로드 후 template 컴포넌트에 props 전달. **components/portfolio/templates/** — TemplateEditorial(기존 PortfolioPage 레이아웃 컴포넌트화), TemplateScrl(CSS scroll-snap: y mandatory + IntersectionObserver + 우측 도트 인디케이터 + 키보드 ↑↓ 네비), TemplateMinimal(흰 배경 3열 정방형 그리드, 소문자 타이포, hover title overlay), TemplateDarkRoom(#080808 배경 + 마우스 스포트라이트 + 무드 필터 + 클릭 피처 영역). **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약).
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + **포트폴리오 템플릿 선택 UI**(7종 카드 그리드, PUT /api/portfolio/{profileName}/template 저장, profileName 없을 때 안내 메시지) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Feature 28 — 템플릿 시스템): GET /api/portfolio/{profileName}/config 로 template 로드 후 컴포넌트 분기 렌더링. `EDITORIAL`(기본) → TemplateEditorial, `SCRL` → TemplateScrl, `MINIMAL` → TemplateMinimal, `DARK_ROOM` → TemplateDarkRoom, 나머지(FILM/SPLIT/MOSAIC/MAGAZINE)는 EDITORIAL 폴백 + "준비 중" 배너. 모든 데이터(photos/series/member/stats)는 PortfolioPage가 로드 후 template 컴포넌트에 props 전달. **components/portfolio/templates/** — TemplateEditorial(기존 PortfolioPage 레이아웃 컴포넌트화), TemplateScrl(CSS scroll-snap: y mandatory + IntersectionObserver + 우측 도트 인디케이터 + 키보드 ↑↓ 네비), TemplateMinimal(흰 배경 3열 정방형 그리드, 소문자 타이포, hover title overlay), TemplateDarkRoom(#080808 배경 + 마우스 스포트라이트 + 무드 필터 + 클릭 피처 영역). **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약). **AdminTagsPage**(`/admin/tags`): 태그 전체 목록(사진 수·최근 사용일), 태그 삭제(사용 중 경고), 태그 병합(MergeModal — 원본/대상 드롭다운 + 2단계 확인), 미사용 태그 통계. **AdminModerationPage**(`/admin/moderation`): 신고 목록 4탭(전체/대기중/처리완료/무시됨), 무시하기/사진 삭제(2단계 위험 액션 빨간색), 신고 썸네일·사유·신고자·날짜 표시.
 - **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount). **LangSwitcher** 컴포넌트 — 드롭다운 언어 선택 (🌐 버튼, 국기+원어 레이블, 현재 언어 체크마크)
 - **components/magazine/MagazineViewer** — 풀스크린 오버레이 뷰어: 상단바(닫기/제목/TOC☰/공유↗/인쇄🖨), 슬라이드 전환(translateX+opacity 320ms), ←→키보드+화살표버튼, TOC 사이드패널(240px 슬라이드인), 하단 썸네일 스트립(active 자동스크롤)+도트 인디케이터(≤7개)+페이지 번호, body 스크롤 잠금
 - **components/magazine/MagazineSpread** — panType별 스프레드 라우터 (7종 → spreads/ 하위 컴포넌트 디스패치)
@@ -650,6 +657,8 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/admin/members` — AdminMembersPage (회원 목록, 권한 변경, 삭제)
 - `/admin/photos` — AdminPhotosPage (전체 사진 목록, 인라인 장르 편집, 강제 삭제)
 - `/admin/categories` — AdminCategoryPage (장르별 분포 통계 테이블, 미분류 경고)
+- `/admin/tags` — AdminTagsPage (태그 목록·사진 수·최근 사용일, 태그 삭제, 태그 병합 MergeModal)
+- `/admin/moderation` — AdminModerationPage (신고 목록 PENDING/RESOLVED/DISMISSED 탭, 2단계 사진 삭제 확인)
 
 > ⚠️ `/gallery/sort` (PhotoSortPage) 는 일반 사용자 앱에서 **제거**됨.  
 > 사진 표시 순서 관리는 어드민 패널(`/admin/gallery-order`)로 이관. `10_ADMIN_PANEL.md` 참조.
@@ -1002,18 +1011,21 @@ npx expo export --platform web 2>&1 | grep -E "Finished|Error"
   1. buildChannelLUTs  — exposure/contrast/whites/blacks/shadows/highlights + 온도/색조(A1)
   2. renderWithChannelLUTs — LUT 적용 (픽셀 루프)
   3. applyVibranceSaturation — 바이브런스/채도(A2), 픽셀별 HSL 변환
-  4. applyHSLAdjustments — HSL 패널(A3), 8색상 가우시안-코사인 가중치
-  5. applyColorGrading — 색 보정(B1), 존별 HSV 컬러 오버레이
-  6. applySharpening — 선명도(C1), 언샵마스크 + 엣지 마스킹
-  7. applyNoiseReduction — 노이즈 제거(C2), 크로마 블러 + 루마 블러
-  8. applyUnsharpMask(texture/clarity) + applyDehaze + applyVignette + applyGrain
+  4. applyCalibration (NEW) — 카메라 보정(C1), RGB 원색 색조/채도 조정 (Gaussian-코사인 가중치)
+  5. applyHSLAdjustments — HSL 패널(A3), 8색상 가우시안-코사인 가중치
+  6. applyColorGrading — 색 보정(B1), 존별 HSV 컬러 오버레이 + balance(NEW) 섀도/하이라이트 영역 확장
+  7. applySharpening — 선명도(C1), 언샵마스크 + 엣지 마스킹
+  8. applyNoiseReduction — 노이즈 제거(C2), 크로마 블러 + 루마 블러
+  9. applyUnsharpMask(texture/clarity) + applyDehaze + applyVignette + applyGrain
 ```
 
 새 exports:
 - `DEFAULT_HSL_ADJUSTMENTS` — 8색상 { hue, saturation, luminance }
-- `DEFAULT_COLOR_GRADING` — shadows/midtones/highlights { hue, saturation } + blending
+- `DEFAULT_COLOR_GRADING` — shadows/midtones/highlights { hue, saturation } + blending + **balance** (NEW, -100~+100)
 - `DEFAULT_SHARPENING` — { amount, radius, detail }
 - `DEFAULT_NOISE_REDUCTION` — { luminance, color }
+- `DEFAULT_CALIBRATION` (NEW) — { red, green, blue } each { hue: 0, saturation: 0 }
+- `applyCalibration(canvas, calibration)` (NEW) — RGB 원색 보정
 - `applyHSLAdjustments(canvas, hslAdj)`
 - `applyColorGrading(canvas, colorGrading)`
 - `applySharpening(canvas, sharpening)`
@@ -1022,8 +1034,8 @@ npx expo export --platform web 2>&1 | grep -E "Finished|Error"
 - `DEFAULT_EFFECTS` — vibrance, saturation 추가됨
 - `DEFAULT_ADJUSTMENTS` — temperature, tint 추가됨
 
-ImageAdjustmentPanel: 모든 섹션을 아코디언으로, 변경 있을 때 ● 뱃지 표시
-PresetManager: MAX 5→20, 내보내기/불러오기(JSON), 내장 스타일 8종 (Fuji Velvia, Kodak Portra, Matte Fade, B&W Dramatic, Golden Hour, Cool Cinematic, Pastel Dream, Vibrant Pop)
+ImageAdjustmentPanel: 모든 섹션을 아코디언으로, 변경 있을 때 ● 뱃지 표시. **카메라 보정 섹션**(NEW): 빨강/초록/파랑 원색 탭 + 색조/채도 슬라이더
+PresetManager: MAX 5→20, 내보내기/불러오기(JSON), **XMP 내보내기**(NEW, Lightroom 호환 .xmp 파일), 내장 스타일 9종 (Fuji Velvia, Kodak Portra, Matte Fade, B&W Dramatic, Golden Hour, Cool Cinematic, Pastel Dream, Vibrant Pop, **Y2K 필름 스냅** NEW)
 
 ### Java 25 연결 확인
 

@@ -56,7 +56,7 @@ function JustifiedPhotoCell({ photo, onClick }) {
         position: 'relative',
         cursor: 'pointer',
         overflow: 'hidden',
-        background: '#1a1a2e',
+        background: '#0f0f0f',
       }}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
@@ -171,7 +171,7 @@ export default function GalleryPage() {
   /* ── 오류 화면 ── */
   if (error) {
     return (
-      <div style={{ ...centerStyle, flexDirection: 'column', gap: 14 }}>
+      <div style={{ ...centerStyle, background: '#090909', flexDirection: 'column', gap: 14 }}>
         <div style={{ color: '#ff8080', fontSize: 15 }}>{error}</div>
         <button onClick={fetchPhotos} style={primaryBtn}>다시 시도</button>
       </div>
@@ -179,7 +179,7 @@ export default function GalleryPage() {
   }
 
   return (
-    <div style={{ background: COLORS.galleryBg, minHeight: '100vh' }}>
+    <div style={{ background: '#090909', minHeight: '100vh' }}>
 
       {/* ── 툴바 ── */}
       <div style={{
@@ -307,7 +307,7 @@ export default function GalleryPage() {
                 ))}
                 {/* 마지막 행 — 남은 공간 채우기 */}
                 {row.isLastRow && (
-                  <div style={{ flex: 1, background: COLORS.galleryBg }} />
+                  <div style={{ flex: 1, background: '#090909' }} />
                 )}
               </div>
             ))
@@ -415,7 +415,7 @@ export default function GalleryPage() {
 /* ── 스타일 상수 ── */
 const centerStyle = {
   display: 'flex', justifyContent: 'center', alignItems: 'center',
-  minHeight: '100vh', background: COLORS.galleryBg,
+  minHeight: '100vh', background: '#090909',
 };
 
 const primaryBtn = {
