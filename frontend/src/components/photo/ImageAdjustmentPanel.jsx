@@ -83,33 +83,35 @@ function SliderRow({ def, value, onChange }) {
   const isCentered = def.min < 0;
   const fillLeft   = isCentered ? `${Math.min(50, pct)}%` : '0%';
   const fillWidth  = isCentered ? `${Math.abs(pct - 50)}%` : `${pct}%`;
+  const changed    = value !== (def.defaultVal ?? 0);
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-        <span style={{ fontSize: 12, color: '#9090b0', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ fontSize: 10 }}>{def.icon}</span>
+    <div style={{ marginBottom: 11 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: changed ? 'rgba(200,200,255,0.75)' : 'rgba(140,140,180,0.55)', display: 'flex', alignItems: 'center', gap: 5, letterSpacing: '0.02em' }}>
+          <span style={{ fontSize: 9, opacity: 0.7 }}>{def.icon}</span>
           {def.label}
         </span>
         <span style={{
           fontSize: 11, fontWeight: 700,
-          color: value === (def.defaultVal ?? 0) ? '#5555aa' : COLORS.primary,
-          minWidth: 36, textAlign: 'right',
+          color: changed ? '#a0aaff' : 'rgba(90,90,140,0.70)',
+          minWidth: 36, textAlign: 'right', letterSpacing: '0.02em',
+          fontVariantNumeric: 'tabular-nums',
         }}>
           {fmt(def, value)}
         </span>
       </div>
-      <div style={{ position: 'relative', height: 20, display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, height: 3, background: '#1e1e3a', borderRadius: 2 }} />
-        <div style={{ position: 'absolute', left: fillLeft, width: fillWidth, height: 3, background: COLORS.primary, borderRadius: 2 }} />
+      <div style={{ position: 'relative', height: 22, display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }} />
+        <div style={{ position: 'absolute', left: fillLeft, width: fillWidth, height: 2, background: 'linear-gradient(90deg,#7060ff,#a090ff)', borderRadius: 2, opacity: changed ? 1 : 0.5 }} />
         {isCentered && (
-          <div style={{ position: 'absolute', left: '50%', width: 1, height: 7, background: '#2a2a50', transform: 'translateX(-50%)' }} />
+          <div style={{ position: 'absolute', left: '50%', width: 1, height: 8, background: 'rgba(255,255,255,0.15)', transform: 'translateX(-50%)' }} />
         )}
         <input
           type="range"
           min={def.min} max={def.max} step={def.step} value={value}
           onChange={e => onChange(def.key, Number(e.target.value))}
-          style={{ position: 'relative', width: '100%', margin: 0, appearance: 'none', background: 'transparent', cursor: 'pointer', height: 20 }}
+          style={{ position: 'relative', width: '100%', margin: 0, appearance: 'none', background: 'transparent', cursor: 'pointer', height: 22 }}
         />
       </div>
     </div>
@@ -121,21 +123,30 @@ function SliderRow({ def, value, onChange }) {
 function Section({ title, badge, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ marginTop: 8 }}>
+    <div style={{ marginTop: 4 }}>
       <div
         onClick={() => setOpen(v => !v)}
         style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#6060a0',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          paddingBottom: 4, borderBottom: '1px solid #1e1e3a',
+          cursor: 'pointer', padding: '8px 0 7px',
+          borderBottom: open ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(255,255,255,0.04)',
           userSelect: 'none',
+          transition: 'border-color 0.15s',
         }}
       >
-        <span>{title}{badge ? <span style={{ marginLeft: 6, color: COLORS.primary, fontSize: 9 }}>●</span> : null}</span>
-        <span style={{ fontSize: 9 }}>{open ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {badge && (
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#8090ff', flexShrink: 0, marginLeft: 1 }} />
+          )}
+          <span style={{
+            fontSize: 10, fontWeight: 700,
+            color: badge ? 'rgba(200,205,255,0.80)' : 'rgba(130,130,170,0.65)',
+            letterSpacing: '0.10em', textTransform: 'uppercase',
+          }}>{title}</span>
+        </div>
+        <span style={{ fontSize: 9, color: 'rgba(130,130,170,0.50)', transition: 'transform 0.2s', display: 'block', transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
       </div>
-      {open && <div style={{ marginTop: 10 }}>{children}</div>}
+      {open && <div style={{ marginTop: 10, paddingBottom: 4 }}>{children}</div>}
     </div>
   );
 }
@@ -266,22 +277,25 @@ export default function ImageAdjustmentPanel({
   };
 
   return (
-    <div style={{ background: '#12122a', borderRadius: 12, padding: '14px 16px 16px', border: '1px solid #1e1e3a' }}>
+    <div style={{ background: '#0e0e1e', borderRadius: 12, padding: '12px 14px 16px', border: '1px solid rgba(255,255,255,0.07)' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ color: '#eeeeff', fontWeight: 700, fontSize: 13 }}>사진 보정</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ color: 'rgba(230,230,255,0.90)', fontWeight: 700, fontSize: 12, letterSpacing: '0.04em' }}>사진 보정</span>
         <button
           type="button"
           onClick={handleReset}
           disabled={!hasAnyChange}
           style={{
-            fontSize: 11, color: hasAnyChange ? COLORS.accent : '#3a3a6e',
+            fontSize: 10, letterSpacing: '0.04em',
+            color: hasAnyChange ? 'rgba(160,160,255,0.80)' : 'rgba(80,80,120,0.50)',
             background: 'none', border: 'none',
             cursor: hasAnyChange ? 'pointer' : 'default',
-            fontWeight: 600, padding: '2px 6px',
+            fontWeight: 600, padding: '3px 8px',
+            borderRadius: 6,
+            background: hasAnyChange ? 'rgba(100,100,255,0.08)' : 'none',
           }}
         >
-          전체 초기화
+          초기화
         </button>
       </div>
 
@@ -294,7 +308,7 @@ export default function ImageAdjustmentPanel({
 
       {/* 화이트 밸런스 (A1) */}
       <Section title="화이트 밸런스" badge={hasWB}>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 3, marginBottom: 10 }}>
           {[
             { label: '맑음', temp: 15, tint: 0 },
             { label: '흐림', temp: 25, tint: 5 },
@@ -304,9 +318,10 @@ export default function ImageAdjustmentPanel({
             <button key={wb.label} type="button"
               onClick={() => { onAdjust('temperature', wb.temp); onAdjust('tint', wb.tint); }}
               style={{
-                flex: 1, padding: '4px 2px', borderRadius: 6, fontSize: 10, fontWeight: 600,
-                border: '1px solid #2a2a50', background: '#0f0f28',
-                color: '#8080b0', cursor: 'pointer',
+                flex: 1, padding: '5px 2px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.04)',
+                color: 'rgba(160,160,200,0.65)', cursor: 'pointer',
+                transition: 'all 0.12s',
               }}
             >{wb.label}</button>
           ))}

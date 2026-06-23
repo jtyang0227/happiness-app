@@ -146,6 +146,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
+5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
+
+### 현재 디자인 방향 (2026-06-23 기준)
+
+> **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
+> iOS 26 Liquid Glass 컨셉 제거 (`21_IOS26_LIQUID_GLASS_DESIGN.md` 등 deprecated)  
+> 참고: `DESIGN_PROMPTS/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
+
+**핵심 원칙:**
+- **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중
+- **이미지 온리**: 카드에 테두리·그림자 없음, 이미지가 배경에 직접 얹힘
+- **마소닉 그리드**: 2(모바일) → 3(태블릿) → 4컬럼(데스크탑), 가변 높이
+- **보드 시스템**: 시리즈 = 보드 카드 (3개 썸네일 콜라주 + 제목 + @handle)
+- **미니멀 네비**: 하단 탭바 3-4 아이콘, Cosmos 스타일
+- **에디터 예외**: 이미지 에디터는 짙은 네이비-블랙 (`#080810`), 프리미엄 다크
+- **어드민 예외**: 어드민 패널은 glass.js light 계열 유지 (운영 편의성)
+
+**Cosmos 앱 분석 (참고 앱):**
+- 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
+- 검색바: pill 형태 (`#1c1c1c`), 카테고리 탭: 수평 스크롤 + 하단 흰선
+- 보드 카드: 3이미지 콜라주 + 메타 (verified 배지, element 수)
+- 마소닉 그리드: 대형+소형 혼합, 편집적 레이아웃
+- 하단 네비: 3 아이콘만 (홈/탐색/프로필)
 
 ### 디자인 작업 우선순위 로드맵
 

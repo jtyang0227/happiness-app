@@ -1,8 +1,14 @@
-# 22 — iOS 26 Liquid Glass 전체 앱 리디자인 바이블
+# ~~22 — iOS 26 Liquid Glass 전체 앱 리디자인 바이블~~
 
-> 작성일: 2026-06-20  
-> 버전: 1.0  
-> 범위: Happiness 앱 전체 페이지 완전 재설계 (다크 퍼스트, 프리미엄 포트폴리오)  
+> ⚠️ **DEPRECATED (2026-06-23)**: 이 기획서는 폐기됩니다.  
+> 대체 문서: **`31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`**  
+> 이유: iOS 컨셉 제거, Cosmos × Pinterest 다크 에디토리얼 방향으로 전환
+
+---
+
+> ~~작성일: 2026-06-20~~  
+> ~~버전: 1.0~~  
+> ~~범위: Happiness 앱 전체 페이지 완전 재설계 (다크 퍼스트, 프리미엄 포트폴리오)~~  
 > 영감: Apple iOS 26 Liquid Glass (WWDC 2025) + VSCO Dark + Apple Photos Dark + Unsplash  
 > 상태: 기존 디자인 전면 폐기 — 신규 다크 토큰 시스템 기반 재설계
 

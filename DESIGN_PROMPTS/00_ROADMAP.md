@@ -4,7 +4,17 @@
 
 ---
 
-## 파일 구성 (전체 30개)
+## 🆕 디자인 방향 전환 (2026-06-23)
+
+> iOS 26 Liquid Glass → **Cosmos × Pinterest 다크 에디토리얼** 방향으로 전환  
+> - 21/22/23번 파일: DEPRECATED (어드민/인증 페이지에서만 glass.js 계속 사용)  
+> - 신규: `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md` — 전체 앱 Cosmos 스타일 기획서  
+> - 신규: `DESIGN_PROMPT_COSMOS_GALLERY.md` — Cosmos 스타일 Claude 디자인 프롬프트 5종  
+> - 에디터 UI 개선: CurveEditor·EditorShell·ImageAdjustmentPanel 프리미엄 업그레이드 완료
+
+---
+
+## 파일 구성 (전체 32개)
 
 | 파일 | 포함 작업 | 상태 |
 |------|----------|------|
@@ -31,9 +41,9 @@
 | `18_FEATURE_ENHANCEMENT_V2.md` | 기능 고도화 로드맵 V2 — 8가지 차별화 아이디어 (클라이언트 납품 포털 등) | 기획 완료 |
 | `19_PORTFOLIO_META_SEO.md` | 포트폴리오 메타 · Open Graph · Schema.org · 사이트맵 · 서버 SSR | 기획 완료 |
 | `20_PHOTO_FORM_DETAIL_GALLERY_V2.md` | PhotoForm 스튜디오 레이아웃 V2 · 갤러리 4종 뷰 모드 · 멀티 선택 | 기획 완료 |
-| `21_IOS26_LIQUID_GLASS_DESIGN.md` | iOS 26 Liquid Glass 디자인 시스템 기초 · 글래스 토큰 5레벨 · 페이지별 명세 | 기획 완료 |
-| `22_IOS26_LIQUID_GLASS_REDESIGN.md` | iOS 26 Liquid Glass 전체 재설계 바이블 (54KB · 6가지 소재 변형) | 기획 완료 |
-| `23_IOS26_LIQUID_GLASS_V2.md` | iOS 26 Liquid Glass V2 — specular highlight · vibrancy · aurora 배경 개선 | 기획 완료 |
+| `21_IOS26_LIQUID_GLASS_DESIGN.md` | ~~iOS 26 Liquid Glass 기초~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
+| `22_IOS26_LIQUID_GLASS_REDESIGN.md` | ~~iOS 26 Liquid Glass 재설계 바이블~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
+| `23_IOS26_LIQUID_GLASS_V2.md` | ~~iOS 26 Liquid Glass V2~~ **[DEPRECATED → 31번으로 대체]** | 폐기됨 |
 | `24_PHOTO_SORT_ALGORITHM_REDESIGN.md` | 사진 정렬 알고리즘 재설계 — Justified Layout · 4가지 정렬 전략 · IDOR 수정 | 기획 완료 |
 | `25_MAGAZINE_SPREAD_LAYOUT.md` | **매거진 면·판 레이아웃 시스템** — 판 7종 · MagazineViewer · 시리즈 통합 | 기획 완료 |
 | `26_GENRE_CLASSIFICATION.md` | **사진 장르 분류 시스템** — 장르 12종 · GenreTabBar · ExplorePage 필터 통합 | 기획 완료 |
@@ -41,6 +51,8 @@
 | `28_PORTFOLIO_TEMPLATE_SCRL.md` | **포트폴리오 템플릿 시스템** (SCRL 참조) — 8종 템플릿 · 템플릿 에디터 · 섹션 구성 · 스냅 스크롤 | 기획 완료 |
 | `29_ADMIN_CATEGORY_MANAGEMENT.md` | **어드민 카테고리·장르 관리** — 기존 어드민 강화 + 3종 신규 페이지(카테고리·태그·모더레이션) + 확장 아이디어 | 기획 완료 |
 | `30_PHOTO_EDITOR_ENHANCEMENT.md` | **보정 엔진 강화 v2** — Camera Calibration · Y2K 필름 스냅 프리셋 · XMP 내보내기 · Color Grading Balance | 기획 완료 |
+| `31_COSMOS_PINTEREST_DESIGN_SYSTEM.md` | **Cosmos × Pinterest 디자인 시스템** — 다크 에디토리얼, 보드 카드, 마소닉 그리드, 전체 마이그레이션 스펙 | 기획 완료 |
+| `DESIGN_PROMPT_COSMOS_GALLERY.md` | **Claude 디자인 프롬프트** — Cosmos 갤러리 홈·보드카드·탐색·에디터 패널·포토카드 5종 | 기획 완료 |
 
 > **⚠️ 파일 번호 중복 안내**  
 > - `11_IMAGE_EDITOR.md` 와 `11_PORTFOLIO_REDESIGN.md` 모두 11번 — 각각 독립 기획서  

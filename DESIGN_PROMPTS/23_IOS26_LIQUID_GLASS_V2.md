@@ -1,4 +1,10 @@
-# 23 — iOS 26 Liquid Glass 디자인 시스템 V2
+# ~~23 — iOS 26 Liquid Glass 디자인 시스템 V2~~
+
+> ⚠️ **DEPRECATED (2026-06-23)**: 이 기획서는 폐기됩니다.  
+> 대체 문서: **`31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`**  
+> 이유: iOS 컨셉 제거, Cosmos × Pinterest 다크 에디토리얼 방향으로 전환
+
+---
 
 ## 0. V1 → V2 변경 이유
 
