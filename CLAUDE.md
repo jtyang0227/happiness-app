@@ -507,6 +507,76 @@ CREATE TABLE IF NOT EXISTS bookings (
   confirmed_at   TIMESTAMP,
   cancelled_at   TIMESTAMP
 );
+-- Module: portfolio-world-class — 세계 수준 포트폴리오 (32_PORTFOLIO_WORLD_CLASS)
+CREATE TABLE IF NOT EXISTS testimonials (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  client_name   VARCHAR(100) NOT NULL,
+  client_role   VARCHAR(100),
+  content       TEXT NOT NULL,
+  shoot_date    VARCHAR(20),
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id ON testimonials(member_id);
+CREATE TABLE IF NOT EXISTS press_features (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  publication    VARCHAR(100) NOT NULL,
+  title          VARCHAR(200),
+  url            VARCHAR(500),
+  published_date VARCHAR(20),
+  logo_url       VARCHAR(500),
+  display_order  INTEGER DEFAULT 0,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS achievements (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  type          VARCHAR(20) NOT NULL,   -- AWARD | EXHIBITION | PUBLICATION
+  title         VARCHAR(200) NOT NULL,
+  organizer     VARCHAR(100),
+  location      VARCHAR(100),
+  year_month    VARCHAR(7),             -- "2025.05"
+  url           VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS pricing_packages (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  price         INTEGER,
+  price_label   VARCHAR(50),
+  description   TEXT,
+  features      TEXT,           -- JSON 배열
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS client_brands (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  logo_url      VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id               BIGSERIAL PRIMARY KEY,
+  member_id        BIGINT NOT NULL,
+  email            VARCHAR(255) NOT NULL,
+  token            VARCHAR(64) UNIQUE NOT NULL,
+  subscribed_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+  unsubscribed_at  TIMESTAMP,
+  UNIQUE (member_id, email)
+);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_video_url VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_taglines TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_sections_enabled TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS blur_hash VARCHAR(500);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
