@@ -377,6 +377,12 @@ Feature-based package layout:
 - **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
 - **analytics/** — 방문자 분석. `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
 - **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. IDOR 검사: findByIdAndMemberId.
+- **testimonial/** — `TestimonialController` (`/api/testimonials`). `Testimonial` 엔티티 (memberId/clientName/clientRole/content/shootDate/featured/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id} (IDOR 검사).
+- **press/** — `PressController` (`/api/press`). `PressFeature` 엔티티 (publication/title/url/publishedDate/logoUrl), `Achievement` 엔티티 (type AWARD|EXHIBITION|PUBLICATION/title/organizer/location/yearMonth). 공개: GET `/member/{memberId}` → `{press:[], achievements:[]}`. 인증: POST/DELETE (각각).
+- **pricing/** — `PricingController` (`/api/pricing`). `PricingPackage` 엔티티 (name/price/priceLabel/description/features TEXT/featured/displayOrder/active). 공개: GET `/member/{memberId}` (active만). 인증: GET `/my` (전체), POST/PUT/{id}/DELETE/{id}.
+- **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
+- **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
+- **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
 
 #### Spring 프로파일 구성
 
@@ -681,6 +687,13 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/deliveryApi.js** — `create/getMyList/getDetail/markViewed/approve/reject/delete`. `getDetail(token, password)` → `POST /delivery/{token}` 바디 전송 (쿼리 파라미터 금지 — 서버 로그 노출 방지).
 - **services/analyticsApi.js** — `track(data)` raw fetch 사용(JWT 없음, 무음 실패). `getSummary/getDaily/getTopPhotos/getGenreDistribution` — Axios + JWT.
 - **services/bookingApi.js** — `getAvailability/createBooking/getMyBookings/confirmBooking/rejectBooking/cancelBooking/getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate` (10 메서드).
+- **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
+- **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)
+- **components/portfolio/PressAwardsSection** — "As Seen In" 로고 카드 + 수상 타임라인 (AWARD/EXHIBITION/PUBLICATION 배지)
+- **components/portfolio/ClientLogoWall** — 클라이언트 브랜드 로고 격자 (텍스트 fallback)
+- **components/portfolio/PricingSection** — 촬영 패키지 카드 (featured=MOST POPULAR 배너, JSON 피처 파싱, 문의하기 버튼)
+- **components/portfolio/NewsletterSection** — 이메일 구독 폼 (유효성 검사, 재구독·이미구독 상태 처리)
+- **components/portfolio/PortfolioContentManager** — 4탭 관리 UI (추천사/언론수상/패키지/클라이언트), ProfilePage 설정 탭에 내장
 - **components/delivery/** — `DeliveryPasswordGate` (비밀번호 입력 UI), `DeliveryApproveModal` (선택 수·피드백 텍스트영역), `DeliveryCreateModal` (사진 선택·만료일 탭·선택적 비밀번호 4자 이상)
 - **components/analytics/** — `KpiCard` (라벨/값/변화율 화살표), `LineChart` (Canvas 베지어+그라디언트, ResizeObserver), `DonutChart` (Canvas 도넛+범례), `TopPhotos` (메트릭 탭 전환), `AnalyticsDashboard` (전체 조합, 4기간 탭, 스켈레톤)
 - **components/booking/** — `StepWizard` (연결선 단계 표시기), `ShootTypeSelector` (7종 3열 그리드), `BookingCalendar` (순수 JS Date API 달력), `TimeSlotPicker` (마감 오버레이 필 버튼), `BookingForm` (전화 숫자+하이픈 정제, 이메일 형식 검증), `AvailabilityModal` (요일 토글, 시간 슬롯 관리, 차단 날짜)
