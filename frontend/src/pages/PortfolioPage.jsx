@@ -5,6 +5,11 @@ import apiClient from '../api/apiClient';
 import { followApi, seriesApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import MagazineGrid from '../components/portfolio/MagazineGrid';
+import TestimonialsSection from '../components/portfolio/TestimonialsSection';
+import PressAwardsSection from '../components/portfolio/PressAwardsSection';
+import ClientLogoWall from '../components/portfolio/ClientLogoWall';
+import PricingSection from '../components/portfolio/PricingSection';
+import NewsletterSection from '../components/portfolio/NewsletterSection';
 
 /* ── Masonry Gallery Item ─────────────────────────────── */
 function MasonryPhoto({ photo, onClick }) {
@@ -290,6 +295,8 @@ export default function PortfolioPage() {
   const {
     member, photos = [], photoCount = 0, series = [],
     followingCount = 0, totalLikes = 0,
+    testimonials = [], press = [], achievements = [],
+    pricing = [], brands = [],
   } = data || {};
 
   const joinYear    = member?.createdAt ? new Date(member.createdAt).getFullYear() : null;
@@ -573,6 +580,21 @@ export default function PortfolioPage() {
           </div>
         </div>
       )}
+
+      {/* ══ CLIENT LOGO WALL ══════════════════════════════════ */}
+      <ClientLogoWall brands={brands} />
+
+      {/* ══ PRICING ══════════════════════════════════════════ */}
+      <PricingSection pricing={pricing} profileName={profileName} />
+
+      {/* ══ TESTIMONIALS ══════════════════════════════════════ */}
+      <TestimonialsSection testimonials={testimonials} />
+
+      {/* ══ PRESS & AWARDS ════════════════════════════════════ */}
+      <PressAwardsSection press={press} achievements={achievements} />
+
+      {/* ══ NEWSLETTER ════════════════════════════════════════ */}
+      <NewsletterSection memberId={member?.id} memberName={member?.name} />
 
       {/* ══ FOOTER CTA ════════════════════════════════════════ */}
       <div style={{

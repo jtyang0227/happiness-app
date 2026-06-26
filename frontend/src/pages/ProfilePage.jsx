@@ -7,6 +7,7 @@ import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
 import PhotoModal from '../components/photo/PhotoModal';
+import PortfolioContentManager from '../components/portfolio/PortfolioContentManager';
 
 const TABS = [
   { key: 'photos',    label: '내 작품' },
@@ -641,6 +642,15 @@ export default function ProfilePage() {
                       <Toggle value={toggles[key]} onChange={() => handleToggle(key)} />
                     </div>
                   ))}
+                </div>
+
+                {/* 포트폴리오 콘텐츠 관리 */}
+                <div style={sectionCard}>
+                  <div style={sectionTitle}>포트폴리오 콘텐츠 관리</div>
+                  <p style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 14, marginTop: -4, lineHeight: 1.6 }}>
+                    추천사, 언론 소개, 촬영 패키지, 클라이언트 브랜드를 포트폴리오에 표시할 수 있습니다.
+                  </p>
+                  <PortfolioContentManager />
                 </div>
 
                 {/* 계정 연결 */}

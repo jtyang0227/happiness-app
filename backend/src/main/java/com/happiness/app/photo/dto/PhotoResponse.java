@@ -30,8 +30,6 @@ public class PhotoResponse {
     private String colorMood;
     private String colorPalette;
     private Integer displayOrder;
-    private String genre;
-    private String subGenres;
     private boolean isLiked;
     private boolean isSaved;
     private List<PhotoTagDto> tags;
@@ -42,13 +40,15 @@ public class PhotoResponse {
     private String shutterSpeed;
     private Integer iso;
     private String focalLength;
-    // Feature 26 — 장르 분류
+    // 장르 분류
     private String genre;
     private List<String> subGenres;
-    // Feature 25 — 매거진 판 타입
+    // 매거진 판 타입
     private String panType;
     private String magazineCaption;
     private Boolean imageRight;
+    // Blur-up 로딩
+    private String blurHash;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -69,8 +69,6 @@ public class PhotoResponse {
                 .colorMood(photo.getColorMood())
                 .colorPalette(photo.getColorPalette())
                 .displayOrder(photo.getDisplayOrder())
-                .genre(photo.getGenre())
-                .subGenres(photo.getSubGenres())
                 .cameraModel(photo.getCameraModel())
                 .lensModel(photo.getLensModel())
                 .aperture(photo.getAperture())
@@ -82,6 +80,7 @@ public class PhotoResponse {
                 .panType(photo.getPanType() != null ? photo.getPanType() : "EDITORIAL")
                 .magazineCaption(photo.getMagazineCaption())
                 .imageRight(photo.getImageRight() != null ? photo.getImageRight() : false)
+                .blurHash(photo.getBlurHash())
                 .createdAt(photo.getCreatedAt())
                 .updatedAt(photo.getUpdatedAt())
                 .build();
@@ -90,7 +89,6 @@ public class PhotoResponse {
     private static List<String> parseSubGenres(String subGenresJson) {
         if (subGenresJson == null || subGenresJson.isBlank()) return List.of();
         try {
-            // 간단한 JSON 배열 파싱: ["FASHION","LIFESTYLE"] → List
             String cleaned = subGenresJson.trim().replaceAll("[\\[\\]\"\\s]", "");
             if (cleaned.isEmpty()) return List.of();
             return Arrays.asList(cleaned.split(","));

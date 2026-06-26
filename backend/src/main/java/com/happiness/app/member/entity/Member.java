@@ -91,6 +91,18 @@ public class Member {
     @Column(nullable = true)
     private Long portfolioCoverPhotoId;
 
+    /** 커버 비디오 URL (mp4/webm) */
+    @Column(nullable = true, length = 500)
+    private String coverVideoUrl;
+
+    /** 타이핑 순환 문구 목록 (JSON 배열 문자열) */
+    @Column(nullable = true, columnDefinition = "TEXT")
+    private String portfolioTaglines;
+
+    /** 포트폴리오 섹션 표시 여부 (JSON 객체 문자열) */
+    @Column(nullable = true, columnDefinition = "TEXT")
+    private String portfolioSectionsEnabled;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

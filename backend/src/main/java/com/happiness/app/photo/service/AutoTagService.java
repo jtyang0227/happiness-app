@@ -29,7 +29,7 @@ public class AutoTagService {
     private static final Set<String> STOP_WORDS = Set.of(
         "의", "가", "이", "은", "는", "을", "를", "에", "에서", "로", "으로",
         "과", "와", "도", "만", "까지", "부터", "한", "하다", "이다", "있다",
-        "없다", "그", "이", "저", "것", "수", "들",
+        "없다", "그", "저", "것", "수", "들",
         "a", "the", "an", "is", "are", "was", "were", "in", "on", "at",
         "to", "for", "of", "and", "or", "it", "this", "that", "with"
     );
