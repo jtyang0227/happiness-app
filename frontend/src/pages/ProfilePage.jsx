@@ -6,6 +6,7 @@ import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import PhotoModal from '../components/photo/PhotoModal';
 
 const TABS = [
   { key: 'photos',    label: '내 작품' },
@@ -32,18 +33,51 @@ const PAGE_SIZE = 9;
 
 /* ── 서브 컴포넌트 ─────────────────────────────────── */
 
-function PhotoGrid({ photos, onPhotoClick }) {
+function PhotoGrid({ photos, onPhotoClick, onPreview }) {
   if (!photos || photos.length === 0)
     return <Empty text="사진이 없습니다." />;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
       {photos.map(p => (
-        <div key={p.id} onClick={() => onPhotoClick(p.id)}
-          style={{ aspectRatio: '1', background: '#111', overflow: 'hidden', cursor: 'pointer' }}>
-          <img src={p.imageUrl || p.image} alt={p.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        </div>
+        <ProfilePhotoCell key={p.id} photo={p} onPhotoClick={onPhotoClick} onPreview={onPreview} />
       ))}
+    </div>
+  );
+}
+
+function ProfilePhotoCell({ photo: p, onPhotoClick, onPreview }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      style={{ aspectRatio: '1', background: '#111', overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <img src={p.imageUrl || p.image} alt={p.title}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s' }} />
+      {hovered && (
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.52)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <button
+            onClick={() => onPreview(p)}
+            style={{
+              padding: '6px 14px', borderRadius: 16, border: 'none',
+              background: 'rgba(255,255,255,0.92)', color: '#111',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            }}
+          >미리보기</button>
+          <button
+            onClick={() => onPhotoClick(p.id)}
+            style={{
+              padding: '6px 14px', borderRadius: 16, border: 'none',
+              background: 'rgba(91,110,245,0.88)', color: '#fff',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            }}
+          >상세 보기</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -181,6 +215,7 @@ export default function ProfilePage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [toast, setToast] = useState('');
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   const isKakao = user?.provider === 'kakao';
   const avatarLetter = (user?.name || user?.email || '?').charAt(0).toUpperCase();
@@ -335,6 +370,7 @@ export default function ProfilePage() {
 
   /* ── 렌더 ──────────────────────────────────────── */
   return (
+    <>
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 80 }}>
 
       {/* Toast */}
@@ -457,7 +493,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {photosView === 'grid'
-                  ? <PhotoGrid photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} />
+                  ? <PhotoGrid photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} onPreview={setPreviewPhoto} />
                   : <PhotoList photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} />
                 }
                 {myPhotos.length > photosPage && (
@@ -473,7 +509,7 @@ export default function ProfilePage() {
             {/* ── 저장함 ── */}
             {activeTab === 'saved' && (
               <div>
-                <PhotoGrid photos={visibleSaved} onPhotoClick={id => navigate(`/photo/${id}`)} />
+                <PhotoGrid photos={visibleSaved} onPhotoClick={id => navigate(`/photo/${id}`)} onPreview={setPreviewPhoto} />
                 {savedPhotos.length > photosPage && (
                   <div style={{ textAlign: 'center', padding: '16px 0' }}>
                     <button onClick={() => setPhotosPage(p => p + PAGE_SIZE)} style={{ padding: '9px 24px', borderRadius: 20, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -704,6 +740,18 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
+    {previewPhoto && (
+      <PhotoModal
+        photo={previewPhoto}
+        onClose={() => setPreviewPhoto(null)}
+        onUpdated={updated => {
+          setMyPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
+          setSavedPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
+          setPreviewPhoto(updated);
+        }}
+      />
+    )}
+    </>
   );
 }
 

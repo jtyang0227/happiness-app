@@ -4,6 +4,7 @@ import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
 import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
+import PhotoModal from '../components/photo/PhotoModal';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -75,13 +76,13 @@ function Highlight({ text, keyword }) {
 
 /* ── PhotoCard ───────────────────────────────────────── */
 
-function PhotoCard({ photo, keyword }) {
+function PhotoCard({ photo, keyword, onPreview }) {
   const navigate = useNavigate();
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
 
   return (
     <div
-      onClick={() => navigate(`/photo/${photo.id}`)}
+      onClick={() => onPreview(photo)}
       style={{
         ...glass('light'),
         borderRadius: 20, overflow: 'hidden',
@@ -105,6 +106,8 @@ function PhotoCard({ photo, keyword }) {
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           onError={e => { e.target.style.display = 'none'; }}
         />
+        {/* hover 오버레이 */}
+        <HoverOverlay onPreview={() => onPreview(photo)} onDetail={() => navigate(`/photo/${photo.id}`)} />
         {mood && (
           <div style={{
             position: 'absolute', top: 8, right: 8,
@@ -148,6 +151,56 @@ function PhotoCard({ photo, keyword }) {
   );
 }
 
+function HoverOverlay({ onPreview, onDetail }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      style={{
+        position: 'absolute', inset: 0,
+        background: visible ? 'rgba(0,0,0,0.46)' : 'rgba(0,0,0,0)',
+        transition: 'background 0.18s',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+        zIndex: 2,
+      }}
+    >
+      {visible && (
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); onPreview(); }}
+            style={{
+              padding: '8px 16px', borderRadius: 20, border: 'none',
+              background: 'rgba(255,255,255,0.95)', color: '#111',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+              transition: 'transform 0.12s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
+            onMouseLeave={e => e.currentTarget.style.transform = ''}
+          >
+            미리보기
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onDetail(); }}
+            style={{
+              padding: '8px 16px', borderRadius: 20, border: 'none',
+              background: 'rgba(91,110,245,0.92)', color: '#fff',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(91,110,245,0.4)',
+              transition: 'transform 0.12s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
+            onMouseLeave={e => e.currentTarget.style.transform = ''}
+          >
+            상세 보기
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── ExplorePage ─────────────────────────────────────── */
 
 export default function ExplorePage() {
@@ -156,6 +209,7 @@ export default function ExplorePage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
   const [search, setSearch]         = useState('');
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   const [mood, setMood]             = useState('');
   const [imageRatio, setImageRatio] = useState('');
   const [genre, setGenre]           = useState(null);
@@ -271,6 +325,7 @@ export default function ExplorePage() {
   const dropType  = search.trim() ? 'suggestion' : 'history';
 
   return (
+    <>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #f0f2ff 0%, #f8f5ff 50%, #eff8ff 100%)',
@@ -508,11 +563,22 @@ export default function ExplorePage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
           {photos.map(photo => (
-            <PhotoCard key={photo.id} photo={photo} keyword={query.keyword} />
+            <PhotoCard key={photo.id} photo={photo} keyword={query.keyword} onPreview={setPreviewPhoto} />
           ))}
         </div>
       )}
     </div>
     </div>
+    {previewPhoto && (
+      <PhotoModal
+        photo={previewPhoto}
+        onClose={() => setPreviewPhoto(null)}
+        onUpdated={updated => {
+          setPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
+          setPreviewPhoto(updated);
+        }}
+      />
+    )}
+    </>
   );
 }
