@@ -3,34 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
-import { GLASS_KEYFRAMES } from '../constants/glass';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
-
-const MOODS = [
-  { value: '', label: '전체' },
-  { value: 'WARM', label: '따뜻함' },
-  { value: 'COOL', label: '차가움' },
-  { value: 'NATURAL', label: '자연' },
-  { value: 'VIBRANT', label: '생동감' },
-  { value: 'MUTED', label: '차분함' },
-  { value: 'ROMANTIC', label: '로맨틱' },
-  { value: 'DRAMATIC', label: '드라마틱' },
-  { value: 'ENERGETIC', label: '에너지' },
-  { value: 'SERENE', label: '평온' },
-  { value: 'CLEAN', label: '깔끔함' },
-  { value: 'MONOCHROME', label: '흑백' },
-];
-
-const RATIOS = [
-  { value: '', label: '전체 비율' },
-  { value: '1:1', label: '1:1' },
-  { value: '4:3', label: '4:3' },
-  { value: '3:4', label: '3:4' },
-  { value: '16:9', label: '16:9' },
-  { value: '9:16', label: '9:16' },
-];
 
 const SORT_OPTIONS = [
   { label: '최신순',    sortBy: 'createdAt',  order: 'desc' },
@@ -38,8 +13,6 @@ const SORT_OPTIONS = [
   { label: '좋아요 순', sortBy: 'likesCount', order: 'desc' },
   { label: '저장 순',   sortBy: 'savesCount', order: 'desc' },
 ];
-
-/* ── helpers ─────────────────────────────────────────── */
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); }
@@ -57,7 +30,6 @@ function removeHistory(term) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
 }
 
-/** 텍스트에서 keyword와 일치하는 부분을 하이라이트 span으로 렌더링 */
 function Highlight({ text, keyword }) {
   if (!keyword || !text) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(keyword.toLowerCase());
@@ -65,15 +37,13 @@ function Highlight({ text, keyword }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: '#fff3a3', color: '#1a1a2e', borderRadius: 2, padding: '0 1px' }}>
+      <mark style={{ background: 'rgba(91,110,245,0.35)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
         {text.slice(idx, idx + keyword.length)}
       </mark>
       {text.slice(idx + keyword.length)}
     </>
   );
 }
-
-/* ── ExplorePhotoCard — Cosmos dark editorial ───────── */
 
 function ExplorePhotoCard({ photo, keyword }) {
   const navigate = useNavigate();
@@ -90,7 +60,7 @@ function ExplorePhotoCard({ photo, keyword }) {
         cursor: 'pointer', position: 'relative',
         background: '#0f0f0f',
         transform: hovered ? 'scale(1.01)' : 'scale(1)',
-        transition: `transform 0.3s cubic-bezier(0.4,0,0.2,1)`,
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
       }}
     >
       <img
@@ -100,7 +70,6 @@ function ExplorePhotoCard({ photo, keyword }) {
         onError={e => { e.target.style.display = 'none'; }}
       />
 
-      {/* Mood badge */}
       {mood && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
@@ -116,7 +85,6 @@ function ExplorePhotoCard({ photo, keyword }) {
         </div>
       )}
 
-      {/* Author + title overlay */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         background: 'linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 100%)',
@@ -144,22 +112,19 @@ function ExplorePhotoCard({ photo, keyword }) {
   );
 }
 
-/* ── ExplorePage ─────────────────────────────────────── */
-
 export default function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [photos, setPhotos]         = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState('');
-  const [search, setSearch]         = useState('');
-  const [mood, setMood]             = useState('');
-  const [imageRatio, setImageRatio] = useState('');
-  const [genre, setGenre]           = useState(null);
-  const [sortIdx, setSortIdx]       = useState(0);
-  const [tagInput, setTagInput]     = useState('');
-  const [activeTags, setActiveTags] = useState([]);
+  const [photos, setPhotos]             = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [search, setSearch]             = useState('');
+  const [sortIdx, setSortIdx]           = useState(0);
   const [selectedGenre, setSelectedGenre] = useState(() => searchParams.get('genre') || '');
-  const [query, setQuery]           = useState({ keyword: '', colorMood: '', imageRatio: '', tags: '', genre: searchParams.get('genre') || '', sortBy: 'createdAt', order: 'desc' });
+  const [query, setQuery]               = useState({
+    keyword: '', colorMood: '', imageRatio: '', tags: '',
+    genre: searchParams.get('genre') || '',
+    sortBy: 'createdAt', order: 'desc',
+  });
 
   // autocomplete + history
   const [suggestions, setSuggestions] = useState([]);
@@ -169,7 +134,6 @@ export default function ExplorePage() {
   const inputRef                      = useRef(null);
   const dropRef                       = useRef(null);
 
-  /* ── fetch photos ─────────────────────────────────── */
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -183,26 +147,8 @@ export default function ExplorePage() {
     }
   }, [query]);
 
-  /* ── tag helpers ──────────────────────────────────── */
-  const addTag = (tag) => {
-    const t = tag.trim();
-    if (!t || activeTags.includes(t)) return;
-    const next = [...activeTags, t];
-    setActiveTags(next);
-    const s = SORT_OPTIONS[sortIdx];
-    setQuery(q => ({ ...q, tags: next.join(','), sortBy: s.sortBy, order: s.order }));
-    setTagInput('');
-  };
-
-  const removeTag = (tag) => {
-    const next = activeTags.filter(t => t !== tag);
-    setActiveTags(next);
-    setQuery(q => ({ ...q, tags: next.join(',') }));
-  };
-
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  /* ── autocomplete debounce ────────────────────────── */
   useEffect(() => {
     clearTimeout(debounceRef.current);
     if (!search.trim()) { setSuggestions([]); return; }
@@ -217,7 +163,6 @@ export default function ExplorePage() {
     return () => clearTimeout(debounceRef.current);
   }, [search]);
 
-  /* ── close dropdown on outside click ─────────────── */
   useEffect(() => {
     const handler = (e) => {
       if (dropRef.current && !dropRef.current.contains(e.target) &&
@@ -229,37 +174,28 @@ export default function ExplorePage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  /* ── helpers ──────────────────────────────────────── */
-  const applyFilters = useCallback((overrides = {}) => {
-    const s = SORT_OPTIONS[overrides.sortIdx ?? sortIdx];
-    setQuery(q => ({
-      keyword:    overrides.keyword    ?? search.trim(),
-      colorMood:  overrides.colorMood  ?? mood,
-      imageRatio: overrides.imageRatio ?? imageRatio,
-      genre:      overrides.genre !== undefined ? overrides.genre : genre,
-      tags:       q.tags,
-      genre:      overrides.genre !== undefined ? overrides.genre : selectedGenre,
-      sortBy:     s.sortBy,
-      order:      s.order,
-    }));
-  }, [search, mood, imageRatio, sortIdx, selectedGenre]);
-
   const commitSearch = useCallback((term) => {
     const t = term.trim();
     setSearch(t);
     setShowDrop(false);
     if (t) { saveHistory(t); setHistory(loadHistory()); }
     const s = SORT_OPTIONS[sortIdx];
-    setQuery(q => ({ keyword: t, colorMood: mood, imageRatio, tags: q.tags, genre: selectedGenre, sortBy: s.sortBy, order: s.order }));
-  }, [sortIdx, mood, imageRatio, selectedGenre]);
+    setQuery(q => ({ ...q, keyword: t, sortBy: s.sortBy, order: s.order }));
+  }, [sortIdx]);
 
-  const handleGenreChange = useCallback((genre) => {
-    setSelectedGenre(genre);
+  const handleGenreChange = useCallback((g) => {
+    setSelectedGenre(g);
     const newParams = new URLSearchParams(searchParams);
-    if (genre) { newParams.set('genre', genre); } else { newParams.delete('genre'); }
+    if (g) { newParams.set('genre', g); } else { newParams.delete('genre'); }
     setSearchParams(newParams, { replace: true });
-    applyFilters({ genre });
-  }, [searchParams, setSearchParams, applyFilters]);
+    setQuery(q => ({ ...q, genre: g }));
+  }, [searchParams, setSearchParams]);
+
+  const handleSortChange = (idx) => {
+    const s = SORT_OPTIONS[idx];
+    setSortIdx(idx);
+    setQuery(q => ({ ...q, sortBy: s.sortBy, order: s.order }));
+  };
 
   const handleSearch = (e) => { e.preventDefault(); commitSearch(search); };
 
@@ -267,45 +203,59 @@ export default function ExplorePage() {
   const dropType  = search.trim() ? 'suggestion' : 'history';
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#090909',
-    }}>
-    <style>{GLASS_KEYFRAMES}{`
-      .explore-masonry { columns: 4 200px; }
-      @media(max-width:1024px) { .explore-masonry { columns: 3; } }
-      @media(max-width:640px)  { .explore-masonry { columns: 2; } }
-    `}</style>
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', marginBottom: 4 }}>탐색</h1>
-        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>{photos.length}장의 사진을 둘러보세요</p>
-      </div>
+    <div style={{ minHeight: '100vh', background: '#090909' }}>
+      <style>{`
+        .explore-masonry { columns: 4 200px; }
+        @media(max-width:1024px) { .explore-masonry { columns: 3; } }
+        @media(max-width:640px)  { .explore-masonry { columns: 2; } }
+        .explore-search-btn:hover { background: rgba(255,255,255,0.12) !important; }
+      `}</style>
 
-      {/* Search form + sort */}
-      <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        {/* Dark pill search bar */}
-        <div style={{ flex: 1, position: 'relative' }}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setShowDrop(true); }}
-            onFocus={() => setShowDrop(true)}
-            onKeyDown={e => { if (e.key === 'Escape') setShowDrop(false); }}
-            placeholder="제목, 설명 검색... (유사어 포함)"
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '12px 20px', borderRadius: 9999,
-              fontSize: 14, color: '#ffffff', outline: 'none',
-              background: '#1c1c1c',
-              border: `1px solid ${showDrop && dropItems.length ? '#5b6ef5' : 'rgba(255,255,255,0.10)'}`,
-              transition: 'border-color 0.2s',
-            }}
-          />
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
 
-          {/* Dropdown */}
+        {/* 검색바 */}
+        <form onSubmit={handleSearch} style={{ marginBottom: 20, position: 'relative' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            background: '#1c1c1c',
+            border: `1px solid ${showDrop && dropItems.length ? '#5b6ef5' : 'rgba(255,255,255,0.08)'}`,
+            borderRadius: 9999,
+            padding: '0 16px',
+            transition: 'border-color 0.2s',
+          }}>
+            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 15, marginRight: 10, flexShrink: 0 }}>🔍</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setShowDrop(true); }}
+              onFocus={() => setShowDrop(true)}
+              onKeyDown={e => { if (e.key === 'Escape') setShowDrop(false); }}
+              placeholder="사진 제목, 설명 검색..."
+              style={{
+                flex: 1,
+                padding: '13px 0',
+                fontSize: 14, color: '#ffffff', outline: 'none',
+                background: 'transparent', border: 'none',
+              }}
+            />
+            <select
+              value={sortIdx}
+              onChange={e => handleSortChange(Number(e.target.value))}
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'rgba(255,255,255,0.50)', fontSize: 13,
+                cursor: 'pointer', outline: 'none',
+                padding: '13px 0 13px 8px', flexShrink: 0,
+              }}
+            >
+              {SORT_OPTIONS.map((opt, i) => (
+                <option key={opt.label} value={i} style={{ background: '#1c1c1c' }}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 검색어 자동완성 + 최근 검색 드롭다운 */}
           {showDrop && dropItems.length > 0 && (
             <div
               ref={dropRef}
@@ -313,13 +263,12 @@ export default function ExplorePage() {
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
                 background: '#161616',
                 border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: 20,
-                overflow: 'hidden',
+                borderRadius: 20, overflow: 'hidden',
                 boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
               }}
             >
               {dropType === 'history' && (
-                <div style={{ padding: '8px 12px 4px', fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                <div style={{ padding: '8px 16px 4px', fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
                   최근 검색어
                 </div>
               )}
@@ -329,7 +278,7 @@ export default function ExplorePage() {
                   onMouseDown={e => { e.preventDefault(); commitSearch(item); }}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 14px', cursor: 'pointer', fontSize: 14,
+                    padding: '10px 16px', cursor: 'pointer', fontSize: 14,
                     color: 'rgba(255,255,255,0.80)', transition: 'background 0.1s',
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
@@ -346,7 +295,7 @@ export default function ExplorePage() {
                         removeHistory(item);
                         setHistory(loadHistory());
                       }}
-                      style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '2px 6px' }}
+                      style={{ fontSize: 12, color: 'rgba(255,255,255,0.30)', padding: '2px 6px' }}
                     >
                       ✕
                     </span>
@@ -355,167 +304,55 @@ export default function ExplorePage() {
               ))}
             </div>
           )}
+        </form>
+
+        {/* 장르 탭바 — Cosmos 언더라인 스타일 */}
+        <div style={{ marginBottom: 24 }}>
+          <GenreTabBar
+            selected={selectedGenre}
+            onChange={handleGenreChange}
+            theme="dark"
+          />
         </div>
 
-        <select
-          value={sortIdx}
-          onChange={e => {
-            const idx = Number(e.target.value);
-            setSortIdx(idx);
-            applyFilters({ sortIdx: idx });
-          }}
-          style={{
-            padding: '12px 14px', borderRadius: 9999,
-            border: '1px solid rgba(255,255,255,0.10)', fontSize: 13, color: 'rgba(255,255,255,0.70)',
-            background: '#1c1c1c',
-            cursor: 'pointer', outline: 'none',
-          }}
-        >
-          {SORT_OPTIONS.map((opt, idx) => (
-            <option key={opt.label} value={idx}>{opt.label}</option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          style={{
-            padding: '12px 24px', borderRadius: 9999,
-            background: `linear-gradient(135deg, #5b6ef5, #a78bfa)`,
-            color: '#fff', border: 'none',
-            fontWeight: 700, fontSize: 14, cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(91,110,245,0.35)',
-            transition: 'opacity 0.15s, transform 0.15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'scale(1.04)'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = ''; }}
-        >
-          검색
-        </button>
-      </form>
+        {/* 결과 수 */}
+        {!loading && !error && (
+          <div style={{ marginBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+            {query.keyword
+              ? `"${query.keyword}" 검색 결과 ${photos.length}장`
+              : `${photos.length}장`}
+            {query.genre && (
+              <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.25)' }}>
+                · {selectedGenre}
+              </span>
+            )}
+          </div>
+        )}
 
-      {/* Genre tab bar */}
-      <div style={{ marginBottom: 12 }}>
-        <GenreTabBar
-          selected={selectedGenre}
-          onChange={handleGenreChange}
-          theme="dark"
-        />
-      </div>
-
-      {/* Mood filter chips */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {MOODS.map(m => {
-          const moodInfo = m.value ? MOOD_COLORS[m.value] : null;
-          const active = mood === m.value;
-          return (
-            <button
-              key={m.value}
-              onClick={() => { const next = mood === m.value ? '' : m.value; setMood(next); applyFilters({ colorMood: next }); }}
-              style={{
-                padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
-                fontWeight: active ? 700 : 500,
-                background: active ? (moodInfo?.bg ?? '#5b6ef5') : 'rgba(255,255,255,0.07)',
-                color: active ? (moodInfo?.dot ?? '#fff') : 'rgba(255,255,255,0.55)',
-                transition: 'all 0.15s',
-              }}
-            >
-              {m.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Ratio filter chips */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
-        {RATIOS.map(r => {
-          const active = imageRatio === r.value;
-          return (
-            <button
-              key={r.value}
-              onClick={() => { const next = imageRatio === r.value ? '' : r.value; setImageRatio(next); applyFilters({ imageRatio: next }); }}
-              style={{
-                padding: '4px 11px', borderRadius: 20,
-                border: `1.5px solid ${active ? '#5b6ef5' : 'rgba(255,255,255,0.12)'}`,
-                background: active ? 'rgba(91,110,245,0.18)' : 'transparent',
-                color: active ? '#a78bfa' : 'rgba(255,255,255,0.50)',
-                fontSize: 12, fontWeight: active ? 700 : 500,
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
-            >
-              {r.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tag filter */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginBottom: 6 }}>
-          태그 검색 (사진에 태그된 이름)
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          {activeTags.map(tag => (
-            <span key={tag} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '4px 10px', borderRadius: 20,
-              background: '#5b6ef5', color: '#fff', fontSize: 12, fontWeight: 700,
-            }}>
-              #{tag}
-              <span onClick={() => removeTag(tag)} style={{ cursor: 'pointer', opacity: 0.8, fontSize: 11 }}>✕</span>
-            </span>
-          ))}
-          <form onSubmit={e => { e.preventDefault(); addTag(tagInput); }} style={{ display: 'flex', gap: 4 }}>
-            <input
-              value={tagInput}
-              onChange={e => setTagInput(e.target.value)}
-              placeholder="태그 입력 후 Enter"
-              style={{
-                padding: '5px 10px', borderRadius: 20, fontSize: 12,
-                border: '1.5px solid rgba(255,255,255,0.12)', outline: 'none',
-                color: '#ffffff', background: 'rgba(255,255,255,0.05)',
-                width: 140,
-              }}
-            />
-          </form>
-        </div>
-      </div>
-
-      {/* Active keyword badge */}
-      {query.keyword && (
-        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>검색:</span>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 12px', borderRadius: 20,
-            background: 'rgba(91,110,245,0.18)', color: '#a78bfa', fontSize: 13, fontWeight: 700,
-          }}>
-            {query.keyword}
-            <span
-              onClick={() => { setSearch(''); commitSearch(''); }}
-              style={{ cursor: 'pointer', fontWeight: 400 }}
-            >✕</span>
-          </span>
-        </div>
-      )}
-
-      {/* Results */}
-      {loading ? (
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', padding: '60px 0' }}>불러오는 중...</div>
-      ) : error ? (
-        <div style={{ textAlign: 'center', color: '#e53e3e', padding: '60px 0' }}>{error}</div>
-      ) : photos.length === 0 ? (
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', padding: '60px 0', fontSize: 15 }}>
-          {query.keyword || query.colorMood || query.imageRatio ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
-        </div>
-      ) : (
-        <div className="explore-masonry" style={{ columnGap: 8 }}>
-          {photos.map(photo => (
-            <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 8 }}>
-              <ExplorePhotoCard photo={photo} keyword={query.keyword} />
+        {/* 포토 그리드 */}
+        {loading ? (
+          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.30)', padding: '80px 0' }}>
+            불러오는 중...
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', color: '#e53e3e', padding: '80px 0' }}>{error}</div>
+        ) : photos.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.40)', fontWeight: 500 }}>
+              {query.keyword || query.genre ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        ) : (
+          <div className="explore-masonry" style={{ columnGap: 8 }}>
+            {photos.map(photo => (
+              <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 8 }}>
+                <ExplorePhotoCard photo={photo} keyword={query.keyword} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

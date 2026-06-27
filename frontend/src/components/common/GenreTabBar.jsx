@@ -8,12 +8,60 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
     : filteredList;
 
   const isDark = theme === 'dark';
-  const unselectedBg = isDark ? 'rgba(255,255,255,0.1)' : '#ededf4';
-  const unselectedColor = isDark ? 'rgba(255,255,255,0.55)' : '#5c5c7a';
-  const fadeGradient = isDark
-    ? 'linear-gradient(to left, #090909, transparent)'
-    : 'linear-gradient(to left, #f5f5fa, transparent)';
 
+  if (isDark) {
+    // Cosmos 언더라인 스타일 (다크 테마)
+    return (
+      <div style={{ position: 'relative' }}>
+        <div style={{
+          display: 'flex', overflowX: 'auto',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          {tabs.map(tab => {
+            const isSelected = selected === tab.code;
+            return (
+              <button
+                key={tab.code}
+                onClick={() => onChange(tab.code)}
+                style={{
+                  position: 'relative',
+                  padding: '10px 0',
+                  marginRight: 28,
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: isSelected ? '2px solid #ffffff' : '2px solid transparent',
+                  marginBottom: -1,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontSize: 14,
+                  fontWeight: isSelected ? 700 : 400,
+                  color: isSelected ? '#ffffff' : 'rgba(255,255,255,0.45)',
+                  transition: 'color 0.15s, border-color 0.15s',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}
+                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
+              >
+                {tab.label}
+                {counts && counts[tab.code] != null && (
+                  <span style={{
+                    marginLeft: 5,
+                    fontSize: 11,
+                    color: isSelected ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)',
+                  }}>
+                    {counts[tab.code]}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // 라이트 테마 — 기존 pill 스타일 유지
   return (
     <div style={{ position: 'relative' }}>
       <div style={{
@@ -32,8 +80,8 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
                 padding: '7px 14px', borderRadius: 24, cursor: 'pointer',
                 whiteSpace: 'nowrap', fontSize: 13, fontWeight: isSelected ? 600 : 400,
                 border: 'none',
-                background: isSelected ? '#5b6ef5' : unselectedBg,
-                color: isSelected ? '#fff' : unselectedColor,
+                background: isSelected ? '#5b6ef5' : '#ededf4',
+                color: isSelected ? '#fff' : '#5c5c7a',
                 boxShadow: isSelected ? '0 2px 8px rgba(91,110,245,0.3)' : 'none',
                 transition: 'all 0.15s',
                 flexShrink: 0,
@@ -43,8 +91,8 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
               <span>{tab.label}</span>
               {counts && counts[tab.code] != null && (
                 <span style={{
-                  fontSize: 11, background: isSelected ? 'rgba(255,255,255,0.25)' : (isDark ? 'rgba(255,255,255,0.15)' : '#d0d0e8'),
-                  color: isSelected ? '#fff' : unselectedColor,
+                  fontSize: 11, background: isSelected ? 'rgba(255,255,255,0.25)' : '#d0d0e8',
+                  color: isSelected ? '#fff' : '#5c5c7a',
                   borderRadius: 10, padding: '1px 6px', marginLeft: 2,
                 }}>
                   {counts[tab.code]}
@@ -57,7 +105,7 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
       {/* 우측 페이드 힌트 */}
       <div style={{
         position: 'absolute', right: 0, top: 0, bottom: 0, width: 40,
-        background: fadeGradient,
+        background: 'linear-gradient(to left, #f5f5fa, transparent)',
         pointerEvents: 'none',
       }} />
     </div>
