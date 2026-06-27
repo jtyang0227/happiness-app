@@ -6,8 +6,18 @@ import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
-import PhotoModal from '../components/photo/PhotoModal';
-import PortfolioContentManager from '../components/portfolio/PortfolioContentManager';
+import apiClient from '../api/apiClient';
+
+/* ── 포트폴리오 템플릿 목록 ──────────────────────── */
+const PORTFOLIO_TEMPLATES = [
+  { id: 'EDITORIAL', name: '에디토리얼', desc: '단일 스크롤 · 무드 필터 · 히어로 이미지', preview: '▌▌▌▌▌▌' },
+  { id: 'MINIMAL',   name: '미니멀',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
+  { id: 'SCRL',      name: '스크롤',     desc: '풀스크린 스냅 스크롤 · 몰입형 사진 감상', preview: '━━━━━━' },
+  { id: 'DARK_ROOM', name: '다크룸',     desc: '순수 블랙 · 대형 타일 · 이미지 온리', preview: '░░░░░░' },
+  { id: 'FILM',      name: '필름',       desc: '필름 스트립 · 시네마틱 레터박스', preview: '▐▐▐▐▐▐', disabled: true },
+  { id: 'SPLIT',     name: '스플릿',     desc: '좌우 분할 · 텍스트/이미지 교차', preview: '▌│▐│▌│', disabled: true },
+  { id: 'MOSAIC',    name: '모자이크',   desc: '자유형 콜라주 · 다양한 크기', preview: '▦▦▦▦▦▦', disabled: true },
+];
 
 const TABS = [
   { key: 'photos',    label: '내 작품' },
@@ -34,51 +44,18 @@ const PAGE_SIZE = 9;
 
 /* ── 서브 컴포넌트 ─────────────────────────────────── */
 
-function PhotoGrid({ photos, onPhotoClick, onPreview }) {
+function PhotoGrid({ photos, onPhotoClick }) {
   if (!photos || photos.length === 0)
     return <Empty text="사진이 없습니다." />;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
       {photos.map(p => (
-        <ProfilePhotoCell key={p.id} photo={p} onPhotoClick={onPhotoClick} onPreview={onPreview} />
-      ))}
-    </div>
-  );
-}
-
-function ProfilePhotoCell({ photo: p, onPhotoClick, onPreview }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      style={{ aspectRatio: '1', background: '#111', overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <img src={p.imageUrl || p.image} alt={p.title}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s' }} />
-      {hovered && (
-        <div style={{
-          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.52)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          <button
-            onClick={() => onPreview(p)}
-            style={{
-              padding: '6px 14px', borderRadius: 16, border: 'none',
-              background: 'rgba(255,255,255,0.92)', color: '#111',
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
-            }}
-          >미리보기</button>
-          <button
-            onClick={() => onPhotoClick(p.id)}
-            style={{
-              padding: '6px 14px', borderRadius: 16, border: 'none',
-              background: 'rgba(91,110,245,0.88)', color: '#fff',
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
-            }}
-          >상세 보기</button>
+        <div key={p.id} onClick={() => onPhotoClick(p.id)}
+          style={{ aspectRatio: '1', background: '#111', overflow: 'hidden', cursor: 'pointer' }}>
+          <img src={p.imageUrl || p.image} alt={p.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -216,7 +193,10 @@ export default function ProfilePage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [toast, setToast] = useState('');
-  const [previewPhoto, setPreviewPhoto] = useState(null);
+
+  // 포트폴리오 템플릿
+  const [portfolioTemplate, setPortfolioTemplate] = useState('EDITORIAL');
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const isKakao = user?.provider === 'kakao';
   const avatarLetter = (user?.name || user?.email || '?').charAt(0).toUpperCase();
@@ -228,6 +208,25 @@ export default function ProfilePage() {
     if (!user?.id) return;
     authApi.getStats(user.id).then(setStats).catch(() => {});
   }, [user?.id]);
+
+  // 현재 포트폴리오 템플릿 로드
+  useEffect(() => {
+    if (!user?.profileName) return;
+    apiClient.get(`/portfolio/${user.profileName}/config`)
+      .then(res => { if (res.data?.template) setPortfolioTemplate(res.data.template); })
+      .catch(() => {});
+  }, [user?.profileName]);
+
+  const handleTemplateSave = async () => {
+    if (!user?.profileName) { showToast('포트폴리오 주소(profileName)를 먼저 설정해주세요.'); return; }
+    setSavingTemplate(true);
+    try {
+      await apiClient.put(`/portfolio/${user.profileName}/template`, { template: portfolioTemplate });
+      showToast('포트폴리오 템플릿이 저장되었습니다.');
+    } catch (err) {
+      showToast(err?.response?.data?.message || '저장에 실패했습니다.');
+    } finally { setSavingTemplate(false); }
+  };
 
   // 탭별 데이터 로드
   useEffect(() => {
@@ -371,7 +370,6 @@ export default function ProfilePage() {
 
   /* ── 렌더 ──────────────────────────────────────── */
   return (
-    <>
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 80 }}>
 
       {/* Toast */}
@@ -494,7 +492,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {photosView === 'grid'
-                  ? <PhotoGrid photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} onPreview={setPreviewPhoto} />
+                  ? <PhotoGrid photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} />
                   : <PhotoList photos={visiblePhotos} onPhotoClick={id => navigate(`/photo/${id}`)} />
                 }
                 {myPhotos.length > photosPage && (
@@ -510,7 +508,7 @@ export default function ProfilePage() {
             {/* ── 저장함 ── */}
             {activeTab === 'saved' && (
               <div>
-                <PhotoGrid photos={visibleSaved} onPhotoClick={id => navigate(`/photo/${id}`)} onPreview={setPreviewPhoto} />
+                <PhotoGrid photos={visibleSaved} onPhotoClick={id => navigate(`/photo/${id}`)} />
                 {savedPhotos.length > photosPage && (
                   <div style={{ textAlign: 'center', padding: '16px 0' }}>
                     <button onClick={() => setPhotosPage(p => p + PAGE_SIZE)} style={{ padding: '9px 24px', borderRadius: 20, border: `1.5px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -627,6 +625,75 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
+                {/* 포트폴리오 템플릿 */}
+                <div style={sectionCard}>
+                  <div style={sectionTitle}>포트폴리오 템플릿</div>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, lineHeight: 1.5 }}>
+                    공개 포트폴리오 페이지의 레이아웃 스타일을 선택합니다.
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
+                    {PORTFOLIO_TEMPLATES.map(tpl => {
+                      const isSelected = portfolioTemplate === tpl.id;
+                      return (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          disabled={tpl.disabled}
+                          onClick={() => !tpl.disabled && setPortfolioTemplate(tpl.id)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            border: isSelected
+                              ? `2px solid ${COLORS.primary}`
+                              : `1.5px solid ${COLORS.border}`,
+                            background: isSelected ? COLORS.primaryLight : COLORS.surface,
+                            cursor: tpl.disabled ? 'not-allowed' : 'pointer',
+                            textAlign: 'left',
+                            opacity: tpl.disabled ? 0.45 : 1,
+                            position: 'relative',
+                            transition: 'border-color 0.15s, background 0.15s',
+                          }}
+                        >
+                          {isSelected && (
+                            <span style={{
+                              position: 'absolute', top: 8, right: 10,
+                              fontSize: 12, color: COLORS.primary, fontWeight: 700,
+                            }}>✓</span>
+                          )}
+                          <div style={{
+                            fontSize: 16, letterSpacing: '0.05em', marginBottom: 6,
+                            color: isSelected ? COLORS.primary : COLORS.textSecondary,
+                            fontFamily: 'monospace',
+                          }}>
+                            {tpl.preview}
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? COLORS.primary : COLORS.text, marginBottom: 3 }}>
+                            {tpl.name}
+                            {tpl.disabled && <span style={{ fontSize: 10, marginLeft: 5, color: COLORS.textMuted }}>준비 중</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.4 }}>
+                            {tpl.desc}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {user?.profileName ? (
+                    <button
+                      type="button"
+                      disabled={savingTemplate}
+                      onClick={handleTemplateSave}
+                      style={{ ...primaryBtn(savingTemplate) }}
+                    >
+                      {savingTemplate ? '저장 중...' : '템플릿 저장'}
+                    </button>
+                  ) : (
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, padding: '10px 14px', background: COLORS.bg, borderRadius: 8, lineHeight: 1.5 }}>
+                      템플릿을 저장하려면 먼저 <strong>포트폴리오 주소</strong>를 설정해주세요.
+                    </div>
+                  )}
+                </div>
+
                 {/* 계정 설정 */}
                 <div style={sectionCard}>
                   <div style={sectionTitle}>계정 설정</div>
@@ -642,15 +709,6 @@ export default function ProfilePage() {
                       <Toggle value={toggles[key]} onChange={() => handleToggle(key)} />
                     </div>
                   ))}
-                </div>
-
-                {/* 포트폴리오 콘텐츠 관리 */}
-                <div style={sectionCard}>
-                  <div style={sectionTitle}>포트폴리오 콘텐츠 관리</div>
-                  <p style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 14, marginTop: -4, lineHeight: 1.6 }}>
-                    추천사, 언론 소개, 촬영 패키지, 클라이언트 브랜드를 포트폴리오에 표시할 수 있습니다.
-                  </p>
-                  <PortfolioContentManager />
                 </div>
 
                 {/* 계정 연결 */}
@@ -750,18 +808,6 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
-    {previewPhoto && (
-      <PhotoModal
-        photo={previewPhoto}
-        onClose={() => setPreviewPhoto(null)}
-        onUpdated={updated => {
-          setMyPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
-          setSavedPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
-          setPreviewPhoto(updated);
-        }}
-      />
-    )}
-    </>
   );
 }
 

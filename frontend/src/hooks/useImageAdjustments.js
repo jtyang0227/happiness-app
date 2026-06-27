@@ -56,7 +56,19 @@ export const DEFAULT_COLOR_GRADING = {
   midtones:  { hue: 0, saturation: 0 },
   highlights: { hue: 0, saturation: 0 },
   blending:  50,  // 0~100
+  balance:   0,   // -100~+100 (negative: more shadow zone, positive: more highlight zone)
 };
+
+// ── Camera Calibration defaults ───────────────────────────────────────
+
+export const DEFAULT_CALIBRATION = {
+  red:   { hue: 0, saturation: 0 },
+  green: { hue: 0, saturation: 0 },
+  blue:  { hue: 0, saturation: 0 },
+};
+
+// Center hue angles for RGB primaries
+const CALIBRATION_CENTERS = { red: 0, green: 120, blue: 240 };
 
 export const DEFAULT_SHARPENING = {
   amount:  0,    // 0~150
@@ -478,6 +490,46 @@ function hslRangeWeight(hueDeg, colorName) {
   return dist > 60 ? 0 : Math.pow(Math.cos((dist / 60) * (Math.PI / 2)), 2);
 }
 
+// ── Camera Calibration ────────────────────────────────────────────
+
+export function applyCalibration(canvas, calibration) {
+  if (!calibration) return;
+  const hasAny = Object.values(calibration).some(ch => ch.hue !== 0 || ch.saturation !== 0);
+  if (!hasAny) return;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let [hDeg, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+    if (s < 0.01) continue; // skip near-gray pixels
+
+    let dH = 0, dS = 0;
+    for (const [primary, adj] of Object.entries(calibration)) {
+      const center = CALIBRATION_CENTERS[primary];
+      // Compute angular distance, handling red wrap-around
+      let dist = Math.abs(hDeg - center) % 360;
+      if (dist > 180) dist = 360 - dist;
+      // Gaussian-cosine weight: full at center, 0 at ±60°
+      const w = dist > 60 ? 0 : Math.pow(Math.cos((dist / 60) * (Math.PI / 2)), 2);
+      if (w < 0.001) continue;
+      dH += w * adj.hue;
+      dS += w * (adj.saturation / 100);
+    }
+
+    hDeg = ((hDeg + dH) % 360 + 360) % 360;
+    s = Math.max(0, Math.min(1, s + dS * (dS > 0 ? 1 - s : s)));
+
+    const [nr, ng, nb] = hsl2rgb(hDeg, s, l);
+    d[i]     = Math.max(0, Math.min(255, nr));
+    d[i + 1] = Math.max(0, Math.min(255, ng));
+    d[i + 2] = Math.max(0, Math.min(255, nb));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
 export function applyHSLAdjustments(canvas, hslAdj) {
   if (!hslAdj) return;
   const hasAny = Object.values(hslAdj).some(
@@ -519,7 +571,7 @@ export function applyHSLAdjustments(canvas, hslAdj) {
 
 export function applyColorGrading(canvas, colorGrading) {
   if (!colorGrading) return;
-  const { shadows, midtones, highlights, blending = 50 } = colorGrading;
+  const { shadows, midtones, highlights, blending = 50, balance = 0 } = colorGrading;
   const hasShadow = shadows.saturation > 0;
   const hasMid    = midtones.saturation > 0;
   const hasHigh   = highlights.saturation > 0;
@@ -530,15 +582,20 @@ export function applyColorGrading(canvas, colorGrading) {
   const imageData = ctx.getImageData(0, 0, w, h);
   const d = imageData.data;
   const blend = blending / 100;
+  // balance: -100 shifts midpoint toward highlights (shadow zone widens),
+  //          +100 shifts midpoint toward shadows (highlight zone widens)
+  const balShift = (balance / 100) * 0.2; // ±0.2 luminance shift
 
   for (let i = 0; i < d.length; i += 4) {
     const r = d[i], g = d[i + 1], b = d[i + 2];
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-    // Zone weights
-    const swt = Math.pow(Math.max(0, 1 - lum / 0.4), 2);
+    // Zone weights with balance offset
+    const shadowMid    = 0.4 - balShift;
+    const highlightMid = 0.6 - balShift;
+    const swt = Math.pow(Math.max(0, 1 - lum / Math.max(0.05, shadowMid)), 2);
     const mwt = Math.pow(Math.cos((lum - 0.5) * Math.PI), 2);
-    const hwt = Math.pow(Math.max(0, (lum - 0.6) / 0.4), 2);
+    const hwt = Math.pow(Math.max(0, (lum - Math.max(0, highlightMid)) / Math.max(0.05, 1 - highlightMid)), 2);
 
     let dr = 0, dg = 0, db = 0;
 
@@ -710,12 +767,16 @@ export function applyEffects(
   hslAdj = null,
   colorGrading = null,
   sharpening = null,
-  noiseReduction = null
+  noiseReduction = null,
+  calibration = null
 ) {
   // A2: Vibrance / Saturation (before other effects)
   if (effects.vibrance !== 0 || effects.saturation !== 0) {
     applyVibranceSaturation(canvas, effects.vibrance, effects.saturation);
   }
+
+  // Camera Calibration (before HSL — adjusts RGB primaries)
+  applyCalibration(canvas, calibration);
 
   // A3: HSL Panel
   applyHSLAdjustments(canvas, hslAdj);

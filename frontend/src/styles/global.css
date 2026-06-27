@@ -16,13 +16,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI',
                Helvetica, Arial, sans-serif;
   font-size: 15px;
-  color: var(--color-text, #1a1a2e);
-  /* V2 라이트모드 aurora 배경 */
-  background:
-    radial-gradient(ellipse at 15% 25%, rgba(167,139,250,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 75%, rgba(91,110,245,0.14) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 10%, rgba(196,181,253,0.10) 0%, transparent 40%),
-    #f8f6ff;
+  color: #ffffff;
+  /* Cosmos × Pinterest dark editorial — pure near-black */
+  background: #090909;
   background-attachment: fixed;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -167,16 +163,16 @@ body {
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
-/* ── 스크롤바 ────────────────────────────────────────────────────────────── */
+/* ── 스크롤바 — Cosmos dark editorial ───────────────────────────────────── */
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(91,110,245,0.25);
+  background: rgba(255,255,255,0.15);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(91,110,245,0.45);
+  background: rgba(255,255,255,0.28);
 }
 
 /* ── 포커스 링 ──────────────────────────────────────────────────────────── */
@@ -207,6 +203,6 @@ input, textarea, select {
   font-family: inherit;
 }
 
-::selection { background: rgba(91,110,245,0.25); color: #1a1a2e; }
+::selection { background: rgba(91,110,245,0.40); color: #ffffff; }
 
-::placeholder { color: rgba(91,110,245,0.35); }
+::placeholder { color: rgba(255,255,255,0.25); }

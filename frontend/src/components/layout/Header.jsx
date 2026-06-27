@@ -45,14 +45,14 @@ function LangSwitcher() {
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           height: 34, padding: '0 12px', borderRadius: 10,
-          background: open ? '#eef0ff' : 'transparent',
-          border: `1px solid ${open ? '#5b6ef5' : 'rgba(92,92,122,0.2)'}`,
-          color: open ? '#5b6ef5' : '#5c5c7a',
+          background: open ? 'rgba(255,255,255,0.08)' : 'transparent',
+          border: `1px solid ${open ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.12)'}`,
+          color: open ? '#ffffff' : 'rgba(255,255,255,0.50)',
           fontSize: 13, fontWeight: 500, cursor: 'pointer',
           transition: 'all 0.15s',
         }}
-        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = '#eef0ff'; e.currentTarget.style.borderColor = '#5b6ef5'; e.currentTarget.style.color = '#5b6ef5'; }}}
-        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(92,92,122,0.2)'; e.currentTarget.style.color = '#5c5c7a'; }}}
+        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.88)'; }}}
+        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.50)'; }}}
       >
         🌐 {lang.toUpperCase()} ▾
       </button>
@@ -60,14 +60,14 @@ function LangSwitcher() {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          width: 160, background: '#fff',
-          border: '1px solid #e2e2ee', borderRadius: 14,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          width: 160, background: '#161616',
+          border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14,
+          boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
           padding: 6, zIndex: 300,
         }}>
           <p style={{
             margin: 0, padding: '6px 10px 4px',
-            fontSize: 11, fontWeight: 600, color: '#9090b0',
+            fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
             letterSpacing: '0.5px', textTransform: 'uppercase',
           }}>
             언어 선택
@@ -83,16 +83,16 @@ function LangSwitcher() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '9px 10px', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? '#eef0ff' : 'transparent',
-                  color: isActive ? '#5b6ef5' : '#1a1a2e',
+                  background: isActive ? 'rgba(91,110,245,0.18)' : 'transparent',
+                  color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.70)',
                   fontSize: 14, transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#ededf4'; }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
               >
                 <span style={{ fontSize: 18 }}>{meta.flag}</span>
                 <span style={{ flex: 1 }}>{meta.nativeLabel}</span>
-                {isActive && <span style={{ fontSize: 14, color: '#5b6ef5', fontWeight: 700 }}>✓</span>}
+                {isActive && <span style={{ fontSize: 14, color: '#a78bfa', fontWeight: 700 }}>✓</span>}
               </button>
             );
           })}
@@ -136,32 +136,26 @@ export default function Header() {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 13px; border-radius: 10px;
           font-size: 14px; font-weight: 500;
-          color: #5c5c7a; text-decoration: none;
-          transition: background 0.15s, color 0.15s;
+          color: rgba(255,255,255,0.50); text-decoration: none;
+          transition: color 0.15s;
           position: relative;
         }
-        .nav-link:hover { background: rgba(91,110,245,0.06); color: #1a1a2e; }
+        .nav-link:hover { color: rgba(255,255,255,0.88); }
         .nav-link.active {
-          background: rgba(91,110,245,0.12);
-          color: #5b6ef5;
+          color: #ffffff;
           font-weight: 700;
-          border: 1px solid rgba(91,110,245,0.20);
-          box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.60), 0 2px 8px rgba(91,110,245,0.12);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
         }
         .avatar-btn { transition: transform 0.2s ${SPRING}; }
         .avatar-btn:hover { transform: scale(1.08); }
       `}</style>
 
-      {/* ── PC Header — V2 glass('strong') 스펙큘러 ──────────── */}
+      {/* ── PC Header — Cosmos dark editorial ──────────── */}
       <header className="h-pc" style={{
         position: 'sticky', top: 0, zIndex: 200,
         height: 58,
-        ...glass('strong'),
+        background: '#090909',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
         borderRadius: 0,
-        borderLeft: 'none', borderRight: 'none', borderTop: 'none',
-        borderBottom: '1px solid rgba(255,255,255,0.50)',
       }}>
         <div style={{
           maxWidth: 1280, margin: '0 auto',
@@ -170,15 +164,15 @@ export default function Header() {
           gap: 12,
         }}>
           {/* Logo */}
-          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 28, height: 28, borderRadius: 8,
               background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
               fontSize: 12,
-              boxShadow: '0 4px 12px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.30)',
+              boxShadow: '0 4px 12px rgba(91,110,245,0.35)',
             }}>✦</span>
-            <span style={{ fontSize: 17, fontWeight: 800, color: '#1a1a2e', letterSpacing: '-0.5px' }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
             </span>
           </NavLink>
@@ -237,19 +231,21 @@ export default function Header() {
             {dropdownOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                ...glass('strong'),
+                background: '#161616',
+                border: '1px solid rgba(255,255,255,0.10)',
                 borderRadius: 16,
                 minWidth: 210, zIndex: 300,
                 overflow: 'hidden',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
                 animation: `glassIn 0.28s ${SPRING} both`,
               }}>
                 <div style={{
                   padding: '14px 16px',
-                  borderBottom: `1px solid rgba(255,255,255,0.42)`,
+                  borderBottom: `1px solid rgba(255,255,255,0.08)`,
                 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{user?.name || '사용자'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>{user?.name || '사용자'}</div>
                   {user?.profileName && (
-                    <div style={{ fontSize: 11, color: '#9090b0', marginTop: 2 }}>@{user.profileName}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2 }}>@{user.profileName}</div>
                   )}
                 </div>
                 <button
@@ -257,15 +253,15 @@ export default function Header() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     width: '100%', padding: '11px 16px',
-                    fontSize: 14, color: '#5c5c7a', textAlign: 'left',
+                    fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'left',
                     transition: 'background 0.12s, color 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,110,245,0.08)'; e.currentTarget.style.color = '#5b6ef5'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; }}
                 >
                   <span>◎</span> 프로필 보기
                 </button>
-                <div style={{ height: 1, background: 'rgba(226,226,238,0.7)', margin: '4px 0' }} />
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 0' }} />
                 <button
                   onClick={handleLogout}
                   style={{
@@ -274,7 +270,7 @@ export default function Header() {
                     fontSize: 14, color: '#e53e3e', textAlign: 'left',
                     transition: 'background 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,62,62,0.08)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <span>🚪</span> 로그아웃
@@ -297,10 +293,11 @@ function BottomNav({ unreadCount }) {
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
       height: 'calc(60px + env(safe-area-inset-bottom))',
       paddingBottom: 'env(safe-area-inset-bottom)',
-      ...glassDark('dark'),
+      background: 'rgba(9,9,9,0.96)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       borderRadius: 0,
-      borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
-      borderTop: '1px solid rgba(255,255,255,0.10)',
+      borderTop: '1px solid rgba(255,255,255,0.07)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
@@ -310,23 +307,36 @@ function BottomNav({ unreadCount }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
             textDecoration: 'none', flex: 1, padding: '6px 0',
-            color: isActive && !isCenter ? '#a8aaff' : C.textHint,
+            color: isActive && !isCenter ? '#ffffff' : 'rgba(255,255,255,0.35)',
             transition: `color 0.2s, transform 0.25s ${SPRING}`,
-            transform: isActive && !isCenter ? 'scale(1.1)' : 'scale(1)',
+            transform: 'scale(1)',
+            position: 'relative',
           })}
         >
-          {isCenter ? (
-            <div style={{
-              width: 46, height: 46, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6c6ef7, #9b7ff7)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 22, fontWeight: 700,
-              boxShadow: '0 4px 20px rgba(108,110,247,0.5)',
-            }}>+</div>
-          ) : (
+          {({ isActive }) => (
             <>
-              <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span>
-              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em' }}>{label}</span>
+              {isActive && !isCenter && (
+                <span style={{
+                  position: 'absolute', top: 0, left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 24, height: 2, borderRadius: 99,
+                  background: '#5b6ef5',
+                }} />
+              )}
+              {isCenter ? (
+                <div style={{
+                  width: 46, height: 46, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 22, fontWeight: 700,
+                  boxShadow: '0 4px 20px rgba(91,110,245,0.45)',
+                }}>+</div>
+              ) : (
+                <>
+                  <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em' }}>{label}</span>
+                </>
+              )}
             </>
           )}
         </NavLink>

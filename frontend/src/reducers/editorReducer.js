@@ -6,6 +6,7 @@ import {
   DEFAULT_COLOR_GRADING,
   DEFAULT_SHARPENING,
   DEFAULT_NOISE_REDUCTION,
+  DEFAULT_CALIBRATION,
 } from '../hooks/useImageAdjustments';
 
 export const DEFAULT_EDIT_STATE = {
@@ -19,6 +20,7 @@ export const DEFAULT_EDIT_STATE = {
   colorGrading:  JSON.parse(JSON.stringify(DEFAULT_COLOR_GRADING)),
   sharpening:    { ...DEFAULT_SHARPENING },
   noiseReduction: { ...DEFAULT_NOISE_REDUCTION },
+  calibration:   JSON.parse(JSON.stringify(DEFAULT_CALIBRATION)),
   filter:      { name: 'none', intensity: 100 },
   overlays:    [],
 };

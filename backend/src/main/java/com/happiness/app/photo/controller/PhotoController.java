@@ -122,19 +122,6 @@ public class PhotoController {
         return ResponseEntity.ok(Map.of("status", "success", "data", suggestions));
     }
 
-    /** GET /api/photos/genres/stats?memberId= — 장르별 사진 수 통계 */
-    @GetMapping("/genres/stats")
-    public ResponseEntity<?> getGenreStats(@RequestParam(required = false) Long memberId) {
-        List<Object[]> raw = photoRepository.countByGenre(memberId);
-        List<Map<String, Object>> data = raw.stream().map(row -> {
-            Map<String, Object> m = new HashMap<>();
-            m.put("genre", row[0]);
-            m.put("count", row[1]);
-            return m;
-        }).collect(Collectors.toList());
-        return ResponseEntity.ok(Map.of("status", "success", "data", data));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<?> getPhoto(@PathVariable Long id) {
         return photoRepository.findById(id)
@@ -553,6 +540,24 @@ public class PhotoController {
         result.put("status", "success");
         result.put("message", "순서가 저장되었습니다.");
         return ResponseEntity.ok(result);
+    }
+
+    // ── 장르 통계 ──────────────────────────────────────────────────────
+
+    /** GET /api/photos/genres/stats — 전체 장르별 사진 수 통계 */
+    @GetMapping("/genres/stats")
+    public ResponseEntity<?> getGenreStats(
+            @RequestParam(required = false) Long memberId) {
+        List<Object[]> rows = memberId != null
+                ? photoRepository.countByGenreForMember(memberId)
+                : photoRepository.countByGenre();
+        List<Map<String, Object>> stats = rows.stream().map(row -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("genre", row[0]);
+            m.put("count", row[1]);
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(Map.of("status", "success", "data", stats));
     }
 
     // ── AI 자동 태그 추천 ──────────────────────────────────────────────

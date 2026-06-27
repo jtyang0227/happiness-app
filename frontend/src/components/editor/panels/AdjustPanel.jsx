@@ -5,6 +5,7 @@ import {
   DEFAULT_ADJUSTMENTS, DEFAULT_EFFECTS,
   DEFAULT_HSL_ADJUSTMENTS, DEFAULT_COLOR_GRADING,
   DEFAULT_SHARPENING, DEFAULT_NOISE_REDUCTION,
+  DEFAULT_CALIBRATION,
 } from '../../../hooks/useImageAdjustments';
 
 const HSL_COLORS = [
@@ -20,6 +21,12 @@ const HSL_COLORS = [
 
 const GRADE_ZONES = ['shadows', 'midtones', 'highlights'];
 const GRADE_LABELS = { shadows: '쉐도우', midtones: '미드톤', highlights: '하이라이트' };
+
+const CAL_PRIMARIES = [
+  { key: 'red',   label: '빨강 원색', dot: '#e53e3e' },
+  { key: 'green', label: '초록 원색', dot: '#48bb78' },
+  { key: 'blue',  label: '파랑 원색', dot: '#4299e1' },
+];
 
 function Section({ title, changed, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -79,8 +86,9 @@ function Slider({ label, value, min, max, step = 1, onChange, trackGradient }) {
 
 export default function AdjustPanel() {
   const { currentEditState, dispatch } = useEditor();
-  const { adjustments, effects, hslAdj, colorGrading, sharpening, noiseReduction } = currentEditState;
+  const { adjustments, effects, hslAdj, colorGrading, sharpening, noiseReduction, calibration } = currentEditState;
   const [hslColor, setHslColor] = useState('red');
+  const [calPrimary, setCalPrimary] = useState('red');
 
   const updateAdj   = patch => dispatch({ type: 'EDIT_UPDATE', patch: { adjustments: { ...adjustments, ...patch } } });
   const updateFx    = patch => dispatch({ type: 'EDIT_UPDATE', patch: { effects: { ...effects, ...patch } } });
@@ -91,6 +99,10 @@ export default function AdjustPanel() {
   });
   const updateSharp = patch => dispatch({ type: 'EDIT_UPDATE', patch: { sharpening: { ...sharpening, ...patch } } });
   const updateNR    = patch => dispatch({ type: 'EDIT_UPDATE', patch: { noiseReduction: { ...noiseReduction, ...patch } } });
+  const updateCal   = (primary, key, val) => {
+    const cal = calibration || JSON.parse(JSON.stringify(DEFAULT_CALIBRATION));
+    dispatch({ type: 'EDIT_UPDATE', patch: { calibration: { ...cal, [primary]: { ...cal[primary], [key]: val } } } });
+  };
 
   const isAdjChanged  = JSON.stringify(adjustments)   !== JSON.stringify(DEFAULT_ADJUSTMENTS);
   const isFxChanged   = JSON.stringify(effects)       !== JSON.stringify(DEFAULT_EFFECTS);
@@ -98,6 +110,7 @@ export default function AdjustPanel() {
   const isGradeChanged= JSON.stringify(colorGrading)  !== JSON.stringify(DEFAULT_COLOR_GRADING);
   const isSharpChanged= JSON.stringify(sharpening)    !== JSON.stringify(DEFAULT_SHARPENING);
   const isNRChanged   = JSON.stringify(noiseReduction)!== JSON.stringify(DEFAULT_NOISE_REDUCTION);
+  const isCalChanged  = calibration && JSON.stringify(calibration) !== JSON.stringify(DEFAULT_CALIBRATION);
 
   return (
     <div style={{ overflowY: 'auto' }}>
@@ -158,6 +171,7 @@ export default function AdjustPanel() {
           </div>
         ))}
         <Slider label="블렌딩" value={colorGrading.blending ?? 50} min={0} max={100} onChange={v => dispatch({ type: 'EDIT_UPDATE', patch: { colorGrading: { ...colorGrading, blending: v } } })} />
+        <Slider label="밸런스" value={colorGrading.balance ?? 0} min={-100} max={100} onChange={v => dispatch({ type: 'EDIT_UPDATE', patch: { colorGrading: { ...colorGrading, balance: v } } })} />
       </Section>
 
       {/* 선명도 */}
@@ -171,6 +185,41 @@ export default function AdjustPanel() {
       <Section title="노이즈 제거" changed={isNRChanged} defaultOpen={false}>
         <Slider label="밝기 노이즈" value={noiseReduction.luminance} min={0} max={100} onChange={v => updateNR({ luminance: v })} />
         <Slider label="색상 노이즈" value={noiseReduction.color}     min={0} max={100} onChange={v => updateNR({ color: v })} />
+      </Section>
+
+      {/* 카메라 보정 */}
+      <Section title="카메라 보정" changed={isCalChanged} defaultOpen={false}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+          {CAL_PRIMARIES.map(p => (
+            <button
+              key={p.key}
+              onClick={() => setCalPrimary(p.key)}
+              style={{
+                flex: 1, padding: '5px 4px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                border: `2px solid ${calPrimary === p.key ? p.dot : 'transparent'}`,
+                background: calPrimary === p.key ? `${p.dot}22` : COLORS.darkElevated,
+                color: calPrimary === p.key ? p.dot : COLORS.darkTextHint,
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+            >{p.label}</button>
+          ))}
+        </div>
+        {calibration && calibration[calPrimary] && (
+          <>
+            <Slider
+              label="색조"
+              value={calibration[calPrimary].hue}
+              min={-100} max={100}
+              onChange={v => updateCal(calPrimary, 'hue', v)}
+            />
+            <Slider
+              label="채도"
+              value={calibration[calPrimary].saturation}
+              min={-100} max={100}
+              onChange={v => updateCal(calPrimary, 'saturation', v)}
+            />
+          </>
+        )}
       </Section>
 
       {/* 하단 버튼 */}

@@ -16,7 +16,7 @@ const SIZES    = [
 const MIME_MAP = { JPG: 'image/jpeg', PNG: 'image/png', WEBP: 'image/webp' };
 
 async function renderExport(img, editState, { size, format, quality }) {
-  const { rotate, flip, crop, adjustments, effects, channelCurves, hslAdj, colorGrading, sharpening, noiseReduction, overlays } = editState;
+  const { rotate, flip, crop, adjustments, effects, channelCurves, hslAdj, colorGrading, sharpening, noiseReduction, calibration, overlays } = editState;
 
   let sw = Math.round(img.naturalWidth  * crop.w);
   let sh = Math.round(img.naturalHeight * crop.h);
@@ -62,7 +62,7 @@ async function renderExport(img, editState, { size, format, quality }) {
   // Adjustments
   const luts = buildChannelLUTs(adjustments, channelCurves);
   renderWithChannelLUTs(tmp, tCtx.getImageData(0, 0, sw, sh).data, sw, sh, luts);
-  applyEffects(tmp, effects, generateGrainTile(), hslAdj, colorGrading, sharpening, noiseReduction);
+  applyEffects(tmp, effects, generateGrainTile(), hslAdj, colorGrading, sharpening, noiseReduction, calibration);
 
   ctx.drawImage(tmp, -sw / 2, -sh / 2);
   ctx.restore();
