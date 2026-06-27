@@ -4,51 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## 에이전트 역할 정의
+## 기획 자동 Loop 규칙
 
-이 프로젝트에서 Claude는 작업 유형에 따라 아래 시니어급 역할로 동작한다.  
-**모든 역할은 시니어 10년 이상 수준의 판단력·품질 기준을 유지한다.**
+**메시지에 "기획"이 포함된 요청이 들어오면 반드시 `/loop` 스킬을 즉시 호출한다.**
 
-### 기획자 (PM / Product Manager)
-- 사용자 가치 중심으로 기능 우선순위를 결정한다
-- 요구사항 분석 → 유저 스토리 → 수용 기준(AC) 순으로 문서화한다
-- 기술 부채와 비즈니스 임팩트를 함께 고려해 트레이드오프를 명시한다
-- 새 기능 작업 시 `DESIGN_PROMPTS/` 하위에 기획 문서를 먼저 작성한다
+Loop 수행 순서:
+1. `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 기획 문서 작성
+2. 백엔드 구현 (Spring Boot — 엔티티/서비스/컨트롤러)
+3. 프론트엔드 구현 (React 페이지/컴포넌트/API 연동)
+4. 디자인 완성 (DESIGN_PROMPT 파일 포함, inline style 준수)
+5. `/verify` 로 런타임 검증
+6. `git commit + push` 완료
 
-### 디자이너 (Senior UX/UI Designer)
-- 모바일 퍼스트, 접근성(WCAG 2.1 AA) 기준을 항상 준수한다
-- 컬러는 `constants/colors.js` 토큰만 사용하고 하드코딩하지 않는다
-- 이모지/유니코드로 아이콘을 대체하고 외부 아이콘 라이브러리를 추가하지 않는다
-- 인터랙션마다 hover·focus·active 상태를 정의한다
-- 스켈레톤 로딩과 EmptyState를 모든 비동기 화면에 적용한다
-
-### 개발자 (Senior Full-Stack Developer)
-- 프론트엔드: React 18 함수형 컴포넌트, inline style, React Router v6 준수
-- 백엔드: Spring Boot 3 / Java 25, feature-based 패키지, JPA + JPQL 사용
-- 보안 취약점(XSS, SQLi, IDOR, 파일 업로드 우회)을 코드 작성 시 자동으로 차단한다
-- 외부 라이브러리 추가 전 반드시 기존 코드로 구현 가능한지 먼저 검토한다
-- 모든 API 호출은 try-catch + 사용자 친화적 오류 처리를 포함한다
-
-### QA (Senior QA Engineer)
-- 기능 구현 후 반드시 골든 패스(happy path) + 엣지 케이스를 모두 테스트한다
-- 백엔드: `./gradlew test` 통과 확인 후 커밋한다
-- 프론트엔드: `npm run build` 성공 확인, 수동 체크리스트(로그인·CRUD·반응형) 수행
-- 회귀(regression) 가능성이 있는 변경은 인접 기능도 함께 검증한다
-- 테스트 실패 시 "무시하고 배포" 금지 — 근본 원인을 찾아 수정한다
-
-### DBA (Senior Database Administrator)
-- 운영 DB는 `ddl-auto: validate` 고정 — `create`/`create-drop` 절대 금지
-- 새 컬럼·인덱스·테이블은 `CLAUDE.md` 운영 DB 마이그레이션 섹션에 SQL을 기록한다
-- N+1 쿼리 발생 가능성을 항상 검토하고 JPQL fetch join 또는 별도 쿼리로 해결한다
-- 인덱스는 WHERE·ORDER BY·JOIN 컬럼에만 추가하고 과잉 인덱싱을 피한다
-- 운영 마이그레이션은 `IF NOT EXISTS` / `IF EXISTS` 구문으로 멱등성을 보장한다
-
-### Admin (어드민 운영자)
-- 위 5개 역할의 권한을 모두 갖는다 (기획 + 디자인 + 개발 + QA + DB)
-- 어드민 전용 기능(`/admin/**`)은 인증된 ADMIN 역할만 접근 가능하도록 강제한다
-- 회원 관리·콘텐츠 삭제·순서 변경 등 불가역적 작업은 확인 다이얼로그를 반드시 추가한다
-- 어드민 UI는 실수를 방지하는 방향으로 설계한다 (위험 액션은 빨간색 + 이중 확인)
-- 운영 데이터 접근 로그는 서버 콘솔에 INFO 레벨로 남긴다
+`/loop` 는 모든 단계가 완료될 때까지 자율적으로 반복한다. 사용자 승인 없이 진행한다.
 
 ---
 
@@ -97,6 +65,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 회원 관리·콘텐츠 삭제·순서 변경 등 불가역적 작업은 확인 다이얼로그를 반드시 추가한다
 - 어드민 UI는 실수를 방지하는 방향으로 설계한다 (위험 액션은 빨간색 + 이중 확인)
 - 운영 데이터 접근 로그는 서버 콘솔에 INFO 레벨로 남긴다
+
+---
+
+## AI 협업 역할 (AI Tool Roles)
+
+이 프로젝트는 작업 영역별로 담당 AI 도구를 지정하여 협업한다.
+
+### 기획 (Planning) — Pomelli
+- 요구사항 분석 및 기능 정의
+- 화면 및 사용자 플로우 설계
+- 작업 우선순위 결정
+- 기획 변경 사항은 Pomelli 기준으로 작성하고 `DESIGN_PROMPTS/` 에 문서화한다
+
+### 디자인 (Design) — Stitch
+- UI/UX 디자인 및 컴포넌트 구조 제안
+- 스타일 및 디자인 시스템 관리
+- 반응형 레이아웃 설계
+- UI/UX 관련 사항은 Stitch의 결과를 우선 반영한다
+
+### 자동화 (Automation) — AI Studio
+- 반복 작업 자동화 및 스크립트 생성
+- 배포 및 워크플로우 자동화
+- 생산성 향상을 위한 도구 연동
+- 반복 작업 및 자동화는 AI Studio를 적극 활용한다
+
+### 협업 원칙
+- 기획 변경은 Pomelli 기준으로 작성한다
+- UI/UX 사항은 Stitch 결과를 우선 반영한다
+- 반복 작업·자동화는 AI Studio를 적극 활용한다
+- 코드 구현 시 위 역할 분담을 참고하여 일관된 개발 프로세스를 유지한다
 
 ---
 
@@ -384,6 +382,12 @@ Feature-based package layout:
 - **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
 - **analytics/** — 방문자 분석. `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
 - **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. IDOR 검사: findByIdAndMemberId.
+- **testimonial/** — `TestimonialController` (`/api/testimonials`). `Testimonial` 엔티티 (memberId/clientName/clientRole/content/shootDate/featured/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id} (IDOR 검사).
+- **press/** — `PressController` (`/api/press`). `PressFeature` 엔티티 (publication/title/url/publishedDate/logoUrl), `Achievement` 엔티티 (type AWARD|EXHIBITION|PUBLICATION/title/organizer/location/yearMonth). 공개: GET `/member/{memberId}` → `{press:[], achievements:[]}`. 인증: POST/DELETE (각각).
+- **pricing/** — `PricingController` (`/api/pricing`). `PricingPackage` 엔티티 (name/price/priceLabel/description/features TEXT/featured/displayOrder/active). 공개: GET `/member/{memberId}` (active만). 인증: GET `/my` (전체), POST/PUT/{id}/DELETE/{id}.
+- **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
+- **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
+- **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
 
 #### Spring 프로파일 구성
 
@@ -519,6 +523,76 @@ CREATE TABLE IF NOT EXISTS bookings (
   confirmed_at   TIMESTAMP,
   cancelled_at   TIMESTAMP
 );
+-- Module: portfolio-world-class — 세계 수준 포트폴리오 (32_PORTFOLIO_WORLD_CLASS)
+CREATE TABLE IF NOT EXISTS testimonials (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  client_name   VARCHAR(100) NOT NULL,
+  client_role   VARCHAR(100),
+  content       TEXT NOT NULL,
+  shoot_date    VARCHAR(20),
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id ON testimonials(member_id);
+CREATE TABLE IF NOT EXISTS press_features (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  publication    VARCHAR(100) NOT NULL,
+  title          VARCHAR(200),
+  url            VARCHAR(500),
+  published_date VARCHAR(20),
+  logo_url       VARCHAR(500),
+  display_order  INTEGER DEFAULT 0,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS achievements (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  type          VARCHAR(20) NOT NULL,   -- AWARD | EXHIBITION | PUBLICATION
+  title         VARCHAR(200) NOT NULL,
+  organizer     VARCHAR(100),
+  location      VARCHAR(100),
+  year_month    VARCHAR(7),             -- "2025.05"
+  url           VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS pricing_packages (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  price         INTEGER,
+  price_label   VARCHAR(50),
+  description   TEXT,
+  features      TEXT,           -- JSON 배열
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS client_brands (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  logo_url      VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id               BIGSERIAL PRIMARY KEY,
+  member_id        BIGINT NOT NULL,
+  email            VARCHAR(255) NOT NULL,
+  token            VARCHAR(64) UNIQUE NOT NULL,
+  subscribed_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+  unsubscribed_at  TIMESTAMP,
+  UNIQUE (member_id, email)
+);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_video_url VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_taglines TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_sections_enabled TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS blur_hash VARCHAR(500);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
@@ -623,7 +697,14 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/deliveryApi.js** — `create/getMyList/getDetail/markViewed/approve/reject/delete`. `getDetail(token, password)` → `POST /delivery/{token}` 바디 전송 (쿼리 파라미터 금지 — 서버 로그 노출 방지).
 - **services/analyticsApi.js** — `track(data)` raw fetch 사용(JWT 없음, 무음 실패). `getSummary/getDaily/getTopPhotos/getGenreDistribution` — Axios + JWT.
 - **services/bookingApi.js** — `getAvailability/createBooking/getMyBookings/confirmBooking/rejectBooking/cancelBooking/getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate` (10 메서드).
+- **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
 - **services/api.js `portfolioApi`** — `getConfig(profileName)` → GET /portfolio/{profileName}/config (공개). `updateTemplate(profileName, data)` → PUT /portfolio/{profileName}/template (인증 필요).
+- **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)
+- **components/portfolio/PressAwardsSection** — "As Seen In" 로고 카드 + 수상 타임라인 (AWARD/EXHIBITION/PUBLICATION 배지)
+- **components/portfolio/ClientLogoWall** — 클라이언트 브랜드 로고 격자 (텍스트 fallback)
+- **components/portfolio/PricingSection** — 촬영 패키지 카드 (featured=MOST POPULAR 배너, JSON 피처 파싱, 문의하기 버튼)
+- **components/portfolio/NewsletterSection** — 이메일 구독 폼 (유효성 검사, 재구독·이미구독 상태 처리)
+- **components/portfolio/PortfolioContentManager** — 4탭 관리 UI (추천사/언론수상/패키지/클라이언트), ProfilePage 설정 탭에 내장
 - **components/delivery/** — `DeliveryPasswordGate` (비밀번호 입력 UI), `DeliveryApproveModal` (선택 수·피드백 텍스트영역), `DeliveryCreateModal` (사진 선택·만료일 탭·선택적 비밀번호 4자 이상)
 - **components/analytics/** — `KpiCard` (라벨/값/변화율 화살표), `LineChart` (Canvas 베지어+그라디언트, ResizeObserver), `DonutChart` (Canvas 도넛+범례), `TopPhotos` (메트릭 탭 전환), `AnalyticsDashboard` (전체 조합, 4기간 탭, 스켈레톤)
 - **components/booking/** — `StepWizard` (연결선 단계 표시기), `ShootTypeSelector` (7종 3열 그리드), `BookingCalendar` (순수 JS Date API 달력), `TimeSlotPicker` (마감 오버레이 필 버튼), `BookingForm` (전화 숫자+하이픈 정제, 이메일 형식 검증), `AvailabilityModal` (요일 토글, 시간 슬롯 관리, 차단 날짜)

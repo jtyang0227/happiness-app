@@ -58,11 +58,15 @@ public class IpBlockFilter implements Filter {
             }
             localCache.remove(ip);
         }
-        // Redis 조회
-        Boolean blocked = redisTemplate.hasKey(BLOCK_KEY_PREFIX + ip);
-        if (Boolean.TRUE.equals(blocked)) {
-            localCache.put(ip, System.currentTimeMillis() + CACHE_TTL_MS);
-            return true;
+        // Redis 조회 — Redis 미연결 시 허용 통과 (개발/Redis 없는 환경 대응)
+        try {
+            Boolean blocked = redisTemplate.hasKey(BLOCK_KEY_PREFIX + ip);
+            if (Boolean.TRUE.equals(blocked)) {
+                localCache.put(ip, System.currentTimeMillis() + CACHE_TTL_MS);
+                return true;
+            }
+        } catch (Exception e) {
+            log.debug("[IP_BLOCK] Redis 연결 실패, IP 차단 검사 스킵: {}", e.getMessage());
         }
         return false;
     }
