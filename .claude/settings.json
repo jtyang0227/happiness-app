@@ -12,6 +12,16 @@
     "defaultMode": "acceptEdits"
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "msg=$(jq -r '.prompt // \"\"'); echo \"$msg\" | grep -q '기획' && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[자동 트리거] 사용자가 기획을 요청했습니다. 반드시 /loop 스킬을 즉시 호출하여 다음 순서로 자동 수행하세요: 1) DESIGN_PROMPTS/ 하위에 기획 문서(DESIGN_PROMPT_<feature>.md) 작성 2) 백엔드 + 프론트엔드 구현 3) 디자인 작업(컴포넌트 UI 완성) 4) /verify로 런타임 검증 5) git commit + push 완료. /loop가 스스로 페이스를 조절하며 완료까지 반복합니다.\"}}' || true"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

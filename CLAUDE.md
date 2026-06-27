@@ -4,6 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 기획 자동 Loop 규칙
+
+**메시지에 "기획"이 포함된 요청이 들어오면 반드시 `/loop` 스킬을 즉시 호출한다.**
+
+Loop 수행 순서:
+1. `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 기획 문서 작성
+2. 백엔드 구현 (Spring Boot — 엔티티/서비스/컨트롤러)
+3. 프론트엔드 구현 (React 페이지/컴포넌트/API 연동)
+4. 디자인 완성 (DESIGN_PROMPT 파일 포함, inline style 준수)
+5. `/verify` 로 런타임 검증
+6. `git commit + push` 완료
+
+`/loop` 는 모든 단계가 완료될 때까지 자율적으로 반복한다. 사용자 승인 없이 진행한다.
+
+---
+
 ## 에이전트 역할 정의
 
 이 프로젝트에서 Claude는 작업 유형에 따라 아래 시니어급 역할로 동작한다.  
