@@ -70,7 +70,7 @@ cd frontend && npm test -- --watchAll=false --passWithNoTests
 
 ### 기획 자동 Loop
 메시지에 **"기획"** 포함 → 즉시 `/loop` 스킬 호출 → 아래 순서 자동 수행:
-1. `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 작성
+1. `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 작성 (Claude.ai 아티팩트 프롬프트)
 2. 백엔드 구현 (엔티티/서비스/컨트롤러)
 3. 프론트엔드 구현 (페이지/컴포넌트/API 연동)
 4. 디자인 완성
@@ -95,9 +95,9 @@ cd frontend && npm test -- --watchAll=false --passWithNoTests
 
 ---
 
-## 7. 현재 디자인 방향 (2026-06-23 확정)
+## 7. 현재 디자인 방향 (2026-06-29 업데이트)
 
-**Cosmos × Pinterest 다크 에디토리얼** (iOS Liquid Glass는 DEPRECATED)
+**Cosmos × Pinterest 다크 에디토리얼** (iOS Liquid Glass는 DEPRECATED → `DESIGN_PROMPTS/deprecated/`)
 
 | 원칙 | 실제 값 | 상태 |
 |------|---------|------|
@@ -105,6 +105,8 @@ cd frontend && npm test -- --watchAll=false --passWithNoTests
 | 카드 | 테두리/그림자 없음, 이미지 직접 얹힘 | ✅ 구현 완료 |
 | 그리드 | CSS columns 마소닉, 2→3→4컬럼 | ✅ 구현 완료 |
 | BottomNav | blur + active top-accent | ✅ 구현 완료 |
+| 장르 탭바 (dark) | Cosmos 언더라인 (bold+2px 흰선) | ✅ 구현 완료 |
+| ExplorePage | 검색+장르탭+그리드 (무드/비율/태그 필터 제거) | ✅ 구현 완료 |
 | 이미지 에디터 | `#080810` 프리미엄 다크 (예외) | — |
 | 어드민 패널 | glass.js light 계열 유지 (예외) | — |
 
@@ -161,7 +163,7 @@ storage/      — Supabase Storage 연동 (POST /api/upload/image)
 **보호 (로그인 필요):**
 ```
 /                — GalleryPage
-/explore         — ExplorePage (마소닉 그리드, 장르 필터)
+/explore         — ExplorePage (검색+Cosmos 언더라인 장르탭+마소닉 그리드, 심플화)
 /list            — ListPage
 /photo/new       — PhotoFormPage
 /photo/:id       — PhotoDetailPage
@@ -291,7 +293,7 @@ npm test -- --watchAll=false --passWithNoTests
 **P1 (단기):** 스켈레톤 로딩 / 공통 Button/Input 컴포넌트 / Header 드롭다운  
 **P2 (중기):** PhotoForm 2컬럼 레이아웃 / Before-After 슬라이더 / 무한 스크롤
 
-전체 로드맵: `DESIGN_PROMPTS/DESIGN_ROADMAP.md` 참조
+전체 로드맵: `DESIGN_PROMPTS/00_ROADMAP.md` 참조
 
 ---
 
@@ -302,7 +304,24 @@ npm test -- --watchAll=false --passWithNoTests
 
 ---
 
-## 18. 모바일 주의사항
+## 18. DESIGN_PROMPTS 폴더 구조 (2026-06-27 재정리)
+
+```
+DESIGN_PROMPTS/
+├── 00_ROADMAP.md          ← 전체 인덱스 (파일 목록 + 우선순위)
+├── planning/              ← 기획서 31개 (기능별 순번형 01~32)
+├── design/                ← Claude.ai 아티팩트 프롬프트 + 디자인 시스템 5개
+│   ├── DESIGN_PROMPT_*.md   (Claude.ai 아티팩트 프롬프트)
+│   └── 31_COSMOS_PINTEREST_DESIGN_SYSTEM.md
+├── deprecated/            ← 폐기 문서 (iOS 26 Liquid Glass 21/22/23번)
+└── review/                ← 검토 문서 1개
+```
+
+**규칙:** 새 기획 → `planning/`, 디자인 프롬프트 → `design/DESIGN_PROMPT_<feature>.md`
+
+---
+
+## 19. 모바일 주의사항
 
 - Android 에뮬레이터 API URL: `http://10.0.2.2:8080` (localhost 아님)
 - 이미지 선택: `expo-image-picker` → `POST /api/upload/image`

@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **메시지에 "기획"이 포함된 요청이 들어오면 반드시 `/loop` 스킬을 즉시 호출한다.**
 
 Loop 수행 순서:
-1. `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 기획 문서 작성
+1. `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 디자인 프롬프트 작성 (Claude.ai 아티팩트용)
 2. 백엔드 구현 (Spring Boot — 엔티티/서비스/컨트롤러)
 3. 프론트엔드 구현 (React 페이지/컴포넌트/API 연동)
 4. 디자인 완성 (DESIGN_PROMPT 파일 포함, inline style 준수)
@@ -29,7 +29,7 @@ Loop 수행 순서:
 - 사용자 가치 중심으로 기능 우선순위를 결정한다
 - 요구사항 분석 → 유저 스토리 → 수용 기준(AC) 순으로 문서화한다
 - 기술 부채와 비즈니스 임팩트를 함께 고려해 트레이드오프를 명시한다
-- 새 기능 작업 시 `DESIGN_PROMPTS/` 하위에 기획 문서를 먼저 작성한다
+- 새 기능 작업 시 `DESIGN_PROMPTS/planning/` 하위에 기획 문서, `DESIGN_PROMPTS/design/` 에 디자인 프롬프트를 먼저 작성한다
 
 ### 디자이너 (Senior UX/UI Designer)
 - 모바일 퍼스트, 접근성(WCAG 2.1 AA) 기준을 항상 준수한다
@@ -76,7 +76,7 @@ Loop 수행 순서:
 - 요구사항 분석 및 기능 정의
 - 화면 및 사용자 플로우 설계
 - 작업 우선순위 결정
-- 기획 변경 사항은 Pomelli 기준으로 작성하고 `DESIGN_PROMPTS/` 에 문서화한다
+- 기획 변경 사항은 Pomelli 기준으로 작성하고 `DESIGN_PROMPTS/planning/` 에 문서화한다
 
 ### 디자인 (Design) — Stitch
 - UI/UX 디자인 및 컴포넌트 구조 제안
@@ -143,14 +143,14 @@ Loop 수행 순서:
 - 한국어 UI 텍스트
 ```
 
-4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
-5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
+4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/design/` 폴더에 정리한다
+5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
 
 ### 현재 디자인 방향 (2026-06-23 기준)
 
 > **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
-> iOS 26 Liquid Glass 컨셉 제거 (`21_IOS26_LIQUID_GLASS_DESIGN.md` 등 deprecated)  
-> 참고: `DESIGN_PROMPTS/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
+> iOS 26 Liquid Glass 컨셉 제거 (`deprecated/21_IOS26_LIQUID_GLASS_DESIGN.md` 등 → `DESIGN_PROMPTS/deprecated/` 폴더로 이동)  
+> 참고: `DESIGN_PROMPTS/design/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
 
 **핵심 원칙:**
 - **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중 — **구현 완료** (global.css body + App.jsx bg)
@@ -166,7 +166,7 @@ Loop 수행 순서:
 - `Header.jsx`: PC헤더 solid #090909 + white nav links, BottomNav blur + active top-accent
 - `GalleryPage.jsx`: 배경 `#090909`, 플레이스홀더 `#0f0f0f`
 - `PhotoCard.jsx`: border-radius 8px, no border/shadow, hover scale(1.01) + author overlay + 🔖 저장 버튼
-- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, radius 9999px), 마소닉 CSS columns 2→3→4컬럼
+- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, 🔍+정렬 인라인 통합), Cosmos 언더라인 장르탭, 마소닉 CSS columns 2→3→4컬럼. 무드/비율/태그 필터 제거로 심플화 (2026-06-29)
 
 **Cosmos 앱 분석 (참고 앱):**
 - 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
@@ -177,7 +177,7 @@ Loop 수행 순서:
 
 ### 디자인 작업 우선순위 로드맵
 
-전체 우선순위 및 각 작업별 프롬프트 파일은 `DESIGN_PROMPTS/DESIGN_ROADMAP.md` 참조.
+전체 우선순위 및 각 작업별 프롬프트 파일은 `DESIGN_PROMPTS/00_ROADMAP.md` 참조.
 
 **P0 — 즉시 수정 (블로커)**
 | 파일 | 작업 |
@@ -652,13 +652,13 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **components/magazine/PanSelector** — 7종 판 타입 선택 UI (인라인 SVG 미리보기 그리드, 선택 체크마크)
 - **components/magazine/spreads/** — 7종 스프레드 컴포넌트: FullBleedSpread(전면판 그라디언트 오버레이), SplitSpread(58/42 이미지/텍스트, imageRight 지원), EditorialSpread(70%+30% 사이드바 작가정보/태그/좋아요), TriptychSpread(3장 나란히+프레임 번호), FeatureSpread(대표60%+보조3장), PortraitFocusSpread(중앙 세로+컬러bg), FilmStripSpread(다크bg+필름 천공+수평 스크롤 스냅)
 - **components/photo/GenreBadge** — 클릭 가능한 장르 배지 (primary solid + sub outline), /explore?genre=X 이동
-- **components/common/GenreTabBar** — 수평 스크롤 탭, fade hint, showAll 프롭, theme(dark/light), genres 필터
+- **components/common/GenreTabBar** — 수평 스크롤 탭, showAll·counts·genres 프롭, theme(dark/light). dark 테마: Cosmos 언더라인 스타일(활성 탭 bold+2px 흰선, 비활성 rgba(255,255,255,0.45)); light 테마: pill 버튼 스타일 유지
 - **components/photo/GenreSelector** — 4열 그리드 선택 UI (primary/sub/disabled 상태), AI 추천 배너
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
 - **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
 - **components/common/GenreSelector** — 주 장르(1개) + 서브 장르(최대 2개) 선택 컴포넌트 (PhotoForm 사용)
-- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용)
+- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용). dark=Cosmos 언더라인, light=pill
 - **components/photo/GenreBadge** — 단일 장르 뱃지 + SubGenreBadges (PhotoDetail 사용)
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
