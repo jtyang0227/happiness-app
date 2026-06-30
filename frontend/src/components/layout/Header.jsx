@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
 import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
 import { inquiryApi } from '../../services/api';
+import meetApi from '../../services/meetApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
 
 const NAV_ITEMS = [
@@ -13,7 +14,8 @@ const NAV_ITEMS = [
   { to: '/list',      label: '목록'     },
   { to: '/photo/new', label: '등록'     },
   { to: '/editor',    label: '에디터'   },
-  { to: '/inbox',     label: '문의함', badge: true },
+  { to: '/inbox',     label: '문의함', badge: 'inquiry' },
+  { to: '/meets',     label: '약속',   badge: 'meets'   },
   { to: '/profile',   label: '프로필'   },
 ];
 
@@ -106,6 +108,7 @@ export default function Header() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingMeets, setPendingMeets] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -113,6 +116,9 @@ export default function Header() {
     if (!user?.id) return;
     inquiryApi.getUnreadCount(user.id)
       .then(data => setUnreadCount(typeof data === 'number' ? data : data?.count ?? 0))
+      .catch(() => {});
+    meetApi.getPendingCount()
+      .then(count => setPendingMeets(count || 0))
       .catch(() => {});
   }, [user?.id]);
 
@@ -179,23 +185,26 @@ export default function Header() {
 
           {/* Nav */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
-            {NAV_ITEMS.map(({ to, label, end, badge }) => (
-              <NavLink
-                key={to} to={to} end={end}
-                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-              >
-                {label}
-                {badge && unreadCount > 0 && (
-                  <span style={{
-                    background: C.danger, color: '#fff',
-                    fontSize: 9, fontWeight: 800,
-                    minWidth: 15, height: 15, borderRadius: 99,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 4px',
-                  }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                )}
-              </NavLink>
-            ))}
+            {NAV_ITEMS.map(({ to, label, end, badge }) => {
+              const badgeCount = badge === 'inquiry' ? unreadCount : badge === 'meets' ? pendingMeets : 0;
+              return (
+                <NavLink
+                  key={to} to={to} end={end}
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                >
+                  {label}
+                  {badge && badgeCount > 0 && (
+                    <span style={{
+                      background: C.danger, color: '#fff',
+                      fontSize: 9, fontWeight: 800,
+                      minWidth: 15, height: 15, borderRadius: 99,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '0 4px',
+                    }}>{badgeCount > 99 ? '99+' : badgeCount}</span>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
 
           {/* Language Switcher */}
