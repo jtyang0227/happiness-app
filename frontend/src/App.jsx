@@ -38,6 +38,8 @@ import ClientDeliveryPage    from './pages/ClientDeliveryPage';
 import DeliveriesPage        from './pages/DeliveriesPage';
 import BookingPage           from './pages/BookingPage';
 import BookingDashboard      from './pages/BookingDashboard';
+import MeetsPage             from './pages/MeetsPage';
+import MeetDetailPage        from './pages/MeetDetailPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -47,6 +49,7 @@ const STANDALONE_PATHS = [
   '/oauth/naver/callback',
   '/oauth/apple/result',
   '/editor',
+  '/photo/new',
 ];
 
 function AppShell() {
@@ -58,7 +61,8 @@ function AppShell() {
     || location.pathname.startsWith('/proof/')
     || location.pathname.startsWith('/booking/')
     || location.pathname.startsWith('/admin')
-    || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname);
+    || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
+    || /^\/photo\/\d+\/edit$/.test(location.pathname);
 
   // Background: dark aurora for login/signup, dark editorial for everything else
   const bg = isDark ? BG.dark : '#090909';
@@ -101,9 +105,9 @@ function AppShell() {
           <Route path="/" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
           <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
-          <Route path="/photo/new" element={<ProtectedRoute><PhotoFormPage /></ProtectedRoute>} />
+          <Route path="/photo/new" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
           <Route path="/photo/:id" element={<ProtectedRoute><PhotoDetailPage /></ProtectedRoute>} />
-          <Route path="/photo/:id/edit" element={<ProtectedRoute><PhotoFormPage /></ProtectedRoute>} />
+          <Route path="/photo/:id/edit" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><InquiryInboxPage /></ProtectedRoute>} />
@@ -117,6 +121,10 @@ function AppShell() {
           {/* Delivery & Booking (protected) */}
           <Route path="/deliveries" element={<ProtectedRoute><DeliveriesPage /></ProtectedRoute>} />
           <Route path="/bookings" element={<ProtectedRoute><BookingDashboard /></ProtectedRoute>} />
+
+          {/* Meets */}
+          <Route path="/meets" element={<ProtectedRoute><MeetsPage /></ProtectedRoute>} />
+          <Route path="/meets/:id" element={<ProtectedRoute><MeetDetailPage /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />

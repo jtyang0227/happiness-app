@@ -64,6 +64,14 @@ public class Photo {
     @Column(nullable = true)
     private Integer displayOrder;
 
+    /** 촬영 장르 (PORTRAIT/WEDDING/LANDSCAPE/NATURE/STREET/ARCHITECTURE/FOOD/TRAVEL/FASHION/LIFESTYLE/COMMERCIAL/FINE_ART) */
+    @Column(nullable = true, length = 20)
+    private String genre;
+
+    /** 서브 장르 목록 (JSON 배열 문자열, 최대 2개 예: '["FASHION","LIFESTYLE"]') */
+    @Column(nullable = true, length = 60)
+    private String subGenres;
+
     // ── EXIF 메타데이터 ─────────────────────────────────
     @Column(nullable = true, length = 100) private String cameraModel;
     @Column(nullable = true, length = 100) private String lensModel;
@@ -71,15 +79,6 @@ public class Photo {
     @Column(nullable = true, length = 20)  private String shutterSpeed;
     @Column(nullable = true)               private Integer iso;
     @Column(nullable = true, length = 20)  private String focalLength;
-
-    // ── Feature 26 — 장르 분류 ──────────────────────────
-    /** 주 장르 (PORTRAIT/WEDDING/LANDSCAPE/NATURE/STREET/ARCHITECTURE/FOOD/TRAVEL/FASHION/LIFESTYLE/COMMERCIAL/FINE_ART) */
-    @Column(name = "genre", length = 20)
-    private String genre;
-
-    /** 서브 장르 목록 (JSON 배열 문자열, 최대 2개, 예: '["FASHION","LIFESTYLE"]') */
-    @Column(name = "sub_genres", length = 60)
-    private String subGenres;
 
     // ── Feature 25 — 매거진 판 타입 ──────────────────────
     /** 판 레이아웃 타입 (FULL_BLEED/SPLIT/EDITORIAL/TRIPTYCH/FEATURE/PORTRAIT_FOCUS/FILM_STRIP) */
@@ -93,6 +92,10 @@ public class Photo {
     /** 2분할판(SPLIT): 이미지를 우측에 배치 여부 */
     @Column(name = "image_right")
     private Boolean imageRight;
+
+    /** Blur-up 로딩용 Base64 소형 플레이스홀더 (BlurHash 알고리즘) */
+    @Column(name = "blur_hash", length = 500)
+    private String blurHash;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

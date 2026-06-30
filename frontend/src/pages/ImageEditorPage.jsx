@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { EditorProvider, useEditor } from '../contexts/EditorContext';
+import { GalleryMetaContext } from '../contexts/GalleryMetaContext';
 import EditorShell  from '../components/editor/EditorShell';
 import ExportModal  from '../components/editor/ExportModal';
 import { photoApi }  from '../services/api';
@@ -59,7 +60,7 @@ function UploadDropZone() {
 }
 
 /* ── Keyboard shortcuts ────────────────────────────────────── */
-function KeyboardHandler({ setExportOpen }) {
+function KeyboardHandler() {
   const { dispatch } = useEditor();
 
   useEffect(() => {
@@ -102,7 +103,7 @@ function BeforeUnloadGuard() {
   return null;
 }
 
-/* ── Auto-load from ?photoId ───────────────────────────────── */
+/* ── Auto-load from ?photoId query param ──────────────────── */
 function PhotoLoader() {
   const [params] = useSearchParams();
   const { dispatch } = useEditor();
@@ -126,18 +127,58 @@ function PhotoLoader() {
   return null;
 }
 
+/* ── Edit mode loader — /photo/:id/edit ───────────────────── */
+function EditModeLoader({ setGalleryMeta }) {
+  const { id } = useParams();
+  const { dispatch } = useEditor();
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        const res = await photoApi.getOne(id);
+        const photo = res?.data ?? res;
+        if (photo?.imageUrl) {
+          const blob = await fetch(photo.imageUrl).then(r => r.blob());
+          const file = new File([blob], photo.title || 'photo.jpg', { type: blob.type || 'image/jpeg' });
+          dispatch({ type: 'IMAGES_ADD', files: [file] });
+        }
+        setGalleryMeta({
+          editId: Number(id),
+          initialMeta: {
+            title: photo?.title || '',
+            description: photo?.description || '',
+            colorMood: photo?.colorMood || '',
+            imageRatio: photo?.imageRatio || '4:3',
+            gridColSpan: photo?.gridColSpan || 6,
+            genre: photo?.genre || '',
+            panType: photo?.panType || '',
+          },
+        });
+        dispatch({ type: 'TAB_SET', tab: 'gallery' });
+      } catch { /* ignore */ }
+    })();
+  }, [id]);
+
+  return null;
+}
+
 /* ── Root Page ─────────────────────────────────────────────── */
 export default function ImageEditorPage() {
   const [exportOpen, setExportOpen] = useState(false);
+  const [galleryMeta, setGalleryMeta] = useState({ editId: null, initialMeta: null });
 
   return (
-    <EditorProvider>
-      <PhotoLoader />
-      <KeyboardHandler setExportOpen={setExportOpen} />
-      <BeforeUnloadGuard />
-      <UploadDropZone />
-      <EditorShell onExport={() => setExportOpen(true)} />
-      {exportOpen && <ExportModal onClose={() => setExportOpen(false)} />}
-    </EditorProvider>
+    <GalleryMetaContext.Provider value={galleryMeta}>
+      <EditorProvider>
+        <EditModeLoader setGalleryMeta={setGalleryMeta} />
+        <PhotoLoader />
+        <KeyboardHandler />
+        <BeforeUnloadGuard />
+        <UploadDropZone />
+        <EditorShell onExport={() => setExportOpen(true)} />
+        {exportOpen && <ExportModal onClose={() => setExportOpen(false)} />}
+      </EditorProvider>
+    </GalleryMetaContext.Provider>
   );
 }

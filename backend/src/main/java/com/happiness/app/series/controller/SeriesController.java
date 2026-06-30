@@ -12,6 +12,7 @@ import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -38,7 +39,6 @@ public class SeriesController {
             List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(s.getId());
             String coverUrl = null;
             if (!sps.isEmpty()) {
-                photoRepository.findById(sps.get(0).getPhotoId()).ifPresent(p -> {});
                 coverUrl = photoRepository.findById(sps.get(0).getPhotoId())
                         .map(p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
                         .orElse(null);
@@ -88,31 +88,32 @@ public class SeriesController {
     /** 시리즈 수정 */
     @PutMapping("/{id}")
     public ResponseEntity<SeriesResponse> updateSeries(
-            @PathVariable Long id, @RequestBody SeriesRequest req) {
-        return seriesRepository.findById(id)
-                .map(series -> {
-                    if (req.getTitle() != null && !req.getTitle().isBlank()) {
-                        series.setTitle(req.getTitle().trim());
-                    }
-                    if (req.getDescription() != null) series.setDescription(req.getDescription());
-                    if (req.getCoverImageUrl() != null) series.setCoverImageUrl(req.getCoverImageUrl());
-                    if (req.getDisplayOrder() != null) series.setDisplayOrder(req.getDisplayOrder());
-                    Series saved = seriesRepository.save(series);
-                    List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(id);
-                    List<PhotoResponse> photos = sps.stream()
-                            .map(sp -> photoRepository.findById(sp.getPhotoId()))
-                            .filter(Optional::isPresent)
-                            .map(opt -> PhotoResponse.fromEntity(opt.get()))
-                            .collect(Collectors.toList());
-                    return ResponseEntity.ok(SeriesResponse.fromEntity(saved, photos));
-                })
-                .orElse(ResponseEntity.notFound().build());
+            @PathVariable Long id, @RequestBody SeriesRequest req, Authentication auth) {
+        Long requesterId = Long.parseLong(auth.getName());
+        Series series = seriesRepository.findById(id).orElse(null);
+        if (series == null) return ResponseEntity.notFound().build();
+        if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (req.getTitle() != null && !req.getTitle().isBlank()) series.setTitle(req.getTitle().trim());
+        if (req.getDescription() != null) series.setDescription(req.getDescription());
+        if (req.getCoverImageUrl() != null) series.setCoverImageUrl(req.getCoverImageUrl());
+        if (req.getDisplayOrder() != null) series.setDisplayOrder(req.getDisplayOrder());
+        Series saved = seriesRepository.save(series);
+        List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(id);
+        List<PhotoResponse> photos = sps.stream()
+                .map(sp -> photoRepository.findById(sp.getPhotoId()))
+                .filter(Optional::isPresent)
+                .map(opt -> PhotoResponse.fromEntity(opt.get()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(SeriesResponse.fromEntity(saved, photos));
     }
 
     /** 시리즈 삭제 */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSeries(@PathVariable Long id) {
-        if (!seriesRepository.existsById(id)) return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteSeries(@PathVariable Long id, Authentication auth) {
+        Long requesterId = Long.parseLong(auth.getName());
+        Series series = seriesRepository.findById(id).orElse(null);
+        if (series == null) return ResponseEntity.notFound().build();
+        if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         seriesPhotoRepository.deleteBySeriesId(id);
         seriesRepository.deleteById(id);
         return ResponseEntity.noContent().build();
@@ -122,11 +123,15 @@ public class SeriesController {
     @PostMapping("/{id}/photos")
     public ResponseEntity<?> addPhoto(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            Authentication auth) {
+        Long requesterId = Long.parseLong(auth.getName());
         Long photoId = body.get("photoId") instanceof Number
                 ? ((Number) body.get("photoId")).longValue() : null;
         if (photoId == null) return ResponseEntity.badRequest().build();
-        if (!seriesRepository.existsById(id)) return ResponseEntity.notFound().build();
+        Series series = seriesRepository.findById(id).orElse(null);
+        if (series == null) return ResponseEntity.notFound().build();
+        if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         if (!photoRepository.existsById(photoId)) return ResponseEntity.notFound().build();
         if (seriesPhotoRepository.existsBySeriesIdAndPhotoId(id, photoId)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -147,7 +152,11 @@ public class SeriesController {
     /** 시리즈에서 사진 제거 */
     @DeleteMapping("/{id}/photos/{photoId}")
     public ResponseEntity<Void> removePhoto(
-            @PathVariable Long id, @PathVariable Long photoId) {
+            @PathVariable Long id, @PathVariable Long photoId, Authentication auth) {
+        Long requesterId = Long.parseLong(auth.getName());
+        Series series = seriesRepository.findById(id).orElse(null);
+        if (series == null) return ResponseEntity.notFound().build();
+        if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         seriesPhotoRepository.deleteBySeriesIdAndPhotoId(id, photoId);
         return ResponseEntity.noContent().build();
     }

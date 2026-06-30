@@ -8,12 +8,14 @@ import TransformPanel from './panels/TransformPanel';
 import AdjustPanel    from './panels/AdjustPanel';
 import FilterPanel    from './panels/FilterPanel';
 import OverlayPanel   from './panels/OverlayPanel';
+import GalleryPanel   from './panels/GalleryPanel';
 
 const TABS = [
   { key: 'transform', label: 'Transform' },
   { key: 'adjust',    label: '보정' },
   { key: 'filter',    label: '필터' },
   { key: 'overlay',   label: '오버레이' },
+  { key: 'gallery',   label: '갤러리 저장' },
 ];
 
 const PANEL_MAP = {
@@ -21,6 +23,7 @@ const PANEL_MAP = {
   adjust:    AdjustPanel,
   filter:    FilterPanel,
   overlay:   OverlayPanel,
+  gallery:   GalleryPanel,
 };
 
 export default function EditorShell({ onExport }) {

@@ -98,6 +98,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/booking/blocked-dates").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/booking/*/availability").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/booking/*").permitAll()
+                // Portfolio 신규 모듈 — 공개 조회
+                .requestMatchers(HttpMethod.GET,  "/api/testimonials/member/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/press/member/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/pricing/member/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/brands/member/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/newsletter/unsubscribe/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용
@@ -117,7 +124,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
-            "Authorization", "Content-Type", "X-Trace-Id", "X-Requested-With", "Accept"));
+            "Authorization", "Content-Type", "X-Trace-Id", "X-Requested-With", "Accept", "X-Device-Id"));
         config.setExposedHeaders(List.of("X-Trace-Id"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

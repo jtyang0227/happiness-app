@@ -26,6 +26,11 @@ public class TokenBlacklistService {
     }
 
     public boolean isBlacklisted(String jti) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(PREFIX + jti));
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(PREFIX + jti));
+        } catch (Exception e) {
+            log.debug("[BLACKLIST] Redis 연결 실패, 블랙리스트 검사 스킵: {}", e.getMessage());
+            return false;
+        }
     }
 }

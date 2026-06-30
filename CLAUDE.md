@@ -4,6 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 기획 자동 Loop 규칙
+
+**메시지에 "기획"이 포함된 요청이 들어오면 반드시 `/loop` 스킬을 즉시 호출한다.**
+
+Loop 수행 순서:
+1. `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 디자인 프롬프트 작성 (Claude.ai 아티팩트용)
+2. 백엔드 구현 (Spring Boot — 엔티티/서비스/컨트롤러)
+3. 프론트엔드 구현 (React 페이지/컴포넌트/API 연동)
+4. 디자인 완성 (DESIGN_PROMPT 파일 포함, inline style 준수)
+5. `/verify` 로 런타임 검증
+6. `git commit + push` 완료
+
+`/loop` 는 모든 단계가 완료될 때까지 자율적으로 반복한다. 사용자 승인 없이 진행한다.
+
+---
+
 ## 에이전트 역할 정의
 
 이 프로젝트에서 Claude는 작업 유형에 따라 아래 시니어급 역할로 동작한다.  
@@ -13,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 사용자 가치 중심으로 기능 우선순위를 결정한다
 - 요구사항 분석 → 유저 스토리 → 수용 기준(AC) 순으로 문서화한다
 - 기술 부채와 비즈니스 임팩트를 함께 고려해 트레이드오프를 명시한다
-- 새 기능 작업 시 `DESIGN_PROMPTS/` 하위에 기획 문서를 먼저 작성한다
+- 새 기능 작업 시 `DESIGN_PROMPTS/planning/` 하위에 기획 문서, `DESIGN_PROMPTS/design/` 에 디자인 프롬프트를 먼저 작성한다
 
 ### 디자이너 (Senior UX/UI Designer)
 - 모바일 퍼스트, 접근성(WCAG 2.1 AA) 기준을 항상 준수한다
@@ -52,51 +68,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## 에이전트 역할 정의
+## AI 협업 역할 (AI Tool Roles)
 
-이 프로젝트에서 Claude는 작업 유형에 따라 아래 시니어급 역할로 동작한다.  
-**모든 역할은 시니어 10년 이상 수준의 판단력·품질 기준을 유지한다.**
+이 프로젝트는 작업 영역별로 담당 AI 도구를 지정하여 협업한다.
 
-### 기획자 (PM / Product Manager)
-- 사용자 가치 중심으로 기능 우선순위를 결정한다
-- 요구사항 분석 → 유저 스토리 → 수용 기준(AC) 순으로 문서화한다
-- 기술 부채와 비즈니스 임팩트를 함께 고려해 트레이드오프를 명시한다
-- 새 기능 작업 시 `DESIGN_PROMPTS/` 하위에 기획 문서를 먼저 작성한다
+### 기획 (Planning) — Pomelli
+- 요구사항 분석 및 기능 정의
+- 화면 및 사용자 플로우 설계
+- 작업 우선순위 결정
+- 기획 변경 사항은 Pomelli 기준으로 작성하고 `DESIGN_PROMPTS/planning/` 에 문서화한다
 
-### 디자이너 (Senior UX/UI Designer)
-- 모바일 퍼스트, 접근성(WCAG 2.1 AA) 기준을 항상 준수한다
-- 컬러는 `constants/colors.js` 토큰만 사용하고 하드코딩하지 않는다
-- 이모지/유니코드로 아이콘을 대체하고 외부 아이콘 라이브러리를 추가하지 않는다
-- 인터랙션마다 hover·focus·active 상태를 정의한다
-- 스켈레톤 로딩과 EmptyState를 모든 비동기 화면에 적용한다
+### 디자인 (Design) — Stitch / designer 에이전트
+- UI/UX 디자인 및 컴포넌트 구조 제안
+- 스타일 및 디자인 시스템 관리
+- 반응형 레이아웃 설계
+- UI/UX 관련 사항은 Stitch의 결과를 우선 반영한다
+- **Claude Code 에이전트**: `.claude/agents/designer.md` — Google Stitch 방법론 기반 자율 디자인 에이전트 (subagent_type: `designer`). "디자인해줘", "화면 만들어줘" 요청 시 자동 호출.
 
-### 개발자 (Senior Full-Stack Developer)
-- 프론트엔드: React 18 함수형 컴포넌트, inline style, React Router v6 준수
-- 백엔드: Spring Boot 3 / Java 25, feature-based 패키지, JPA + JPQL 사용
-- 보안 취약점(XSS, SQLi, IDOR, 파일 업로드 우회)을 코드 작성 시 자동으로 차단한다
-- 외부 라이브러리 추가 전 반드시 기존 코드로 구현 가능한지 먼저 검토한다
-- 모든 API 호출은 try-catch + 사용자 친화적 오류 처리를 포함한다
+### 자동화 (Automation) — AI Studio
+- 반복 작업 자동화 및 스크립트 생성
+- 배포 및 워크플로우 자동화
+- 생산성 향상을 위한 도구 연동
+- 반복 작업 및 자동화는 AI Studio를 적극 활용한다
 
-### QA (Senior QA Engineer)
-- 기능 구현 후 반드시 골든 패스(happy path) + 엣지 케이스를 모두 테스트한다
-- 백엔드: `./gradlew test` 통과 확인 후 커밋한다
-- 프론트엔드: `npm run build` 성공 확인, 수동 체크리스트(로그인·CRUD·반응형) 수행
-- 회귀(regression) 가능성이 있는 변경은 인접 기능도 함께 검증한다
-- 테스트 실패 시 "무시하고 배포" 금지 — 근본 원인을 찾아 수정한다
-
-### DBA (Senior Database Administrator)
-- 운영 DB는 `ddl-auto: validate` 고정 — `create`/`create-drop` 절대 금지
-- 새 컬럼·인덱스·테이블은 `CLAUDE.md` 운영 DB 마이그레이션 섹션에 SQL을 기록한다
-- N+1 쿼리 발생 가능성을 항상 검토하고 JPQL fetch join 또는 별도 쿼리로 해결한다
-- 인덱스는 WHERE·ORDER BY·JOIN 컬럼에만 추가하고 과잉 인덱싱을 피한다
-- 운영 마이그레이션은 `IF NOT EXISTS` / `IF EXISTS` 구문으로 멱등성을 보장한다
-
-### Admin (어드민 운영자)
-- 위 5개 역할의 권한을 모두 갖는다 (기획 + 디자인 + 개발 + QA + DB)
-- 어드민 전용 기능(`/admin/**`)은 인증된 ADMIN 역할만 접근 가능하도록 강제한다
-- 회원 관리·콘텐츠 삭제·순서 변경 등 불가역적 작업은 확인 다이얼로그를 반드시 추가한다
-- 어드민 UI는 실수를 방지하는 방향으로 설계한다 (위험 액션은 빨간색 + 이중 확인)
-- 운영 데이터 접근 로그는 서버 콘솔에 INFO 레벨로 남긴다
+### 협업 원칙
+- 기획 변경은 Pomelli 기준으로 작성한다
+- UI/UX 사항은 Stitch 결과를 우선 반영한다
+- 반복 작업·자동화는 AI Studio를 적극 활용한다
+- 코드 구현 시 위 역할 분담을 참고하여 일관된 개발 프로세스를 유지한다
 
 ---
 
@@ -145,14 +144,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 한국어 UI 텍스트
 ```
 
-4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/` 폴더에 정리한다
-5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
+4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/design/` 폴더에 정리한다
+5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
 
 ### 현재 디자인 방향 (2026-06-23 기준)
 
 > **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
-> iOS 26 Liquid Glass 컨셉 제거 (`21_IOS26_LIQUID_GLASS_DESIGN.md` 등 deprecated)  
-> 참고: `DESIGN_PROMPTS/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
+> iOS 26 Liquid Glass 컨셉 제거 (`deprecated/21_IOS26_LIQUID_GLASS_DESIGN.md` 등 → `DESIGN_PROMPTS/deprecated/` 폴더로 이동)  
+> 참고: `DESIGN_PROMPTS/design/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
 
 **핵심 원칙:**
 - **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중 — **구현 완료** (global.css body + App.jsx bg)
@@ -168,7 +167,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Header.jsx`: PC헤더 solid #090909 + white nav links, BottomNav blur + active top-accent
 - `GalleryPage.jsx`: 배경 `#090909`, 플레이스홀더 `#0f0f0f`
 - `PhotoCard.jsx`: border-radius 8px, no border/shadow, hover scale(1.01) + author overlay + 🔖 저장 버튼
-- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, radius 9999px), 마소닉 CSS columns 2→3→4컬럼
+- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, 🔍+정렬 인라인 통합), Cosmos 언더라인 장르탭, 마소닉 CSS columns 2→3→4컬럼. 무드/비율/태그 필터 제거로 심플화 (2026-06-29)
 
 **Cosmos 앱 분석 (참고 앱):**
 - 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
@@ -179,7 +178,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 디자인 작업 우선순위 로드맵
 
-전체 우선순위 및 각 작업별 프롬프트 파일은 `DESIGN_PROMPTS/DESIGN_ROADMAP.md` 참조.
+전체 우선순위 및 각 작업별 프롬프트 파일은 `DESIGN_PROMPTS/00_ROADMAP.md` 참조.
 
 **P0 — 즉시 수정 (블로커)**
 | 파일 | 작업 |
@@ -384,6 +383,13 @@ Feature-based package layout:
 - **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
 - **analytics/** — 방문자 분석. `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
 - **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. IDOR 검사: findByIdAndMemberId.
+- **testimonial/** — `TestimonialController` (`/api/testimonials`). `Testimonial` 엔티티 (memberId/clientName/clientRole/content/shootDate/featured/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id} (IDOR 검사).
+- **press/** — `PressController` (`/api/press`). `PressFeature` 엔티티 (publication/title/url/publishedDate/logoUrl), `Achievement` 엔티티 (type AWARD|EXHIBITION|PUBLICATION/title/organizer/location/yearMonth). 공개: GET `/member/{memberId}` → `{press:[], achievements:[]}`. 인증: POST/DELETE (각각).
+- **pricing/** — `PricingController` (`/api/pricing`). `PricingPackage` 엔티티 (name/price/priceLabel/description/features TEXT/featured/displayOrder/active). 공개: GET `/member/{memberId}` (active만). 인증: GET `/my` (전체), POST/PUT/{id}/DELETE/{id}.
+- **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
+- **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
+- **meet/** — `MeetController` (`/api/meets`) — 모델·작가 약속 커뮤니케이션 공간 (Feature 35). `Meet` 엔티티 (status PENDING/NEGOTIATING/CONFIRMED/COMPLETED/CANCELLED, locationName/Address/Lat/Lng, confirmedDate DATE, confirmedTime VARCHAR(10), initialMessage TEXT, @PrePersist/@PreUpdate updatedAt). `MeetAvailability` (meetId+memberId UNIQUE, availableDates/Times TEXT 콤마구분). `MeetMessage` (senderId/senderName/senderAvatar/content TEXT). IDOR 검사: `findByIdAndMemberId()` — 요청자·수신자 외 접근 차단. XSS: `sanitize()` HTML 태그 제거. 좌표 검증: lat(-90~90)/lng(-180~180). 상태 전환: PENDING→NEGOTIATING(accept), NEGOTIATING→CONFIRMED(confirmDate), CONFIRMED→COMPLETED(complete), 언제나→CANCELLED. 인증 필요(모든 엔드포인트): POST(생성), GET(목록/상세/pending-count), PUT(respond/confirm/location/cancel/complete), GET/POST(messages), GET/POST(availability).
+- **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
 
 #### Spring 프로파일 구성
 
@@ -519,6 +525,113 @@ CREATE TABLE IF NOT EXISTS bookings (
   confirmed_at   TIMESTAMP,
   cancelled_at   TIMESTAMP
 );
+-- Module: portfolio-world-class — 세계 수준 포트폴리오 (32_PORTFOLIO_WORLD_CLASS)
+CREATE TABLE IF NOT EXISTS testimonials (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  client_name   VARCHAR(100) NOT NULL,
+  client_role   VARCHAR(100),
+  content       TEXT NOT NULL,
+  shoot_date    VARCHAR(20),
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id ON testimonials(member_id);
+CREATE TABLE IF NOT EXISTS press_features (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  publication    VARCHAR(100) NOT NULL,
+  title          VARCHAR(200),
+  url            VARCHAR(500),
+  published_date VARCHAR(20),
+  logo_url       VARCHAR(500),
+  display_order  INTEGER DEFAULT 0,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS achievements (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  type          VARCHAR(20) NOT NULL,   -- AWARD | EXHIBITION | PUBLICATION
+  title         VARCHAR(200) NOT NULL,
+  organizer     VARCHAR(100),
+  location      VARCHAR(100),
+  year_month    VARCHAR(7),             -- "2025.05"
+  url           VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS pricing_packages (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  price         INTEGER,
+  price_label   VARCHAR(50),
+  description   TEXT,
+  features      TEXT,           -- JSON 배열
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS client_brands (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  logo_url      VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id               BIGSERIAL PRIMARY KEY,
+  member_id        BIGINT NOT NULL,
+  email            VARCHAR(255) NOT NULL,
+  token            VARCHAR(64) UNIQUE NOT NULL,
+  subscribed_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+  unsubscribed_at  TIMESTAMP,
+  UNIQUE (member_id, email)
+);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_video_url VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_taglines TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_sections_enabled TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS blur_hash VARCHAR(500);
+-- Feature 35 — 모델-작가 약속 커뮤니케이션
+CREATE TABLE IF NOT EXISTS meets (
+  id BIGSERIAL PRIMARY KEY,
+  requester_id BIGINT NOT NULL,
+  receiver_id BIGINT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  location_name VARCHAR(200),
+  location_address VARCHAR(400),
+  location_lat DOUBLE PRECISION,
+  location_lng DOUBLE PRECISION,
+  confirmed_date DATE,
+  confirmed_time VARCHAR(10),
+  initial_message TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meets_requester ON meets(requester_id);
+CREATE INDEX IF NOT EXISTS idx_meets_receiver ON meets(receiver_id);
+CREATE TABLE IF NOT EXISTS meet_availabilities (
+  id BIGSERIAL PRIMARY KEY,
+  meet_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  available_dates TEXT,
+  available_times TEXT,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (meet_id, member_id)
+);
+CREATE TABLE IF NOT EXISTS meet_messages (
+  id BIGSERIAL PRIMARY KEY,
+  meet_id BIGINT NOT NULL,
+  sender_id BIGINT NOT NULL,
+  sender_name VARCHAR(100) NOT NULL,
+  sender_avatar VARCHAR(500),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meet_messages_meet_id ON meet_messages(meet_id);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
@@ -571,20 +684,20 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
-- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + **포트폴리오 템플릿 선택 UI**(7종 카드 그리드, PUT /api/portfolio/{profileName}/template 저장, profileName 없을 때 안내 메시지) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Feature 28 — 템플릿 시스템): GET /api/portfolio/{profileName}/config 로 template 로드 후 컴포넌트 분기 렌더링. `EDITORIAL`(기본) → TemplateEditorial, `SCRL` → TemplateScrl, `MINIMAL` → TemplateMinimal, `DARK_ROOM` → TemplateDarkRoom, 나머지(FILM/SPLIT/MOSAIC/MAGAZINE)는 EDITORIAL 폴백 + "준비 중" 배너. 모든 데이터(photos/series/member/stats)는 PortfolioPage가 로드 후 template 컴포넌트에 props 전달. **components/portfolio/templates/** — TemplateEditorial(기존 PortfolioPage 레이아웃 컴포넌트화), TemplateScrl(CSS scroll-snap: y mandatory + IntersectionObserver + 우측 도트 인디케이터 + 키보드 ↑↓ 네비), TemplateMinimal(흰 배경 3열 정방형 그리드, 소문자 타이포, hover title overlay), TemplateDarkRoom(#080808 배경 + 마우스 스포트라이트 + 무드 필터 + 클릭 피처 영역). **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약). **AdminTagsPage**(`/admin/tags`): 태그 전체 목록(사진 수·최근 사용일), 태그 삭제(사용 중 경고), 태그 병합(MergeModal — 원본/대상 드롭다운 + 2단계 확인), 미사용 태그 통계. **AdminModerationPage**(`/admin/moderation`): 신고 목록 4탭(전체/대기중/처리완료/무시됨), 무시하기/사진 삭제(2단계 위험 액션 빨간색), 신고 썸네일·사유·신고자·날짜 표시.
-- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함 링크에 미읽음 배지 표시 (inquiryApi.getUnreadCount). **LangSwitcher** 컴포넌트 — 드롭다운 언어 선택 (🌐 버튼, 국기+원어 레이블, 현재 언어 체크마크)
+- **pages/** — Route-level components (Login, SignUp, Gallery, Explore, List, PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **MeetsPage**, **MeetDetailPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor`, ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + **포트폴리오 템플릿 선택 UI**(7종 카드 그리드, PUT /api/portfolio/{profileName}/template 저장, profileName 없을 때 안내 메시지) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Feature 28 — 템플릿 시스템): GET /api/portfolio/{profileName}/config 로 template 로드 후 컴포넌트 분기 렌더링. `EDITORIAL`(기본) → TemplateEditorial, `SCRL` → TemplateScrl, `MINIMAL` → TemplateMinimal, `DARK_ROOM` → TemplateDarkRoom, 나머지(FILM/SPLIT/MOSAIC/MAGAZINE)는 EDITORIAL 폴백 + "준비 중" 배너. 모든 데이터(photos/series/member/stats)는 PortfolioPage가 로드 후 template 컴포넌트에 props 전달. **components/portfolio/templates/** — TemplateEditorial(기존 PortfolioPage 레이아웃 컴포넌트화), TemplateScrl(CSS scroll-snap: y mandatory + IntersectionObserver + 우측 도트 인디케이터 + 키보드 ↑↓ 네비), TemplateMinimal(흰 배경 3열 정방형 그리드, 소문자 타이포, hover title overlay), TemplateDarkRoom(#080808 배경 + 마우스 스포트라이트 + 무드 필터 + 클릭 피처 영역). **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약). **AdminTagsPage**(`/admin/tags`): 태그 전체 목록(사진 수·최근 사용일), 태그 삭제(사용 중 경고), 태그 병합(MergeModal — 원본/대상 드롭다운 + 2단계 확인), 미사용 태그 통계. **AdminModerationPage**(`/admin/moderation`): 신고 목록 4탭(전체/대기중/처리완료/무시됨), 무시하기/사진 삭제(2단계 위험 액션 빨간색), 신고 썸네일·사유·신고자·날짜 표시. **MeetsPage** (`/meets`, 인증 필요, Feature 35): 약속 목록 + 상태별 탭 필터(전체/대기중/날짜조율/확정/완료). 상대 아바타·이름·상태배지·장소·메시지 수 카드. `NewMeetModalWrapper` — 회원 검색(이름/@프로필명) → `MeetRequestModal` 3단계 위저드. `useAuthStore(s => s.user)` 사용(AuthContext 아님). **MeetDetailPage** (`/meets/:id`, 인증 필요): 3-탭 레이아웃(📅 날짜/📍 장소/💬 채팅, Cosmos 언더라인 스타일). 달력 탭: `MeetCalendar` 가용일 토글 + NEGOTIATING 시 날짜 확정 폼. 장소 탭: `MeetLocationPicker` readOnly/편집 모드. 채팅 탭: `MeetChat` 460px 컨테이너. PENDING 수신자: 수락/거절 액션 카드. CONFIRMED: 확정 날짜 + 완료 처리 버튼.
+- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. BottomNav: 탐색·갤러리·등록(원형 강조)·목록·프로필, safe-area 대응. PC 헤더: 문의함·약속 링크에 미읽음/대기 배지 표시 (inquiryApi.getUnreadCount + meetApi.getPendingCount). **LangSwitcher** 컴포넌트 — 드롭다운 언어 선택 (🌐 버튼, 국기+원어 레이블, 현재 언어 체크마크)
 - **components/magazine/MagazineViewer** — 풀스크린 오버레이 뷰어: 상단바(닫기/제목/TOC☰/공유↗/인쇄🖨), 슬라이드 전환(translateX+opacity 320ms), ←→키보드+화살표버튼, TOC 사이드패널(240px 슬라이드인), 하단 썸네일 스트립(active 자동스크롤)+도트 인디케이터(≤7개)+페이지 번호, body 스크롤 잠금
 - **components/magazine/MagazineSpread** — panType별 스프레드 라우터 (7종 → spreads/ 하위 컴포넌트 디스패치)
 - **components/magazine/PanSelector** — 7종 판 타입 선택 UI (인라인 SVG 미리보기 그리드, 선택 체크마크)
 - **components/magazine/spreads/** — 7종 스프레드 컴포넌트: FullBleedSpread(전면판 그라디언트 오버레이), SplitSpread(58/42 이미지/텍스트, imageRight 지원), EditorialSpread(70%+30% 사이드바 작가정보/태그/좋아요), TriptychSpread(3장 나란히+프레임 번호), FeatureSpread(대표60%+보조3장), PortraitFocusSpread(중앙 세로+컬러bg), FilmStripSpread(다크bg+필름 천공+수평 스크롤 스냅)
 - **components/photo/GenreBadge** — 클릭 가능한 장르 배지 (primary solid + sub outline), /explore?genre=X 이동
-- **components/common/GenreTabBar** — 수평 스크롤 탭, fade hint, showAll 프롭, theme(dark/light), genres 필터
+- **components/common/GenreTabBar** — 수평 스크롤 탭, showAll·counts·genres 프롭, theme(dark/light). dark 테마: Cosmos 언더라인 스타일(활성 탭 bold+2px 흰선, 비활성 rgba(255,255,255,0.45)); light 테마: pill 버튼 스타일 유지
 - **components/photo/GenreSelector** — 4열 그리드 선택 UI (primary/sub/disabled 상태), AI 추천 배너
 - **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
 - **components/common/GridSpanPicker** — 12-컬럼 너비 선택
 - **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
 - **components/common/GenreSelector** — 주 장르(1개) + 서브 장르(최대 2개) 선택 컴포넌트 (PhotoForm 사용)
-- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용)
+- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용). dark=Cosmos 언더라인, light=pill
 - **components/photo/GenreBadge** — 단일 장르 뱃지 + SubGenreBadges (PhotoDetail 사용)
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
@@ -623,10 +736,19 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/deliveryApi.js** — `create/getMyList/getDetail/markViewed/approve/reject/delete`. `getDetail(token, password)` → `POST /delivery/{token}` 바디 전송 (쿼리 파라미터 금지 — 서버 로그 노출 방지).
 - **services/analyticsApi.js** — `track(data)` raw fetch 사용(JWT 없음, 무음 실패). `getSummary/getDaily/getTopPhotos/getGenreDistribution` — Axios + JWT.
 - **services/bookingApi.js** — `getAvailability/createBooking/getMyBookings/confirmBooking/rejectBooking/cancelBooking/getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate` (10 메서드).
+- **services/meetApi.js** (Feature 35) — `create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage` (13 메서드). import: `apiClient from '../api/apiClient'`. 모든 호출 → `r.data` 자동 언래핑.
+- **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
 - **services/api.js `portfolioApi`** — `getConfig(profileName)` → GET /portfolio/{profileName}/config (공개). `updateTemplate(profileName, data)` → PUT /portfolio/{profileName}/template (인증 필요).
+- **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)
+- **components/portfolio/PressAwardsSection** — "As Seen In" 로고 카드 + 수상 타임라인 (AWARD/EXHIBITION/PUBLICATION 배지)
+- **components/portfolio/ClientLogoWall** — 클라이언트 브랜드 로고 격자 (텍스트 fallback)
+- **components/portfolio/PricingSection** — 촬영 패키지 카드 (featured=MOST POPULAR 배너, JSON 피처 파싱, 문의하기 버튼)
+- **components/portfolio/NewsletterSection** — 이메일 구독 폼 (유효성 검사, 재구독·이미구독 상태 처리)
+- **components/portfolio/PortfolioContentManager** — 4탭 관리 UI (추천사/언론수상/패키지/클라이언트), ProfilePage 설정 탭에 내장
 - **components/delivery/** — `DeliveryPasswordGate` (비밀번호 입력 UI), `DeliveryApproveModal` (선택 수·피드백 텍스트영역), `DeliveryCreateModal` (사진 선택·만료일 탭·선택적 비밀번호 4자 이상)
 - **components/analytics/** — `KpiCard` (라벨/값/변화율 화살표), `LineChart` (Canvas 베지어+그라디언트, ResizeObserver), `DonutChart` (Canvas 도넛+범례), `TopPhotos` (메트릭 탭 전환), `AnalyticsDashboard` (전체 조합, 4기간 탭, 스켈레톤)
 - **components/booking/** — `StepWizard` (연결선 단계 표시기), `ShootTypeSelector` (7종 3열 그리드), `BookingCalendar` (순수 JS Date API 달력), `TimeSlotPicker` (마감 오버레이 필 버튼), `BookingForm` (전화 숫자+하이픈 정제, 이메일 형식 검증), `AvailabilityModal` (요일 토글, 시간 슬롯 관리, 차단 날짜)
+- **components/meet/** (Feature 35) — `MeetCalendar` (3색 날짜 표시: 파랑=내 선택, 보라=상대, 초록=겹침; 월 이동 화살표, 과거 날짜 비활성화), `MeetLocationPicker` (Kakao Maps JS SDK 동적 로드 + 키워드 검색 + 마커; `REACT_APP_KAKAO_MAP_KEY` 없으면 텍스트 입력 fallback; readOnly 시 지도+링크 표시), `MeetChat` (30초 polling setInterval, 날짜 구분선, 우측 파랑=본인/좌측 다크=상대, Enter 전송), `MeetRequestModal` (3단계 위저드: 날짜 선택→장소→메시지+요약)
 - **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → Axios multipart 업로드
 - **services/mockData.js** — (레거시, 현재 미사용)
 
@@ -650,6 +772,8 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/editor` — ImageEditorPage (이미지 에디터, Standalone — Header 없음)
 - `/deliveries` — DeliveriesPage (납품 세트 목록 + 생성)
 - `/bookings` — BookingDashboard (예약 수신함 + 가용 시간 설정)
+- `/meets` — MeetsPage (약속 목록 + 상태별 탭 필터, Feature 35)
+- `/meets/:id` — MeetDetailPage (약속 상세 — 달력/장소/채팅 3탭, Feature 35)
 
 **어드민 라우트** (ADMIN 권한 필요, `ProtectedRoute requiredRoles=['ADMIN']`):
 - `/admin` — AdminDashboardPage (통계 카드 + 장르 도넛 차트 + 미분류 경고)

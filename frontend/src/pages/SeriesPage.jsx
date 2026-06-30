@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { glass, GLASS, SPRING } from '../constants/glass';
 import MagazineViewer from '../components/magazine/MagazineViewer';
+import PhotoModal from '../components/photo/PhotoModal';
 
 /* ─── 시리즈 카드 ─────────────────────────────────────────── */
 function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
@@ -210,8 +211,75 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
   );
 }
 
+/* ─── 피커 사진 셀 (hover → 미리보기 버튼) ─────────────── */
+function PickerPhotoCell({ photo, selected, saving, onToggle, onPreview }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => !saving && onToggle(photo)}
+      style={{
+        position: 'relative', aspectRatio: '1',
+        borderRadius: 10, overflow: 'hidden',
+        cursor: saving ? 'not-allowed' : 'pointer',
+        border: `2.5px solid ${selected ? COLORS.primary : 'transparent'}`,
+        boxShadow: selected ? `0 0 0 2px ${COLORS.primaryLight}` : 'none',
+        transition: 'all 0.15s',
+      }}
+    >
+      <img
+        src={photo.thumbnailUrl || photo.imageUrl}
+        alt={photo.title}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+      {selected && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(91,110,245,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: COLORS.primary, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 800,
+          }}>
+            ✓
+          </div>
+        </div>
+      )}
+      {hovered && (
+        <button
+          onClick={e => { e.stopPropagation(); onPreview(photo); }}
+          style={{
+            position: 'absolute', top: 5, right: 5,
+            background: 'rgba(0,0,0,0.72)', border: 'none',
+            borderRadius: 6, padding: '3px 8px',
+            fontSize: 11, color: '#fff', cursor: 'pointer',
+            fontWeight: 600, zIndex: 2,
+          }}
+        >
+          👁
+        </button>
+      )}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+        padding: '8px 6px 5px',
+        fontSize: 10, color: '#fff', fontWeight: 600,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        pointerEvents: 'none',
+      }}>
+        {photo.title || '제목 없음'}
+      </div>
+    </div>
+  );
+}
+
 /* ─── 시리즈 사진 관리 모달 ──────────────────────────────── */
-function PhotoPickerModal({ series, allPhotos, onClose, onSave }) {
+function PhotoPickerModal({ series, allPhotos, onClose, onSave, onPreview }) {
   const [seriesDetail, setSeriesDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -296,54 +364,16 @@ function PhotoPickerModal({ series, allPhotos, onClose, onSave }) {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-                {allPhotos.map(photo => {
-                  const selected = inSeriesIds.has(photo.id);
-                  return (
-                    <div
-                      key={photo.id}
-                      onClick={() => !saving && handleToggle(photo)}
-                      style={{
-                        position: 'relative', aspectRatio: '1',
-                        borderRadius: 10, overflow: 'hidden',
-                        cursor: saving ? 'not-allowed' : 'pointer',
-                        border: `2.5px solid ${selected ? COLORS.primary : 'transparent'}`,
-                        boxShadow: selected ? `0 0 0 2px ${COLORS.primaryLight}` : 'none',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <img
-                        src={photo.thumbnailUrl || photo.imageUrl}
-                        alt={photo.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      />
-                      {selected && (
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          background: 'rgba(91,110,245,0.3)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <div style={{
-                            width: 28, height: 28, borderRadius: '50%',
-                            background: COLORS.primary, color: '#fff',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 16, fontWeight: 800,
-                          }}>
-                            ✓
-                          </div>
-                        </div>
-                      )}
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
-                        padding: '8px 6px 5px',
-                        fontSize: 10, color: '#fff', fontWeight: 600,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      }}>
-                        {photo.title || '제목 없음'}
-                      </div>
-                    </div>
-                  );
-                })}
+                {allPhotos.map(photo => (
+                  <PickerPhotoCell
+                    key={photo.id}
+                    photo={photo}
+                    selected={inSeriesIds.has(photo.id)}
+                    saving={saving}
+                    onToggle={handleToggle}
+                    onPreview={onPreview}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -363,6 +393,7 @@ export default function SeriesPage() {
   const [modal, setModal]           = useState(null); // null | 'create' | { editing: series }
   const [photoPicker, setPhotoPicker] = useState(null); // null | series
   const [magazineTarget, setMagazineTarget] = useState(null); // { series, photos }
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   const handleMagazineView = useCallback(async (series) => {
     try {
@@ -521,6 +552,19 @@ export default function SeriesPage() {
           allPhotos={allPhotos}
           onClose={() => setPhotoPicker(null)}
           onSave={() => { setPhotoPicker(null); fetchData(); }}
+          onPreview={setPreviewPhoto}
+        />
+      )}
+
+      {/* 사진 미리보기 모달 */}
+      {previewPhoto && (
+        <PhotoModal
+          photo={previewPhoto}
+          onClose={() => setPreviewPhoto(null)}
+          onUpdated={updated => {
+            setAllPhotos(ps => ps.map(p => p.id === updated.id ? updated : p));
+            setPreviewPhoto(updated);
+          }}
         />
       )}
 

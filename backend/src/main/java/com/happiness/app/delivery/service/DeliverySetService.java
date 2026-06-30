@@ -77,7 +77,7 @@ public class DeliverySetService {
         }
 
         long photoCount = req.getPhotoIds() != null ? req.getPhotoIds().size() : 0;
-        return toResponse(set, photoCount);
+        return toResponse(set, photoCount, 0);
     }
 
     // ── LIST FOR MEMBER ────────────────────────────────────────────────────────
@@ -86,10 +86,41 @@ public class DeliverySetService {
     public List<DeliverySetResponse> getSummariesForMember(Long memberId) {
         return deliverySetRepository.findByMemberIdOrderByCreatedAtDesc(memberId).stream()
                 .map(set -> {
-                    long count = deliverySetPhotoRepository.countByIdDeliverySetId(set.getId());
-                    return toResponse(set, count);
+                    long count      = deliverySetPhotoRepository.countByIdDeliverySetId(set.getId());
+                    long likedCount = deliverySetPhotoRepository.countByIdDeliverySetIdAndLikedTrue(set.getId());
+                    return toResponse(set, count, likedCount);
                 })
                 .collect(Collectors.toList());
+    }
+
+    // ── GET LIKED PHOTOS FOR OWNER ─────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getLikedPhotosForOwner(Long memberId, Long id) {
+        deliverySetRepository.findByMemberIdAndId(memberId, id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"));
+
+        List<DeliverySetPhoto> likedPhotos = deliverySetPhotoRepository
+                .findByIdDeliverySetIdAndLikedTrue(id);
+
+        if (likedPhotos.isEmpty()) return Collections.emptyList();
+
+        List<Long> photoIds = likedPhotos.stream()
+                .map(sp -> sp.getId().getPhotoId())
+                .collect(Collectors.toList());
+
+        Map<Long, Photo> photoMap = new HashMap<>();
+        photoRepository.findAllById(photoIds).forEach(p -> photoMap.put(p.getId(), p));
+
+        return likedPhotos.stream().map(sp -> {
+            Photo photo = photoMap.get(sp.getId().getPhotoId());
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id",           sp.getId().getPhotoId());
+            item.put("thumbnailUrl", photo != null ? photo.getThumbnailUrl() : null);
+            item.put("imageUrl",     photo != null ? photo.getImageUrl() : null);
+            item.put("title",        photo != null ? photo.getTitle() : null);
+            return item;
+        }).collect(Collectors.toList());
     }
 
     // ── GET DETAIL FOR CLIENT ─────────────────────────────────────────────────
@@ -228,16 +259,18 @@ public class DeliverySetService {
 
     // ── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
-    private DeliverySetResponse toResponse(DeliverySet set, long photoCount) {
+    private DeliverySetResponse toResponse(DeliverySet set, long photoCount, long likedCount) {
         return DeliverySetResponse.builder()
                 .id(set.getId())
                 .token(set.getToken())
                 .title(set.getTitle())
                 .clientName(set.getClientName())
                 .status(set.getStatus())
+                .feedback(set.getFeedback())
                 .expiresAt(set.getExpiresAt())
                 .createdAt(set.getCreatedAt())
                 .photoCount(photoCount)
+                .likedCount(likedCount)
                 .viewedAt(set.getViewedAt())
                 .approvedAt(set.getApprovedAt())
                 .hasPassword(set.getPasswordHash() != null)
