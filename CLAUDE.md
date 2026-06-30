@@ -103,7 +103,11 @@ Loop 수행 순서:
 
 **모든 작업이 완료되면 반드시 아래를 수행한다:**
 1. 작업 내용을 이 CLAUDE.md에 반영 (아키텍처 변경, 새 파일, 설정 변경)
-2. 변경 사항 요약 후 `git commit` + `git push` 까지 완료
+2. **빌드 검증** — push 전 반드시 빌드 성공을 확인한다:
+   - 프론트엔드 변경 시: `cd frontend && npm run build` → "Compiled successfully." 확인
+   - 백엔드 변경 시: `cd backend && ./gradlew clean build -x test` → "BUILD SUCCESSFUL" 확인
+   - 빌드 실패 시 오류를 수정한 후 다시 빌드를 실행한다. 빌드가 실패한 상태로 push 금지.
+3. 변경 사항 요약 후 `git commit` + `git push` 까지 완료
 
 ---
 
