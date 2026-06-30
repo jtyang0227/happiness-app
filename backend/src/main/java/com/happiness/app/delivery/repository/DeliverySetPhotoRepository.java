@@ -20,4 +20,8 @@ public interface DeliverySetPhotoRepository extends JpaRepository<DeliverySetPho
     void deleteByDeliverySetId(@Param("deliverySetId") Long deliverySetId);
 
     long countByIdDeliverySetId(Long deliverySetId);
+
+    List<DeliverySetPhoto> findByIdDeliverySetIdAndLikedTrue(Long deliverySetId);
+
+    long countByIdDeliverySetIdAndLikedTrue(Long deliverySetId);
 }

@@ -237,8 +237,48 @@ export default function TemplateEditorial({
 
       {/* BIO */}
       {member?.bio && (
-        <div style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 40px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 32px', textAlign: 'center' }}>
           <p style={{ fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.55)', fontStyle: 'italic', wordBreak: 'keep-all' }}>"{member.bio}"</p>
+        </div>
+      )}
+
+      {/* SPECIALTIES */}
+      {specialties.length > 0 && (
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: `${member?.bio ? '0' : '52px'} 32px 40px`, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>전문 분야</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            {specialties.map(sp => {
+              const EMOJI_MAP = {
+                '웨딩':        '💍',
+                '인물/포트레이트': '👤',
+                '풍경':        '🌄',
+                '제품/광고':    '📦',
+                '음식':        '🍽',
+                '건축/인테리어': '🏛',
+                '스포츠/액션':  '⚡',
+                '야생동물':     '🦁',
+                '패션':        '👗',
+                '이벤트':      '🎊',
+              };
+              const emoji = EMOJI_MAP[sp] || '✦';
+              return (
+                <div key={sp} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 20px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(8px)',
+                }}>
+                  <span style={{ fontSize: 16 }}>{emoji}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.01em' }}>{sp}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

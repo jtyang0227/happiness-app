@@ -16,6 +16,8 @@ public class DeliverySetResponse {
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
     private long photoCount;
+    private long likedCount;
+    private String feedback;
     private LocalDateTime viewedAt;
     private LocalDateTime approvedAt;
     private boolean hasPassword;

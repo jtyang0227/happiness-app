@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -77,6 +78,13 @@ public class DeliverySetController {
             @RequestBody(required = false) ClientActionRequest req) {
         deliverySetService.reject(token, req != null ? req : new ClientActionRequest());
         return ResponseEntity.noContent().build();
+    }
+
+    /** GET /api/delivery/{id}/selections — 클라이언트가 선택(좋아요)한 사진 목록 (인증 필요, 소유자만) */
+    @GetMapping("/{id}/selections")
+    public ResponseEntity<List<Map<String, Object>>> getSelections(@PathVariable Long id) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        return ResponseEntity.ok(deliverySetService.getLikedPhotosForOwner(memberId, id));
     }
 
     /** DELETE /api/delivery/{id} — 배달 세트 삭제 (인증 필요, IDOR 검사) */

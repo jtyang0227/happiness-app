@@ -8,4 +8,5 @@ export const deliveryApi = {
   approve: (token, data) => apiClient.put(`/delivery/${token}/approve`, data).then(r => r.data),
   reject: (token, data) => apiClient.put(`/delivery/${token}/reject`, data).then(r => r.data),
   delete: (id) => apiClient.delete(`/delivery/${id}`).then(r => r.data),
+  getSelections: (id) => apiClient.get(`/delivery/${id}/selections`).then(r => r.data),
 };

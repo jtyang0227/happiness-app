@@ -115,6 +115,48 @@ export default function PortfolioPage() {
     return () => { cancelled = true; };
   }, [profileName]);
 
+  /* ── SEO 메타태그 동적 주입 ── */
+  useEffect(() => {
+    if (!data?.member) return;
+    const member = data.member;
+    const name = member.name || profileName;
+    const specialties = member.specialties
+      ? member.specialties.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    const specialtyText = specialties.length > 0 ? ` · ${specialties.join(' · ')}` : '';
+    const title = `${name} — 포트폴리오${specialtyText} | Happiness`;
+    const description = member.bio
+      ? member.bio.slice(0, 120)
+      : `${name}의 사진 포트폴리오${specialtyText}`;
+    const ogImage = member.coverUrl || (data.photos?.[0]?.thumbnailUrl) || '';
+    const ogUrl = window.location.href;
+
+    const prev = {
+      title: document.title,
+      desc:  document.querySelector('meta[name="description"]')?.getAttribute('content') || '',
+    };
+
+    document.title = title;
+    const setMeta = (sel, attr, val) => {
+      let el = document.querySelector(sel);
+      if (!el) { el = document.createElement('meta'); document.head.appendChild(el); }
+      el.setAttribute(attr, val);
+    };
+
+    setMeta('meta[name="description"]',         'content', description);
+    setMeta('meta[property="og:title"]',         'content', title);
+    setMeta('meta[property="og:description"]',   'content', description);
+    setMeta('meta[property="og:url"]',           'content', ogUrl);
+    if (ogImage) setMeta('meta[property="og:image"]', 'content', ogImage);
+    setMeta('meta[property="og:type"]',          'content', 'profile');
+
+    return () => {
+      document.title = prev.title || 'Happiness';
+      const descEl = document.querySelector('meta[name="description"]');
+      if (descEl) descEl.setAttribute('content', prev.desc);
+    };
+  }, [data, profileName]);
+
   /* ── 팔로우 여부 ── */
   useEffect(() => {
     if (!data?.member?.id || !user?.id || user.id === data.member.id) return;
