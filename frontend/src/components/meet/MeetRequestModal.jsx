@@ -85,7 +85,16 @@ export default function MeetRequestModal({ receiverId, receiverName, onClose, on
                 만날 수 있는 날을 모두 선택하세요.
                 <span style={{ color: '#5b6ef5', marginLeft: 8 }}>{selectedDates.length}일 선택됨</span>
               </div>
-              <MeetCalendar myDates={selectedDates} onToggle={toggleDate} />
+              <MeetCalendar
+                myDates={selectedDates}
+                onToggle={toggleDate}
+                meetInfo={{
+                  myName: '나',
+                  theirName: receiverName,
+                  locationName: location.locationName,
+                  locationAddress: location.locationAddress,
+                }}
+              />
             </div>
           )}
 

@@ -205,6 +205,14 @@ export default function MeetDetailPage() {
               theirDates={theirDates}
               onToggle={isClosed ? undefined : handleToggleDate}
               readOnly={isClosed}
+              meetInfo={{
+                myName: isRequester ? meet.requesterName : meet.receiverName,
+                theirName: other.name,
+                locationName: meet.locationName,
+                locationAddress: meet.locationAddress,
+                confirmedDate: meet.confirmedDate,
+                confirmedTime: meet.confirmedTime,
+              }}
             />
 
             {/* confirm date (NEGOTIATING, both parties) */}
