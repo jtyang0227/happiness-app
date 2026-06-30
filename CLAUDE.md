@@ -78,11 +78,12 @@ Loop 수행 순서:
 - 작업 우선순위 결정
 - 기획 변경 사항은 Pomelli 기준으로 작성하고 `DESIGN_PROMPTS/planning/` 에 문서화한다
 
-### 디자인 (Design) — Stitch
+### 디자인 (Design) — Stitch / designer 에이전트
 - UI/UX 디자인 및 컴포넌트 구조 제안
 - 스타일 및 디자인 시스템 관리
 - 반응형 레이아웃 설계
 - UI/UX 관련 사항은 Stitch의 결과를 우선 반영한다
+- **Claude Code 에이전트**: `.claude/agents/designer.md` — Google Stitch 방법론 기반 자율 디자인 에이전트 (subagent_type: `designer`). "디자인해줘", "화면 만들어줘" 요청 시 자동 호출.
 
 ### 자동화 (Automation) — AI Studio
 - 반복 작업 자동화 및 스크립트 생성
