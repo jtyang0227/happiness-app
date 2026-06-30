@@ -1,16 +1,17 @@
 package com.happiness.app.photo.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * 사진 제목·설명·색상 무드를 분석해 태그를 자동 제안하는 서비스.
- * 외부 AI API 없이 키워드 추출 + 무드 매핑 방식으로 구현.
- */
 @Service
 public class AutoTagService {
+
+    @Value("${google.vision.api-key:}")
+    private String visionApiKey;
 
     private static final Map<String, List<String>> MOOD_TAGS = Map.ofEntries(
         Map.entry("WARM",       List.of("따뜻한", "황금빛", "노을", "여름", "일몰")),
@@ -80,6 +81,75 @@ public class AutoTagService {
             List<String> moodTags = MOOD_TAGS.get(colorMood.toUpperCase());
             if (moodTags != null) moodTags.forEach(result::add);
         }
+
+        return result.stream().limit(10).collect(Collectors.toList());
+    }
+
+    /**
+     * Google Vision API로 이미지 URL을 분석해 라벨 태그를 반환한다.
+     * API 키가 없거나 호출 실패 시 빈 리스트를 반환 (기존 suggest()로 fallback).
+     */
+    public List<String> analyzeWithVision(String imageUrl) {
+        if (visionApiKey == null || visionApiKey.isBlank() || imageUrl == null || imageUrl.isBlank()) {
+            return List.of();
+        }
+        try {
+            var client = WebClient.create("https://vision.googleapis.com");
+            var body = Map.of(
+                "requests", List.of(Map.of(
+                    "image", Map.of("source", Map.of("imageUri", imageUrl)),
+                    "features", List.of(
+                        Map.of("type", "LABEL_DETECTION", "maxResults", 8),
+                        Map.of("type", "IMAGE_PROPERTIES", "maxResults", 3)
+                    )
+                ))
+            );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = client.post()
+                .uri("/v1/images:annotate?key=" + visionApiKey)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+
+            if (response == null) return List.of();
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> responses = (List<Map<String, Object>>) response.get("responses");
+            if (responses == null || responses.isEmpty()) return List.of();
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> labels = (List<Map<String, Object>>) responses.get(0).get("labelAnnotations");
+            if (labels == null) return List.of();
+
+            return labels.stream()
+                .filter(l -> {
+                    Object score = l.get("score");
+                    return score instanceof Number n && n.doubleValue() >= 0.75;
+                })
+                .map(l -> (String) l.get("description"))
+                .filter(Objects::nonNull)
+                .limit(8)
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /**
+     * Vision API 결과 + 기존 키워드 추출을 합산해 최종 태그 목록을 반환한다.
+     */
+    public List<String> suggestWithVision(String title, String description, String colorMood, String imageUrl) {
+        Set<String> result = new LinkedHashSet<>();
+
+        // Vision API 라벨 (API 키 있을 때)
+        List<String> visionTags = analyzeWithVision(imageUrl);
+        result.addAll(visionTags);
+
+        // 기존 키워드 + 무드 태그
+        result.addAll(suggest(title, description, colorMood));
 
         return result.stream().limit(10).collect(Collectors.toList());
     }

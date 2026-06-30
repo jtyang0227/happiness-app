@@ -1,6 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const KAKAO_KEY = process.env.REACT_APP_KAKAO_MAP_KEY || '';
+const GOOGLE_MAPS_KEY = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
+
+function GoogleMapsLinks({ locationName, locationAddress, locationLat, locationLng }) {
+  const query = encodeURIComponent([locationName, locationAddress].filter(Boolean).join(', '));
+  const googleMapUrl = locationLat && locationLng
+    ? `https://maps.google.com/maps?q=${locationLat},${locationLng}&z=16`
+    : `https://maps.google.com/maps?q=${query}`;
+
+  return (
+    <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+      {locationLat && locationLng && (
+        <a
+          href={`https://map.kakao.com/link/map/${encodeURIComponent(locationName)},${locationLat},${locationLng}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 12, color: '#f9c94e', textDecoration: 'none' }}
+        >
+          카카오맵 →
+        </a>
+      )}
+      <a
+        href={googleMapUrl}
+        target="_blank" rel="noopener noreferrer"
+        style={{ fontSize: 12, color: '#4285f4', textDecoration: 'none' }}
+      >
+        구글맵 →
+      </a>
+    </div>
+  );
+}
 
 function loadKakaoMaps() {
   if (window.kakao && window.kakao.maps && window.kakao.maps.Map) return Promise.resolve();
@@ -88,15 +117,19 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
       <div>
         <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>📍 {value.locationName}</div>
         {value.locationAddress && <div style={{ color: '#9090b0', fontSize: 12, marginTop: 2 }}>{value.locationAddress}</div>}
-        {value.locationLat && value.locationLng && (
-          <a
-            href={`https://map.kakao.com/link/map/${encodeURIComponent(value.locationName)},${value.locationLat},${value.locationLng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: 12, color: '#5b6ef5', marginTop: 4, display: 'inline-block' }}
-          >
-            카카오맵에서 보기 →
-          </a>
+        <GoogleMapsLinks
+          locationName={value.locationName}
+          locationAddress={value.locationAddress}
+          locationLat={value.locationLat}
+          locationLng={value.locationLng}
+        />
+        {value.locationLat && value.locationLng && GOOGLE_MAPS_KEY && (
+          <iframe
+            title="지도"
+            width="100%" height="180"
+            style={{ border: 'none', borderRadius: 10, marginTop: 8 }}
+            src={`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${value.locationLat},${value.locationLng}&zoom=15`}
+          />
         )}
       </div>
     );
@@ -122,6 +155,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
         {value?.locationName && (
           <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(91,110,245,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
             📍 {value.locationName}{value.locationAddress ? ` — ${value.locationAddress}` : ''}
+            <GoogleMapsLinks locationName={value.locationName} locationAddress={value.locationAddress} />
           </div>
         )}
       </div>
