@@ -8,10 +8,13 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+      data-source-properties:
+        sslmode: require
+        sslfactory: org.postgresql.ssl.NonValidatingFactory
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update              # 초기 배포 시 테이블 자동 생성; 안정화 후 validate로 변경
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -25,7 +28,7 @@ spring:
       enabled: false
   data:
     redis:
-      url: ${REDIS_URL:redis://localhost:6379}   # 미설정 시 localhost fallback (연결 실패 허용)
+      url: ${REDIS_URL:redis://localhost:6379}
       timeout: 3000
       lettuce:
         pool:
