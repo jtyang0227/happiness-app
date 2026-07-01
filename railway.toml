@@ -1,9 +1,9 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+cmd = "cd backend && ./gradlew bootJar -x test --no-daemon -q"
 
 [deploy]
+startCmd = "java -Xms128m -Xmx400m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -jar backend/build/libs/app.jar"
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 120
+healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
