@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["jdk21_headless"]
+
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = ["cd backend && chmod +x gradlew && ./gradlew bootJar -x test --no-daemon -q"]
+
+[start]
+cmd = "java -Xms128m -Xmx400m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -jar backend/build/libs/app.jar"
