@@ -6,6 +6,37 @@ import MeetCalendar from '../components/meet/MeetCalendar';
 import MeetLocationPicker from '../components/meet/MeetLocationPicker';
 import MeetChat from '../components/meet/MeetChat';
 
+function buildGoogleCalendarUrl(meet, otherName) {
+  const title = encodeURIComponent(`약속 — ${otherName || '상대방'}`);
+  const details = encodeURIComponent(
+    [
+      meet.initialMessage && `메모: ${meet.initialMessage}`,
+      meet.locationName && `장소: ${meet.locationName}`,
+      meet.locationAddress && meet.locationAddress,
+    ].filter(Boolean).join('\n')
+  );
+  const location = encodeURIComponent(
+    [meet.locationName, meet.locationAddress].filter(Boolean).join(', ')
+  );
+
+  let dates = '';
+  if (meet.confirmedDate) {
+    const base = meet.confirmedDate.replace(/-/g, '');
+    if (meet.confirmedTime) {
+      const [h, m] = meet.confirmedTime.split(':');
+      const startDt = `${base}T${h.padStart(2,'0')}${(m||'00').padStart(2,'0')}00`;
+      const endH = String(Number(h) + 1).padStart(2, '0');
+      const endDt = `${base}T${endH}${(m||'00').padStart(2,'0')}00`;
+      dates = `${startDt}/${endDt}`;
+    } else {
+      const next = base; // all-day
+      dates = `${next}/${next}`;
+    }
+  }
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+}
+
 const STATUS_LABELS = {
   PENDING: { label: '대기중 ⏳', color: '#f59e0b' },
   NEGOTIATING: { label: '날짜 조율 중 📅', color: '#60a5fa' },
@@ -158,15 +189,31 @@ export default function MeetDetailPage() {
           <div style={{ ...actionCard, borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.07)' }}>
             <div style={{ color: '#10b981', fontWeight: 600, marginBottom: 4 }}>📅 확정된 약속</div>
             <div style={{ color: '#fff', fontSize: 15 }}>{meet.confirmedDate} {meet.confirmedTime && `· ${meet.confirmedTime}`}</div>
-            {meet.status === 'CONFIRMED' && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <a
+                href={buildGoogleCalendarUrl(meet, other.name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: 'rgba(66,133,244,0.15)', border: '1px solid rgba(66,133,244,0.35)',
+                  borderRadius: 8, color: '#4285f4', padding: '9px 0',
+                  fontSize: 12, fontWeight: 600, textDecoration: 'none',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(66,133,244,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(66,133,244,0.15)'}
+              >
+                📆 구글 캘린더에 추가
+              </a>
               <button
                 onClick={() => doAction(() => meetApi.complete(id), '약속이 완료됐습니다!')}
                 disabled={actionLoading}
-                style={{ ...primaryBtn, marginTop: 12, width: '100%' }}
+                style={{ ...primaryBtn, flex: 1 }}
               >
                 완료 처리
               </button>
-            )}
+            </div>
           </div>
         )}
 

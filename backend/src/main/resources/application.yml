@@ -45,6 +45,11 @@ security:
   ip-whitelist:
     admin: 127.0.0.1,0:0:0:0:0:0:0:1
 
+# Google APIs
+google:
+  vision:
+    api-key: ${GOOGLE_VISION_API_KEY:}
+
 # Supabase Storage
 supabase:
   url: ${SUPABASE_URL:}

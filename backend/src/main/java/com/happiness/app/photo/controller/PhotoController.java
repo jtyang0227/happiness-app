@@ -567,8 +567,8 @@ public class PhotoController {
     public ResponseEntity<?> autoTagSuggestions(@PathVariable Long id) {
         return photoRepository.findById(id)
                 .map(photo -> {
-                    List<String> suggestions = autoTagService.suggest(
-                            photo.getTitle(), photo.getDescription(), photo.getColorMood());
+                    List<String> suggestions = autoTagService.suggestWithVision(
+                            photo.getTitle(), photo.getDescription(), photo.getColorMood(), photo.getImageUrl());
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");
                     result.put("data", suggestions);
