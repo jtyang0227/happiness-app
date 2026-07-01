@@ -45,11 +45,6 @@ security:
   ip-whitelist:
     admin: 127.0.0.1,0:0:0:0:0:0:0:1
 
-# Google APIs
-google:
-  vision:
-    api-key: ${GOOGLE_VISION_API_KEY:}
-
 # Supabase Storage
 supabase:
   url: ${SUPABASE_URL:}
@@ -80,7 +75,10 @@ kakao:
   client-secret: ${KAKAO_CLIENT_SECRET:}
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/oauth/kakao/callback}
 
+# Google APIs + OAuth
 google:
+  vision:
+    api-key: ${GOOGLE_VISION_API_KEY:}
   client-id: ${GOOGLE_CLIENT_ID:}
   client-secret: ${GOOGLE_CLIENT_SECRET:}
   redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:3000/oauth/google/callback}
