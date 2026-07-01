@@ -1,4 +1,4 @@
-# ── Stage 1: Build ────────────────────────────────────────────────────
+# Stage 1: Build
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /workspace
@@ -13,7 +13,7 @@ RUN ./gradlew dependencies --no-daemon -q 2>/dev/null || true
 COPY backend/src src
 RUN ./gradlew bootJar -x test --no-daemon -q
 
-# ── Stage 2: Runtime ───────────────────────────────────────────────────
+# Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -23,10 +23,7 @@ WORKDIR /app
 
 COPY --from=builder /workspace/build/libs/app.jar app.jar
 
-ENV JAVA_OPTS="-Xms128m -Xmx400m \
-  -XX:+UseContainerSupport \
-  -XX:MaxRAMPercentage=75.0 \
-  -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xms128m -Xmx400m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
 
 EXPOSE 8080
 
