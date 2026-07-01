@@ -25,6 +25,9 @@ WORKDIR /app
 
 COPY --from=builder /workspace/build/libs/app.jar app.jar
 
+# 운영 기본값 (Railway Variables에 SPRING_PROFILES_ACTIVE가 설정되어 있으면 그 값이 우선 적용됨)
+ENV SPRING_PROFILES_ACTIVE=prod
+
 # JVM 튜닝 (Railway 512MB 플랜 기준)
 ENV JAVA_OPTS="-Xms128m -Xmx400m \
   -XX:+UseContainerSupport \
