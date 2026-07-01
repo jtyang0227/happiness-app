@@ -68,6 +68,11 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    redis:
+      enabled: false
+    mail:
+      enabled: false
 
 # OAuth 소셜 로그인
 kakao:
