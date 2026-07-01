@@ -10,6 +10,8 @@ WORKDIR /app
 # backend-ci 잡이 build/libs/app.jar 을 이미 만들어 전달함
 COPY build/libs/app.jar app.jar
 
+ENV SPRING_PROFILES_ACTIVE=prod
+
 ENV JAVA_OPTS="-Xms128m -Xmx400m \
   -XX:+UseContainerSupport \
   -XX:MaxRAMPercentage=75.0 \
