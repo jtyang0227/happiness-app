@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DATABASE_URL}           # postgresql://user:pass@host:5432/db
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -11,7 +11,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate              # 운영에서는 절대 create/create-drop 금지
+      ddl-auto: update              # 초기 배포 시 테이블 자동 생성; 안정화 후 validate로 변경
     show-sql: false
     properties:
       hibernate:
@@ -25,7 +25,7 @@ spring:
       enabled: false
   data:
     redis:
-      url: ${REDIS_URL}              # redis://default:token@host:port
+      url: ${REDIS_URL:redis://localhost:6379}   # 미설정 시 localhost fallback (연결 실패 허용)
       timeout: 3000
       lettuce:
         pool:
@@ -34,14 +34,11 @@ spring:
           min-idle: 5
 
 server:
-  # Railway/Render는 PORT 환경변수 자동 주입
   port: ${PORT:8080}
   tomcat:
     threads:
-      max: 200        # Spring Boot 3.x: server.tomcat.threads.max
+      max: 200
     accept-count: 100
-  # HTTPS 리다이렉트는 Cloudflare에서 처리하므로 앱 레벨 불필요
-  # forward-headers-strategy: NATIVE  # 프록시 헤더 신뢰
 
 app:
   cors:
@@ -52,7 +49,6 @@ logging:
     root: WARN
     com.happiness: INFO
   pattern:
-    # Logstash JSON 포맷 (Railway 로그 수집용)
     console: '{"time":"%d{ISO8601}","level":"%level","trace":"%X{traceId}","logger":"%logger{36}","msg":"%msg"}%n'
 
 management:
