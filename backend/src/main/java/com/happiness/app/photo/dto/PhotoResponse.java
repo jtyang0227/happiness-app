@@ -1,5 +1,6 @@
 package com.happiness.app.photo.dto;
 
+import com.happiness.app.common.util.ImageVariantUtil;
 import com.happiness.app.photo.entity.Photo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,10 @@ public class PhotoResponse {
     private String title;
     private String imageUrl;
     private String thumbnailUrl;
+    /** imageUrl(1024)에서 파일명 규칙으로 파생한 512px 변형 URL — DB에 저장되지 않음 */
+    private String imageUrl512;
+    /** imageUrl(1024)에서 파일명 규칙으로 파생한 128px 변형 URL — DB에 저장되지 않음 */
+    private String imageUrl128;
     private String description;
     private String imageRatio;
     private Integer likesCount;
@@ -57,6 +62,8 @@ public class PhotoResponse {
                 .title(photo.getTitle())
                 .imageUrl(photo.getImageUrl())
                 .thumbnailUrl(photo.getThumbnailUrl())
+                .imageUrl512(ImageVariantUtil.deriveUrl(photo.getImageUrl(), 512))
+                .imageUrl128(ImageVariantUtil.deriveUrl(photo.getImageUrl(), 128))
                 .description(photo.getDescription())
                 .imageRatio(photo.getImageRatio())
                 .likesCount(photo.getLikesCount())
