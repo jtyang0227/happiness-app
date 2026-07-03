@@ -44,6 +44,13 @@ public class RateLimitFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
+        // CORS preflight(OPTIONS)는 요청량 제한 대상에서 제외 — Spring Security의
+        // CorsFilter가 처리하도록 그대로 통과시킨다 (IpBlockFilter와 동일한 이유)
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String key = resolveKey(req);
         Bucket bucket = buckets.computeIfAbsent(key, k -> createBucket());
 

@@ -36,6 +36,16 @@ public class IpBlockFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
+
+        // CORS preflight(OPTIONS)는 이 필터보다 늦게 실행되는 Spring Security의
+        // CorsFilter가 처리해야 브라우저가 Access-Control-Allow-Origin 등을 받을 수 있다.
+        // 이 필터는 Spring Security보다 먼저 실행되므로(@Order(0)) 여기서 차단하면
+        // CORS 헤더 없이 403이 반환되어 브라우저가 "CORS policy" 에러로 보고한다.
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String ip = getClientIp(req);
 
         if (isBlocked(ip)) {
