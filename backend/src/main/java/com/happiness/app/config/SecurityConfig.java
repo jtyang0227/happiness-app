@@ -74,6 +74,9 @@ public class SecurityConfig {
 
             // 인증/인가 규칙
             .authorizeHttpRequests(auth -> auth
+                // CORS preflight(OPTIONS)는 항상 통과 — 그렇지 않으면 GET/POST 등으로만 permitAll된
+                // 엔드포인트도 preflight 단계에서 anyRequest().authenticated()에 걸려 403이 남
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // 공개 엔드포인트
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
