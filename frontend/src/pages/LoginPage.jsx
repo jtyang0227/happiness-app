@@ -111,6 +111,7 @@ export default function LoginPage() {
             </PrimaryBtn>
           </form>
 
+          {/* 간편 로그인(소셜) — OAuth 앱 키 발급 전까지 비활성화
           <Divider label="간편 로그인" />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -153,6 +154,7 @@ export default function LoginPage() {
               }}
             />
           </div>
+          */}
 
           <div style={{ marginTop: 20, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
             계정이 없으신가요?{' '}
