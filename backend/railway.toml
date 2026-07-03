@@ -7,4 +7,4 @@ healthcheckPath = "/actuator/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-# redeploy-trigger-5
+# redeploy-trigger-6
