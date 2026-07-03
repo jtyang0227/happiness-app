@@ -136,7 +136,7 @@ export default function AdminPhotosPage() {
                       borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f8' : 'none',
                     }}>
                       <img
-                        src={p.thumbnailUrl || p.imageUrl}
+                        src={p.imageUrl128 || p.thumbnailUrl || p.imageUrl}
                         alt={p.title}
                         style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#f0f0f0' }}
                         onError={e => { e.target.style.display = 'none'; }}

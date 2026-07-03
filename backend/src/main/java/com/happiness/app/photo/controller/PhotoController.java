@@ -1,6 +1,7 @@
 package com.happiness.app.photo.controller;
 
 import com.happiness.app.common.util.ImageProcessingUtil;
+import com.happiness.app.common.util.ImageVariantUtil;
 import com.happiness.app.photo.dto.PhotoRequest;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.dto.PhotoTagDto;
@@ -16,6 +17,7 @@ import com.happiness.app.photo.repository.PhotoShareRepository;
 import com.happiness.app.photo.repository.PhotoTagRepository;
 import com.happiness.app.photo.service.AutoTagService;
 import com.happiness.app.security.auth.CustomUserDetails;
+import com.happiness.app.storage.SupabaseStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +43,8 @@ public class PhotoController {
     private final PhotoShareRepository photoShareRepository;
     private final PhotoSaveRepository photoSaveRepository;
     private final ImageProcessingUtil imageProcessingUtil;
+    private final ImageVariantUtil imageVariantUtil;
+    private final SupabaseStorageService supabaseStorageService;
     private final AutoTagService autoTagService;
 
     // ── 사진 조회 ─────────────────────────────────────────────────────
@@ -148,22 +152,31 @@ public class PhotoController {
             @RequestParam(required = false) String subGenres,
             @RequestParam MultipartFile file) {
         try {
-            ImageProcessingUtil.ImageUploadResult upload = imageProcessingUtil.uploadAndResizeImage(file, imageRatio);
+            // 1024/512/256/128 4단계 변형 생성 후 Supabase Storage에 업로드
+            // (DB에는 1024=imageUrl, 256=thumbnailUrl만 저장 — 36_MULTI_RESOLUTION_IMAGES.md 참조)
+            ImageVariantUtil.VariantPrep prep = imageVariantUtil.prepare(file);
+            String uid = UUID.randomUUID().toString();
+            Map<Integer, String> variantUrls = new HashMap<>();
+            for (int size : ImageVariantUtil.SIZES) {
+                String objectKey = ImageVariantUtil.objectKey("photos", uid, size, prep.ext());
+                variantUrls.put(size, supabaseStorageService.uploadBytes(
+                        prep.variants().get(size), objectKey, prep.contentType()));
+            }
 
             int colSpan = (gridColSpan >= 1 && gridColSpan <= 12) ? gridColSpan : 6;
-            String mood = (colorMood != null && !colorMood.isBlank()) ? colorMood : upload.colorMood();
+            String mood = (colorMood != null && !colorMood.isBlank()) ? colorMood : prep.colorMood();
 
             Photo photo = Photo.builder()
                     .memberId(memberId)
                     .title(title)
-                    .imageUrl(upload.imageUrl())
-                    .thumbnailUrl(upload.thumbnailUrl())
+                    .imageUrl(variantUrls.get(1024))
+                    .thumbnailUrl(variantUrls.get(256))
                     .description(description)
                     .imageRatio(imageRatio != null ? imageRatio : "1:1")
                     .gridColSpan(colSpan)
-                    .dominantColor(upload.dominantColor())
+                    .dominantColor(prep.dominantColor())
                     .colorMood(mood)
-                    .colorPalette(upload.colorPalette())
+                    .colorPalette(prep.colorPalette())
                     .genre(genre)
                     .subGenres(subGenres)
                     .likesCount(0)
@@ -301,6 +314,8 @@ public class PhotoController {
                     photoShareRepository.deleteByPhotoId(id);
                     photoTagRepository.deleteByPhotoId(id);
 
+                    // 신규 파이프라인(Supabase 4단계 변형) 삭제 시도, 레거시 로컬 파일도 안전하게 폴백 정리
+                    supabaseStorageService.deletePhotoVariants(photo.getImageUrl());
                     imageProcessingUtil.deleteImage(photo.getImageUrl());
                     photoRepository.delete(photo);
 

@@ -4,7 +4,8 @@ import { MOOD_COLORS } from '../../constants/colors';
 export default function PhotoCard({ photo, onClick, showDetails = true }) {
   const [hovered, setHovered] = useState(false);
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
-  const imgSrc = photo.imageUrl || photo.image;
+  // 목록/그리드 카드는 256px(thumbnailUrl)을 우선 사용 — 대역폭·로딩속도 절감
+  const imgSrc = photo.thumbnailUrl || photo.imageUrl || photo.image;
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
