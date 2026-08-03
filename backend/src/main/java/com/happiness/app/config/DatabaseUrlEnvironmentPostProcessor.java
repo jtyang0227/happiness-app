@@ -5,7 +5,6 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -16,6 +15,11 @@ import java.util.Map;
  * user:password가 URL authority에 임베드되어 있음. PostgreSQL JDBC 드라이버는 이 문법을 지원하지
  * 않고(userinfo를 파싱하지 않고 host의 일부로 취급해 UnknownHostException 발생) 별도의
  * username/password 프로퍼티로 전달해야 하므로, 여기서 미리 분해해 스프링 프로퍼티로 주입한다.
+ *
+ * java.net.URI 대신 수동 문자열 파싱을 사용한다 — Supabase 커넥션 풀러(Supavisor)의 사용자명은
+ * "postgres.<project-ref>"처럼 '.'이 포함된 테넌트 접두사 형식이라, username을 한 글자도 잘라내면
+ * 안 되기 때문에(테넌트 접두사가 잘리면 "tenant/user ... not found" 인증 오류 발생) userinfo/host
+ * 경계를 '@'의 마지막 위치 기준으로 명시적으로 찾아 정확히 보존한다.
  */
 public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
@@ -28,32 +32,57 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
 
         try {
             String raw = databaseUrl.startsWith("jdbc:") ? databaseUrl.substring("jdbc:".length()) : databaseUrl;
-            URI uri = new URI(raw);
 
-            // URI#getUserInfo()는 이미 퍼센트 인코딩을 디코딩해 반환하므로(getRawUserInfo()가 원본),
-            // 여기서 다시 URLDecoder.decode()를 적용하면 이중 디코딩이 되어 비밀번호에 '+'가 있으면
-            // 공백으로 깨지는 등의 문제가 생김 — 분리(:)는 raw 문자열 기준으로 하고 디코딩은 한 번만 수행
-            String username = null;
+            int schemeIdx = raw.indexOf("://");
+            if (schemeIdx < 0) {
+                return;
+            }
+            String afterScheme = raw.substring(schemeIdx + 3); // user:password@host:port/db...
+
+            // host/db 부분에는 '@'가 나올 수 없으므로, userinfo와 host의 경계는 마지막 '@'로 찾는다.
+            // 이렇게 하면 비밀번호에 인코딩되지 않은 '@'가 섞여 있어도 username/tenant 접두사가
+            // 잘리지 않고 그대로 보존된다.
+            int atIdx = afterScheme.lastIndexOf('@');
+            if (atIdx < 0) {
+                return; // userinfo가 없는 URL — 손대지 않고 기존 spring.datasource.* 설정 사용
+            }
+
+            String userInfo = afterScheme.substring(0, atIdx);
+            String hostPortAndPath = afterScheme.substring(atIdx + 1);
+
+            String username = userInfo;
             String password = null;
-            String rawUserInfo = uri.getRawUserInfo();
-            if (rawUserInfo != null) {
-                int idx = rawUserInfo.indexOf(':');
-                if (idx >= 0) {
-                    username = URLDecoder.decode(rawUserInfo.substring(0, idx), StandardCharsets.UTF_8);
-                    password = URLDecoder.decode(rawUserInfo.substring(idx + 1), StandardCharsets.UTF_8);
-                } else {
-                    username = URLDecoder.decode(rawUserInfo, StandardCharsets.UTF_8);
+            int colonIdx = userInfo.indexOf(':');
+            if (colonIdx >= 0) {
+                username = userInfo.substring(0, colonIdx);
+                password = userInfo.substring(colonIdx + 1);
+            }
+            username = URLDecoder.decode(username, StandardCharsets.UTF_8);
+            if (password != null) {
+                password = URLDecoder.decode(password, StandardCharsets.UTF_8);
+            }
+
+            int slashIdx = hostPortAndPath.indexOf('/');
+            String hostPort = slashIdx >= 0 ? hostPortAndPath.substring(0, slashIdx) : hostPortAndPath;
+            String pathAndQuery = slashIdx >= 0 ? hostPortAndPath.substring(slashIdx) : "";
+
+            String host = hostPort;
+            int port = 5432;
+            int lastColonIdx = hostPort.lastIndexOf(':');
+            if (lastColonIdx >= 0) {
+                host = hostPort.substring(0, lastColonIdx);
+                try {
+                    port = Integer.parseInt(hostPort.substring(lastColonIdx + 1));
+                } catch (NumberFormatException ignored) {
+                    // 포트 파싱 실패 시 기본값(5432) 유지
                 }
             }
 
-            int port = uri.getPort() > 0 ? uri.getPort() : 5432;
-            String jdbcUrl = "jdbc:postgresql://" + uri.getHost() + ":" + port + uri.getPath();
+            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + pathAndQuery;
 
             Map<String, Object> overrides = new HashMap<>();
             overrides.put("spring.datasource.url", jdbcUrl);
-            if (username != null) {
-                overrides.put("spring.datasource.username", username);
-            }
+            overrides.put("spring.datasource.username", username);
             if (password != null) {
                 overrides.put("spring.datasource.password", password);
             }
