@@ -14,7 +14,6 @@ spring:
         sslmode: require
         sslfactory: org.postgresql.ssl.NonValidatingFactory
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: false
