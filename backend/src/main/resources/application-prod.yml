@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: ${DATABASE_URL}
+    # 실제 url/username/password는 DatabaseUrlEnvironmentPostProcessor가
+    # DATABASE_URL(libpq 형식)을 파싱해 주입함 — 아래는 해당 파싱이 실패할 경우의 fallback
+    url: jdbc:${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
