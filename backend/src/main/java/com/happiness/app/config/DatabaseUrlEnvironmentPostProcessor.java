@@ -30,16 +30,19 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             String raw = databaseUrl.startsWith("jdbc:") ? databaseUrl.substring("jdbc:".length()) : databaseUrl;
             URI uri = new URI(raw);
 
+            // URI#getUserInfo()는 이미 퍼센트 인코딩을 디코딩해 반환하므로(getRawUserInfo()가 원본),
+            // 여기서 다시 URLDecoder.decode()를 적용하면 이중 디코딩이 되어 비밀번호에 '+'가 있으면
+            // 공백으로 깨지는 등의 문제가 생김 — 분리(:)는 raw 문자열 기준으로 하고 디코딩은 한 번만 수행
             String username = null;
             String password = null;
-            String userInfo = uri.getUserInfo();
-            if (userInfo != null) {
-                int idx = userInfo.indexOf(':');
+            String rawUserInfo = uri.getRawUserInfo();
+            if (rawUserInfo != null) {
+                int idx = rawUserInfo.indexOf(':');
                 if (idx >= 0) {
-                    username = URLDecoder.decode(userInfo.substring(0, idx), StandardCharsets.UTF_8);
-                    password = URLDecoder.decode(userInfo.substring(idx + 1), StandardCharsets.UTF_8);
+                    username = URLDecoder.decode(rawUserInfo.substring(0, idx), StandardCharsets.UTF_8);
+                    password = URLDecoder.decode(rawUserInfo.substring(idx + 1), StandardCharsets.UTF_8);
                 } else {
-                    username = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
+                    username = URLDecoder.decode(rawUserInfo, StandardCharsets.UTF_8);
                 }
             }
 
