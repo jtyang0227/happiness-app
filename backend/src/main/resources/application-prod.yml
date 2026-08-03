@@ -1,1 +1,61 @@
-c3ByaW5nOgogIGRhdGFzb3VyY2U6CiAgICAjIOyLpOyerCB1cmwvdXNlcm5hbWUvcGFzc3dvcmTripAgRGF0YWJhc2VVcmxFbnZpcm9ubWVudFBvc3RQcm9jZXNzb3LqsIAKICAgICMgREFUQUJBU0VfVVJMKGxpYnBxIO2VmOyLnCnsnYQg7YyM7Iuc7ZW0IOycvOyeheGoIOKAlCDslYTrnpDripAg7ZWY65Cd7Ja0IO2VmOyLnOydtCDsi6TtjqjtlZjripAg6rKw7Jqw7J2YIGZhbGxiYWNrCiAgICB1cmw6IGpkYmM6JHtEQVRBQkFTRV9VUkx9CiAgICBkcml2ZXItY2xhc3MtbmFtZTogb3JnLnBvc3RncmVzcWwuRHJpdmVyCiAgICBoaWthcmk6CiAgICAgIG1heGltdW0tcG9vbC1zaXplOiAxMAogICAgICBtaW5pbXVtLWlkbGU6IDIKICAgICAgY29ubmVjdGlvbi10aW1lb3V0OiAzMDAwMAogICAgICBpZGxlLXRpbWVvdXQ6IDYwMDAwMAogICAgICBtYXgtbGlmZXRpbWU6IDE4MDAwMDAKICAgICAgZGF0YS1zb3VyY2UtcHJvcGVydGllczoKICAgICAgICBzc2xtb2RlOiByZXF1aXJlCiAgICAgICAgc3NsZmFjdG9yeTogb3JnLnBvc3RncmVzcWwuc3NsLk5vblZhbGlkYXRpbmdGYWN0b3J5CiAganBhOgogICAgaGliZXJuYXRlOgogICAgICBkZGwtYXV0bzogdXBkYXRlCiAgICBzaG93LXNxbDogZmFsc2UKICAgIHByb3BlcnRpZXM6CiAgICAgIGhpYmVybmF0ZToKICAgICAgICBmb3JtYXRfc3FsOiBmYWxzZQogICAgICAgIGpkYmM6CiAgICAgICAgICBiYXRjaF9zaXplOiAyMAogICAgICAgIG9yZGVyX2luc2VydHM6IHRydWUKICAgICAgICBvcmRlcl91cGRhdGVzOiB0cnVlCiAgaDI6CiAgICBjb25zb2xlOgogICAgICBlbmFibGVkOiBmYWxzZQogIGRhdGE6CiAgICByZWRpczoKICAgICAgdXJsOiAke1JFRElTX1VSTDpyZWRpczovL2xvY2FsaG9zdDo2Mzc5fQogICAgICB0aW1lb3V0OiAzMDAwCiAgICAgIGxldHR1Y2U6CiAgICAgICAgcG9vbDoKICAgICAgICAgIG1heC1hY3RpdmU6IDIwCiAgICAgICAgICBtYXgtaWRsZTogMTAKICAgICAgICAgIG1pbi1pZGxlOiA1CgpzZXJ2ZXI6CiAgcG9ydDogJHtQT1JUOjgwODB9CiAgdG9tY2F0OgogICAgdGhyZWFkczoKICAgICAgbWF4OiAyMDAKICAgIGFjY2VwdC1jb3VudDogMTAwCgphcHA6CiAgY29yczoKICAgIGFsbG93ZWQtb3JpZ2luczogJHtDT1JTX0FMTE9XRURfT1JJR0lOUzpodHRwczovL2hhcHBpbmVzcy5pby5rcixodHRwczovL3d3dy5oYXBwaW5lc3MuaW8ua3IsaHR0cHM6Ly9oYXBwaW5lc3MtYXBwLWVpZ2h0LnZlcmNlbC5hcHB9Cgpsb2dnaW5nOgogIGxldmVsOgogICAgcm9vdDogV0FSTgogICAgY29tLmhhcHBpbmVzczogSU5GTwogIHBhdHRlcm46CiAgICBjb25zb2xlOiAne1widGltZVwiOlwiJWR7SVNPODYwMX1cIixcImxldmVsXCI6XCIlbGV2ZWxcIixcInRyYWNlXCI6XCIlWHt0cmFjZUlkfVwiLFwibG9nZ2VyXCI6XCIlbG9nZ2VyezM2fVwiLFwibXNnXCI6XCIlbXNnXCJ9JW4nCgptYW5hZ2VtZW50OgogIGVuZHBvaW50OgogICAgaGVhbHRoOgogICAgICBzaG93LWRldGFpbHM6IG5ldmVyCg==
+spring:
+  datasource:
+    # 실제 url/username/password는 DatabaseUrlEnvironmentPostProcessor가
+    # DATABASE_URL(libpq 형식)을 파싱해 주입함 — 아래는 해당 파싱이 실패할 경우의 fallback
+    url: jdbc:${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      data-source-properties:
+        sslmode: require
+        sslfactory: org.postgresql.ssl.NonValidatingFactory
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  h2:
+    console:
+      enabled: false
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      timeout: 3000
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
+server:
+  port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 100
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://happiness.io.kr,https://www.happiness.io.kr,https://happiness-app-eight.vercel.app}
+
+logging:
+  level:
+    root: WARN
+    com.happiness: INFO
+  pattern:
+    console: '{"time":"%d{ISO8601}","level":"%level","trace":"%X{traceId}","logger":"%logger{36}","msg":"%msg"}%n'
+
+management:
+  endpoint:
+    health:
+      show-details: never
