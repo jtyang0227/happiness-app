@@ -206,7 +206,7 @@ export default function ProfilePage() {
   // 통계
   useEffect(() => {
     if (!user?.id) return;
-    authApi.getStats(user.id).then(setStats).catch(() => {});
+    authApi.getStats(user.id).then(res => setStats(res?.data ?? res)).catch(() => {});
   }, [user?.id]);
 
   // 현재 포트폴리오 템플릿 로드
@@ -233,10 +233,14 @@ export default function ProfilePage() {
     if (!user?.id) return;
     if (activeTab === 'saved') {
       setLoadingTab(true);
-      photoApi.getSaved(user.id).then(setSavedPhotos).catch(() => {}).finally(() => setLoadingTab(false));
+      photoApi.getSaved(user.id)
+        .then(res => setSavedPhotos(res?.data ?? (Array.isArray(res) ? res : [])))
+        .catch(() => {}).finally(() => setLoadingTab(false));
     } else if (activeTab === 'series') {
       setLoadingTab(true);
-      seriesApi.getByMember(user.id).then(setSeriesList).catch(() => {}).finally(() => setLoadingTab(false));
+      seriesApi.getByMember(user.id)
+        .then(res => setSeriesList(res?.data ?? (Array.isArray(res) ? res : [])))
+        .catch(() => {}).finally(() => setLoadingTab(false));
     }
   }, [activeTab, user?.id]);
 
@@ -246,7 +250,10 @@ export default function ProfilePage() {
     setLoadingTab(true);
     const { sortBy, order } = PHOTO_SORTS[photosSort];
     photoApi.getByMember(user.id, { sortBy, order })
-      .then(data => { setMyPhotos(data); setPhotosPage(PAGE_SIZE); })
+      .then(res => {
+        setMyPhotos(res?.data ?? (Array.isArray(res) ? res : []));
+        setPhotosPage(PAGE_SIZE);
+      })
       .catch(() => {})
       .finally(() => setLoadingTab(false));
   }, [user?.id, photosSort]);
