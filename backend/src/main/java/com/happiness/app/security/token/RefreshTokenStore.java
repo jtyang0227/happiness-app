@@ -61,9 +61,17 @@ public class RefreshTokenStore {
     }
 
     public boolean isValid(Long memberId, String deviceId, String token) {
-        return find(memberId, deviceId)
-            .map(stored -> stored.equals(token))
-            .orElse(false);
+        // Redis 장애 시에는 다른 컴포넌트(IpBlockFilter 등)와 동일하게 허용 통과(fail-open)한다.
+        // find()가 Redis 연결 실패든 "저장된 토큰 없음"이든 모두 Optional.empty()로 뜻개서
+        // 반환하기 때문에 isValid()가 이를 그대로 쓰면 Redis가 죽었을 때 정상 리프레시 토큰까지
+        // "불일치"로 거부해 로그인 세션이 통채로 끓긴다 — 여기서는 두 경우를 구분해서 처리한다.
+        try {
+            String stored = redisTemplate.opsForValue().get(key(memberId, deviceId));
+            return token.equals(stored);
+        } catch (Exception e) {
+            log.debug("[RT_STORE] Redis 연결 실패, 리프레시 토큰 검증 스킵(fail-open): {}", e.getMessage());
+            return true;
+        }
     }
 
     private String key(Long memberId, String deviceId) {
