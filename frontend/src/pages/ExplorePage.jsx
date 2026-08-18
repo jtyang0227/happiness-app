@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
+import DotEmptyState from '../components/common/DotEmptyState';
+import DotSkeletonCard from '../components/common/DotSkeletonCard';
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -331,18 +333,29 @@ export default function ExplorePage() {
 
         {/* 포토 그리드 */}
         {loading ? (
-          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.30)', padding: '80px 0' }}>
-            불러오는 중...
+          /* 도트 스켈레톤 — masonry로 표시 */
+          <div className="explore-masonry" style={{ columnGap: 8 }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} style={{ breakInside: 'avoid', marginBottom: 8 }}>
+                <DotSkeletonCard />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div style={{ textAlign: 'center', color: '#e53e3e', padding: '80px 0' }}>{error}</div>
         ) : photos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.40)', fontWeight: 500 }}>
-              {query.keyword || query.genre ? '검색 결과가 없습니다.' : '등록된 사진이 없습니다.'}
-            </div>
-          </div>
+          <DotEmptyState
+            icon={query.keyword || query.genre ? '🔍' : '📷'}
+            title={query.keyword || query.genre ? '검색 결과가 없어요' : '등록된 사진이 없어요'}
+            description={
+              query.keyword
+                ? `"${query.keyword}" 에 해당하는 사진이 없습니다.`
+                : query.genre
+                ? `${query.genre} 장르의 사진이 없습니다.`
+                : undefined
+            }
+            theme="dark"
+          />
         ) : (
           <div className="explore-masonry" style={{ columnGap: 8 }}>
             {photos.map(photo => (

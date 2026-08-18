@@ -4,7 +4,7 @@ import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
-import EmptyState from '../components/common/EmptyState';
+import DotEmptyState from '../components/common/DotEmptyState';
 import { SkeletonFeedCard } from '../components/common/Skeleton';
 
 function FeedCard({ photo, onClick }) {
@@ -166,12 +166,13 @@ export default function FeedPage() {
           {Array.from({ length: 4 }).map((_, i) => <SkeletonFeedCard key={i} />)}
         </div>
       ) : photos.length === 0 ? (
-        <EmptyState
-          icon="📸"
-          title="피드가 비어 있습니다"
+        <DotEmptyState
+          icon="✨"
+          title="팔로우한 작가가 없어요"
           description="마음에 드는 작가를 팔로우하면 여기에 최신 사진이 나타납니다."
           actionLabel="작가 탐색하기"
           onAction={() => navigate('/explore')}
+          theme="light"
         />
       ) : (
         <>
