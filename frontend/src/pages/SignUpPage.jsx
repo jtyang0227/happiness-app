@@ -9,7 +9,7 @@ const PHONE_RE = /^01[0-9]-\d{3,4}-\d{4}$/;
 
 const INITIAL = {
   name: '', email: '', password: '', confirmPassword: '',
-  tel: '', profileName: '', instagramId: '',
+  tel: '', profileName: '', instagramId: '', termsAgreed: false,
 };
 
 function formatPhone(value) {
@@ -85,6 +85,7 @@ export default function SignUpPage() {
     if (!form.profileName.trim())        e.profileName     = '포트폴리오 주소를 입력해주세요.';
     else if (!/^[a-z0-9-]+$/.test(form.profileName)) e.profileName = '영문 소문자, 숫자, 하이픈만 사용 가능합니다.';
     if (form.tel && !PHONE_RE.test(form.tel)) e.tel = '올바른 전화번호 형식이 아닙니다.';
+    if (!form.termsAgreed)               e.termsAgreed     = '이용약관 및 개인정보처리방침에 동의해주세요.';
     return e;
   };
 
@@ -255,6 +256,29 @@ export default function SignUpPage() {
                 style={darkInput(false)}
               />
             </DarkField>
+
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              marginBottom: 18, cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox" name="termsAgreed"
+                checked={form.termsAgreed}
+                onChange={e => {
+                  setForm(p => ({ ...p, termsAgreed: e.target.checked }));
+                  setErrors(p => ({ ...p, termsAgreed: '' }));
+                }}
+                style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', accentColor: '#5b6ef5' }}
+              />
+              <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                이용약관 및 개인정보처리방침에 동의합니다.
+              </span>
+            </label>
+            {errors.termsAgreed && (
+              <div style={{ color: '#ff8098', fontSize: 11, marginTop: -12, marginBottom: 14 }}>
+                {errors.termsAgreed}
+              </div>
+            )}
 
             <PrimaryBtn type="submit" loading={loading}>
               {loading ? '가입 중...' : '가입하기'}
