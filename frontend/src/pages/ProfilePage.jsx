@@ -8,11 +8,11 @@ import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
 import apiClient from '../api/apiClient';
 
-/* ── 포트폴리오 템플릿 목록 ──────────────────────── */
+/* ── 포트폴리오 템플릿 목록 ────────────────── */
 const PORTFOLIO_TEMPLATES = [
   { id: 'EDITORIAL', name: '에디토리얼', desc: '단일 스크롤 · 무드 필터 · 히어로 이미지', preview: '▌▌▌▌▌▌' },
-  { id: 'MINIMAL',   name: '미니멀',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
-  { id: 'SCRL',      name: '스크롤',     desc: '풀스크린 스냅 스크롤 · 몰입형 사진 감상', preview: '━━━━━━' },
+  { id: 'MINIMAL',   name: '미니볼',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
+  { id: 'SCRL',      name: '스크롤',     desc: '풀스크린 스냵 스크롤 · 몰입형 사진 감상', preview: '━━━━━━' },
   { id: 'DARK_ROOM', name: '다크룸',     desc: '순수 블랙 · 대형 타일 · 이미지 온리', preview: '░░░░░░' },
   { id: 'FILM',      name: '필름',       desc: '필름 스트립 · 시네마틱 레터박스', preview: '▐▐▐▐▐▐', disabled: true },
   { id: 'SPLIT',     name: '스플릿',     desc: '좌우 분할 · 텍스트/이미지 교차', preview: '▌│▐│▌│', disabled: true },
@@ -42,7 +42,7 @@ const SPECIALTIES_OPTIONS = [
 
 const PAGE_SIZE = 9;
 
-/* ── 서브 컴포넌트 ─────────────────────────────────── */
+/* ── 서브 컴포넌트 ─────────────────────── */
 
 function PhotoGrid({ photos, onPhotoClick }) {
   if (!photos || photos.length === 0)
@@ -96,7 +96,7 @@ function SeriesList({ series, onSeriesClick }) {
           <div style={{ aspectRatio: '16/9', background: COLORS.bg, overflow: 'hidden' }}>
             {s.coverUrl
               ? <img src={s.coverUrl} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🎞</div>
+              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🏞</div>
             }
           </div>
           <div style={{ padding: '10px 12px' }}>
@@ -135,7 +135,7 @@ function Toggle({ value, onChange }) {
   );
 }
 
-/* ── 메인 컴포넌트 ─────────────────────────────────── */
+/* ── 메인 컴포넌트 ─────────────────────── */
 
 export default function ProfilePage() {
   const { user, updateProfile, logout } = useAuth();
@@ -206,7 +206,7 @@ export default function ProfilePage() {
   // 통계
   useEffect(() => {
     if (!user?.id) return;
-    authApi.getStats(user.id).then(setStats).catch(() => {});
+    authApi.getStats(user.id).then(res => setStats(res?.data ?? res)).catch(() => {});
   }, [user?.id]);
 
   // 현재 포트폴리오 템플릿 로드
@@ -233,10 +233,14 @@ export default function ProfilePage() {
     if (!user?.id) return;
     if (activeTab === 'saved') {
       setLoadingTab(true);
-      photoApi.getSaved(user.id).then(setSavedPhotos).catch(() => {}).finally(() => setLoadingTab(false));
+      photoApi.getSaved(user.id)
+        .then(res => setSavedPhotos(res?.data ?? (Array.isArray(res) ? res : [])))
+        .catch(() => {}).finally(() => setLoadingTab(false));
     } else if (activeTab === 'series') {
       setLoadingTab(true);
-      seriesApi.getByMember(user.id).then(setSeriesList).catch(() => {}).finally(() => setLoadingTab(false));
+      seriesApi.getByMember(user.id)
+        .then(res => setSeriesList(res?.data ?? (Array.isArray(res) ? res : [])))
+        .catch(() => {}).finally(() => setLoadingTab(false));
     }
   }, [activeTab, user?.id]);
 
@@ -246,7 +250,10 @@ export default function ProfilePage() {
     setLoadingTab(true);
     const { sortBy, order } = PHOTO_SORTS[photosSort];
     photoApi.getByMember(user.id, { sortBy, order })
-      .then(data => { setMyPhotos(data); setPhotosPage(PAGE_SIZE); })
+      .then(res => {
+        setMyPhotos(res?.data ?? (Array.isArray(res) ? res : []));
+        setPhotosPage(PAGE_SIZE);
+      })
       .catch(() => {})
       .finally(() => setLoadingTab(false));
   }, [user?.id, photosSort]);
@@ -368,7 +375,7 @@ export default function ProfilePage() {
   const visiblePhotos = myPhotos.slice(0, photosPage);
   const visibleSaved  = savedPhotos.slice(0, photosPage);
 
-  /* ── 렌더 ──────────────────────────────────────── */
+  /* ── 렌더 ──────────────────────── */
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 80 }}>
 
@@ -811,7 +818,7 @@ export default function ProfilePage() {
   );
 }
 
-/* ── 스타일 상수 ───────────────────────────────────── */
+/* ── 스타일 상수 ─────────────────────── */
 
 const tagStyle = {
   fontSize: 12, color: COLORS.textSecondary,
