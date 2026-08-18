@@ -5,8 +5,8 @@ import { COLORS } from '../constants/colors';
 import { glassDark } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
-import EmptyState from '../components/common/EmptyState';
-import { SkeletonGalleryCard } from '../components/common/Skeleton';
+import DotEmptyState from '../components/common/DotEmptyState';
+import DotSkeletonCard from '../components/common/DotSkeletonCard';
 import { useGalleryLayout } from '../hooks/useGalleryLayout';
 import GenreTabBar from '../components/common/GenreTabBar';
 import MagazineViewer from '../components/magazine/MagazineViewer';
@@ -269,19 +269,21 @@ export default function GalleryPage() {
 
       {/* ── 콘텐츠 ── */}
       {loading ? (
-        /* 스켈레톤 — masonry로 통일 */
+        /* 도트 스켈레톤 — masonry로 통일 */
         <>
           <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
           <div className="gallery-masonry" style={{ columnGap: 4, padding: 4 }}>
             {Array.from({ length: 12 }).map((_, i) => (
-              <SkeletonGalleryCard key={i} dark />
+              <div key={i} style={{ breakInside: 'avoid', marginBottom: 4 }}>
+                <DotSkeletonCard />
+              </div>
             ))}
           </div>
         </>
       ) : displayed.length === 0 ? (
-        <EmptyState
-          icon="✦"
-          title="아직 등록된 사진이 없습니다"
+        <DotEmptyState
+          icon="📷"
+          title="아직 사진이 없어요"
           description="첫 번째 사진을 등록하고 갤러리를 채워보세요."
           actionLabel="첫 사진 등록하기"
           onAction={() => navigate('/photo/new')}

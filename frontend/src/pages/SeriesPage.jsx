@@ -6,6 +6,7 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { glass, GLASS, SPRING } from '../constants/glass';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 import PhotoModal from '../components/photo/PhotoModal';
+import DotEmptyState from '../components/common/DotEmptyState';
 
 /* ─── 시리즈 카드 ─────────────────────────────────────────── */
 function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
@@ -494,28 +495,15 @@ export default function SeriesPage() {
           불러오는 중...
         </div>
       ) : seriesList.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '80px 0',
-          border: `2px dashed ${COLORS.border}`, borderRadius: 20,
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✦</div>
-          <p style={{ color: COLORS.textSecondary, fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
-            아직 시리즈가 없습니다
-          </p>
-          <p style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 20 }}>
-            여러 사진을 하나의 프로젝트로 묶어 포트폴리오를 구성해 보세요
-          </p>
-          <button
-            onClick={() => setModal('create')}
-            style={{
-              padding: '10px 24px', borderRadius: 10, border: 'none',
-              background: COLORS.primary, color: '#fff',
-              fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}
-          >
-            첫 번째 시리즈 만들기
-          </button>
-        </div>
+        <DotEmptyState
+          icon="🗂️"
+          title="시리즈가 없어요"
+          description="여러 사진을 하나의 프로젝트로 묶어 포트폴리오를 구성해 보세요."
+          actionLabel="첫 번째 시리즈 만들기"
+          onAction={() => setModal('create')}
+          theme="dark"
+          style={{ minHeight: '50vh' }}
+        />
       ) : (
         <div style={{
           display: 'grid',
