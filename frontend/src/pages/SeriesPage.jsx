@@ -8,7 +8,7 @@ import MagazineViewer from '../components/magazine/MagazineViewer';
 import PhotoModal from '../components/photo/PhotoModal';
 import DotEmptyState from '../components/common/DotEmptyState';
 
-/* ─── 시리즈 카드 ─────────────────────────────────────────── */
+/* ─── 시리즈 카드 ───────────────────────────────── */
 function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
   return (
     <div style={{
@@ -108,7 +108,7 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }
   );
 }
 
-/* ─── 시리즈 생성/수정 모달 ──────────────────────────────── */
+/* ─── 시리즈 생성/수정 모달 ────────────────────── */
 function SeriesModal({ series, onClose, onSave, memberId }) {
   const [form, setForm] = useState({
     title: series?.title || '',
@@ -212,7 +212,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
   );
 }
 
-/* ─── 피커 사진 셀 (hover → 미리보기 버튼) ─────────────── */
+/* ─── 피커 사진 셀 (hover → 미리보기 버튼) ───────────── */
 function PickerPhotoCell({ photo, selected, saving, onToggle, onPreview }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -279,7 +279,7 @@ function PickerPhotoCell({ photo, selected, saving, onToggle, onPreview }) {
   );
 }
 
-/* ─── 시리즈 사진 관리 모달 ──────────────────────────────── */
+/* ─── 시리즈 사진 관리 모달 ────────────────────── */
 function PhotoPickerModal({ series, allPhotos, onClose, onSave, onPreview }) {
   const [seriesDetail, setSeriesDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -384,7 +384,7 @@ function PhotoPickerModal({ series, allPhotos, onClose, onSave, onPreview }) {
   );
 }
 
-/* ─── 메인 페이지 ─────────────────────────────────────────── */
+/* ─── 메인 페이지 ────────────────────────── */
 export default function SeriesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -445,7 +445,7 @@ export default function SeriesPage() {
             시리즈
           </h1>
           <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>
-            사진을 프로젝트/컬렉션으로 묶어 포트폴리오를 구성하세요
+            사진을 프로젝트/컴렝션으로 묶어 포트폴리오를 구성하세요
           </p>
         </div>
         <button
