@@ -23,7 +23,7 @@ export const GLASS = {
     blur:     'blur(32px) saturate(180%) brightness(103%)',
     border:   'rgba(255,255,255,0.58)',
     specular: 'rgba(255,255,255,0.72)',
-    shadow:   '0 8px 32px rgba(91,110,245,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+    shadow:   '0 8px 32px rgba(232, 18, 26,0.10), 0 2px 8px rgba(0,0,0,0.06)',
   },
   // 강화 라이트 글래스 — 헤더, Nav
   strong: {
@@ -31,7 +31,7 @@ export const GLASS = {
     blur:     'blur(40px) saturate(200%) brightness(104%)',
     border:   'rgba(255,255,255,0.65)',
     specular: 'rgba(255,255,255,0.80)',
-    shadow:   '0 4px 20px rgba(91,110,245,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+    shadow:   '0 4px 20px rgba(232, 18, 26,0.08), 0 1px 4px rgba(0,0,0,0.04)',
   },
   // 다크 글래스 — 어두운 배경 위
   dark: {
@@ -51,11 +51,11 @@ export const GLASS = {
   },
   // 프라이머리 tint 글래스
   tinted: {
-    bg:       'rgba(91,110,245,0.16)',
+    bg:       'rgba(232, 18, 26,0.16)',
     blur:     'blur(32px) saturate(220%)',
-    border:   'rgba(91,110,245,0.28)',
+    border:   'rgba(232, 18, 26,0.28)',
     specular: 'rgba(255,255,255,0.25)',
-    shadow:   '0 8px 32px rgba(91,110,245,0.22)',
+    shadow:   '0 8px 32px rgba(232, 18, 26,0.22)',
   },
 };
 
@@ -101,17 +101,17 @@ export function glassDark(variant = 'dark', extra = {}) {
 export const BG = {
   // 라이트 — 은은한 보라/파랑 aurora
   light: [
-    'radial-gradient(ellipse at 15% 25%, rgba(167,139,250,0.18) 0%, transparent 55%)',
-    'radial-gradient(ellipse at 85% 75%, rgba(91,110,245,0.14) 0%, transparent 55%)',
+    'radial-gradient(ellipse at 15% 25%, rgba(34, 211, 238,0.18) 0%, transparent 55%)',
+    'radial-gradient(ellipse at 85% 75%, rgba(232, 18, 26,0.14) 0%, transparent 55%)',
     'radial-gradient(ellipse at 50% 10%, rgba(196,181,253,0.10) 0%, transparent 40%)',
     '#f8f6ff',
   ].join(', '),
 
   // 다크 — 딥 퍼플/네이비 aurora
   dark: [
-    'radial-gradient(ellipse at 20% 35%, rgba(91,110,245,0.28) 0%, transparent 50%)',
+    'radial-gradient(ellipse at 20% 35%, rgba(232, 18, 26,0.28) 0%, transparent 50%)',
     'radial-gradient(ellipse at 80% 20%, rgba(30,5,69,0.90) 0%, transparent 55%)',
-    'radial-gradient(ellipse at 55% 85%, rgba(167,139,250,0.20) 0%, transparent 50%)',
+    'radial-gradient(ellipse at 55% 85%, rgba(34, 211, 238,0.20) 0%, transparent 50%)',
     '#05040f',
   ].join(', '),
 
@@ -145,8 +145,8 @@ export const GLASS_CSS = `
     100% { background-position:  600px 0; }
   }
   @keyframes pulseGlow {
-    0%,100% { box-shadow: 0 0 0 0 rgba(91,110,245,0.4); }
-    50%      { box-shadow: 0 0 0 8px rgba(91,110,245,0); }
+    0%,100% { box-shadow: 0 0 0 0 rgba(232, 18, 26,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(232, 18, 26,0); }
   }
   @keyframes orbFloat {
     0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.65; }
@@ -174,7 +174,7 @@ export const AMBIENT_ORBS = [
     style: {
       position: 'fixed', top: '-10%', left: '-5%',
       width: 600, height: 600, borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(91,110,245,0.18) 0%, transparent 70%)',
+      background: 'radial-gradient(circle, rgba(232, 18, 26,0.18) 0%, transparent 70%)',
       filter: 'blur(80px)',
       animation: 'orbFloat 12s ease-in-out infinite',
       pointerEvents: 'none', zIndex: 0,
@@ -184,7 +184,7 @@ export const AMBIENT_ORBS = [
     style: {
       position: 'fixed', bottom: '-15%', right: '-10%',
       width: 500, height: 500, borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)',
+      background: 'radial-gradient(circle, rgba(34, 211, 238,0.14) 0%, transparent 70%)',
       filter: 'blur(80px)',
       animation: 'orbFloat 16s ease-in-out infinite reverse',
       pointerEvents: 'none', zIndex: 0,
@@ -215,7 +215,7 @@ Object.assign(GLASS.light, {
   borderFull:    `1px solid ${GLASS.light.border}`,
   borderSubtle:  `1px solid rgba(255,255,255,0.38)`,
   shadow:        `${GLASS.light.shadow}, inset 0 1.5px 0 ${GLASS.light.specular}`,
-  shadowStrong:  `0 16px 48px rgba(91,110,245,0.18), inset 0 1.5px 0 ${GLASS.light.specular}`,
+  shadowStrong:  `0 16px 48px rgba(232, 18, 26,0.18), inset 0 1.5px 0 ${GLASS.light.specular}`,
 });
 
 Object.assign(GLASS.dark, {

@@ -139,7 +139,7 @@ export default function SignUpPage() {
             width: 56, height: 56, borderRadius: 18,
             background: 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
             fontSize: 24, marginBottom: 14,
-            boxShadow: '0 8px 32px rgba(91,110,245,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+            boxShadow: '0 8px 32px rgba(232, 18, 26,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
           }}>✦</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#f0f0ff', letterSpacing: '-0.8px' }}>
             Happiness
@@ -360,25 +360,25 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
         width: '100%', padding: '13px',
         borderRadius: 14, border: 'none',
         background: loading
-          ? 'rgba(91,110,245,0.4)'
+          ? 'rgba(232, 18, 26,0.4)'
           : 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
         color: '#fff', fontSize: 15, fontWeight: 700,
         cursor: loading ? 'not-allowed' : 'pointer',
         boxShadow: loading
           ? 'none'
-          : '0 4px 20px rgba(91,110,245,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+          : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
         transition: `all 0.2s ${SPRING}`,
         marginTop: 6, letterSpacing: '-0.2px',
       }}
       onMouseEnter={e => {
         if (!loading) {
           e.currentTarget.style.transform = 'scale(1.02)';
-          e.currentTarget.style.boxShadow = '0 6px 28px rgba(91,110,245,0.6), inset 0 1px 0 rgba(255,255,255,0.25)';
+          e.currentTarget.style.boxShadow = '0 6px 28px rgba(232, 18, 26,0.6), inset 0 1px 0 rgba(255,255,255,0.25)';
         }
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 20px rgba(91,110,245,0.45), inset 0 1px 0 rgba(255,255,255,0.25)';
+        e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)';
       }}
     >
       {children}

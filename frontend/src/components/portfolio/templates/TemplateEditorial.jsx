@@ -198,7 +198,7 @@ export default function TemplateEditorial({
             <button
               onClick={() => onInquiry ? onInquiry() : navigate(`/inquiry/${pName}?memberId=${member?.id ?? ''}`)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', cursor: 'pointer' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,110,245,0.6)'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232, 18, 26,0.6)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
             >✉ 촬영 문의하기</button>
             <button
@@ -286,7 +286,7 @@ export default function TemplateEditorial({
       {availableMoods.length > 0 && (
         <div ref={filterBarRef} style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(14,14,14,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '12px 20px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
           <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? '1.5px solid #E8121A' : '1.5px solid rgba(255,255,255,0.1)', background: !moodFilter ? 'rgba(91,110,245,0.2)' : 'transparent', color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>전체 {photos.length}</button>
+          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? '1.5px solid #E8121A' : '1.5px solid rgba(255,255,255,0.1)', background: !moodFilter ? 'rgba(232, 18, 26,0.2)' : 'transparent', color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>전체 {photos.length}</button>
           {availableMoods.map(mood => {
             const md = MOOD_COLORS?.[mood];
             if (!md) return null;
@@ -346,15 +346,15 @@ export default function TemplateEditorial({
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28, lineHeight: 1.7 }}>촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate(`/inquiry/${pName}?memberId=${member?.id ?? ''}`)}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: '#E8121A', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 24px rgba(91,110,245,0.4)' }}
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: '#E8121A', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 24px rgba(232, 18, 26,0.4)' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}>
             ✉ 촬영 문의하기
           </button>
           <a href={`/booking/${pName}`}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: '1px solid #22D3EE', background: 'rgba(167,139,250,0.12)', color: '#22D3EE', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; }}>
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: '1px solid #22D3EE', background: 'rgba(34, 211, 238,0.12)', color: '#22D3EE', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(34, 211, 238,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(34, 211, 238,0.12)'; }}>
             📅 촬영 예약
           </a>
         </div>

@@ -134,7 +134,7 @@ export default function PanSelector({ selected, onChange }) {
                 background: isSelected ? '#ffe9e7' : '#fff',
                 overflow: 'hidden', transition: 'all 0.15s',
                 display: 'flex', flexDirection: 'column',
-                boxShadow: isSelected ? '0 0 0 2px rgba(91,110,245,0.2)' : 'none',
+                boxShadow: isSelected ? '0 0 0 2px rgba(232, 18, 26,0.2)' : 'none',
               }}
             >
               <div style={{ width: '100%', aspectRatio: '4/3', position: 'relative' }}>

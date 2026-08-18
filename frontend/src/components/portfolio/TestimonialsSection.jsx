@@ -84,8 +84,8 @@ export default function TestimonialsSection({ testimonials = [] }) {
         <div style={{
           display: 'inline-block',
           padding: '4px 14px', borderRadius: 20,
-          background: 'rgba(91,110,245,0.15)',
-          border: '1px solid rgba(91,110,245,0.3)',
+          background: 'rgba(232, 18, 26,0.15)',
+          border: '1px solid rgba(232, 18, 26,0.3)',
           fontSize: 11, fontWeight: 700,
           color: '#a0a8ff', letterSpacing: '0.1em',
           textTransform: 'uppercase', marginBottom: 16,

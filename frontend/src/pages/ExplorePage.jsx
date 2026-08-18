@@ -39,7 +39,7 @@ function Highlight({ text, keyword }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: 'rgba(91,110,245,0.35)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
+      <mark style={{ background: 'rgba(232, 18, 26,0.35)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
         {text.slice(idx, idx + keyword.length)}
       </mark>
       {text.slice(idx + keyword.length)}

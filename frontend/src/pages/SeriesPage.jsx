@@ -237,7 +237,7 @@ function PickerPhotoCell({ photo, selected, saving, onToggle, onPreview }) {
       {selected && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(91,110,245,0.3)',
+          background: 'rgba(232, 18, 26,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none',
         }}>

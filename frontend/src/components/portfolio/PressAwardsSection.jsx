@@ -110,7 +110,7 @@ export default function PressAwardsSection({ press = [], achievements = [] }) {
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{
               display: 'inline-block', padding: '4px 14px', borderRadius: 20,
-              background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)',
+              background: 'rgba(34, 211, 238,0.12)', border: '1px solid rgba(34, 211, 238,0.25)',
               fontSize: 11, fontWeight: 700, color: '#b8a0ff',
               letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14,
             }}>As Seen In</div>

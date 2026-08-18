@@ -170,7 +170,7 @@ export default function AdminGalleryOrderPage() {
         {/* Dirty 배너 */}
         {dirty && (
           <div style={{
-            background: '#ffe9e7', border: '1px solid rgba(91,110,245,0.25)',
+            background: '#ffe9e7', border: '1px solid rgba(232, 18, 26,0.25)',
             borderRadius: 10, padding: '10px 16px', marginBottom: 16,
             fontSize: 13, color: '#E8121A', fontWeight: 600,
           }}>
@@ -209,7 +209,7 @@ export default function AdminGalleryOrderPage() {
                 onDragEnd={handleDragEnd}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, idx)}
-                onDragEnter={e => { e.currentTarget.style.borderColor = '#E8121A'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,110,245,0.25)'; }}
+                onDragEnter={e => { e.currentTarget.style.borderColor = '#E8121A'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(232, 18, 26,0.25)'; }}
                 onDragLeave={e => { e.currentTarget.style.borderColor = '#e5e5ed'; e.currentTarget.style.boxShadow = 'none'; }}
                 style={{
                   borderRadius: 10, overflow: 'hidden', cursor: 'grab',

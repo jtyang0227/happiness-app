@@ -42,17 +42,17 @@ function PackageCard({ pkg, profileName, navigate }) {
     <div style={{
       flex: '1 1 240px', maxWidth: 340, borderRadius: 20, overflow: 'hidden',
       background: isFeatured
-        ? 'linear-gradient(145deg, rgba(91,110,245,0.25), rgba(167,139,250,0.15))'
+        ? 'linear-gradient(145deg, rgba(232, 18, 26,0.25), rgba(34, 211, 238,0.15))'
         : 'rgba(255,255,255,0.04)',
       border: isFeatured
-        ? '1.5px solid rgba(91,110,245,0.5)'
+        ? '1.5px solid rgba(232, 18, 26,0.5)'
         : '1px solid rgba(255,255,255,0.07)',
       position: 'relative',
-      boxShadow: isFeatured ? '0 0 40px rgba(91,110,245,0.2)' : 'none',
+      boxShadow: isFeatured ? '0 0 40px rgba(232, 18, 26,0.2)' : 'none',
       transition: 'transform 0.2s, box-shadow 0.2s',
     }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = isFeatured ? '0 12px 48px rgba(91,110,245,0.35)' : '0 8px 32px rgba(0,0,0,0.3)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = isFeatured ? '0 0 40px rgba(91,110,245,0.2)' : 'none'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = isFeatured ? '0 12px 48px rgba(232, 18, 26,0.35)' : '0 8px 32px rgba(0,0,0,0.3)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = isFeatured ? '0 0 40px rgba(232, 18, 26,0.2)' : 'none'; }}
     >
       {isFeatured && (
         <div style={{

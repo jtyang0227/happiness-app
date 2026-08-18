@@ -633,7 +633,7 @@ export default function PhotoFormPage() {
                             display: 'flex', gap: 4, fontSize: 9, fontWeight: 700, pointerEvents: 'none',
                           }}>
                             <span style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>이전</span>
-                            <span style={{ background: 'rgba(91,110,245,0.8)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>이후</span>
+                            <span style={{ background: 'rgba(232, 18, 26,0.8)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>이후</span>
                           </div>
                         )}
                       </div>

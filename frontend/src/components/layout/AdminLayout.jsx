@@ -31,7 +31,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       ...glass('strong'),
       borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
       borderRight: '1px solid rgba(255,255,255,0.50)',
-      boxShadow: '4px 0 24px rgba(91,110,245,0.08), inset -1px 0 0 rgba(255,255,255,0.50)',
+      boxShadow: '4px 0 24px rgba(232, 18, 26,0.08), inset -1px 0 0 rgba(255,255,255,0.50)',
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, zIndex: 200,
     }}>
@@ -81,9 +81,9 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
         @media (max-width: 768px) { .admin-sidebar { display: none !important; } }
         @media (min-width: 769px) { .admin-mobile-overlay { display: none !important; } }
         .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
-        .admin-nav-link:hover { background: rgba(91,110,245,0.07); color: #E8121A; }
-        .admin-nav-link--active { background: rgba(91,110,245,0.12); color: #E8121A; border-left: 3px solid #E8121A; }
-        .admin-nav-link--active:hover { background: rgba(91,110,245,0.14); }
+        .admin-nav-link:hover { background: rgba(232, 18, 26,0.07); color: #E8121A; }
+        .admin-nav-link--active { background: rgba(232, 18, 26,0.12); color: #E8121A; border-left: 3px solid #E8121A; }
+        .admin-nav-link--active:hover { background: rgba(232, 18, 26,0.14); }
       `}</style>
       <div className="admin-sidebar">{sidebar}</div>
 

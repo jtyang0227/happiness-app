@@ -37,10 +37,10 @@ export default function NewsletterSection({ memberId, memberName }) {
       {/* 배경 장식 */}
       <div style={{
         maxWidth: 560, margin: '0 auto',
-        background: 'radial-gradient(ellipse at center, rgba(91,110,245,0.08) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse at center, rgba(232, 18, 26,0.08) 0%, transparent 70%)',
         padding: '48px 32px',
         borderRadius: 24,
-        border: '1px solid rgba(91,110,245,0.1)',
+        border: '1px solid rgba(232, 18, 26,0.1)',
       }}>
         <div style={{ fontSize: 32, marginBottom: 16 }}>✉</div>
         <h2 style={{
@@ -80,7 +80,7 @@ export default function NewsletterSection({ memberId, memberName }) {
                 color: '#fff',
                 transition: 'border-color 0.2s',
               }}
-              onFocus={e => { if (status !== 'error') e.target.style.borderColor = 'rgba(91,110,245,0.6)'; }}
+              onFocus={e => { if (status !== 'error') e.target.style.borderColor = 'rgba(232, 18, 26,0.6)'; }}
               onBlur={e => { if (status !== 'error') e.target.style.borderColor = 'rgba(255,255,255,0.12)'; }}
             />
             <button

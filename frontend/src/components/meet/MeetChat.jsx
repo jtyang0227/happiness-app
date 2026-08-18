@@ -142,7 +142,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
           onClick={handleSend}
           disabled={sending || !text.trim()}
           style={{
-            background: sending || !text.trim() ? 'rgba(91,110,245,0.3)' : '#E8121A',
+            background: sending || !text.trim() ? 'rgba(232, 18, 26,0.3)' : '#E8121A',
             border: 'none',
             borderRadius: 10,
             color: '#fff',

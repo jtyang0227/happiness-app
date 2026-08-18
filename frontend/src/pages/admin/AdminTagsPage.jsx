@@ -50,7 +50,7 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
             onClick={onConfirm}
             style={{
               padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-              border: `1.5px solid ${danger ? '#fecaca' : 'rgba(91,110,245,0.3)'}`,
+              border: `1.5px solid ${danger ? '#fecaca' : 'rgba(232, 18, 26,0.3)'}`,
               background: danger ? '#e53e3e' : '#E8121A',
               color: '#fff', cursor: 'pointer',
             }}
@@ -310,7 +310,7 @@ export default function AdminTagsPage() {
             disabled={tags.length < 2}
             style={{
               padding: '9px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-              border: '1.5px solid rgba(91,110,245,0.3)',
+              border: '1.5px solid rgba(232, 18, 26,0.3)',
               background: tags.length >= 2 ? '#ffe9e7' : '#f7f7fb',
               color: tags.length >= 2 ? '#E8121A' : '#9090b0',
               cursor: tags.length >= 2 ? 'pointer' : 'not-allowed',
@@ -418,7 +418,7 @@ function TagRow({ tag, index, total, onDelete }) {
           padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
           background: isUnused ? '#f7f7fb' : '#f0f0ff',
           color: isUnused ? '#9090b0' : '#E8121A',
-          border: `1px solid ${isUnused ? '#e5e5ed' : 'rgba(91,110,245,0.2)'}`,
+          border: `1px solid ${isUnused ? '#e5e5ed' : 'rgba(232, 18, 26,0.2)'}`,
         }}>
           #{tag.name}
         </span>

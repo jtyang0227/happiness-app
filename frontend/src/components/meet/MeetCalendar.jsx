@@ -278,7 +278,7 @@ function MemoParticipantRow({ name, isMe, available }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{
         width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-        background: isMe ? 'rgba(91,110,245,0.25)' : 'rgba(167,139,250,0.25)',
+        background: isMe ? 'rgba(232, 18, 26,0.25)' : 'rgba(34, 211, 238,0.25)',
         border: `1.5px solid ${isMe ? '#E8121A' : '#22D3EE'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: isMe ? '#E8121A' : '#22D3EE', fontSize: 12, fontWeight: 700,

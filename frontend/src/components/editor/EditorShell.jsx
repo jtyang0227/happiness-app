@@ -100,7 +100,7 @@ export default function EditorShell({ onExport }) {
                 border: 'none',
                 color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 letterSpacing: '0.04em',
-                boxShadow: '0 2px 12px rgba(91,110,245,0.35)',
+                boxShadow: '0 2px 12px rgba(232, 18, 26,0.35)',
                 transition: 'opacity 0.15s',
               }}
             >+ 이미지 추가</button>
@@ -181,8 +181,8 @@ export default function EditorShell({ onExport }) {
               title={t.title}
               style={{
                 width: 30, height: 30, borderRadius: 7, fontSize: 14,
-                background: activeTool === t.tool ? 'rgba(91,110,245,0.20)' : 'none',
-                border: activeTool === t.tool ? '1px solid rgba(91,110,245,0.45)' : '1px solid transparent',
+                background: activeTool === t.tool ? 'rgba(232, 18, 26,0.20)' : 'none',
+                border: activeTool === t.tool ? '1px solid rgba(232, 18, 26,0.45)' : '1px solid transparent',
                 color: activeTool === t.tool ? '#8899ff' : 'rgba(180,180,220,0.65)',
                 cursor: 'pointer', transition: 'all 0.15s',
               }}
@@ -264,7 +264,7 @@ export default function EditorShell({ onExport }) {
               fontSize: 13, fontWeight: 700,
               cursor: currentImage ? 'pointer' : 'not-allowed',
               opacity: currentImage ? 1 : 0.7,
-              boxShadow: currentImage ? '0 3px 16px rgba(91,110,245,0.40)' : 'none',
+              boxShadow: currentImage ? '0 3px 16px rgba(232, 18, 26,0.40)' : 'none',
               letterSpacing: '0.04em',
               transition: 'opacity 0.2s, box-shadow 0.2s',
             }}

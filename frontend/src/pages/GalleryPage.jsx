@@ -205,7 +205,7 @@ export default function GalleryPage() {
                 ...(sortIdx === idx
                   ? {
                       background: COLORS.primary, color: '#fff',
-                      boxShadow: '0 2px 10px rgba(91,110,245,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)',
+                      boxShadow: '0 2px 10px rgba(232, 18, 26,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)',
                     }
                   : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }
                 ),
@@ -426,6 +426,6 @@ const primaryBtn = {
   color: '#fff', border: 'none',
   borderRadius: 10, cursor: 'pointer',
   fontWeight: 700, fontSize: 13,
-  boxShadow: '0 2px 10px rgba(91,110,245,0.3)',
+  boxShadow: '0 2px 10px rgba(232, 18, 26,0.3)',
   transition: 'opacity 0.15s',
 };

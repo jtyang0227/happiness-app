@@ -182,7 +182,7 @@ export default function MeetsPage() {
               {/* right info */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 {meet.messageCount > 0 && (
-                  <div style={{ fontSize: 11, color: '#E8121A', background: 'rgba(91,110,245,0.15)', borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: '#E8121A', background: 'rgba(232, 18, 26,0.15)', borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
                     💬 {meet.messageCount}
                   </div>
                 )}
@@ -263,7 +263,7 @@ function NewMeetModalWrapper({ currentMemberId, onClose, onCreated }) {
               key={r.id}
               onClick={() => { setMember(r); setStep('request'); }}
               style={memberRowStyle}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(91,110,245,0.15)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(232, 18, 26,0.15)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
             >
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: r.avatarUrl ? `url(${r.avatarUrl}) center/cover` : '#A80D14', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>

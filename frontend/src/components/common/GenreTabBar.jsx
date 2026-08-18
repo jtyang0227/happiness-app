@@ -82,7 +82,7 @@ export default function GenreTabBar({ selected, onChange, showAll = true, counts
                 border: 'none',
                 background: isSelected ? '#E8121A' : '#ededf4',
                 color: isSelected ? '#fff' : '#5c5c7a',
-                boxShadow: isSelected ? '0 2px 8px rgba(91,110,245,0.3)' : 'none',
+                boxShadow: isSelected ? '0 2px 8px rgba(232, 18, 26,0.3)' : 'none',
                 transition: 'all 0.15s',
                 flexShrink: 0,
               }}

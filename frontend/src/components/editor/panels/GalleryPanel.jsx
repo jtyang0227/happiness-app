@@ -266,7 +266,7 @@ export default function GalleryPanel() {
                   onClick={() => set('genre', active ? '' : code)}
                   style={{
                     padding: '4px 7px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
-                    background: active ? 'rgba(91,110,245,0.30)' : 'rgba(255,255,255,0.05)',
+                    background: active ? 'rgba(232, 18, 26,0.30)' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
@@ -304,7 +304,7 @@ export default function GalleryPanel() {
                   onClick={() => set('imageRatio', r.value)}
                   style={{
                     padding: '4px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer',
-                    background: active ? 'rgba(91,110,245,0.25)' : 'rgba(255,255,255,0.05)',
+                    background: active ? 'rgba(232, 18, 26,0.25)' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
@@ -319,7 +319,7 @@ export default function GalleryPanel() {
         <div style={sec}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
             <label style={{ ...lbl, marginBottom: 0 }}>그리드 너비</label>
-            <span style={{ fontSize: 10, color: 'rgba(91,110,245,0.85)' }}>{form.gridColSpan}/12</span>
+            <span style={{ fontSize: 10, color: 'rgba(232, 18, 26,0.85)' }}>{form.gridColSpan}/12</span>
           </div>
           <input
             type="range"
@@ -369,7 +369,7 @@ export default function GalleryPanel() {
             fontSize: 13, fontWeight: 700,
             cursor: (saving || !currentImage) ? 'not-allowed' : 'pointer',
             opacity: saving ? 0.7 : 1,
-            boxShadow: (!saving && currentImage) ? '0 3px 16px rgba(91,110,245,0.40)' : 'none',
+            boxShadow: (!saving && currentImage) ? '0 3px 16px rgba(232, 18, 26,0.40)' : 'none',
             letterSpacing: '0.04em',
             transition: 'opacity 0.2s, box-shadow 0.2s',
           }}

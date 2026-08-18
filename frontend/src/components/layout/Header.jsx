@@ -84,7 +84,7 @@ function LangSwitcher() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '9px 10px', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? 'rgba(91,110,245,0.18)' : 'transparent',
+                  background: isActive ? 'rgba(232, 18, 26,0.18)' : 'transparent',
                   color: isActive ? '#22D3EE' : 'rgba(255,255,255,0.70)',
                   fontSize: 14, transition: 'background 0.1s',
                 }}
@@ -175,7 +175,7 @@ export default function Header() {
               width: 28, height: 28, borderRadius: 8,
               background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
               fontSize: 12,
-              boxShadow: '0 4px 12px rgba(91,110,245,0.35)',
+              boxShadow: '0 4px 12px rgba(232, 18, 26,0.35)',
             }}>✦</span>
             <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
@@ -337,7 +337,7 @@ function BottomNav({ unreadCount }) {
                   background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 22, fontWeight: 700,
-                  boxShadow: '0 4px 20px rgba(91,110,245,0.45)',
+                  boxShadow: '0 4px 20px rgba(232, 18, 26,0.45)',
                 }}>+</div>
               ) : (
                 <>

@@ -200,7 +200,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
                   style={{
                     display: 'flex', gap: 10, alignItems: 'center',
                     width: '100%', padding: '8px 8px', borderRadius: 8,
-                    background: i === currentIdx ? 'rgba(91,110,245,0.2)' : 'transparent',
+                    background: i === currentIdx ? 'rgba(232, 18, 26,0.2)' : 'transparent',
                     border: 'none', cursor: 'pointer', textAlign: 'left',
                     color: i === currentIdx ? '#a0aaff' : 'rgba(255,255,255,0.6)',
                   }}
