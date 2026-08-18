@@ -1,33 +1,41 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/colors';
 
-/* ── 도트 패턴 사전 계산 (모듈 로드 시 1회) ── */
-const COLS = 15;
-const ROWS = 11;
-const SPACING = 14;
-const CX = (COLS - 1) * SPACING / 2;   // 98
-const CY = (ROWS - 1) * SPACING / 2;   // 70
-const MAX_DIST = Math.sqrt(CX * CX + CY * CY); // ≈ 120
-const SVG_W = (COLS - 1) * SPACING;    // 196
-const SVG_H = (ROWS - 1) * SPACING;    // 140
+/* ── 레코드(바이닐) 도트 그루브 사전 계산 (모듈 로드 시 1회) ──
+ * 이전 버전(옅은 primary/accent 산포)이 취향이 약하다는 피드백에 따라
+ * 보라색 포인트를 걷어내고, 검정×흰색 고대비 "레코드판" 모티프로 교체.
+ * 링 형태로 도트를 배치해 바이닐 그루브를 연상시키면서 시각적 존재감을 강화한다.
+ */
+const DISC_R = 66;          // 레코드판 반지름
+const LABEL_R = 22;         // 중앙 라벨(아이콘 배경) 반지름
+const RING_COUNT = 6;
+const SVG_SIZE = (DISC_R + 6) * 2;
+const CENTER = SVG_SIZE / 2;
 
-const DOTS = [];
-for (let r = 0; r < ROWS; r++) {
-  for (let c = 0; c < COLS; c++) {
-    const x = c * SPACING;
-    const y = r * SPACING;
-    const dist = Math.sqrt((x - CX) ** 2 + (y - CY) ** 2);
-    // 중앙: opacity 1, 외곽: opacity 0.04 (방사형 페이드)
-    const opacity = Math.max(0.04, 1 - (dist / MAX_DIST) * 0.96);
-    // 체커보드 패턴으로 primary / accent 교대
-    const isPrimary = (r + c) % 2 === 0;
-    DOTS.push({ x, y, opacity, isPrimary });
+const RINGS = [];
+for (let i = 0; i < RING_COUNT; i++) {
+  const t = i / (RING_COUNT - 1);                       // 0(바깥) → 1(안쪽)
+  const radius = DISC_R - 8 - t * (DISC_R - 8 - LABEL_R - 10);
+  const dotCount = Math.round(28 - t * 14);              // 바깥 링일수록 도트 촘촘
+  const dotR = 2.4 - t * 0.9;                             // 안쪽으로 갈수록 살짝 작아짐
+  const angleOffset = i % 2 === 0 ? 0 : Math.PI / dotCount; // 링마다 엇갈리게 배치
+  for (let d = 0; d < dotCount; d++) {
+    const angle = (d / dotCount) * Math.PI * 2 + angleOffset;
+    RINGS.push({
+      x: CENTER + Math.cos(angle) * radius,
+      y: CENTER + Math.sin(angle) * radius,
+      r: dotR,
+    });
   }
 }
 
-/* ────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────── */
 /**
- * DotEmptyState — 도트 컨셉 빈 상태 컴포넌트
+ * DotEmptyState — 레코드(바이닐) 도트 컨셉 빈 상태 컴포넌트
+ *
+ * 검정×흰색 고대비 원반 + 그루브 도트 패턴으로 강한 시각적 임팩트를 준다.
+ * dark 테마: 어두운 페이지 배경 위에 흰 원반 + 검정 도트(포인트 컬러=검정)
+ * light 테마: 밝은 페이지 배경 위에 검정 원반 + 흰 도트로 반전(여전히 포인트=검정)
  *
  * Props:
  *   icon        {string}   이모지 아이콘 (기본: '✦')
@@ -50,10 +58,12 @@ export default function DotEmptyState({
   const [btnHovered, setBtnHovered] = useState(false);
   const isDark = theme === 'dark';
 
-  /* 테마별 색상 */
-  const titleColor = isDark ? 'rgba(255,255,255,0.88)' : COLORS.text;
-  const descColor  = isDark ? 'rgba(255,255,255,0.45)' : COLORS.textMuted;
-  const svgOpacity = isDark ? 1 : 0.35;
+  /* 검정×흰색 고대비 팔레트 — 테마에 따라 원반/도트 색을 반전 */
+  const discFill  = isDark ? '#f5f5f7' : '#0a0a0a';
+  const dotFill   = isDark ? '#0a0a0a' : '#f5f5f7';
+  const labelFill = isDark ? '#0a0a0a' : '#f5f5f7';
+  const titleColor = isDark ? 'rgba(255,255,255,0.92)' : COLORS.text;
+  const descColor  = isDark ? 'rgba(255,255,255,0.48)' : COLORS.textMuted;
 
   return (
     <div
@@ -62,116 +72,104 @@ export default function DotEmptyState({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '64px 24px',
+        padding: '56px 24px',
         textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
         minHeight: 280,
         ...extraStyle,
       }}
     >
-      {/* ── 도트 패턴 배경 (SVG, 수평수직 중앙 절대 위치) ── */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: svgOpacity,
-        }}
-      >
+      {/* ── 레코드(바이닐) 그래픽 — 검정×흰색 고대비, 강한 존재감 ── */}
+      <div style={{ position: 'relative', width: SVG_SIZE, height: SVG_SIZE, marginBottom: 22 }}>
         <svg
-          width={SVG_W}
-          height={SVG_H}
-          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-        >
-          {DOTS.map(({ x, y, opacity, isPrimary }, i) => (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={1.25}
-              fill={isPrimary ? COLORS.primary : COLORS.accent}
-              opacity={opacity}
-            />
-          ))}
-        </svg>
-      </div>
-
-      {/* ── 콘텐츠 (도트 위, z-index 1) ── */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* 이모지 아이콘 */}
-        <div
+          width={SVG_SIZE}
+          height={SVG_SIZE}
+          viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
           style={{
-            fontSize: 48,
-            lineHeight: 1,
-            marginBottom: 18,
-            filter: isDark ? 'drop-shadow(0 0 12px rgba(91,110,245,0.30))' : 'none',
+            filter: isDark
+              ? 'drop-shadow(0 10px 28px rgba(0,0,0,0.55))'
+              : 'drop-shadow(0 10px 24px rgba(10,10,10,0.18))',
           }}
         >
+          {/* 원반 */}
+          <circle cx={CENTER} cy={CENTER} r={DISC_R} fill={discFill} />
+          {/* 그루브 도트 링 */}
+          {RINGS.map(({ x, y, r }, i) => (
+            <circle key={i} cx={x} cy={y} r={r} fill={dotFill} />
+          ))}
+          {/* 중앙 라벨 */}
+          <circle cx={CENTER} cy={CENTER} r={LABEL_R} fill={labelFill} />
+          <circle cx={CENTER} cy={CENTER} r={2.5} fill={discFill} />
+        </svg>
+
+        {/* 아이콘 — 중앙 라벨 위에 오버레이 */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: 22, lineHeight: 1,
+          filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))',
+        }}>
           {icon}
         </div>
-
-        {/* 제목 */}
-        {title && (
-          <div
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: titleColor,
-              marginBottom: description ? 8 : 0,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {title}
-          </div>
-        )}
-
-        {/* 설명 */}
-        {description && (
-          <div
-            style={{
-              fontSize: 13,
-              color: descColor,
-              lineHeight: 1.65,
-              maxWidth: 280,
-              margin: '0 auto',
-            }}
-          >
-            {description}
-          </div>
-        )}
-
-        {/* CTA 버튼 */}
-        {actionLabel && onAction && (
-          <button
-            onClick={onAction}
-            onMouseEnter={() => setBtnHovered(true)}
-            onMouseLeave={() => setBtnHovered(false)}
-            style={{
-              marginTop: 24,
-              padding: '10px 24px',
-              background: btnHovered ? COLORS.primaryDark : COLORS.primary,
-              color: '#fff',
-              border: 'none',
-              borderRadius: 10,
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              transform: btnHovered ? 'translateY(-1px)' : 'translateY(0)',
-              boxShadow: btnHovered
-                ? '0 6px 20px rgba(91,110,245,0.50)'
-                : '0 2px 10px rgba(91,110,245,0.30)',
-            }}
-          >
-            {actionLabel}
-          </button>
-        )}
       </div>
+
+      {/* ── 텍스트 ── */}
+      {title && (
+        <div
+          style={{
+            fontSize: 17,
+            fontWeight: 800,
+            color: titleColor,
+            marginBottom: description ? 8 : 0,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {title}
+        </div>
+      )}
+
+      {description && (
+        <div
+          style={{
+            fontSize: 13,
+            color: descColor,
+            lineHeight: 1.65,
+            maxWidth: 280,
+            margin: '0 auto',
+          }}
+        >
+          {description}
+        </div>
+      )}
+
+      {/* ── CTA 버튼 — 포인트 컬러(검정) 강조 버전 ── */}
+      {actionLabel && onAction && (
+        <button
+          onClick={onAction}
+          onMouseEnter={() => setBtnHovered(true)}
+          onMouseLeave={() => setBtnHovered(false)}
+          style={{
+            marginTop: 24,
+            padding: '11px 26px',
+            background: isDark
+              ? (btnHovered ? '#f5f5f7' : '#ffffff')
+              : (btnHovered ? '#1a1a1a' : '#0a0a0a'),
+            color: isDark ? '#0a0a0a' : '#ffffff',
+            border: 'none',
+            borderRadius: 10,
+            fontWeight: 800,
+            fontSize: 13,
+            letterSpacing: '-0.01em',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            transform: btnHovered ? 'translateY(-1px)' : 'translateY(0)',
+            boxShadow: isDark
+              ? (btnHovered ? '0 8px 24px rgba(255,255,255,0.20)' : '0 4px 14px rgba(255,255,255,0.10)')
+              : (btnHovered ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 14px rgba(0,0,0,0.20)'),
+          }}
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
