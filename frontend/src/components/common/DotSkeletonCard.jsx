@@ -9,7 +9,7 @@ import React, { useRef, useId } from 'react';
   el.id = STYLE_ID;
   el.textContent = `
     @keyframes dotSkeletonPulse {
-      0%, 100% { opacity: 0.65; }
+      0%, 100% { opacity: 0.55; }
       50%       { opacity: 1;    }
     }
   `;
@@ -63,11 +63,11 @@ export default function DotSkeletonCard({ height }) {
             id={patternId}
             x="0"
             y="0"
-            width="10"
-            height="10"
+            width="11"
+            height="11"
             patternUnits="userSpaceOnUse"
           >
-            <circle cx="5" cy="5" r="1" fill="rgba(255,255,255,0.12)" />
+            <circle cx="5.5" cy="5.5" r="1.4" fill="rgba(255,255,255,0.18)" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill={`url(#${patternId})`} />
