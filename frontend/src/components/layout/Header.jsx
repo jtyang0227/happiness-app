@@ -85,7 +85,7 @@ function LangSwitcher() {
                   width: '100%', padding: '9px 10px', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   background: isActive ? 'rgba(91,110,245,0.18)' : 'transparent',
-                  color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.70)',
+                  color: isActive ? '#22D3EE' : 'rgba(255,255,255,0.70)',
                   fontSize: 14, transition: 'background 0.1s',
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
@@ -93,7 +93,7 @@ function LangSwitcher() {
               >
                 <span style={{ fontSize: 18 }}>{meta.flag}</span>
                 <span style={{ flex: 1 }}>{meta.nativeLabel}</span>
-                {isActive && <span style={{ fontSize: 14, color: '#a78bfa', fontWeight: 700 }}>✓</span>}
+                {isActive && <span style={{ fontSize: 14, color: '#22D3EE', fontWeight: 700 }}>✓</span>}
               </button>
             );
           })}
@@ -173,7 +173,7 @@ export default function Header() {
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 28, height: 28, borderRadius: 8,
-              background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+              background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
               fontSize: 12,
               boxShadow: '0 4px 12px rgba(91,110,245,0.35)',
             }}>✦</span>
@@ -328,13 +328,13 @@ function BottomNav({ unreadCount }) {
                   position: 'absolute', top: 0, left: '50%',
                   transform: 'translateX(-50%)',
                   width: 24, height: 2, borderRadius: 99,
-                  background: '#5b6ef5',
+                  background: '#E8121A',
                 }} />
               )}
               {isCenter ? (
                 <div style={{
                   width: 46, height: 46, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+                  background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 22, fontWeight: 700,
                   boxShadow: '0 4px 20px rgba(91,110,245,0.45)',

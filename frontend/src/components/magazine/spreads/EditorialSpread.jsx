@@ -20,7 +20,7 @@ export default function EditorialSpread({ photo }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
-            background: '#eef0ff', display: 'flex', alignItems: 'center',
+            background: '#ffe9e7', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 16, flexShrink: 0,
           }}>
             {photo.authorAvatar
@@ -61,7 +61,7 @@ export default function EditorialSpread({ photo }) {
               {photo.tags.slice(0, 5).map(tag => (
                 <span key={tag.id || tag.memberName} style={{
                   fontSize: 11, padding: '3px 8px', borderRadius: 6,
-                  background: '#eef0ff', color: '#5b6ef5',
+                  background: '#ffe9e7', color: '#E8121A',
                 }}>
                   #{tag.memberName || tag}
                 </span>

@@ -96,7 +96,7 @@ export default function EditorShell({ onExport }) {
               onClick={() => fileRef.current?.click()}
               style={{
                 width: '100%', padding: '9px 0', borderRadius: 8,
-                background: 'linear-gradient(135deg, #5b6ef5, #7c5cfc)',
+                background: 'linear-gradient(135deg, #E8121A, #7c5cfc)',
                 border: 'none',
                 color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 letterSpacing: '0.04em',
@@ -258,7 +258,7 @@ export default function EditorShell({ onExport }) {
             style={{
               width: '100%', padding: '12px 0', borderRadius: 10,
               background: currentImage
-                ? 'linear-gradient(135deg, #5b6ef5 0%, #7c5cfc 100%)'
+                ? 'linear-gradient(135deg, #E8121A 0%, #7c5cfc 100%)'
                 : 'rgba(255,255,255,0.05)',
               border: 'none', color: currentImage ? '#fff' : 'rgba(120,120,160,0.40)',
               fontSize: 13, fontWeight: 700,

@@ -39,7 +39,7 @@ function TestimonialCard({ item, delay = 0 }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+          background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0,
         }}>

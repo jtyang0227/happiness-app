@@ -19,7 +19,7 @@ export default function SplitSpread({ photo }) {
     }}>
       <p style={{
         margin: '0 0 12px', fontSize: 11, fontWeight: 600, letterSpacing: '2px',
-        textTransform: 'uppercase', color: '#5b6ef5',
+        textTransform: 'uppercase', color: '#E8121A',
       }}>
         {photo.genre ? photo.genre : 'PHOTOGRAPHY'}
       </p>

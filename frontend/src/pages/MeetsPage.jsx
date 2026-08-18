@@ -152,7 +152,7 @@ export default function MeetsPage() {
               {/* avatar */}
               <div style={{
                 width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
-                background: other.avatar ? `url(${other.avatar}) center/cover` : '#4458e0',
+                background: other.avatar ? `url(${other.avatar}) center/cover` : '#A80D14',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', fontWeight: 700, fontSize: 18,
               }}>
@@ -182,7 +182,7 @@ export default function MeetsPage() {
               {/* right info */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 {meet.messageCount > 0 && (
-                  <div style={{ fontSize: 11, color: '#5b6ef5', background: 'rgba(91,110,245,0.15)', borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: '#E8121A', background: 'rgba(91,110,245,0.15)', borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
                     💬 {meet.messageCount}
                   </div>
                 )}
@@ -266,7 +266,7 @@ function NewMeetModalWrapper({ currentMemberId, onClose, onCreated }) {
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(91,110,245,0.15)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
             >
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: r.avatarUrl ? `url(${r.avatarUrl}) center/cover` : '#4458e0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: r.avatarUrl ? `url(${r.avatarUrl}) center/cover` : '#A80D14', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
                 {!r.avatarUrl && (r.name?.[0] || '?')}
               </div>
               <div>
@@ -301,12 +301,12 @@ const inputStyle = {
 };
 
 const searchBtnStyle = {
-  background: '#5b6ef5', border: 'none', borderRadius: 8, color: '#fff',
+  background: '#E8121A', border: 'none', borderRadius: 8, color: '#fff',
   padding: '9px 16px', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap',
 };
 
 const newBtnStyle = {
-  background: '#5b6ef5', border: 'none', borderRadius: 10, color: '#fff',
+  background: '#E8121A', border: 'none', borderRadius: 10, color: '#fff',
   padding: '9px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 14,
 };
 

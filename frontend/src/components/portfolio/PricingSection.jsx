@@ -57,7 +57,7 @@ function PackageCard({ pkg, profileName, navigate }) {
       {isFeatured && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0,
-          background: 'linear-gradient(90deg, #5b6ef5, #a78bfa)',
+          background: 'linear-gradient(90deg, #E8121A, #22D3EE)',
           padding: '6px 0', textAlign: 'center',
           fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
           color: '#fff', textTransform: 'uppercase',
@@ -88,7 +88,7 @@ function PackageCard({ pkg, profileName, navigate }) {
           style={{
             width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
             border: isFeatured ? 'none' : '1px solid rgba(255,255,255,0.15)',
-            background: isFeatured ? 'linear-gradient(90deg, #5b6ef5, #a78bfa)' : 'rgba(255,255,255,0.08)',
+            background: isFeatured ? 'linear-gradient(90deg, #E8121A, #22D3EE)' : 'rgba(255,255,255,0.08)',
             color: '#fff', cursor: 'pointer', transition: 'opacity 0.2s',
           }}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}

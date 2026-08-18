@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const TYPE_META = {
   AWARD:       { icon: '🏆', label: '수상', color: '#f59e0b' },
-  EXHIBITION:  { icon: '🎨', label: '전시', color: '#a78bfa' },
+  EXHIBITION:  { icon: '🎨', label: '전시', color: '#22D3EE' },
   PUBLICATION: { icon: '📖', label: '출판', color: '#34d399' },
 };
 

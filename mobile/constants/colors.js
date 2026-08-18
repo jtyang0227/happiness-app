@@ -2,12 +2,14 @@
  * Stitch 디자인 교체 방법 (React Native):
  * 이 파일의 값을 Stitch 팔레트로 교체하면 앱 전체에 반영됩니다.
  * frontend/src/styles/theme.css 와 값을 일치시켜 주세요.
+ *
+ * AKIRA Neo-Tokyo 액센트 (2026-08-18) — DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md
  */
 export const COLORS = {
   /* ── Brand ── */
-  primary:   '#5b6ef5',
-  primaryDark: '#4a5ce0',
-  accent:    '#a78bfa',
+  primary:   '#E8121A',
+  primaryDark: '#A80D14',
+  accent:    '#22D3EE',
   liked:     '#ec4899',
   fav:       '#f59e0b',
   share:     '#10b981',
@@ -43,8 +45,8 @@ export const COLORS = {
   textLight:     '#d1d5db',
 
   /* ── Tag ── */
-  tagBg:   '#ede9fe',
-  tagText: '#5b6ef5',
+  tagBg:   '#ffe9e7',
+  tagText: '#E8121A',
 };
 
 export const MOOD_COLORS = {

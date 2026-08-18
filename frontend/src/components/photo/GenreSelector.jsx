@@ -36,14 +36,14 @@ export default function GenreSelector({
       padding: '10px 6px', borderRadius: 12, cursor: state === 'disabled' ? 'default' : 'pointer',
       fontSize: 12, border: '1px solid',
       opacity: state === 'disabled' ? 0.4 : 1,
-      background: state === 'primary' ? '#5b6ef5'
-        : state === 'sub' ? '#eef0ff'
+      background: state === 'primary' ? '#E8121A'
+        : state === 'sub' ? '#ffe9e7'
         : '#ffffff',
       color: state === 'primary' ? '#fff'
-        : state === 'sub' ? '#5b6ef5'
+        : state === 'sub' ? '#E8121A'
         : '#9090b0',
-      borderColor: state === 'primary' ? '#5b6ef5'
-        : state === 'sub' ? '#5b6ef5'
+      borderColor: state === 'primary' ? '#E8121A'
+        : state === 'sub' ? '#E8121A'
         : '#e2e2ee',
       fontWeight: state === 'primary' ? 700 : 400,
       transition: 'all 0.15s',
@@ -68,15 +68,15 @@ export default function GenreSelector({
       {suggestedGenre && GENRE_META[suggestedGenre] && !primaryGenre && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
-          padding: '8px 12px', background: '#eef0ff', borderRadius: 10,
-          fontSize: 13, color: '#5b6ef5',
+          padding: '8px 12px', background: '#ffe9e7', borderRadius: 10,
+          fontSize: 13, color: '#E8121A',
         }}>
           <span>💡 AI 추천: {GENRE_META[suggestedGenre].emoji} {GENRE_META[suggestedGenre].label}</span>
           <button
             onClick={() => onChangePrimary(suggestedGenre)}
             style={{
               padding: '2px 10px', borderRadius: 8, border: 'none',
-              background: '#5b6ef5', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+              background: '#E8121A', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600,
             }}
           >적용</button>
         </div>

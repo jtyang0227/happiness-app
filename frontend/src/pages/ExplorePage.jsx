@@ -220,7 +220,7 @@ export default function ExplorePage() {
           <div style={{
             display: 'flex', alignItems: 'center',
             background: '#1c1c1c',
-            border: `1px solid ${showDrop && dropItems.length ? '#5b6ef5' : 'rgba(255,255,255,0.08)'}`,
+            border: `1px solid ${showDrop && dropItems.length ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
             borderRadius: 9999,
             padding: '0 16px',
             transition: 'border-color 0.2s',

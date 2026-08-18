@@ -47,7 +47,7 @@ function UploadDropZone() {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: 'rgba(91,110,245,0.15)',
-      border: '3px dashed #5b6ef5',
+      border: '3px dashed #E8121A',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       pointerEvents: 'none',

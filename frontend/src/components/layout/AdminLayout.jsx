@@ -37,7 +37,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
     }}>
       {/* 로고 */}
       <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid rgba(255,255,255,0.38)` }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#5b6ef5' }}>🛠️ Happiness Admin</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#E8121A' }}>🛠️ Happiness Admin</div>
       </div>
 
       {/* 네비게이션 */}
@@ -81,8 +81,8 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
         @media (max-width: 768px) { .admin-sidebar { display: none !important; } }
         @media (min-width: 769px) { .admin-mobile-overlay { display: none !important; } }
         .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
-        .admin-nav-link:hover { background: rgba(91,110,245,0.07); color: #5b6ef5; }
-        .admin-nav-link--active { background: rgba(91,110,245,0.12); color: #5b6ef5; border-left: 3px solid #5b6ef5; }
+        .admin-nav-link:hover { background: rgba(91,110,245,0.07); color: #E8121A; }
+        .admin-nav-link--active { background: rgba(91,110,245,0.12); color: #E8121A; border-left: 3px solid #E8121A; }
         .admin-nav-link--active:hover { background: rgba(91,110,245,0.14); }
       `}</style>
       <div className="admin-sidebar">{sidebar}</div>

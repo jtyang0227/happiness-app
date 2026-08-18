@@ -2,13 +2,17 @@
  * Stitch 디자인 교체:
  * 1. src/styles/theme.css :root 값 교체 → CSS 전역 반영
  * 2. 아래 COLORS hex 값 교체 → JS inline style 반영
+ *
+ * AKIRA Neo-Tokyo 액센트 (2026-08-18) — DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md
+ * primary/accent만 교체된 것이며 bg/surface/text/border는 의도적으로 유지한다.
+ * (레드는 CTA·활성 상태 등 기존 primary 사용처에만 등장해야 하며 배경을 칠하는 용도로 쓰지 않는다.)
  */
 export const COLORS = {
-  primary:       '#5b6ef5',
-  primaryDark:   '#4458e0',
-  primaryLight:  '#eef0ff',
-  primaryTonal:  '#dde0ff',
-  accent:        '#a78bfa',
+  primary:       '#E8121A',
+  primaryDark:   '#A80D14',
+  primaryLight:  '#ffe9e7',
+  primaryTonal:  '#ffd2cd',
+  accent:        '#22D3EE',
 
   bg:            '#f5f5fa',
   surface:       '#ffffff',

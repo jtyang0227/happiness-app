@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 const COLORS = {
-  mine: '#5b6ef5',
-  theirs: '#a78bfa',
+  mine: '#E8121A',
+  theirs: '#22D3EE',
   overlap: '#10b981',
   past: '#2a2a3e',
-  today: '#4458e0',
+  today: '#A80D14',
 };
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -279,9 +279,9 @@ function MemoParticipantRow({ name, isMe, available }) {
       <div style={{
         width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
         background: isMe ? 'rgba(91,110,245,0.25)' : 'rgba(167,139,250,0.25)',
-        border: `1.5px solid ${isMe ? '#5b6ef5' : '#a78bfa'}`,
+        border: `1.5px solid ${isMe ? '#E8121A' : '#22D3EE'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: isMe ? '#5b6ef5' : '#a78bfa', fontSize: 12, fontWeight: 700,
+        color: isMe ? '#E8121A' : '#22D3EE', fontSize: 12, fontWeight: 700,
       }}>
         {(name || '?')[0].toUpperCase()}
       </div>

@@ -12,7 +12,7 @@ function Thumbnail({ photo, isActive, onClick }) {
       onClick={onClick}
       style={{
         flexShrink: 0, width: 60, height: 44, padding: 0, cursor: 'pointer',
-        border: `2px solid ${isActive ? '#5b6ef5' : 'rgba(255,255,255,0.15)'}`,
+        border: `2px solid ${isActive ? '#E8121A' : 'rgba(255,255,255,0.15)'}`,
         borderRadius: 6, overflow: 'hidden', background: '#111', transition: 'border-color 0.15s',
       }}
     >
@@ -227,7 +227,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
                     </p>
                   </div>
                   {i === currentIdx && (
-                    <span style={{ fontSize: 10, color: '#5b6ef5' }}>●</span>
+                    <span style={{ fontSize: 10, color: '#E8121A' }}>●</span>
                   )}
                 </button>
               ))}
@@ -271,7 +271,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
                 style={{
                   width: i === currentIdx ? 16 : 6,
                   height: 6, borderRadius: 3,
-                  background: i === currentIdx ? '#5b6ef5' : 'rgba(255,255,255,0.2)',
+                  background: i === currentIdx ? '#E8121A' : 'rgba(255,255,255,0.2)',
                   cursor: 'pointer', transition: 'width 0.2s, background 0.2s',
                 }}
               />

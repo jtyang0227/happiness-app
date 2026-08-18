@@ -267,7 +267,7 @@ export default function GalleryPanel() {
                   style={{
                     padding: '4px 7px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
                     background: active ? 'rgba(91,110,245,0.30)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${active ? '#5b6ef5' : 'rgba(255,255,255,0.08)'}`,
+                    border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
                   }}
@@ -305,7 +305,7 @@ export default function GalleryPanel() {
                   style={{
                     padding: '4px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer',
                     background: active ? 'rgba(91,110,245,0.25)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${active ? '#5b6ef5' : 'rgba(255,255,255,0.08)'}`,
+                    border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
                   }}
@@ -326,7 +326,7 @@ export default function GalleryPanel() {
             min={1} max={12}
             value={form.gridColSpan}
             onChange={e => set('gridColSpan', Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#5b6ef5', cursor: 'pointer' }}
+            style={{ width: '100%', accentColor: '#E8121A', cursor: 'pointer' }}
           />
         </div>
 
@@ -363,7 +363,7 @@ export default function GalleryPanel() {
             width: '100%', padding: '12px 0', borderRadius: 10,
             background: (saving || !currentImage)
               ? 'rgba(255,255,255,0.05)'
-              : 'linear-gradient(135deg, #5b6ef5 0%, #7c5cfc 100%)',
+              : 'linear-gradient(135deg, #E8121A 0%, #7c5cfc 100%)',
             border: 'none',
             color: (saving || !currentImage) ? 'rgba(120,120,160,0.40)' : '#fff',
             fontSize: 13, fontWeight: 700,

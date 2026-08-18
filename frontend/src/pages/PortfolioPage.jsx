@@ -24,7 +24,7 @@ function FollowListModal({ title, members, loading, onClose }) {
           <div style={{ textAlign: 'center', color: '#5555aa', padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
         ) : members.map(m => (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #1e1e3a' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, #E8121A, #22D3EE)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
               {m.avatarUrl ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name?.charAt(0)}
             </div>
             <div>
@@ -197,7 +197,7 @@ export default function PortfolioPage() {
   /* ── 로딩 ── */
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#5b6ef5', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#E8121A', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -207,7 +207,7 @@ export default function PortfolioPage() {
       <div style={{ fontSize: 48 }}>🔒</div>
       <div style={{ color: '#eeeeff', fontSize: 18, fontWeight: 700 }}>비공개 포트폴리오</div>
       <div style={{ color: '#6060a0', fontSize: 14 }}>이 작가의 포트폴리오는 비공개 상태입니다.</div>
-      <button onClick={() => navigate(-1)} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>돌아가기</button>
+      <button onClick={() => navigate(-1)} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#E8121A', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>돌아가기</button>
     </div>
   );
 
@@ -215,7 +215,7 @@ export default function PortfolioPage() {
     <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <div style={{ fontSize: 48 }}>✦</div>
       <div style={{ color: '#9090b0', fontSize: 16 }}>{error}</div>
-      <button onClick={() => navigate('/login')} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#5b6ef5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>로그인하기</button>
+      <button onClick={() => navigate('/login')} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#E8121A', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>로그인하기</button>
     </div>
   );
 

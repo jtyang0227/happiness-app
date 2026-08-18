@@ -76,7 +76,7 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }
             onClick={() => onMagazineView(series)}
             style={{
               padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-              border: `1px solid #a78bfa`, background: '#f3f0ff',
+              border: `1px solid #22D3EE`, background: '#f3f0ff',
               color: '#7c3aed', cursor: 'pointer',
             }}
           >

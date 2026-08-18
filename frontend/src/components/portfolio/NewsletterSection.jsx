@@ -88,7 +88,7 @@ export default function NewsletterSection({ memberId, memberName }) {
               disabled={status === 'loading'}
               style={{
                 padding: '12px 24px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                border: 'none', background: '#5b6ef5', color: '#fff',
+                border: 'none', background: '#E8121A', color: '#fff',
                 cursor: status === 'loading' ? 'not-allowed' : 'pointer',
                 opacity: status === 'loading' ? 0.7 : 1,
                 transition: 'opacity 0.2s, transform 0.2s',

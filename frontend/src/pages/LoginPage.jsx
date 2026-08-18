@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 60, height: 60, borderRadius: 20,
-            background: 'linear-gradient(135deg, #5b6ef5 0%, #a78bfa 100%)',
+            background: 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
             fontSize: 26, marginBottom: 16,
             boxShadow: '0 8px 32px rgba(91,110,245,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
           }}>✦</div>
@@ -158,7 +158,7 @@ export default function LoginPage() {
 
           <div style={{ marginTop: 20, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
             계정이 없으신가요?{' '}
-            <Link to="/signup" style={{ color: '#a78bfa', fontWeight: 700 }}>회원가입</Link>
+            <Link to="/signup" style={{ color: '#22D3EE', fontWeight: 700 }}>회원가입</Link>
           </div>
         </div>
       </div>
@@ -207,7 +207,7 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
         borderRadius: 14, border: 'none',
         background: loading
           ? 'rgba(91,110,245,0.4)'
-          : 'linear-gradient(135deg, #5b6ef5 0%, #a78bfa 100%)',
+          : 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
         color: '#fff', fontSize: 15, fontWeight: 700,
         cursor: loading ? 'not-allowed' : 'pointer',
         boxShadow: loading

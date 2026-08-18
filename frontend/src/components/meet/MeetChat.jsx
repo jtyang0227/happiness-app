@@ -98,7 +98,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
               <div style={{ maxWidth: '70%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                 {!isMe && <div style={{ fontSize: 11, color: '#9090b0', marginBottom: 3 }}>{msg.senderName}</div>}
                 <div style={{
-                  background: isMe ? '#5b6ef5' : 'rgba(255,255,255,0.07)',
+                  background: isMe ? '#E8121A' : 'rgba(255,255,255,0.07)',
                   color: '#fff',
                   borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                   padding: '9px 13px',
@@ -142,7 +142,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
           onClick={handleSend}
           disabled={sending || !text.trim()}
           style={{
-            background: sending || !text.trim() ? 'rgba(91,110,245,0.3)' : '#5b6ef5',
+            background: sending || !text.trim() ? 'rgba(91,110,245,0.3)' : '#E8121A',
             border: 'none',
             borderRadius: 10,
             color: '#fff',
@@ -164,7 +164,7 @@ function avatarStyle(url) {
     width: 30,
     height: 30,
     borderRadius: '50%',
-    background: url ? `url(${url}) center/cover` : '#4458e0',
+    background: url ? `url(${url}) center/cover` : '#A80D14',
     color: '#fff',
     fontSize: 12,
     display: 'flex',

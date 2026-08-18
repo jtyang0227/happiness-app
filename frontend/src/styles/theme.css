@@ -8,12 +8,12 @@
  */
 
 :root {
-  /* ── Brand ── */
-  --color-primary:        #5b6ef5;
-  --color-primary-dark:   #4458e0;
-  --color-primary-light:  #eef0ff;
-  --color-primary-tonal:  #dde0ff;
-  --color-accent:         #a78bfa;
+  /* ── Brand — AKIRA Neo-Tokyo 액센트 (2026-08-18) ── */
+  --color-primary:        #E8121A;
+  --color-primary-dark:   #A80D14;
+  --color-primary-light:  #ffe9e7;
+  --color-primary-tonal:  #ffd2cd;
+  --color-accent:         #22D3EE;
 
   /* ── Surface ── */
   --color-bg:             #f5f5fa;

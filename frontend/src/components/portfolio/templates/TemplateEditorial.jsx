@@ -146,7 +146,7 @@ export default function TemplateEditorial({
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #12122a 0%, #0a0a18 50%, #0e0e0e 100%)' }}>
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle at 25% 35%, #5b6ef5 0%, transparent 50%), radial-gradient(circle at 75% 65%, #a78bfa 0%, transparent 50%)' }} />
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle at 25% 35%, #E8121A 0%, transparent 50%), radial-gradient(circle at 75% 65%, #22D3EE 0%, transparent 50%)' }} />
           </div>
         )}
 
@@ -155,7 +155,7 @@ export default function TemplateEditorial({
         <div style={{ position: 'relative', width: '100%', padding: '0 32px 0', zIndex: 1 }}>
           <div style={{
             width: 72, height: 72, borderRadius: '50%', marginBottom: 20,
-            background: 'linear-gradient(135deg, #5b6ef5, #a78bfa)',
+            background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 28, fontWeight: 800, color: '#fff',
             border: '2.5px solid rgba(255,255,255,0.25)', overflow: 'hidden',
@@ -191,7 +191,7 @@ export default function TemplateEditorial({
               </a>
             )}
             {onFollow && (
-              <button onClick={onFollow} disabled={followLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: following ? '1px solid rgba(255,255,255,0.2)' : 'none', background: following ? 'rgba(255,255,255,0.1)' : '#5b6ef5', color: '#fff', cursor: followLoading ? 'not-allowed' : 'pointer', opacity: followLoading ? 0.7 : 1, backdropFilter: 'blur(8px)' }}>
+              <button onClick={onFollow} disabled={followLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: following ? '1px solid rgba(255,255,255,0.2)' : 'none', background: following ? 'rgba(255,255,255,0.1)' : '#E8121A', color: '#fff', cursor: followLoading ? 'not-allowed' : 'pointer', opacity: followLoading ? 0.7 : 1, backdropFilter: 'blur(8px)' }}>
                 {following ? '✓ 팔로잉' : '+ 팔로우'}
               </button>
             )}
@@ -286,7 +286,7 @@ export default function TemplateEditorial({
       {availableMoods.length > 0 && (
         <div ref={filterBarRef} style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(14,14,14,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '12px 20px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
           <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? '1.5px solid #5b6ef5' : '1.5px solid rgba(255,255,255,0.1)', background: !moodFilter ? 'rgba(91,110,245,0.2)' : 'transparent', color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>전체 {photos.length}</button>
+          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? '1.5px solid #E8121A' : '1.5px solid rgba(255,255,255,0.1)', background: !moodFilter ? 'rgba(91,110,245,0.2)' : 'transparent', color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>전체 {photos.length}</button>
           {availableMoods.map(mood => {
             const md = MOOD_COLORS?.[mood];
             if (!md) return null;
@@ -346,13 +346,13 @@ export default function TemplateEditorial({
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28, lineHeight: 1.7 }}>촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate(`/inquiry/${pName}?memberId=${member?.id ?? ''}`)}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: '#5b6ef5', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 24px rgba(91,110,245,0.4)' }}
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: '#E8121A', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 24px rgba(91,110,245,0.4)' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}>
             ✉ 촬영 문의하기
           </button>
           <a href={`/booking/${pName}`}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: '1px solid #a78bfa', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: '1px solid #22D3EE', background: 'rgba(167,139,250,0.12)', color: '#22D3EE', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; }}>
             📅 촬영 예약

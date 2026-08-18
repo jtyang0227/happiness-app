@@ -24,9 +24,9 @@ function GenrePopover({ photo, onSave, onClose }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         <button onClick={() => setSelected('')} style={{
           padding: '4px 10px', borderRadius: 16, fontSize: 11, cursor: 'pointer',
-          border: `1.5px solid ${!selected ? '#5b6ef5' : '#e5e5ed'}`,
-          background: !selected ? '#eef0ff' : '#fff',
-          color: !selected ? '#5b6ef5' : '#9090b0', fontWeight: !selected ? 700 : 400,
+          border: `1.5px solid ${!selected ? '#E8121A' : '#e5e5ed'}`,
+          background: !selected ? '#ffe9e7' : '#fff',
+          color: !selected ? '#E8121A' : '#9090b0', fontWeight: !selected ? 700 : 400,
         }}>미분류</button>
         {GENRE_LIST.map(({ code, emoji, label, color, bg }) => (
           <button key={code} onClick={() => setSelected(code)} style={{
@@ -42,7 +42,7 @@ function GenrePopover({ photo, onSave, onClose }) {
         onClick={() => onSave(selected || null)}
         style={{
           width: '100%', padding: '7px 0', borderRadius: 8, border: 'none',
-          background: '#5b6ef5', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          background: '#E8121A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
         }}
       >저장</button>
     </div>

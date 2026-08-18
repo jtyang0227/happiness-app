@@ -45,7 +45,7 @@ export default function ShareButton({ url, title, theme = 'light' }) {
         cursor: 'pointer', transition: 'background 0.2s',
       }}
       onMouseEnter={e => {
-        if (state === 'idle') e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.13)' : '#eef0ff';
+        if (state === 'idle') e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.13)' : '#ffe9e7';
       }}
       onMouseLeave={e => {
         if (state === 'idle') e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.07)' : '#fff';

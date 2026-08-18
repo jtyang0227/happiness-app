@@ -137,7 +137,7 @@ export default function SignUpPage() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 56, height: 56, borderRadius: 18,
-            background: 'linear-gradient(135deg, #5b6ef5 0%, #a78bfa 100%)',
+            background: 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
             fontSize: 24, marginBottom: 14,
             boxShadow: '0 8px 32px rgba(91,110,245,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
           }}>✦</div>
@@ -268,7 +268,7 @@ export default function SignUpPage() {
                   setForm(p => ({ ...p, termsAgreed: e.target.checked }));
                   setErrors(p => ({ ...p, termsAgreed: '' }));
                 }}
-                style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', accentColor: '#5b6ef5' }}
+                style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', accentColor: '#E8121A' }}
               />
               <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
                 이용약관 및 개인정보처리방침에 동의합니다.
@@ -287,7 +287,7 @@ export default function SignUpPage() {
 
           <div style={{ marginTop: 18, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
             이미 계정이 있으신가요?{' '}
-            <Link to="/login" style={{ color: '#a78bfa', fontWeight: 700 }}>로그인</Link>
+            <Link to="/login" style={{ color: '#22D3EE', fontWeight: 700 }}>로그인</Link>
           </div>
         </div>
       </div>
@@ -361,7 +361,7 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
         borderRadius: 14, border: 'none',
         background: loading
           ? 'rgba(91,110,245,0.4)'
-          : 'linear-gradient(135deg, #5b6ef5 0%, #a78bfa 100%)',
+          : 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
         color: '#fff', fontSize: 15, fontWeight: 700,
         cursor: loading ? 'not-allowed' : 'pointer',
         boxShadow: loading

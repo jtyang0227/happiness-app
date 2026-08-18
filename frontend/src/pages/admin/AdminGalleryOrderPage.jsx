@@ -157,7 +157,7 @@ export default function AdminGalleryOrderPage() {
               style={{
                 padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                 border: 'none',
-                background: saved ? '#22c55e' : !dirty ? '#c5c9f5' : '#5b6ef5',
+                background: saved ? '#22c55e' : !dirty ? '#c5c9f5' : '#E8121A',
                 color: '#fff', cursor: (!dirty || saving) ? 'not-allowed' : 'pointer',
                 transition: 'background 0.3s',
               }}
@@ -170,9 +170,9 @@ export default function AdminGalleryOrderPage() {
         {/* Dirty 배너 */}
         {dirty && (
           <div style={{
-            background: '#eef0ff', border: '1px solid rgba(91,110,245,0.25)',
+            background: '#ffe9e7', border: '1px solid rgba(91,110,245,0.25)',
             borderRadius: 10, padding: '10px 16px', marginBottom: 16,
-            fontSize: 13, color: '#5b6ef5', fontWeight: 600,
+            fontSize: 13, color: '#E8121A', fontWeight: 600,
           }}>
             ⚠️ 저장하지 않은 변경사항이 있습니다
           </div>
@@ -209,7 +209,7 @@ export default function AdminGalleryOrderPage() {
                 onDragEnd={handleDragEnd}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, idx)}
-                onDragEnter={e => { e.currentTarget.style.borderColor = '#5b6ef5'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,110,245,0.25)'; }}
+                onDragEnter={e => { e.currentTarget.style.borderColor = '#E8121A'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,110,245,0.25)'; }}
                 onDragLeave={e => { e.currentTarget.style.borderColor = '#e5e5ed'; e.currentTarget.style.boxShadow = 'none'; }}
                 style={{
                   borderRadius: 10, overflow: 'hidden', cursor: 'grab',
@@ -230,7 +230,7 @@ export default function AdminGalleryOrderPage() {
                   <div style={{
                     position: 'absolute', top: 5, left: 5,
                     width: 20, height: 20, borderRadius: '50%',
-                    background: '#5b6ef5', color: '#fff',
+                    background: '#E8121A', color: '#fff',
                     fontSize: 10, fontWeight: 800,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{idx + 1}</div>

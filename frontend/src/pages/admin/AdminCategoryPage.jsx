@@ -44,10 +44,10 @@ export default function AdminCategoryPage() {
         {/* 요약 카드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
           {[
-            { label: '전체 사진',      value: total,          icon: '📷', color: '#5b6ef5' },
+            { label: '전체 사진',      value: total,          icon: '📷', color: '#E8121A' },
             { label: '분류 완료',      value: genreTotal,     icon: '✅', color: '#43a047' },
             { label: '미분류',        value: uncategorized,  icon: '⚠️', color: '#f59e0b' },
-            { label: '사용 장르 수',  value: sortedStats.filter(s => s.count > 0).length, icon: '🎨', color: '#a78bfa' },
+            { label: '사용 장르 수',  value: sortedStats.filter(s => s.count > 0).length, icon: '🎨', color: '#22D3EE' },
           ].map(card => (
             <div key={card.label} style={{
               background: '#fff', borderRadius: 12, padding: '16px 18px',
@@ -74,7 +74,7 @@ export default function AdminCategoryPage() {
                 미분류 사진 {uncategorized}장이 있습니다
               </div>
               <div style={{ fontSize: 12, color: '#9090b0', marginTop: 2 }}>
-                <a href="/admin/photos" style={{ color: '#5b6ef5', fontWeight: 600 }}>사진 관리</a>
+                <a href="/admin/photos" style={{ color: '#E8121A', fontWeight: 600 }}>사진 관리</a>
                 {' '}에서 개별 장르를 지정하거나, 사진 등록 시 장르를 선택하세요.
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function AdminCategoryPage() {
           <strong style={{ color: '#5c5c7a' }}>💡 안내</strong><br />
           • 사진 등록·수정 시 주 장르(1개)와 서브 장르(최대 2개)를 선택할 수 있습니다.<br />
           • 장르 통계는 미분류(장르 없음) 사진을 제외한 수치입니다.<br />
-          • <a href="/admin/photos" style={{ color: '#5b6ef5' }}>사진 관리</a>에서 각 사진의 장르를 개별 수정할 수 있습니다.
+          • <a href="/admin/photos" style={{ color: '#E8121A' }}>사진 관리</a>에서 각 사진의 장르를 개별 수정할 수 있습니다.
         </div>
       </div>
     </AdminLayout>

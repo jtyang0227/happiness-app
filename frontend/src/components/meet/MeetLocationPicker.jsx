@@ -217,7 +217,7 @@ const inputStyle = {
 };
 
 const saveBtnStyle = {
-  background: '#5b6ef5',
+  background: '#E8121A',
   border: 'none',
   borderRadius: 8,
   color: '#fff',
