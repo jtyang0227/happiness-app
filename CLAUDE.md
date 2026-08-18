@@ -125,11 +125,11 @@ Loop 수행 순서:
 기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 사용 (외부 아이콘 라이브러리 없음)
 
-현재 컬러 시스템:
-  primary:       '#5b6ef5'
-  primaryDark:   '#4458e0'
-  primaryLight:  '#eef0ff'
-  accent:        '#a78bfa'
+현재 컬러 시스템 (AKIRA Neo-Tokyo 액센트, 2026-08-18~):
+  primary:       '#E8121A'
+  primaryDark:   '#A80D14'
+  primaryLight:  '#ffe9e7'
+  accent:        '#22D3EE'
   bg:            '#f5f5fa'
   surface:       '#ffffff'
   border:        '#e2e2ee'
@@ -151,11 +151,15 @@ Loop 수행 순서:
 4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/design/` 폴더에 정리한다
 5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
 
-### 현재 디자인 방향 (2026-06-23 기준)
+### 현재 디자인 방향 (2026-06-23 기준, 2026-08-18 액센트 갱신)
 
 > **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
 > iOS 26 Liquid Glass 컨셉 제거 (`deprecated/21_IOS26_LIQUID_GLASS_DESIGN.md` 등 → `DESIGN_PROMPTS/deprecated/` 폴더로 이동)  
 > 참고: `DESIGN_PROMPTS/design/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
+
+> **AKIRA Neo-Tokyo 액센트 (2026-08-18)** — 레이아웃/배경(`#090909` 블랙)은 그대로, 브랜드 액센트만
+> 인디고/라벤더 → **아키라 레드(`#E8121A`) + 네온 시안(`#22D3EE`)** 로 교체. 레드는 CTA·활성 탭·배지 등
+> 기존 primary 사용처에만 등장하며 배경을 칠하지 않음(비율 유지). 상세: `DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md`
 
 **핵심 원칙:**
 - **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중 — **구현 완료** (global.css body + App.jsx bg)
