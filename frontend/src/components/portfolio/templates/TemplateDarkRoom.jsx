@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOOD_COLORS } from '../../../constants/colors';
+import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioApi';
+import TestimonialsSection from '../TestimonialsSection';
+import PressAwardsSection from '../PressAwardsSection';
+import ClientLogoWall from '../ClientLogoWall';
 
 export default function TemplateDarkRoom({ member, photos, profileName }) {
   const navigate = useNavigate();
@@ -9,9 +13,29 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
   const [moodFilter, setMoodFilter] = useState('');
   const [hovered, setHovered] = useState(null);
 
+  const [testimonials, setTestimonials] = useState([]);
+  const [press, setPress] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [brands, setBrands] = useState([]);
+
   const profileNameDisplay = member?.profileName || profileName || '';
   const availableMoods = [...new Set(photos.map(p => p.colorMood).filter(Boolean))];
   const filteredPhotos = moodFilter ? photos.filter(p => p.colorMood === moodFilter) : photos;
+
+  /* ── 신뢰 신호(추천사·언론·클라이언트) 로드 ── */
+  useEffect(() => {
+    const memberId = member?.id;
+    if (!memberId) return;
+    let cancelled = false;
+    testimonialApi.list(memberId).then(res => { if (!cancelled) setTestimonials(Array.isArray(res) ? res : []); }).catch(() => {});
+    pressApi.list(memberId).then(res => {
+      if (cancelled) return;
+      setPress(Array.isArray(res?.press) ? res.press : []);
+      setAchievements(Array.isArray(res?.achievements) ? res.achievements : []);
+    }).catch(() => {});
+    brandApi.list(memberId).then(res => { if (!cancelled) setBrands(Array.isArray(res) ? res : []); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [member?.id]);
 
   // 최초 피처 사진 = 첫 번째 사진
   useEffect(() => {
@@ -56,9 +80,19 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
             <div style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 6 }}>
               DARK ROOM
             </div>
-            <h1 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 700, color: '#e8e8e8', margin: 0, letterSpacing: '-0.02em' }}>
-              {member?.name || profileNameDisplay}
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h1 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 700, color: '#e8e8e8', margin: 0, letterSpacing: '-0.02em' }}>
+                {member?.name || profileNameDisplay}
+              </h1>
+              <div style={{
+                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                border: '1.5px solid #E8121A', background: 'rgba(232,18,26,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transform: 'rotate(-10deg)',
+              }}>
+                <span style={{ fontSize: 11, color: '#ff5a5f', fontWeight: 900 }}>✦</span>
+              </div>
+            </div>
             {member?.bio && (
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 8, maxWidth: 400, lineHeight: 1.6 }}>
                 {member.bio}
@@ -249,6 +283,13 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
             )}
           </>
         )}
+      </div>
+
+      {/* 신뢰 신호 — 추천사 · 언론/수상 · 협업 클라이언트 (데이터가 없으면 각 컴포넌트가 null 반환) */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <TestimonialsSection testimonials={testimonials} />
+        <PressAwardsSection press={press} achievements={achievements} />
+        <ClientLogoWall brands={brands} />
       </div>
 
       {/* Footer */}
