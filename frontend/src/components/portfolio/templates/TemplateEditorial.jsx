@@ -1,8 +1,43 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOOD_COLORS } from '../../../constants/colors';
 import MagazineGrid from '../MagazineGrid';
 import { seriesApi } from '../../../services/api';
+import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioApi';
+import TestimonialsSection from '../TestimonialsSection';
+import PressAwardsSection from '../PressAwardsSection';
+import ClientLogoWall from '../ClientLogoWall';
+
+/* ── 스크롤 진입 시 페이드+슬라이드업 리빌 ──────────── */
+function Reveal({ children, style }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); io.unobserve(el); }
+    }, { threshold: 0.15 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="portfolio-reveal"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1)',
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /* ── Masonry Photo Item ──────────────────────────── */
 function MasonryPhoto({ photo, onClick }) {
@@ -125,6 +160,37 @@ export default function TemplateEditorial({
   const navigate = useNavigate();
   const filterBarRef = useRef(null);
   const [moodFilter, setMoodFilter] = useState('');
+  const [heroEntered, setHeroEntered] = useState(false);
+
+  const [testimonials, setTestimonials] = useState([]);
+  const [press, setPress] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [brands, setBrands] = useState([]);
+
+  /* ── 신뢰 신호(추천사·언론·클라이언트) 로드 ── */
+  useEffect(() => {
+    const memberId = member?.id;
+    if (!memberId) return;
+    let cancelled = false;
+    testimonialApi.list(memberId).then(res => { if (!cancelled) setTestimonials(Array.isArray(res) ? res : []); }).catch(() => {});
+    pressApi.list(memberId).then(res => {
+      if (cancelled) return;
+      setPress(Array.isArray(res?.press) ? res.press : []);
+      setAchievements(Array.isArray(res?.achievements) ? res.achievements : []);
+    }).catch(() => {});
+    brandApi.list(memberId).then(res => { if (!cancelled) setBrands(Array.isArray(res) ? res : []); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [member?.id]);
+
+  /* ── 히어로 등장 애니메이션 트리거 (prefers-reduced-motion 사용자는 즉시 표시) ── */
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setHeroEntered(true);
+      return;
+    }
+    const t = setTimeout(() => setHeroEntered(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const specialties = member?.specialties ? member.specialties.split(',').map(s => s.trim()).filter(Boolean) : [];
   const joinYear = member?.createdAt ? new Date(member.createdAt).getFullYear() : null;
@@ -138,6 +204,11 @@ export default function TemplateEditorial({
 
   return (
     <div style={{ minHeight: '100vh', background: '#0e0e0e', color: '#e8e8f0' }}>
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .portfolio-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+        }
+      `}</style>
 
       {/* HERO */}
       <div style={{ position: 'relative', height: '82vh', minHeight: 480, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
@@ -152,25 +223,60 @@ export default function TemplateEditorial({
 
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.92) 100%)' }} />
 
+        {/* 고스트 타이포 — 이니셜을 배경 레이어로 깔아 매거진 커버 같은 깊이감을 만든다 */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', right: '3%', bottom: '8%', zIndex: 0,
+          fontSize: 'min(38vw, 320px)', fontWeight: 900, lineHeight: 1,
+          color: 'rgba(255,255,255,0.045)', letterSpacing: '-0.05em',
+          userSelect: 'none', pointerEvents: 'none',
+        }}>
+          {(member?.name ?? pName ?? '?').charAt(0)}
+        </div>
+
         <div style={{ position: 'relative', width: '100%', padding: '0 32px 0', zIndex: 1 }}>
           <div style={{
-            width: 72, height: 72, borderRadius: '50%', marginBottom: 20,
-            background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, fontWeight: 800, color: '#fff',
-            border: '2.5px solid rgba(255,255,255,0.25)', overflow: 'hidden',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 20,
+            opacity: heroEntered ? 1 : 0, transform: heroEntered ? 'translateY(0)' : 'translateY(18px)',
+            transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1)',
           }}>
-            {member?.avatarUrl
-              ? <img src={member.avatarUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : (member?.name?.charAt(0) ?? '?')}
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, fontWeight: 800, color: '#fff',
+              border: '2.5px solid rgba(255,255,255,0.25)', overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+            }}>
+              {member?.avatarUrl
+                ? <img src={member.avatarUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (member?.name?.charAt(0) ?? '?')}
+            </div>
+
+            {/* 시그니처 스탬프 — 작가의 도장/서명처럼 기능하는 배지 */}
+            <div style={{
+              width: 50, height: 50, borderRadius: '50%', flexShrink: 0,
+              border: '2px solid #E8121A', background: 'rgba(232,18,26,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transform: 'rotate(-10deg)', marginBottom: 2,
+            }}>
+              <span style={{ fontSize: 18, color: '#ff5a5f', fontWeight: 900 }}>✦</span>
+            </div>
           </div>
 
-          <h1 style={{ fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 10 }}>
+          <h1 style={{
+            fontSize: 'clamp(34px, 6.5vw, 68px)', fontWeight: 900, color: '#fff',
+            letterSpacing: '-0.03em', lineHeight: 1.02, marginBottom: 10,
+            opacity: heroEntered ? 1 : 0, transform: heroEntered ? 'translateY(0)' : 'translateY(22px)',
+            transition: 'opacity 0.65s cubic-bezier(0.4,0,0.2,1) 0.08s, transform 0.65s cubic-bezier(0.4,0,0.2,1) 0.08s',
+          }}>
             {member?.name ?? pName}
           </h1>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 20,
+            opacity: heroEntered ? 1 : 0, transform: heroEntered ? 'translateY(0)' : 'translateY(18px)',
+            transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1) 0.16s, transform 0.6s cubic-bezier(0.4,0,0.2,1) 0.16s',
+          }}>
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>@{pName}</span>
             {joinYear && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>· Since {joinYear}</span>}
             {member?.location && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>· {member.location}</span>}
@@ -179,7 +285,11 @@ export default function TemplateEditorial({
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'flex', gap: 10, flexWrap: 'wrap',
+            opacity: heroEntered ? 1 : 0, transform: heroEntered ? 'translateY(0)' : 'translateY(18px)',
+            transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1) 0.24s, transform 0.6s cubic-bezier(0.4,0,0.2,1) 0.24s',
+          }}>
             {member?.websiteUrl && (
               <a href={member.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
                 🔗 웹사이트
@@ -237,19 +347,19 @@ export default function TemplateEditorial({
 
       {/* BIO */}
       {member?.bio && (
-        <div style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 32px', textAlign: 'center' }}>
+        <Reveal style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 32px', textAlign: 'center' }}>
           <p style={{ fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.55)', fontStyle: 'italic', wordBreak: 'keep-all' }}>"{member.bio}"</p>
-        </div>
+        </Reveal>
       )}
 
       {/* SPECIALTIES */}
       {specialties.length > 0 && (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: `${member?.bio ? '0' : '52px'} 32px 40px`, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <Reveal style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
             <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>전문 분야</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-          </div>
+          </Reveal>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
             {specialties.map(sp => {
               const EMOJI_MAP = {
@@ -325,11 +435,11 @@ export default function TemplateEditorial({
       {series?.length > 0 && (
         <div style={{ padding: '60px 0 48px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ padding: '0 24px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Reveal style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>컬렉션 · {series.length}</span>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            </div>
+            </Reveal>
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
             {series.map(s => (
@@ -338,6 +448,11 @@ export default function TemplateEditorial({
           </div>
         </div>
       )}
+
+      {/* 신뢰 신호 — 추천사 · 언론/수상 · 협업 클라이언트 (데이터가 없으면 각 컴포넌트가 null 반환) */}
+      <Reveal><TestimonialsSection testimonials={testimonials} /></Reveal>
+      <Reveal><PressAwardsSection press={press} achievements={achievements} /></Reveal>
+      <Reveal><ClientLogoWall brands={brands} /></Reveal>
 
       {/* FOOTER CTA */}
       <div style={{ padding: '64px 24px 48px', textAlign: 'center', background: 'linear-gradient(180deg, transparent 0%, rgba(18,18,42,0.4) 100%)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
