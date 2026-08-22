@@ -90,6 +90,9 @@ Loop 수행 순서:
 - 배포 및 워크플로우 자동화
 - 생산성 향상을 위한 도구 연동
 - 반복 작업 및 자동화는 AI Studio를 적극 활용한다
+- **Claude Code 에이전트**: `.claude/agents/deployer.md` — 배포/CI-CD 관리 에이전트 (subagent_type: `deployer`).
+  GitHub Actions(`deploy.yml`) 실패 진단, 배포 전 빌드·마이그레이션 체크, Railway/Vercel 트러블슈팅,
+  운영 DB 마이그레이션 절차 안내 담당. "배포해줘", "배포 확인", "CI 실패 확인" 요청 시 호출.
 
 ### 협업 원칙
 - 기획 변경은 Pomelli 기준으로 작성한다
