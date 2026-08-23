@@ -20,6 +20,8 @@ public class SeriesResponse {
     private Integer displayOrder;
     private Integer photoCount;
     private List<PhotoResponse> photos;
+    /** 보드 카드 콜라주용 — 최대 3개 썸네일 URL (목록 조회 시에만 채워짐) */
+    private List<String> previewPhotos;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -44,8 +46,8 @@ public class SeriesResponse {
                 .build();
     }
 
-    /** 목록용 — photos 필드 제외 */
-    public static SeriesResponse summary(Series series, int photoCount, String coverUrl) {
+    /** 목록용 — photos 필드 제외, previewPhotos(최대 3개)로 보드 카드 콜라주 지원 */
+    public static SeriesResponse summary(Series series, int photoCount, String coverUrl, List<String> previewPhotos) {
         String cover = series.getCoverImageUrl() != null ? series.getCoverImageUrl() : coverUrl;
         return SeriesResponse.builder()
                 .id(series.getId())
@@ -55,6 +57,7 @@ public class SeriesResponse {
                 .coverImageUrl(cover)
                 .displayOrder(series.getDisplayOrder())
                 .photoCount(photoCount)
+                .previewPhotos(previewPhotos)
                 .createdAt(series.getCreatedAt())
                 .updatedAt(series.getUpdatedAt())
                 .build();

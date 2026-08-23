@@ -17,27 +17,45 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }
       overflow: 'hidden',
       transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
     }}>
-      {/* 커버 */}
+      {/* 커버 — 사진 3장 이상이면 Cosmos 스타일 콜라주(좌측 큰 이미지 + 우측 2분할) */}
       <div style={{
-        position: 'relative', aspectRatio: '16/9',
+        position: 'relative', height: 150,
         background: COLORS.border, overflow: 'hidden',
         cursor: 'pointer',
       }} onClick={() => onManagePhotos(series)}>
-        {series.coverImageUrl ? (
-          <img
-            src={series.coverImageUrl} alt={series.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          <div style={{
-            width: '100%', height: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${COLORS.primaryLight}, ${COLORS.border})`,
-            fontSize: 32, color: COLORS.primary,
-          }}>
-            ✦
-          </div>
-        )}
+        {(() => {
+          const imgs = (series.previewPhotos?.length ? series.previewPhotos : [series.coverImageUrl]).filter(Boolean);
+          if (imgs.length === 0) {
+            return (
+              <div style={{
+                width: '100%', height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `linear-gradient(135deg, ${COLORS.primaryLight}, ${COLORS.border})`,
+                fontSize: 32, color: COLORS.primary,
+              }}>✦</div>
+            );
+          }
+          if (imgs.length === 1) {
+            return <img src={imgs[0]} alt={series.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />;
+          }
+          return (
+            <div style={{ display: 'flex', gap: 2, height: '100%' }}>
+              <div style={{ flex: 1.5, height: '100%' }}>
+                <img src={imgs[0]} alt={series.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <img src={imgs[1]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                </div>
+                {imgs[2] && (
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <img src={imgs[2]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
         <div style={{
           position: 'absolute', bottom: 8, right: 8,
           background: 'rgba(0,0,0,0.55)', borderRadius: 8,

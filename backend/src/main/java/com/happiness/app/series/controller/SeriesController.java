@@ -1,5 +1,6 @@
 package com.happiness.app.series.controller;
 
+import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.entity.Photo;
 import com.happiness.app.photo.repository.PhotoRepository;
@@ -43,7 +44,13 @@ public class SeriesController {
                         .map(p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
                         .orElse(null);
             }
-            return SeriesResponse.summary(s, sps.size(), coverUrl);
+            List<String> previewPhotos = sps.stream().limit(3)
+                    .map(sp -> photoRepository.findById(sp.getPhotoId())
+                            .map(p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
+                            .orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            return SeriesResponse.summary(s, sps.size(), coverUrl, previewPhotos);
         }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -89,7 +96,7 @@ public class SeriesController {
     @PutMapping("/{id}")
     public ResponseEntity<SeriesResponse> updateSeries(
             @PathVariable Long id, @RequestBody SeriesRequest req, Authentication auth) {
-        Long requesterId = Long.parseLong(auth.getName());
+        Long requesterId = SecurityUtil.getCurrentMemberId();
         Series series = seriesRepository.findById(id).orElse(null);
         if (series == null) return ResponseEntity.notFound().build();
         if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -110,7 +117,7 @@ public class SeriesController {
     /** 시리즈 삭제 */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSeries(@PathVariable Long id, Authentication auth) {
-        Long requesterId = Long.parseLong(auth.getName());
+        Long requesterId = SecurityUtil.getCurrentMemberId();
         Series series = seriesRepository.findById(id).orElse(null);
         if (series == null) return ResponseEntity.notFound().build();
         if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -125,7 +132,7 @@ public class SeriesController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             Authentication auth) {
-        Long requesterId = Long.parseLong(auth.getName());
+        Long requesterId = SecurityUtil.getCurrentMemberId();
         Long photoId = body.get("photoId") instanceof Number
                 ? ((Number) body.get("photoId")).longValue() : null;
         if (photoId == null) return ResponseEntity.badRequest().build();
@@ -153,7 +160,7 @@ public class SeriesController {
     @DeleteMapping("/{id}/photos/{photoId}")
     public ResponseEntity<Void> removePhoto(
             @PathVariable Long id, @PathVariable Long photoId, Authentication auth) {
-        Long requesterId = Long.parseLong(auth.getName());
+        Long requesterId = SecurityUtil.getCurrentMemberId();
         Series series = seriesRepository.findById(id).orElse(null);
         if (series == null) return ResponseEntity.notFound().build();
         if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

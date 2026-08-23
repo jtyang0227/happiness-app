@@ -293,14 +293,15 @@ export default function Header() {
 function BottomNav({ unreadCount }) {
   return (
     <nav className="h-mobile" style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-      height: 'calc(60px + env(safe-area-inset-bottom))',
-      paddingBottom: 'env(safe-area-inset-bottom)',
-      background: 'rgba(9,9,9,0.96)',
+      position: 'fixed', left: 12, right: 12, zIndex: 200,
+      bottom: 'calc(10px + env(safe-area-inset-bottom))',
+      height: 60,
+      background: 'rgba(20,20,20,0.85)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      borderRadius: 0,
-      borderTop: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (

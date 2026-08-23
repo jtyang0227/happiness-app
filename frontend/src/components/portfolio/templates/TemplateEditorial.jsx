@@ -110,14 +110,34 @@ function SeriesScrollCard({ series, onPhotoClick }) {
         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        <div style={{ position: 'relative', aspectRatio: '16/9', background: '#0a0a18', overflow: 'hidden' }}>
-          {series.coverImageUrl ? (
-            <img src={series.coverImageUrl} alt={series.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#3a3a6a' }}>✦</div>
-          )}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
+        <div style={{ position: 'relative', height: 135, background: '#0a0a18', overflow: 'hidden' }}>
+          {(() => {
+            const imgs = (series.previewPhotos?.length ? series.previewPhotos : [series.coverImageUrl]).filter(Boolean);
+            if (imgs.length === 0) {
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#3a3a6a' }}>✦</div>;
+            }
+            if (imgs.length === 1) {
+              return <img src={imgs[0]} alt={series.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />;
+            }
+            return (
+              <div style={{ display: 'flex', gap: 2, height: '100%' }}>
+                <div style={{ flex: 1.5, height: '100%' }}>
+                  <img src={imgs[0]} alt={series.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <img src={imgs[1]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                  </div>
+                  {imgs[2] && (
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <img src={imgs[2]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 60%, rgba(0,0,0,0.75) 100%)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>
             {series.photoCount ?? 0}장
           </div>

@@ -76,7 +76,13 @@ public class PortfolioController {
                         .map(p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
                         .orElse(null);
             }
-            return SeriesResponse.summary(s, sps.size(), coverUrl);
+            List<String> previewPhotos = sps.stream().limit(3)
+                    .map(sp -> photoRepository.findById(sp.getPhotoId())
+                            .map(p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
+                            .orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            return SeriesResponse.summary(s, sps.size(), coverUrl, previewPhotos);
         }).collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
