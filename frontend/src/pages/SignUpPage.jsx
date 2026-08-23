@@ -138,10 +138,7 @@ export default function SignUpPage() {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
             <AkiraLogo variant="white" size={48} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#f0f0ff', letterSpacing: '-0.8px' }}>
-            Happiness
-          </div>
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginTop: 5 }}>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
             새 계정 만들기
           </div>
         </div>

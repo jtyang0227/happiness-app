@@ -58,10 +58,7 @@ export default function LoginPage() {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
             <AkiraLogo variant="white" size={52} />
           </div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: '#f0f0ff', letterSpacing: '-0.8px' }}>
-            Happiness
-          </div>
-          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14, marginTop: 6 }}>
+          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
             포트폴리오 갤러리
           </div>
         </div>
