@@ -6,6 +6,7 @@ import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
 import { inquiryApi } from '../../services/api';
 import meetApi from '../../services/meetApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
+import AkiraLogo from '../common/AkiraLogo';
 
 const NAV_ITEMS = [
   { to: '/explore',   label: '탐색'     },
@@ -170,13 +171,7 @@ export default function Header() {
         }}>
           {/* Logo */}
           <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 28, height: 28, borderRadius: 8,
-              background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
-              fontSize: 12,
-              boxShadow: '0 4px 12px rgba(232, 18, 26,0.35)',
-            }}>✦</span>
+            <AkiraLogo variant="white" size={22} />
             <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
             </span>

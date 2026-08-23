@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
 import { glassDark, SPRING } from '../constants/glass';
+import AkiraLogo from '../components/common/AkiraLogo';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 const PHONE_RE = /^01[0-9]-\d{3,4}-\d{4}$/;
@@ -134,13 +135,9 @@ export default function SignUpPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 56, height: 56, borderRadius: 18,
-            background: 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
-            fontSize: 24, marginBottom: 14,
-            boxShadow: '0 8px 32px rgba(232, 18, 26,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
-          }}>✦</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <AkiraLogo variant="white" size={48} />
+          </div>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#f0f0ff', letterSpacing: '-0.8px' }}>
             Happiness
           </div>
@@ -356,6 +353,7 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
     <button
       type={type}
       disabled={loading}
+      className="akira-sweep-btn"
       style={{
         width: '100%', padding: '13px',
         borderRadius: 14, border: 'none',
@@ -369,6 +367,7 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
           : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
         transition: `all 0.2s ${SPRING}`,
         marginTop: 6, letterSpacing: '-0.2px',
+        position: 'relative', overflow: 'hidden',
       }}
       onMouseEnter={e => {
         if (!loading) {
@@ -381,6 +380,15 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
         e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)';
       }}
     >
+      <style>{`
+        .akira-sweep-btn .akira-sweep-line { position: absolute; top: 0; left: -40%; width: 30%; height: 100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent); transform: skewX(-18deg); pointer-events: none; }
+        .akira-sweep-btn:hover .akira-sweep-line { animation: akiraSweep 0.5s ease; }
+        @keyframes akiraSweep { from { left: -40%; } to { left: 130%; } }
+        @media (prefers-reduced-motion: reduce) {
+          .akira-sweep-btn:hover .akira-sweep-line { animation: none; }
+        }
+      `}</style>
+      <span className="akira-sweep-line" />
       {children}
     </button>
   );
