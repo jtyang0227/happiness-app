@@ -47,14 +47,14 @@ function LangSwitcher() {
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           height: 34, padding: '0 12px', borderRadius: 10,
-          background: open ? 'rgba(255,255,255,0.08)' : 'transparent',
-          border: `1px solid ${open ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.12)'}`,
-          color: open ? '#ffffff' : 'rgba(255,255,255,0.50)',
+          background: open ? '#f5f5fa' : 'transparent',
+          border: `1px solid ${open ? '#c8c8de' : '#e2e2ee'}`,
+          color: open ? '#1a1a2e' : '#5c5c7a',
           fontSize: 13, fontWeight: 500, cursor: 'pointer',
           transition: 'all 0.15s',
         }}
-        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.88)'; }}}
-        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.50)'; }}}
+        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = '#f5f5fa'; e.currentTarget.style.color = '#1a1a2e'; }}}
+        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}}
       >
         🌐 {lang.toUpperCase()} ▾
       </button>
@@ -62,14 +62,14 @@ function LangSwitcher() {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          width: 160, background: '#161616',
-          border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14,
-          boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
+          width: 160, background: '#ffffff',
+          border: '1px solid #e2e2ee', borderRadius: 14,
+          boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
           padding: 6, zIndex: 300,
         }}>
           <p style={{
             margin: 0, padding: '6px 10px 4px',
-            fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
+            fontSize: 11, fontWeight: 600, color: '#9090b0',
             letterSpacing: '0.5px', textTransform: 'uppercase',
           }}>
             언어 선택
@@ -85,16 +85,16 @@ function LangSwitcher() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '9px 10px', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? 'rgba(232, 18, 26,0.18)' : 'transparent',
-                  color: isActive ? '#22D3EE' : 'rgba(255,255,255,0.70)',
+                  background: isActive ? 'rgba(232, 18, 26,0.10)' : 'transparent',
+                  color: isActive ? '#A80D14' : '#5c5c7a',
                   fontSize: 14, transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#f5f5fa'; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
               >
                 <span style={{ fontSize: 18 }}>{meta.flag}</span>
                 <span style={{ flex: 1 }}>{meta.nativeLabel}</span>
-                {isActive && <span style={{ fontSize: 14, color: '#22D3EE', fontWeight: 700 }}>✓</span>}
+                {isActive && <span style={{ fontSize: 14, color: '#A80D14', fontWeight: 700 }}>✓</span>}
               </button>
             );
           })}
@@ -142,25 +142,25 @@ export default function Header() {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 13px; border-radius: 10px;
           font-size: 14px; font-weight: 500;
-          color: rgba(255,255,255,0.50); text-decoration: none;
+          color: #5c5c7a; text-decoration: none;
           transition: color 0.15s;
           position: relative;
         }
-        .nav-link:hover { color: rgba(255,255,255,0.88); }
+        .nav-link:hover { color: #1a1a2e; }
         .nav-link.active {
-          color: #ffffff;
+          color: #1a1a2e;
           font-weight: 700;
         }
         .avatar-btn { transition: transform 0.2s ${SPRING}; }
         .avatar-btn:hover { transform: scale(1.08); }
       `}</style>
 
-      {/* ── PC Header — Cosmos dark editorial ──────────── */}
+      {/* ── PC Header — Cosmos 화이트 에디토리얼 ──────────── */}
       <header className="h-pc" style={{
         position: 'sticky', top: 0, zIndex: 200,
         height: 58,
-        background: '#090909',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        background: '#ffffff',
+        borderBottom: '1px solid #e2e2ee',
         borderRadius: 0,
       }}>
         <div style={{
@@ -171,8 +171,8 @@ export default function Header() {
         }}>
           {/* Logo */}
           <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
-            <AkiraLogo variant="white" size={22} />
-            <span style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <AkiraLogo variant="black" size={22} />
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
             </span>
           </NavLink>
@@ -216,12 +216,12 @@ export default function Header() {
                 width: 32, height: 32, borderRadius: '50%',
                 background: user?.avatarUrl
                   ? 'transparent'
-                  : 'linear-gradient(135deg, #6c6ef7, #9b7ff7)',
+                  : 'linear-gradient(135deg, #E8121A, #22D3EE)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700, color: '#fff',
                 overflow: 'hidden', flexShrink: 0,
-                border: `1.5px solid ${dropdownOpen ? '#6c6ef7' : 'rgba(255,255,255,0.15)'}`,
-                boxShadow: dropdownOpen ? '0 0 0 3px rgba(108,110,247,0.25)' : 'none',
+                border: `1.5px solid ${dropdownOpen ? '#E8121A' : '#e2e2ee'}`,
+                boxShadow: dropdownOpen ? '0 0 0 3px rgba(232,18,26,0.18)' : 'none',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
               }}>
                 {user?.avatarUrl
@@ -234,21 +234,21 @@ export default function Header() {
             {dropdownOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                background: '#161616',
-                border: '1px solid rgba(255,255,255,0.10)',
+                background: '#ffffff',
+                border: '1px solid #e2e2ee',
                 borderRadius: 16,
                 minWidth: 210, zIndex: 300,
                 overflow: 'hidden',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.16)',
                 animation: `glassIn 0.28s ${SPRING} both`,
               }}>
                 <div style={{
                   padding: '14px 16px',
-                  borderBottom: `1px solid rgba(255,255,255,0.08)`,
+                  borderBottom: `1px solid #e2e2ee`,
                 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>{user?.name || '사용자'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{user?.name || '사용자'}</div>
                   {user?.profileName && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2 }}>@{user.profileName}</div>
+                    <div style={{ fontSize: 11, color: '#9090b0', marginTop: 2 }}>@{user.profileName}</div>
                   )}
                 </div>
                 <button
@@ -256,15 +256,15 @@ export default function Header() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     width: '100%', padding: '11px 16px',
-                    fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'left',
+                    fontSize: 14, color: '#5c5c7a', textAlign: 'left',
                     transition: 'background 0.12s, color 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#ffffff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f5f5fa'; e.currentTarget.style.color = '#1a1a2e'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}
                 >
                   <span>◎</span> 프로필 보기
                 </button>
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 0' }} />
+                <div style={{ height: 1, background: '#e2e2ee', margin: '4px 0' }} />
                 <button
                   onClick={handleLogout}
                   style={{
@@ -296,12 +296,12 @@ function BottomNav({ unreadCount }) {
       position: 'fixed', left: 12, right: 12, zIndex: 200,
       bottom: 'calc(10px + env(safe-area-inset-bottom))',
       height: 60,
-      background: 'rgba(20,20,20,0.85)',
+      background: 'rgba(255,255,255,0.90)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       borderRadius: 999,
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      border: '1px solid #e2e2ee',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
@@ -311,7 +311,7 @@ function BottomNav({ unreadCount }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
             textDecoration: 'none', flex: 1, padding: '6px 0',
-            color: isActive && !isCenter ? '#ffffff' : 'rgba(255,255,255,0.35)',
+            color: isActive && !isCenter ? '#1a1a2e' : '#9090b0',
             transition: `color 0.2s, transform 0.25s ${SPRING}`,
             transform: 'scale(1)',
             position: 'relative',

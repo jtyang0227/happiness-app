@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MOOD_COLORS } from '../../constants/colors';
+import { MOOD_COLORS, COLORS } from '../../constants/colors';
 
 export default function PhotoCard({ photo, onClick, showDetails = true }) {
   const [hovered, setHovered] = useState(false);
@@ -26,7 +26,7 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
       style={{
         position: 'relative',
         cursor: 'pointer',
-        background: '#0f0f0f',
+        background: COLORS.border,
         width: '100%',
         overflow: 'hidden',
         borderRadius: 8,

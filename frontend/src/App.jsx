@@ -64,8 +64,8 @@ function AppShell() {
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
     || /^\/photo\/\d+\/edit$/.test(location.pathname);
 
-  // Background: dark aurora for login/signup, dark editorial for everything else
-  const bg = isDark ? BG.dark : '#090909';
+  // Background: dark aurora for login/signup, Cosmos 화이트 에디토리얼 for everything else
+  const bg = isDark ? BG.dark : '#ffffff';
 
   return (
     <div style={{

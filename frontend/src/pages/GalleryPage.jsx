@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
-import { glassDark } from '../constants/glass';
+import { glass } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 import DotEmptyState from '../components/common/DotEmptyState';
@@ -56,7 +56,7 @@ function JustifiedPhotoCell({ photo, onClick }) {
         position: 'relative',
         cursor: 'pointer',
         overflow: 'hidden',
-        background: '#0f0f0f',
+        background: COLORS.border,
       }}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
@@ -171,25 +171,25 @@ export default function GalleryPage() {
   /* ── 오류 화면 ── */
   if (error) {
     return (
-      <div style={{ ...centerStyle, background: '#090909', flexDirection: 'column', gap: 14 }}>
-        <div style={{ color: '#ff8080', fontSize: 15 }}>{error}</div>
+      <div style={{ ...centerStyle, flexDirection: 'column', gap: 14 }}>
+        <div style={{ color: COLORS.danger, fontSize: 15 }}>{error}</div>
         <button onClick={fetchPhotos} style={primaryBtn}>다시 시도</button>
       </div>
     );
   }
 
   return (
-    <div style={{ background: '#090909', minHeight: '100vh' }}>
+    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
 
       {/* ── 툴바 ── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', gap: 10, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 10,
-        ...glassDark('dark'),
+        ...glass('light'),
         borderRadius: 0,
         borderLeft: 'none', borderRight: 'none', borderTop: 'none',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: `1px solid ${COLORS.border}`,
       }}>
 
         {/* 정렬 칩 */}
@@ -207,7 +207,7 @@ export default function GalleryPage() {
                       background: COLORS.primary, color: '#fff',
                       boxShadow: '0 2px 10px rgba(232, 18, 26,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)',
                     }
-                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }
+                  : { background: COLORS.surfaceDim, color: COLORS.textSecondary }
                 ),
               }}
             >
@@ -222,7 +222,7 @@ export default function GalleryPage() {
           {/* 뷰 모드 3종 토글 */}
           <div style={{
             display: 'flex',
-            background: 'rgba(255,255,255,0.06)',
+            background: COLORS.surfaceDim,
             borderRadius: 10, overflow: 'hidden',
           }}>
             {VIEW_MODES.map(({ mode, icon, label }) => (
@@ -233,7 +233,7 @@ export default function GalleryPage() {
                 style={{
                   padding: '6px 11px', border: 'none', cursor: 'pointer', fontSize: 14,
                   background: viewMode === mode ? COLORS.primary : 'transparent',
-                  color: viewMode === mode ? '#fff' : 'rgba(255,255,255,0.45)',
+                  color: viewMode === mode ? '#fff' : COLORS.textMuted,
                   transition: 'all 0.15s',
                 }}
               >
@@ -242,7 +242,7 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+          <span style={{ fontSize: 12, color: COLORS.textMuted }}>
             {displayed.length}장
           </span>
 
@@ -254,15 +254,15 @@ export default function GalleryPage() {
       {!loading && genresInGallery.length > 0 && (
         <div style={{
           padding: '8px 16px',
-          background: 'rgba(255,255,255,0.04)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: COLORS.bg,
+          borderBottom: `1px solid ${COLORS.border}`,
         }}>
           <GenreTabBar
             selected={selectedGenre}
             onChange={setSelectedGenre}
             genres={genresInGallery}
             showAll
-            theme="dark"
+            theme="light"
           />
         </div>
       )}
@@ -287,7 +287,7 @@ export default function GalleryPage() {
           description="첫 번째 사진을 등록하고 갤러리를 채워보세요."
           actionLabel="첫 사진 등록하기"
           onAction={() => navigate('/photo/new')}
-          theme="dark"
+          theme="light"
           style={{ minHeight: '60vh' }}
         />
       ) : viewMode === 'justified' ? (
@@ -309,7 +309,7 @@ export default function GalleryPage() {
                 ))}
                 {/* 마지막 행 — 남은 공간 채우기 */}
                 {row.isLastRow && (
-                  <div style={{ flex: 1, background: '#090909' }} />
+                  <div style={{ flex: 1, background: '#ffffff' }} />
                 )}
               </div>
             ))
@@ -345,7 +345,7 @@ export default function GalleryPage() {
       ) : viewMode === 'magazine' ? (
 
         /* ── Magazine — MagazineViewer 오버레이가 처리 ── */
-        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textMuted, fontSize: 14 }}>
           매거진 뷰어 로딩 중...
         </div>
 
@@ -360,7 +360,7 @@ export default function GalleryPage() {
               style={{
                 display: 'flex', gap: 14, alignItems: 'flex-start',
                 padding: '12px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                borderBottom: `1px solid ${COLORS.border}`,
                 cursor: 'pointer',
               }}
             >
@@ -371,18 +371,18 @@ export default function GalleryPage() {
                 onError={e => { e.target.style.display = 'none'; }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.88)', marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>
                   {photo.title || '제목 없음'}
                 </div>
                 {photo.description && (
                   <div style={{
-                    fontSize: 12, color: 'rgba(255,255,255,0.42)', lineHeight: 1.5,
+                    fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.5,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {photo.description}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+                <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: COLORS.textMuted }}>
                   <span>♡ {photo.likesCount ?? 0}</span>
                   <span>🔖 {photo.savesCount ?? 0}</span>
                   {photo.colorMood && <span>{photo.colorMood}</span>}
@@ -417,7 +417,7 @@ export default function GalleryPage() {
 /* ── 스타일 상수 ── */
 const centerStyle = {
   display: 'flex', justifyContent: 'center', alignItems: 'center',
-  minHeight: '100vh', background: '#090909',
+  minHeight: '100vh', background: '#ffffff',
 };
 
 const primaryBtn = {

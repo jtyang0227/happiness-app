@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
-import { MOOD_COLORS } from '../constants/colors';
+import { MOOD_COLORS, COLORS } from '../constants/colors';
 import GenreTabBar from '../components/common/GenreTabBar';
 import DotEmptyState from '../components/common/DotEmptyState';
 import DotSkeletonCard from '../components/common/DotSkeletonCard';
@@ -39,7 +39,7 @@ function Highlight({ text, keyword }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: 'rgba(232, 18, 26,0.35)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
+      <mark style={{ background: '#E8121A', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
         {text.slice(idx, idx + keyword.length)}
       </mark>
       {text.slice(idx + keyword.length)}
@@ -60,7 +60,7 @@ function ExplorePhotoCard({ photo, keyword }) {
       style={{
         borderRadius: 8, overflow: 'hidden',
         cursor: 'pointer', position: 'relative',
-        background: '#0f0f0f',
+        background: COLORS.border,
         transform: hovered ? 'scale(1.01)' : 'scale(1)',
         transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
       }}
@@ -205,12 +205,12 @@ export default function ExplorePage() {
   const dropType  = search.trim() ? 'suggestion' : 'history';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#090909' }}>
+    <div style={{ minHeight: '100vh', background: '#ffffff' }}>
       <style>{`
         .explore-masonry { columns: 4 200px; }
         @media(max-width:1024px) { .explore-masonry { columns: 3; } }
         @media(max-width:640px)  { .explore-masonry { columns: 2; } }
-        .explore-search-btn:hover { background: rgba(255,255,255,0.12) !important; }
+        .explore-search-btn:hover { background: rgba(0,0,0,0.06) !important; }
       `}</style>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
@@ -219,13 +219,13 @@ export default function ExplorePage() {
         <form onSubmit={handleSearch} style={{ marginBottom: 20, position: 'relative' }}>
           <div style={{
             display: 'flex', alignItems: 'center',
-            background: '#1c1c1c',
-            border: `1px solid ${showDrop && dropItems.length ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
+            background: '#f5f5fa',
+            border: `1px solid ${showDrop && dropItems.length ? '#E8121A' : '#e2e2ee'}`,
             borderRadius: 9999,
             padding: '0 16px',
             transition: 'border-color 0.2s',
           }}>
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 15, marginRight: 10, flexShrink: 0 }}>🔍</span>
+            <span style={{ color: '#9090b0', fontSize: 15, marginRight: 10, flexShrink: 0 }}>🔍</span>
             <input
               ref={inputRef}
               type="text"
@@ -237,7 +237,7 @@ export default function ExplorePage() {
               style={{
                 flex: 1,
                 padding: '13px 0',
-                fontSize: 14, color: '#ffffff', outline: 'none',
+                fontSize: 14, color: '#1a1a2e', outline: 'none',
                 background: 'transparent', border: 'none',
               }}
             />
@@ -246,13 +246,13 @@ export default function ExplorePage() {
               onChange={e => handleSortChange(Number(e.target.value))}
               style={{
                 background: 'transparent', border: 'none',
-                color: 'rgba(255,255,255,0.50)', fontSize: 13,
+                color: '#5c5c7a', fontSize: 13,
                 cursor: 'pointer', outline: 'none',
                 padding: '13px 0 13px 8px', flexShrink: 0,
               }}
             >
               {SORT_OPTIONS.map((opt, i) => (
-                <option key={opt.label} value={i} style={{ background: '#1c1c1c' }}>{opt.label}</option>
+                <option key={opt.label} value={i} style={{ background: '#ffffff' }}>{opt.label}</option>
               ))}
             </select>
           </div>
@@ -263,14 +263,14 @@ export default function ExplorePage() {
               ref={dropRef}
               style={{
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
-                background: '#161616',
-                border: '1px solid rgba(255,255,255,0.10)',
+                background: '#ffffff',
+                border: '1px solid #e2e2ee',
                 borderRadius: 20, overflow: 'hidden',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.70)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
               }}
             >
               {dropType === 'history' && (
-                <div style={{ padding: '8px 16px 4px', fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                <div style={{ padding: '8px 16px 4px', fontSize: 11, color: '#9090b0', fontWeight: 600 }}>
                   최근 검색어
                 </div>
               )}
@@ -281,9 +281,9 @@ export default function ExplorePage() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '10px 16px', cursor: 'pointer', fontSize: 14,
-                    color: 'rgba(255,255,255,0.80)', transition: 'background 0.1s',
+                    color: '#1a1a2e', transition: 'background 0.1s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5fa'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <span>
@@ -297,7 +297,7 @@ export default function ExplorePage() {
                         removeHistory(item);
                         setHistory(loadHistory());
                       }}
-                      style={{ fontSize: 12, color: 'rgba(255,255,255,0.30)', padding: '2px 6px' }}
+                      style={{ fontSize: 12, color: '#9090b0', padding: '2px 6px' }}
                     >
                       ✕
                     </span>
@@ -313,18 +313,18 @@ export default function ExplorePage() {
           <GenreTabBar
             selected={selectedGenre}
             onChange={handleGenreChange}
-            theme="dark"
+            theme="light"
           />
         </div>
 
         {/* 결과 수 */}
         {!loading && !error && (
-          <div style={{ marginBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+          <div style={{ marginBottom: 16, fontSize: 13, color: '#9090b0' }}>
             {query.keyword
               ? `"${query.keyword}" 검색 결과 ${photos.length}장`
               : `${photos.length}장`}
             {query.genre && (
-              <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.25)' }}>
+              <span style={{ marginLeft: 8, color: '#b8b8d0' }}>
                 · {selectedGenre}
               </span>
             )}
@@ -354,7 +354,7 @@ export default function ExplorePage() {
                 ? `${query.genre} 장르의 사진이 없습니다.`
                 : undefined
             }
-            theme="dark"
+            theme="light"
           />
         ) : (
           <div className="explore-masonry" style={{ columnGap: 8 }}>
