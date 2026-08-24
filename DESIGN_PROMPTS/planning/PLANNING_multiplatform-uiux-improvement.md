@@ -263,14 +263,16 @@
 |------|--------|---------|
 | FeedPage glass.js 제거 + Cosmos 카드 전환 | 웹 | 2~3시간 |
 | PortfolioPage FollowListModal COLORS 토큰화 | 웹 | 30분 |
+| PhotoDetailPage 데스크탑 래퍼 배경 수정 | 웹 | 1시간 |
 | AppNavigator.js COLORS 토큰화 | 모바일 | 30분 |
+
+> **디자이너 검토 반영**: `PhotoDetailPage`는 원래 P1이었으나, 화이트로 전환된 GalleryPage에서 진입 시 전체 뷰포트가 순간적으로 `#0e0e0e`로 바뀌는 충격이 커 P0로 상향했다(이미지 섹션 자체는 다크 유지 — 래퍼만 수정). 근거: `DESIGN_PROMPT_web-cosmos-completion.md` 2절.
 
 ### P1 — 단기 (1~2주)
 
 | 항목 | 플랫폼 | 예상 공수 |
 |------|--------|---------|
-| PhotoDetailPage 데스크탑 래퍼 배경 수정 | 웹 | 1시간 |
-| GalleryPage 1024px 중간 브레이크포인트 | 웹 (태블릿 효과) | 30분 |
+| GalleryPage 768~1024px 3컬럼 브레이크포인트 | 웹 (태블릿) | 30분 |
 | 브레이크포인트 상수 파일 생성 (`constants/breakpoints.js`) | 웹 | 1시간 |
 | ExploreScreen 장르 필터 추가 | 모바일 | 3~4시간 |
 | SeriesScreen 3장 콜라주 카드 | 모바일 | 2~3시간 |
@@ -281,8 +283,8 @@
 |------|--------|---------|
 | 모바일 Meets 화면 (MeetsScreen + MeetDetailScreen) | 모바일 | 2~3일 |
 | 전체 브레이크포인트 상수 파일 기반으로 통일 리팩토링 | 웹 (전체) | 반나절 |
-| PhotoDetailPage 태블릿 레이아웃 개선 | 웹 (태블릿) | 2시간 |
-| Header 태블릿 범위(768~1024px) UX 결정 및 적용 | 웹 (태블릿) | 2~3시간 |
+
+> **디자이너 검토 반영**: "PhotoDetailPage 태블릿 레이아웃 개선"과 "Header 태블릿 UX 결정"은 P2에서 제외했다. 검토 결과 PhotoDetailPage는 태블릿에서도 가로 2분할 구조를 유지하는 것이 맞고(이미지 섹션 비율만 58%→52%로 소폭 조정, P1에 흡수), Header는 현행 768px 이분법을 유지하는 것으로 결론 내렸다(아이패드는 세로/가로가 정확히 768/1024px로 고정되어 있어 중간 폭이 실사용에 존재하지 않음). 결정 근거 전문은 `DESIGN_PROMPT_tablet-breakpoint-system.md` 3~4절 참조.
 
 ---
 
@@ -316,5 +318,8 @@
 - `DESIGN_PROMPTS/design/DESIGN_PROMPT_cosmos-light-theme.md` — 화이트 테마 전환 결정 사항 (1차)
 - `DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md` — AKIRA 컬러 시스템
 - `DESIGN_PROMPTS/design/DESIGN_PROMPT_cosmos-board-and-nav.md` — 보드 카드 + 필 네비
+- `DESIGN_PROMPTS/design/DESIGN_PROMPT_web-cosmos-completion.md` — 웹 2차 완성 (본 기획서 기반 디자인 상세, P0 상향 근거 포함)
+- `DESIGN_PROMPTS/design/DESIGN_PROMPT_mobile-design-parity.md` — 모바일 AKIRA 통일 + 장르필터·Meets 화면 디자인 상세
+- `DESIGN_PROMPTS/design/DESIGN_PROMPT_tablet-breakpoint-system.md` — 태블릿 브레이크포인트 디자인 상세, Header 결정 근거
 - `DESIGN_PROMPTS/planning/35_MODEL_MEET_PLANNING.md` — 모바일 Meets 기획 참조
 - `DESIGN_PROMPTS/planning/26_GENRE_CLASSIFICATION.md` — 장르 시스템 기획 참조
