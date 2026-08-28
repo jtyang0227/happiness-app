@@ -237,7 +237,8 @@ Loop 수행 순서:
 - **frontend/** — React 18 SPA
 - **mobile/** — React Native 0.72 + Expo 49
 
-기능 분석 및 로드맵 전체 내용: **`PORTFOLIO_FEATURES.md`** 참조
+기능 분석 및 로드맵 전체 내용: **`DESIGN_PROMPTS/planning/MASTER_PLAN_happiness-app.md`** 참조
+(과거 `PORTFOLIO_FEATURES.md`를 참조했으나 저장소에 해당 파일이 없어 위 마스터 플랜 문서로 대체)
 
 ---
 
