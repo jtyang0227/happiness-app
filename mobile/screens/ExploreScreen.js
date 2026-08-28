@@ -4,23 +4,26 @@ import {
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { photoApi } from '../services/api';
-import { COLORS, MOOD_COLORS } from '../constants/colors';
+import { COLORS, MOOD_COLORS, GENRE_LIST } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
+const GENRES = [{ code: null, label: '전체', emoji: '✦' }, ...GENRE_LIST];
 
 export default function ExploreScreen({ navigation }) {
   const [photos, setPhotos] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [moodFilter, setMoodFilter] = useState(null);
+  const [genre, setGenre] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async (kw = keyword, mood = moodFilter) => {
+  const load = useCallback(async (kw = keyword, mood = moodFilter, g = genre) => {
     try {
       const params = {};
       if (kw.trim()) params.keyword = kw.trim();
       if (mood) params.colorMood = mood;
+      if (g) params.genre = g;
       const res = await photoApi.getAll(params);
       setPhotos(res.data || res || []);
     } catch {
@@ -29,15 +32,19 @@ export default function ExploreScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [keyword, moodFilter]);
+  }, [keyword, moodFilter, genre]);
 
   useEffect(() => { load(); }, []);
 
-  const handleSearch = () => load(keyword, moodFilter);
+  const handleSearch = () => load(keyword, moodFilter, genre);
+  const handleGenre = (code) => {
+    setGenre(code);
+    load(keyword, moodFilter, code);
+  };
   const handleMood = (key) => {
     const next = moodFilter === key ? null : key;
     setMoodFilter(next);
-    load(keyword, next);
+    load(keyword, next, genre);
   };
   const handleRefresh = () => { setRefreshing(true); load(); };
 
@@ -84,6 +91,30 @@ export default function ExploreScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* 장르 필터 */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.genreScroll}
+        contentContainerStyle={styles.genreScrollContent}
+      >
+        {GENRES.map(g => {
+          const active = genre === g.code;
+          return (
+            <TouchableOpacity
+              key={g.code ?? 'all'}
+              style={[styles.genreChip, active && styles.genreChipActive]}
+              onPress={() => handleGenre(g.code)}
+            >
+              <Text style={styles.genreEmoji}>{g.emoji}</Text>
+              <Text style={[styles.genreChipText, active && styles.genreChipTextActive]}>
+                {g.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       {/* 무드 필터 */}
       <ScrollView
         horizontal
@@ -113,7 +144,7 @@ export default function ExploreScreen({ navigation }) {
 
       {!loading && (
         <Text style={styles.resultCount}>
-          {moodFilter || keyword.trim() ? `검색 결과 ${photos.length}건` : `사진 ${photos.length}장`}
+          {moodFilter || genre || keyword.trim() ? `검색 결과 ${photos.length}건` : `사진 ${photos.length}장`}
         </Text>
       )}
     </View>
@@ -140,7 +171,7 @@ export default function ExploreScreen({ navigation }) {
       refreshing={refreshing}
       ListEmptyComponent={
         <Text style={styles.empty}>
-          {keyword.trim() || moodFilter ? '검색 결과가 없습니다.' : '아직 등록된 사진이 없습니다.'}
+          {keyword.trim() || moodFilter || genre ? '검색 결과가 없습니다.' : '아직 등록된 사진이 없습니다.'}
         </Text>
       }
     />
@@ -161,6 +192,16 @@ const styles = StyleSheet.create({
   searchBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, borderRadius: RADIUS.md,
     justifyContent: 'center', alignItems: 'center' },
   searchBtnText: { fontSize: 18 },
+
+  genreScroll: { marginBottom: SPACING.sm },
+  genreScrollContent: { paddingHorizontal: SPACING.md, gap: 6 },
+  genreChip: { flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
+  genreChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  genreEmoji: { fontSize: 12 },
+  genreChipText: { fontSize: FONT.xs, fontWeight: '600', color: COLORS.textSecondary },
+  genreChipTextActive: { color: '#fff' },
 
   moodScroll: { marginBottom: SPACING.sm },
   moodScrollContent: { paddingHorizontal: SPACING.md, gap: 6 },

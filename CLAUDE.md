@@ -840,12 +840,12 @@ mobile/
 ├── hooks/        # 커스텀 훅 (usePhotos, useToast)
 ├── screens/      # 페이지 단위 컴포넌트
 │   ├── LoginScreen.js / SignUpScreen.js
-│   ├── ExploreScreen.js     # 실제 API + 검색바 + 무드필터 + 2컬럼 그리드
+│   ├── ExploreScreen.js     # 실제 API + 검색바 + 장르필터(GENRES 수평스크롤, 웹 GENRE_LIST와 동일 12종) + 무드필터 + 2컬럼 그리드
 │   ├── GalleryScreen.js
 │   ├── PhotoDetailScreen.js # 댓글/대댓글 + 좋아요/저장 (API 수정)
 │   ├── PhotoFormScreen.js   # expo-image-picker 갤러리/카메라 + 파일업로드
 │   ├── ProfileScreen.js     # bio/location/specialties/아바타업로드/통계
-│   ├── SeriesScreen.js      # 시리즈 목록 + 펼치기/사진 그리드 (NEW)
+│   ├── SeriesScreen.js      # 시리즈 목록 + 펼치기/사진 그리드 + SeriesCollage(previewPhotos 1~3장 콜라주 보드 카드, 라이트 테마)
 │   └── FeedScreen.js        # 팔로우 피드 + 무한스크롤 (NEW)
 ├── services/     # API 호출 (api.js — photoApi/followApi/commentApi/seriesApi re-export)
 ├── src/

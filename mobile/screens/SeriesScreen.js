@@ -8,6 +8,43 @@ import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 
+function SeriesCollage({ previewPhotos, coverUrl, height = 140 }) {
+  const photos = (previewPhotos?.length ? previewPhotos : [coverUrl]).filter(Boolean);
+
+  if (photos.length === 0) {
+    return (
+      <View style={[styles.collage, styles.collageEmpty, { height }]}>
+        <Text style={styles.collageEmptyIcon}>📷</Text>
+      </View>
+    );
+  }
+
+  if (photos.length === 1) {
+    return <Image source={{ uri: photos[0] }} style={[styles.collage, { height }]} />;
+  }
+
+  if (photos.length === 2) {
+    return (
+      <View style={[styles.collageRow, { height }]}>
+        {photos.map((uri, i) => (
+          <Image key={i} source={{ uri }} style={[styles.collageHalf, i > 0 && { marginLeft: 1 }]} />
+        ))}
+      </View>
+    );
+  }
+
+  // 3장 이상 — 60/40 콜라주
+  return (
+    <View style={[styles.collageRow, { height }]}>
+      <Image source={{ uri: photos[0] }} style={styles.collageMain} />
+      <View style={styles.collageSideCol}>
+        <Image source={{ uri: photos[1] }} style={styles.collageSide} />
+        <Image source={{ uri: photos[2] }} style={[styles.collageSide, { marginTop: 1 }]} />
+      </View>
+    </View>
+  );
+}
+
 export default function SeriesScreen({ navigation }) {
   const { user } = useAuth();
   const [series, setSeries] = useState([]);
@@ -49,15 +86,9 @@ export default function SeriesScreen({ navigation }) {
 
     return (
       <View style={styles.card}>
-        <TouchableOpacity onPress={() => handleToggle(item.id)} style={styles.cardHeader} activeOpacity={0.8}>
-          <View style={styles.cardHeaderLeft}>
-            {item.coverUrl ? (
-              <Image source={{ uri: item.coverUrl }} style={styles.cover} />
-            ) : (
-              <View style={[styles.cover, styles.coverFallback]}>
-                <Text style={styles.coverIcon}>🖼️</Text>
-              </View>
-            )}
+        <TouchableOpacity onPress={() => handleToggle(item.id)} activeOpacity={0.85}>
+          <SeriesCollage previewPhotos={item.previewPhotos} coverUrl={item.coverUrl} />
+          <View style={styles.cardMeta}>
             <View style={{ flex: 1 }}>
               <Text style={styles.seriesTitle} numberOfLines={1}>{item.title}</Text>
               {item.description ? (
@@ -65,8 +96,8 @@ export default function SeriesScreen({ navigation }) {
               ) : null}
               <Text style={styles.seriesMeta}>{item.photoCount ?? 0}장</Text>
             </View>
+            <Text style={[styles.chevron, open && styles.chevronOpen]}>{open ? '▲' : '▼'}</Text>
           </View>
-          <Text style={[styles.chevron, open && styles.chevronOpen]}>{open ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
         {open && (
@@ -130,13 +161,18 @@ const styles = StyleSheet.create({
 
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.card, marginBottom: 12,
     borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center',
-    padding: SPACING.md, justifyContent: 'space-between' },
-  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
 
-  cover: { width: 56, height: 56, borderRadius: RADIUS.md, backgroundColor: '#e0e0e0' },
-  coverFallback: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f8' },
-  coverIcon: { fontSize: 24 },
+  collage: { width: '100%', backgroundColor: '#e0e0e0' },
+  collageEmpty: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f8' },
+  collageEmptyIcon: { fontSize: 32 },
+  collageRow: { flexDirection: 'row' },
+  collageHalf: { flex: 1, height: '100%', backgroundColor: '#e0e0e0' },
+  collageMain: { flex: 0.6, height: '100%', backgroundColor: '#e0e0e0' },
+  collageSideCol: { flex: 0.4, marginLeft: 1 },
+  collageSide: { flex: 1, backgroundColor: '#e0e0e0' },
+
+  cardMeta: { flexDirection: 'row', alignItems: 'center',
+    padding: SPACING.md, justifyContent: 'space-between' },
 
   seriesTitle: { fontSize: FONT.md, fontWeight: '700', color: COLORS.textPrimary },
   seriesDesc:  { fontSize: FONT.xs, color: COLORS.textSecondary, marginTop: 2 },
