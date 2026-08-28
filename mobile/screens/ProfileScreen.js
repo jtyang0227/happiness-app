@@ -301,6 +301,16 @@ export default function ProfileScreen({ navigation = {} }) {
         )}
       </View>
 
+      {/* 메뉴 */}
+      <View style={styles.legalSection}>
+        <Text style={styles.legalTitle}>메뉴</Text>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Meets')}>
+          <Text style={styles.legalItemText}>🤝 약속</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* 법적 고지 */}
       <View style={styles.legalSection}>
         <Text style={styles.legalTitle}>법적 고지</Text>

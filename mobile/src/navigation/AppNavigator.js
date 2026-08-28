@@ -19,6 +19,8 @@ import ProfileScreen     from '../../screens/ProfileScreen';
 import PhotoDetailScreen from '../../screens/PhotoDetailScreen';
 import SeriesScreen      from '../../screens/SeriesScreen';
 import LegalScreen       from '../../screens/LegalScreen';
+import MeetsScreen       from '../../screens/MeetsScreen';
+import MeetDetailScreen  from '../../screens/MeetDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -136,6 +138,10 @@ function MainStack() {
       <Stack.Screen name="Series"      component={SeriesScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
           headerTintColor: '#fff', title: '시리즈' }} />
+      <Stack.Screen name="Meets"       component={MeetsScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
+          headerTintColor: '#fff', title: '약속' }} />
+      <Stack.Screen name="MeetDetail"  component={MeetDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Legal"       component={LegalScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#1a1a2e', title: '법적 고지' }} />

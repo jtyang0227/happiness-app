@@ -375,7 +375,7 @@ REACT_APP_APPLE_REDIRECT_URI=https://api.example.com/api/auth/oauth/apple/callba
 Feature-based package layout:
 
 - **photo/** — Core domain. `PhotoController` exposes REST endpoints for CRUD plus likes/saves/shares/tags. Entities: `Photo`, `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag`.
-- **member/** — Auth & users. `AuthController` handles signup/login/stats/password-change. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security. `Member` entity includes: avatarUrl, coverUrl, bio, websiteUrl, location, specialties (Phase 2-8 추가). `MemberStatsResponse` — 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount). Endpoints: `GET /member/:id/stats`, `PUT /member/:id/password`.
+- **member/** — Auth & users. `AuthController` handles signup/login/stats/password-change. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security. `Member` entity includes: avatarUrl, coverUrl, bio, websiteUrl, location, specialties (Phase 2-8 추가). `MemberStatsResponse` — 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount). Endpoints: `GET /member/:id/stats`, `PUT /member/:id/password`, `GET /members/search?q=&size=`(인증된 유저 누구나, 이름/프로필명 검색, 최대 30건, Meets 약속 요청 상대 찾기용 — `MemberRepository.searchByNameOrProfileName`). **버그 수정**: `AuthService.login()`이 `findByEmail(request.getEmail())`을 그대로 사용해 회원가입 시 소문자로 정규화된 이메일과 대소문자가 다르면 로그인이 항상 실패하던 문제 수정 — `.trim().toLowerCase()` 추가(signup과 동일하게 정규화).
 - **member/service/GoogleOAuthService** — Google OAuth 2.0. `googleLogin(code)` → Token URL: `oauth2.googleapis.com/token`, UserInfo: `googleapis.com/oauth2/v2/userinfo`.
 - **member/service/NaverOAuthService** — 네이버 OAuth 2.0. `naverLogin(code, state)` → Token: `nid.naver.com/oauth2.0/token`, UserInfo: `openapi.naver.com/v1/nid/me`.
 - **member/service/AppleOAuthService** — Apple Sign In. `appleLogin(idToken, userJson)` → id_token JWT 디코딩(base64)으로 sub+email 추출. `generateClientSecret()` → JJWT ES256으로 client_secret JWT 생성.
@@ -846,21 +846,24 @@ mobile/
 │   ├── PhotoFormScreen.js   # expo-image-picker 갤러리/카메라 + 파일업로드
 │   ├── ProfileScreen.js     # bio/location/specialties/아바타업로드/통계
 │   ├── SeriesScreen.js      # 시리즈 목록 + 펼치기/사진 그리드 + SeriesCollage(previewPhotos 1~3장 콜라주 보드 카드, 라이트 테마)
-│   └── FeedScreen.js        # 팔로우 피드 + 무한스크롤 (NEW)
-├── services/     # API 호출 (api.js — photoApi/followApi/commentApi/seriesApi re-export)
+│   ├── FeedScreen.js        # 팔로우 피드 + 무한스크롤 (NEW)
+│   ├── MeetsScreen.js       # 약속 목록 + 상태별 탭 필터(전체/대기중/조율중/확정/완료) + MeetCard + FAB(새 약속 요청 모달: 회원검색→날짜선택→메시지, 라이트 테마)
+│   └── MeetDetailScreen.js  # 약속 상세 — 커스텀 헤더 + 3탭(💬채팅 기본/📅일정/📍장소), PENDING 수신자 수락·거절 바, CONFIRMED 완료 처리 바, 채팅 30초 polling
+├── services/     # API 호출 (api.js — photoApi/followApi/commentApi/seriesApi/meetApi re-export)
 ├── src/
 │   ├── api/
 │   │   ├── apiClient.js     # Axios + JWT 자동 첨부 + 토큰 재발급
 │   │   ├── photoApi.js      # getAll/search/getFeed/uploadFile 추가
 │   │   ├── followApi.js     # follow/unfollow/check/count/list (NEW)
 │   │   ├── commentApi.js    # getComments/addComment/deleteComment (NEW)
-│   │   └── seriesApi.js     # getByMember/getOne/CRUD (NEW)
+│   │   ├── seriesApi.js     # getByMember/getOne/CRUD (NEW)
+│   │   └── meetApi.js       # create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage/searchMembers (웹 meetApi.js와 동일 엔드포인트)
 │   ├── navigation/
-│   │   └── AppNavigator.js  # BottomTabNavigator(탐색/갤러리/등록/피드/프로필) + Stack
+│   │   └── AppNavigator.js  # BottomTabNavigator(탐색/갤러리/등록/피드/프로필) + Stack(PhotoForm/Series/Meets/MeetDetail/Legal)
 │   ├── storage/secureStorage.js
 │   └── store/authStore.js
 ├── store/
-│   └── AuthContext.js       # useAuth() 인터페이스 (SecureStore 기반)
+│   └── AuthContext.js       # useAuth() 인터페이스 (SecureStore 기반). **`App.js`에서 `<AuthProvider>`로 `<AppNavigator/>`를 감싸야 동작함** — 누락 시 useAuth() 사용하는 모든 화면에서 즉시 throw(버그 수정 완료)
 └── utils/
     └── uploadImage.js
 ```
@@ -886,7 +889,9 @@ Root Stack
       │    └── ProfileTab   — 프로필 (👤)
       ├── PhotoDetail — 사진 상세 (modal, headerShown:false)
       ├── PhotoForm   — 사진 등록/수정 (Stack)
-      └── Series      — 시리즈 (Stack)
+      ├── Series      — 시리즈 (Stack)
+      ├── Meets       — 약속 목록 (Stack, ProfileScreen "메뉴" 섹션에서 진입)
+      └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
 ```
 
 **주요 의존성 (mobile/package.json):**

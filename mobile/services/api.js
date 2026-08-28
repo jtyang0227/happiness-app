@@ -7,3 +7,4 @@ export { authMobileApi as authApi } from '../src/api/authMobileApi';
 export { followApi } from '../src/api/followApi';
 export { commentApi } from '../src/api/commentApi';
 export { seriesApi } from '../src/api/seriesApi';
+export { meetApi } from '../src/api/meetApi';

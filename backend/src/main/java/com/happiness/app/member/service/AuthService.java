@@ -43,7 +43,7 @@ public class AuthService {
         String ip       = getClientIp(httpRequest);
         String deviceId = resolveDeviceId(request.getDeviceId(), httpRequest);
 
-        Member member = memberRepository.findByEmail(request.getEmail())
+        Member member = memberRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> {
                     auditLogService.recordLoginFailure(request.getEmail(), ip);
                     return new SecurityException(ErrorCode.LOGIN_FAILED);

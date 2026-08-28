@@ -10,6 +10,7 @@ import com.happiness.app.photo.repository.*;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
 import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -228,6 +229,15 @@ public class MemberService {
     @Transactional(readOnly = true)
     public List<MemberResponse> getAllMembers() {
         return memberRepository.findAll().stream()
+                .map(MemberResponse::fromEntity)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberResponse> searchMembers(String q, int size) {
+        if (q == null || q.trim().isEmpty()) return List.of();
+        int limit = Math.max(1, Math.min(size, 30));
+        return memberRepository.searchByNameOrProfileName(q.trim(), PageRequest.of(0, limit)).stream()
                 .map(MemberResponse::fromEntity)
                 .toList();
     }

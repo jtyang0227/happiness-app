@@ -119,6 +119,14 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok(memberService.getAllMembers()));
     }
 
+    /** GET /api/auth/members/search — 회원 이름/프로필명 검색 (인증된 유저 누구나, 약속 요청 상대 찾기용) */
+    @GetMapping("/members/search")
+    public ResponseEntity<List<MemberResponse>> searchMembers(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(memberService.searchMembers(q, size));
+    }
+
     @PutMapping("/member/{id}/role")
     @PreAuthorize("hasAnyRole('WM', 'SA')")
     public ResponseEntity<ApiResponse<MemberResponse>> changeMemberRole(
