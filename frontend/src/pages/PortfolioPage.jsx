@@ -39,22 +39,30 @@ function FollowListModal({ title, members, loading, onClose }) {
   );
 }
 
-/* ── Fallback for FILM/SPLIT/MOSAIC (준비 중) ──────── */
-function TemplateComingSoon({ template, member, photos, profileName }) {
-  const navigate = useNavigate();
-  const pName = member?.profileName || profileName || '';
+/* ── 템플릿 레지스트리 — 새 템플릿은 여기 한 줄만 추가하면 됨 ──────── */
+const TEMPLATE_REGISTRY = {
+  EDITORIAL: TemplateEditorial,
+  SCRL:      TemplateScrl,
+  MINIMAL:   TemplateMinimal,
+  DARK_ROOM: TemplateDarkRoom,
+};
+
+/* ── 레지스트리에 없는 템플릿(FILM/SPLIT/MOSAIC/MAGAZINE)용 배너 래퍼 ──────── */
+function TemplateComingSoon({ template, children }) {
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.galleryBg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-      <div style={{ fontSize: 40 }}>✦</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: '#eeeeff' }}>{template} 템플릿</div>
-      <div style={{ fontSize: 14, color: '#6060a0' }}>이 템플릿은 현재 준비 중입니다.</div>
-      <div style={{ fontSize: 13, color: '#4040a0', marginTop: 4 }}>잠시 에디토리얼 레이아웃으로 표시합니다.</div>
-      <TemplateEditorial
-        member={member}
-        photos={photos}
-        series={[]}
-        profileName={pName}
-      />
+    <div>
+      <div style={{
+        background: '#1a1a2e',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        padding: '10px 20px',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 14 }}>✦</span>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>
+          {template} 템플릿은 준비 중입니다. 에디토리얼 레이아웃으로 표시합니다.
+        </div>
+      </div>
+      {children}
     </div>
   );
 }
@@ -227,72 +235,32 @@ export default function PortfolioPage() {
 
   const isOwnPage = user?.id === member?.id;
 
-  /* ── 공통 props ── */
-  const sharedProps = {
+  /* ── 모든 템플릿에 공통으로 전달하는 props (신규 템플릿도 이 객체 하나만 받으면 됨) ── */
+  const templateProps = {
     member,
     photos,
     series,
     profileName: member?.profileName || profileName,
     isOwnPage,
+    photoCount, followerCount, followingCount, totalLikes,
+    following: !isOwnPage && user?.id ? following : undefined,
+    followLoading,
+    onFollow: !isOwnPage && user?.id ? handleFollow : null,
+    onOpenFollowModal: handleOpenFollowModal,
   };
 
-  /* ── 템플릿 분기 렌더링 ── */
+  /* ── 템플릿 분기 렌더링 — 레지스트리 조회, 새 템플릿은 TEMPLATE_REGISTRY에만 추가하면 됨 ── */
   const renderTemplate = () => {
-    switch (template) {
-      case 'SCRL':
-        return <TemplateScrl {...sharedProps} />;
+    const TemplateComponent = TEMPLATE_REGISTRY[template];
 
-      case 'MINIMAL':
-        return <TemplateMinimal {...sharedProps} />;
-
-      case 'DARK_ROOM':
-        return <TemplateDarkRoom {...sharedProps} />;
-
-      case 'FILM':
-      case 'SPLIT':
-      case 'MOSAIC':
-      case 'MAGAZINE':
-        // 준비 중 — 에디토리얼로 표시 + 안내
-        return (
-          <div>
-            <div style={{
-              background: '#1a1a2e', borderBottom: '1px solid rgba(255,255,255,0.08)',
-              padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>
-                {template} 템플릿은 준비 중입니다. 에디토리얼 레이아웃으로 표시합니다.
-              </div>
-            </div>
-            <TemplateEditorial
-              {...sharedProps}
-              photoCount={photoCount}
-              followerCount={followerCount}
-              followingCount={followingCount}
-              totalLikes={totalLikes}
-              following={!isOwnPage && user?.id ? following : undefined}
-              followLoading={followLoading}
-              onFollow={!isOwnPage && user?.id ? handleFollow : null}
-              onOpenFollowModal={handleOpenFollowModal}
-            />
-          </div>
-        );
-
-      case 'EDITORIAL':
-      default:
-        return (
-          <TemplateEditorial
-            {...sharedProps}
-            photoCount={photoCount}
-            followerCount={followerCount}
-            followingCount={followingCount}
-            totalLikes={totalLikes}
-            following={!isOwnPage && user?.id ? following : undefined}
-            followLoading={followLoading}
-            onFollow={!isOwnPage && user?.id ? handleFollow : null}
-            onOpenFollowModal={handleOpenFollowModal}
-          />
-        );
+    if (!TemplateComponent) {
+      return (
+        <TemplateComingSoon template={template}>
+          <TemplateEditorial {...templateProps} />
+        </TemplateComingSoon>
+      );
     }
+    return <TemplateComponent {...templateProps} />;
   };
 
   return (

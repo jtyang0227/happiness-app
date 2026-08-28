@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator, Image,
+  ScrollView, Alert, ActivityIndicator, Image, Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../store/AuthContext';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { getPortfolioUrl } from '../src/utils/portfolioUrl';
 
 const PROFILE_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$/;
 const SPECIALTIES_OPTIONS = ['웨딩', '포트레이트', '풍경', '제품', '음식', '건축', '스트릿', '패션', '스포츠', '반려동물'];
@@ -105,6 +106,17 @@ export default function ProfileScreen({ navigation = {} }) {
       { text: '취소', style: 'cancel' },
       { text: '로그아웃', style: 'destructive', onPress: logout },
     ]);
+  };
+
+  const handleOpenPortfolio = () => {
+    const url = getPortfolioUrl(user?.profileName);
+    if (!url) {
+      Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+      return;
+    }
+    Linking.openURL(url).catch(() => {
+      Alert.alert('열기 실패', '브라우저를 열 수 없습니다.');
+    });
   };
 
   return (
@@ -307,6 +319,10 @@ export default function ProfileScreen({ navigation = {} }) {
         <TouchableOpacity style={styles.legalItem}
           onPress={() => navigation.navigate && navigation.navigate('Meets')}>
           <Text style={styles.legalItemText}>🤝 약속</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem} onPress={handleOpenPortfolio}>
+          <Text style={styles.legalItemText}>🌐 내 포트폴리오 보기</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
       </View>

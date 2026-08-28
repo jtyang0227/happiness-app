@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { mq } from '../../../constants/breakpoints';
 
 export default function TemplateMinimal({ member, photos, series, profileName, onInquiry }) {
   const navigate = useNavigate();
@@ -90,12 +91,13 @@ export default function TemplateMinimal({ member, photos, series, profileName, o
             아직 등록된 작품이 없습니다.
           </div>
         ) : (
-          <div style={{
+          <div className="minimal-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 4,
           }}>
             <style>{`
+              ${mq.tablet} { .minimal-grid { gap: 1px !important; } }
               @media (max-width: 600px) {
                 .minimal-grid { grid-template-columns: repeat(2, 1fr) !important; }
               }

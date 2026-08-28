@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOOD_COLORS } from '../../../constants/colors';
+import { mq } from '../../../constants/breakpoints';
 import MagazineGrid from '../MagazineGrid';
 import { seriesApi } from '../../../services/api';
 import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioApi';
@@ -433,7 +434,7 @@ export default function TemplateEditorial({
       )}
 
       {/* GALLERY */}
-      <style>{`.portfolio-masonry { columns: 4 220px; column-gap: 4px; } @media (max-width: 900px) { .portfolio-masonry { columns: 3; } } @media (max-width: 600px) { .portfolio-masonry { columns: 2; } }`}</style>
+      <style>{`.portfolio-masonry { columns: 4 220px; column-gap: 4px; } ${mq.tablet} { .portfolio-masonry { columns: 3; } } ${mq.mobile} { .portfolio-masonry { columns: 2; } }`}</style>
 
       {filteredPhotos.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '100px 0', color: 'rgba(255,255,255,0.2)', fontSize: 15 }}>
