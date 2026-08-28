@@ -80,7 +80,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       {/* 데스크탑 사이드바 */}
       <style>{`
         ${mq.mobile} { .admin-sidebar { display: none !important; } }
-        ${mq.desktop} { .admin-mobile-overlay { display: none !important; } }
+        ${mq.tabletUp} { .admin-mobile-overlay { display: none !important; } }
         .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
         .admin-nav-link:hover { background: rgba(232, 18, 26,0.07); color: #E8121A; }
         .admin-nav-link--active { background: rgba(232, 18, 26,0.12); color: #E8121A; border-left: 3px solid #E8121A; }
@@ -101,7 +101,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
 
       {/* 메인 콘텐츠 */}
       <div style={{ flex: 1, marginLeft: 0, display: 'flex', flexDirection: 'column' }}>
-        <style>{`@media (min-width: 769px) { .admin-content { margin-left: ${SIDEBAR_W}px !important; } }`}</style>
+        <style>{`${mq.tabletUp} { .admin-content { margin-left: ${SIDEBAR_W}px !important; } }`}</style>
 
         {/* 상단바 — V2 glass('strong') */}
         <div style={{

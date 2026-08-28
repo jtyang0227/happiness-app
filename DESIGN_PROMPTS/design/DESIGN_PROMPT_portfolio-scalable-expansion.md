@@ -230,6 +230,12 @@ const handleOpenPortfolio = () => {
 
 ---
 
+## 5. P1 검증 중 발견한 회귀 버그 (수정 완료)
+
+태블릿 Hero 영역 실측 검증(768px, 820px) 중, PC 헤더와 모바일 BottomNav가 **동시에 렌더링**되는 버그를 발견했다. 원인은 이전 라운드("브레이크포인트 통일 리팩토링")에서 `Header.jsx`/`AdminLayout.jsx`의 `@media (min-width: 768px)`를 `mq.desktop`(`min-width:1024px`)으로 잘못 치환한 것 — `mq.desktop`은 3단 그리드(모바일/태블릿/데스크탑)용이고, PC헤더는 2단(모바일이냐 아니냐)만 구분하므로 값이 다르다. `constants/breakpoints.js`에 `mq.tabletUp`(`min-width:768px`)을 신설해 Header.jsx·AdminLayout.jsx 3곳(사이드바 오버레이, 사이드바 마진 — 마지막 것은 기존에 `769px` 별도 하드코딩이던 것도 함께 정렬)을 교체했다. 통계 바(팔로워/팔로잉 등) 자체는 검증 결과 정상 렌더링되어 추가 조정 불필요.
+
+---
+
 ## 수용 기준 (AC) — PLANNING 문서 6절과 동일, 여기서는 시각 스펙만 재확인
 
 - [ ] `.portfolio-masonry`가 768~1023px에서 3열, 1024px 이상에서 4열

@@ -138,7 +138,7 @@ export default function Header() {
     <>
       <style>{`
         ${mq.mobile} { .h-pc { display: none !important; } }
-        ${mq.desktop} { .h-mobile { display: none !important; } }
+        ${mq.tabletUp} { .h-mobile { display: none !important; } }
         .nav-link {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 13px; border-radius: 10px;

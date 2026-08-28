@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator, Image, Linking,
+  ScrollView, Alert, ActivityIndicator, Image, Linking, Share,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../store/AuthContext';
@@ -117,6 +117,15 @@ export default function ProfileScreen({ navigation = {} }) {
     Linking.openURL(url).catch(() => {
       Alert.alert('열기 실패', '브라우저를 열 수 없습니다.');
     });
+  };
+
+  const handleSharePortfolio = () => {
+    const url = getPortfolioUrl(user?.profileName);
+    if (!url) {
+      Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+      return;
+    }
+    Share.share({ message: `${user?.name || '작가'}님의 포트폴리오를 확인해보세요\n${url}`, url }).catch(() => {});
   };
 
   return (
@@ -321,10 +330,17 @@ export default function ProfileScreen({ navigation = {} }) {
           <Text style={styles.legalItemText}>🤝 약속</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.legalItem} onPress={handleOpenPortfolio}>
-          <Text style={styles.legalItemText}>🌐 내 포트폴리오 보기</Text>
-          <Text style={styles.legalChevron}>›</Text>
-        </TouchableOpacity>
+        <View style={styles.legalItem}>
+          <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={handleOpenPortfolio}>
+            <Text style={styles.legalItemText}>🌐 내 포트폴리오 보기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSharePortfolio} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginRight: 14 }}>
+            <Text style={{ fontSize: 15 }}>📤</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleOpenPortfolio} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.legalChevron}>›</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 법적 고지 */}
