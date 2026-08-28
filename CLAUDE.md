@@ -88,6 +88,7 @@ Loop 수행 순서:
 - 반응형 레이아웃 설계
 - UI/UX 관련 사항은 Stitch의 결과를 우선 반영한다
 - **Claude Code 에이전트**: `.claude/agents/designer.md` — Google Stitch 방법론 기반 자율 디자인 에이전트 (subagent_type: `designer`). "디자인해줘", "화면 만들어줘" 요청 시 자동 호출.
+- **Claude Code 스킬**: `.claude/skills/design/SKILL.md` (`/design`) — 현재 세션에서 바로 실행되는 Stitch 워크플로우(UNDERSTAND→PLAN→GENERATE→BUILD→**PREVIEW(Playwright 브라우저 스크린샷 자가 검수·수정 루프, 생략 금지)**→ITERATE). `designer` 에이전트와 역할은 겹치지만 PREVIEW 단계 필수 여부가 다르다.
 
 ### 자동화 (Automation) — AI Studio
 - 반복 작업 자동화 및 스크립트 생성
