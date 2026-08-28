@@ -722,7 +722,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **contexts/LanguageContext** — 다국어(ko/en/ja/zh) 상태. `useLang()` → `{ lang, changeLang, t, SUPPORTED_LANGS }`. `t(key, vars)` — `{var}` 치환 지원. `detectLang()` — localStorage > navigator.language > 'ko' 순 감지
 - **i18n/** — `index.js`(TRANSLATIONS, SUPPORTED_LANGS, LANG_META), `ko.js`/`en.js`/`ja.js`/`zh.js` (각 ~150 키)
 - **constants/colors.js** — `GENRE_META`(12 장르, emoji/label/color/description) + `GENRE_LIST` 추가
-- **constants/breakpoints.js** (Feature: 멀티플랫폼 UI/UX 개선 P0/P1) — `BP = { sm:480, md:768, lg:1024, xl:1280 }` + `mq` 미디어쿼리 헬퍼(mobile/tablet/desktop/upToTablet). GalleryPage 마소닉 그리드 768~1023px 3컬럼 브레이크포인트에 사용.
+- **constants/breakpoints.js** (Feature: 멀티플랫폼 UI/UX 개선 P0/P1) — `BP = { sm:480, md:768, lg:1024, xl:1280 }` + `mq` 미디어쿼리 헬퍼(mobile/tablet/desktop/upToTablet). GalleryPage 마소닉 그리드 768~1023px 3컬럼 브레이크포인트에 사용. 이후 Header.jsx(PC/모바일 767·768 분기 + 콘텐츠 maxWidth), AdminLayout.jsx(사이드바 767·768 분기, 기존 768·769에서 Header와 동일 기준으로 통일), EditorShell.jsx(모바일 서랍 768 분기 ×4), PhotoDetailPage.jsx(모바일 768 + 태블릿 1024 분기, 태블릿에서 이미지 섹션 58%→52% 축소 — 기존에 누락돼 있던 AC 항목 반영), ExplorePage.jsx(태블릿 3컬럼 분기를 GalleryPage와 동일하게 1024 경계로 통일), RelatedPhotos.jsx(480 분기)에 순차 적용. GalleryPage의 600px 모바일 분기, ExplorePage의 640px 모바일 분기, TemplateEditorial/TemplateMinimal의 포트폴리오 마소닉 900·600 분기는 `BP` 토큰과 값이 정확히 일치하지 않아(실제 화면 폭 기준이 달라짐) 시각적 회귀 위험 때문에 이번 라운드에서 값 변경 없이 보류 — 해당 파일을 다른 이유로 수정할 때 점진적으로 맞춰나간다.
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi + inquiryApi + seriesApi

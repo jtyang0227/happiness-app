@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import { mq } from '../constants/breakpoints';
 import GenreTabBar from '../components/common/GenreTabBar';
 import DotEmptyState from '../components/common/DotEmptyState';
 import DotSkeletonCard from '../components/common/DotSkeletonCard';
@@ -208,7 +209,7 @@ export default function ExplorePage() {
     <div style={{ minHeight: '100vh', background: '#ffffff' }}>
       <style>{`
         .explore-masonry { columns: 4 200px; }
-        @media(max-width:1024px) { .explore-masonry { columns: 3; } }
+        ${mq.tablet} { .explore-masonry { columns: 3; } }
         @media(max-width:640px)  { .explore-masonry { columns: 2; } }
         .explore-search-btn:hover { background: rgba(0,0,0,0.06) !important; }
       `}</style>

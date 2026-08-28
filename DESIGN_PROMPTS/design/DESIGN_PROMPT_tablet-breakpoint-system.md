@@ -225,5 +225,5 @@ const isTablet = !isMobile && window.innerWidth < BP.lg; // 768~1023px
 - [ ] **AC-T2**: `frontend/src/constants/breakpoints.js` (신규)에 `BP = { sm:480, md:768, lg:1024, xl:1280 }`와 `mq` 헬퍼가 정의되고 GalleryPage에서 실제로 참조된다.
 - [ ] **AC-T3**: Chrome DevTools 820px(아이패드 Air)·768px(아이패드 미니)·1024px(아이패드 가로) 3개 폭에서 GalleryPage 스크린샷 확인 — overflow, 텍스트 잘림, 과도한 빈 공간 없음.
 - [ ] **AC-T4**: Header 태블릿 범위 결정 사항(현행 768px 이분법 유지, 근거 포함)이 이 문서 4절에 기록되어 재논의 없이 참조 가능하다.
-- [ ] PhotoDetailPage 768~1023px 구간에서 이미지 섹션 비율이 52%로 조정된다(가로 2분할 구조 자체는 유지).
+- [x] PhotoDetailPage 768~1023px 구간에서 이미지 섹션 비율이 52%로 조정된다(가로 2분할 구조 자체는 유지). — 구현·검증 완료(900px→52%, 1200px→58% 확인)
 - [ ] `npm run build` 성공

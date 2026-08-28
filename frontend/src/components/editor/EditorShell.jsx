@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEditor } from '../../contexts/EditorContext';
 import { COLORS } from '../../constants/colors';
+import { BP } from '../../constants/breakpoints';
 import LeftPanel   from './LeftPanel';
 import CenterCanvas from './CenterCanvas';
 import TransformPanel from './panels/TransformPanel';
@@ -67,8 +68,8 @@ export default function EditorShell({ onExport }) {
           borderRight: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', flexDirection: 'column',
           // Mobile
-          position: window.innerWidth < 768 ? 'fixed' : 'relative',
-          top: 0, left: window.innerWidth < 768 ? (leftOpen ? 0 : -220) : 'auto',
+          position: window.innerWidth < BP.md ? 'fixed' : 'relative',
+          top: 0, left: window.innerWidth < BP.md ? (leftOpen ? 0 : -220) : 'auto',
           height: '100%', zIndex: 200,
           transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1)',
         }}>
@@ -135,7 +136,7 @@ export default function EditorShell({ onExport }) {
           <button
             onClick={() => setLeftOpen(v => !v)}
             style={{
-              display: window.innerWidth < 768 ? 'flex' : 'none',
+              display: window.innerWidth < BP.md ? 'flex' : 'none',
               alignItems: 'center', justifyContent: 'center',
               width: 32, height: 32, borderRadius: 7,
               background: 'none', border: 'none',
@@ -215,7 +216,7 @@ export default function EditorShell({ onExport }) {
         borderLeft: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', flexDirection: 'column',
         // Mobile: bottom sheet
-        ...(window.innerWidth < 768 ? {
+        ...(window.innerWidth < BP.md ? {
           position: 'fixed', bottom: 0, left: 0, right: 0, width: '100%',
           maxHeight: '52vh', zIndex: 100, borderLeft: 'none',
           borderTop: '1px solid rgba(255,255,255,0.06)',

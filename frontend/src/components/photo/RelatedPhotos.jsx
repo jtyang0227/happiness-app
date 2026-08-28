@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BP } from '../../constants/breakpoints';
 
 function RelatedCard({ photo, onClick }) {
   const [hovered, setHovered] = useState(false);
@@ -51,7 +52,7 @@ export default function RelatedPhotos({ photos = [], onPhotoClick }) {
       </div>
       <style>{`
         .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        @media (max-width: 480px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: ${BP.sm}px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
       <div className="related-grid">
         {photos.slice(0, 6).map(p => (

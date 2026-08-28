@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
+import { BP } from '../constants/breakpoints';
 import GenreBadge, { SubGenreBadges } from '../components/photo/GenreBadge';
 import CommentsSection from '../components/photo/CommentsSection';
 import ColorPalette from '../components/photo/ColorPalette';
@@ -41,7 +42,8 @@ export default function PhotoDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [saved, setSaved] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < BP.md);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= BP.md && window.innerWidth < BP.lg);
 
   // 전체화면 뷰어
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -58,7 +60,10 @@ export default function PhotoDetailPage() {
   );
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
+    const onResize = () => {
+      setIsMobile(window.innerWidth < BP.md);
+      setIsTablet(window.innerWidth >= BP.md && window.innerWidth < BP.lg);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -177,7 +182,7 @@ export default function PhotoDetailPage() {
 
   const imageSection = (
     <div style={{
-      flex: isMobile ? 'none' : '0 0 58%',
+      flex: isMobile ? 'none' : isTablet ? '0 0 52%' : '0 0 58%',
       background: COLORS.galleryBg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: isMobile ? 280 : '100%',

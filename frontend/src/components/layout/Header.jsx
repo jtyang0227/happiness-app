@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
 import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
+import { BP, mq } from '../../constants/breakpoints';
 import { inquiryApi } from '../../services/api';
 import meetApi from '../../services/meetApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
@@ -136,8 +137,8 @@ export default function Header() {
   return (
     <>
       <style>{`
-        @media (max-width: 767px) { .h-pc { display: none !important; } }
-        @media (min-width: 768px) { .h-mobile { display: none !important; } }
+        ${mq.mobile} { .h-pc { display: none !important; } }
+        ${mq.desktop} { .h-mobile { display: none !important; } }
         .nav-link {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 13px; border-radius: 10px;
@@ -164,7 +165,7 @@ export default function Header() {
         borderRadius: 0,
       }}>
         <div style={{
-          maxWidth: 1280, margin: '0 auto',
+          maxWidth: BP.xl, margin: '0 auto',
           padding: '0 20px', height: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 12,
