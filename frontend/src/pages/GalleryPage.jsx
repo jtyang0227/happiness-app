@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
+import { mq } from '../constants/breakpoints';
 import { glass } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
@@ -271,7 +272,7 @@ export default function GalleryPage() {
       {loading ? (
         /* 도트 스켈레톤 — masonry로 통일 */
         <>
-          <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+          <style>{`.gallery-masonry{columns:4 200px}${mq.tablet}{.gallery-masonry{columns:3 200px}}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
           <div className="gallery-masonry" style={{ columnGap: 4, padding: 4 }}>
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} style={{ breakInside: 'avoid', marginBottom: 4 }}>
@@ -316,7 +317,7 @@ export default function GalleryPage() {
           ) : (
             /* 컨테이너 너비 감지 전 폴백 — masonry로 표시 */
             <>
-              <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+              <style>{`.gallery-masonry{columns:4 200px}${mq.tablet}{.gallery-masonry{columns:3 200px}}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
               <div className="gallery-masonry" style={{ columnGap: 4 }}>
                 {displayed.map(photo => (
                   <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 4 }}>
@@ -332,7 +333,7 @@ export default function GalleryPage() {
 
         /* ── Masonry ── */
         <>
-          <style>{`.gallery-masonry{columns:4 200px}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
+          <style>{`.gallery-masonry{columns:4 200px}${mq.tablet}{.gallery-masonry{columns:3 200px}}@media(max-width:600px){.gallery-masonry{columns:2}}`}</style>
           <div className="gallery-masonry" style={{ columnGap: 4, padding: 4 }}>
             {displayed.map(photo => (
               <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 4 }}>

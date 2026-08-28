@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
-import { glass, GLASS, GLASS_KEYFRAMES, SPRING } from '../constants/glass';
 import DotEmptyState from '../components/common/DotEmptyState';
 import { SkeletonFeedCard } from '../components/common/Skeleton';
 
@@ -25,23 +24,24 @@ function FeedCard({ photo, onClick }) {
   return (
     <div
       style={{
-        ...glass('light'),
-        borderRadius: 24,
+        background: COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 16,
         overflow: 'hidden',
-        transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
-        animation: `glassIn 0.4s ${SPRING} both`,
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        cursor: 'pointer',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
-        e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(26,26,46,0.10)';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = GLASS.light.shadow;
+        e.currentTarget.style.boxShadow = '';
       }}
     >
       {/* 작가 헤더 */}
-      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${COLORS.borderLight}` }}>
         <div style={{
           width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
           background: authorAvatar ? 'transparent' : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
@@ -138,10 +138,9 @@ export default function FeedPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg, #f0f2ff 0%, #f5f0ff 40%, #eff7ff 100%)',
+      background: COLORS.bg,
     }}>
-    <style>{GLASS_KEYFRAMES}</style>
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 20px 60px' }}>
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 60px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>📰 피드</h2>
@@ -150,10 +149,8 @@ export default function FeedPage() {
         {!loading && photos.length === 0 && (
           <button onClick={() => navigate('/explore')} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-            border: `1px solid ${GLASS.light.border}`,
-            background: GLASS.light.surface,
-            backdropFilter: GLASS.light.blur,
-            WebkitBackdropFilter: GLASS.light.blur,
+            border: `1px solid ${COLORS.border}`,
+            background: COLORS.surface,
             color: COLORS.textSecondary, cursor: 'pointer',
           }}>
             탐색하기
@@ -189,14 +186,11 @@ export default function FeedPage() {
                 disabled={loadingMore}
                 style={{
                   padding: '10px 32px', borderRadius: 24,
-                  border: `1px solid ${GLASS.light.border}`,
-                  background: GLASS.light.surface,
-                  backdropFilter: GLASS.light.blur,
-                  WebkitBackdropFilter: GLASS.light.blur,
+                  border: `1px solid ${COLORS.border}`,
+                  background: COLORS.surface,
                   color: COLORS.textSecondary,
                   fontWeight: 600, cursor: loadingMore ? 'not-allowed' : 'pointer',
                   fontSize: 14, opacity: loadingMore ? 0.6 : 1,
-                  boxShadow: GLASS.light.shadow,
                 }}
               >
                 {loadingMore ? '로딩 중...' : '더 보기'}

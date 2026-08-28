@@ -178,7 +178,7 @@ export default function PhotoDetailPage() {
   const imageSection = (
     <div style={{
       flex: isMobile ? 'none' : '0 0 58%',
-      background: '#0e0e0e',
+      background: COLORS.galleryBg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: isMobile ? 280 : '100%',
       position: 'relative',
@@ -215,6 +215,7 @@ export default function PhotoDetailPage() {
     <div style={{
       flex: 1, padding: isMobile ? '20px 20px 32px' : '28px 28px',
       overflowY: 'auto', background: COLORS.surface,
+      borderLeft: isMobile ? 'none' : `1px solid ${COLORS.border}`,
     }}>
       {/* 작가 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
@@ -375,7 +376,7 @@ export default function PhotoDetailPage() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: isMobile ? COLORS.bg : '#0e0e0e' }}>
+    <div style={{ minHeight: '100vh', background: COLORS.bg }}>
       <style>{`
         @media print {
           header, nav, .no-print, .comments-section { display: none !important; }

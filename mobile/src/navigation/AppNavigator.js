@@ -50,12 +50,12 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerStyle:     { backgroundColor: '#0a0a18' },
+        headerStyle:     { backgroundColor: COLORS.darkDeep },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700', fontSize: FONT.lg },
         tabBarStyle: {
-          backgroundColor: '#0a0a18',
-          borderTopColor: '#1e1e3a',
+          backgroundColor: COLORS.darkDeep,
+          borderTopColor: COLORS.darkAlt,
           height: 56 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 6,
@@ -131,10 +131,10 @@ function MainStack() {
       <Stack.Screen name="Main"        component={MainTabs}         options={{ headerShown: false }} />
       <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhotoForm"   component={PhotoFormScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: '#0a0a18' },
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
           headerTintColor: '#fff', title: '사진 등록' }} />
       <Stack.Screen name="Series"      component={SeriesScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: '#0a0a18' },
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
           headerTintColor: '#fff', title: '시리즈' }} />
       <Stack.Screen name="Legal"       component={LegalScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
@@ -167,7 +167,7 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   center: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a18',
+    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.darkDeep,
   },
   splashText: {
     marginTop: 16, fontSize: 28, fontWeight: '800', color: '#fff', letterSpacing: 2,

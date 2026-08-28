@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { followApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { COLORS } from '../constants/colors';
 
 import TemplateEditorial from '../components/portfolio/templates/TemplateEditorial';
 import TemplateMinimal   from '../components/portfolio/templates/TemplateMinimal';
@@ -13,23 +14,23 @@ import TemplateDarkRoom  from '../components/portfolio/templates/TemplateDarkRoo
 function FollowListModal({ title, members, loading, onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#12122a', borderRadius: 16, padding: 20, width: '90%', maxWidth: 360, maxHeight: '70vh', overflow: 'auto', border: '1px solid #2a2a50' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: COLORS.surface, borderRadius: 16, padding: 20, width: '90%', maxWidth: 360, maxHeight: '70vh', overflow: 'auto', border: `1px solid ${COLORS.border}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#eeeeff' }}>{title}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9090cc', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>{title}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textSecondary, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
         </div>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#5555aa', fontSize: 13 }}>불러오는 중...</div>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: COLORS.textMuted, fontSize: 13 }}>불러오는 중...</div>
         ) : members.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#5555aa', padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
+          <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
         ) : members.map(m => (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #1e1e3a' }}>
+          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${COLORS.borderLight}` }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, #E8121A, #22D3EE)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
               {m.avatarUrl ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name?.charAt(0)}
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#d0d0f0' }}>{m.name}</div>
-              {m.profileName && <div style={{ fontSize: 11, color: '#6060a0' }}>@{m.profileName}</div>}
+              <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>{m.name}</div>
+              {m.profileName && <div style={{ fontSize: 11, color: COLORS.textMuted }}>@{m.profileName}</div>}
             </div>
           </div>
         ))}
@@ -43,7 +44,7 @@ function TemplateComingSoon({ template, member, photos, profileName }) {
   const navigate = useNavigate();
   const pName = member?.profileName || profileName || '';
   return (
-    <div style={{ minHeight: '100vh', background: '#0e0e0e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+    <div style={{ minHeight: '100vh', background: COLORS.galleryBg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
       <div style={{ fontSize: 40 }}>✦</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: '#eeeeff' }}>{template} 템플릿</div>
       <div style={{ fontSize: 14, color: '#6060a0' }}>이 템플릿은 현재 준비 중입니다.</div>

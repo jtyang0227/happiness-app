@@ -722,6 +722,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **contexts/LanguageContext** — 다국어(ko/en/ja/zh) 상태. `useLang()` → `{ lang, changeLang, t, SUPPORTED_LANGS }`. `t(key, vars)` — `{var}` 치환 지원. `detectLang()` — localStorage > navigator.language > 'ko' 순 감지
 - **i18n/** — `index.js`(TRANSLATIONS, SUPPORTED_LANGS, LANG_META), `ko.js`/`en.js`/`ja.js`/`zh.js` (각 ~150 키)
 - **constants/colors.js** — `GENRE_META`(12 장르, emoji/label/color/description) + `GENRE_LIST` 추가
+- **constants/breakpoints.js** (Feature: 멀티플랫폼 UI/UX 개선 P0/P1) — `BP = { sm:480, md:768, lg:1024, xl:1280 }` + `mq` 미디어쿼리 헬퍼(mobile/tablet/desktop/upToTablet). GalleryPage 마소닉 그리드 768~1023px 3컬럼 브레이크포인트에 사용.
 - **hooks/usePhotos** — 사진 CRUD + 상태 관리
 - **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
 - **services/api.js** — photoApi + authApi + inquiryApi + seriesApi
