@@ -1004,7 +1004,7 @@ React Native(Expo) 코드가 App Store / Google Play 심사를 통과하기 위�
     "sdkVersion": "49.0.0",
     "platforms": ["ios", "android", "web"],
     "icon": "./assets/icon.png",
-    "splash": { "image": "./assets/splash.png", "backgroundColor": "#0a0a18" },
+    "splash": { "image": "./assets/splash.png", "backgroundColor": "#F2F4F6" },
     "ios": {
       "bundleIdentifier": "com.happiness.gallery",
       "buildNumber": "1",

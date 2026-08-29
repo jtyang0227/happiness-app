@@ -66,7 +66,7 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#16162a',
+          background: '#1A1E22',
           borderRadius: 16,
           display: 'flex',
           width: '100%',

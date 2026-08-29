@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { COLORS } from '../../constants/colors';
 import meetApi from '../../services/meetApi';
 
 export default function MeetChat({ meetId, currentMemberId }) {
@@ -74,14 +75,14 @@ export default function MeetChat({ meetId, currentMemberId }) {
       {/* message list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 4px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {grouped.length === 0 && (
-          <div style={{ textAlign: 'center', color: '#5c5c7a', fontSize: 13, marginTop: 32 }}>
+          <div style={{ textAlign: 'center', color: COLORS.textMuted, fontSize: 13, marginTop: 32 }}>
             아직 메시지가 없습니다.<br />먼저 인사를 건네보세요 👋
           </div>
         )}
         {grouped.map(item => {
           if (item.type === 'date') {
             return (
-              <div key={item.key} style={{ textAlign: 'center', fontSize: 11, color: '#5c5c7a', margin: '8px 0' }}>
+              <div key={item.key} style={{ textAlign: 'center', fontSize: 11, color: COLORS.textMuted, margin: '8px 0' }}>
                 {item.label}
               </div>
             );
@@ -96,10 +97,10 @@ export default function MeetChat({ meetId, currentMemberId }) {
                 </div>
               )}
               <div style={{ maxWidth: '70%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                {!isMe && <div style={{ fontSize: 11, color: '#9090b0', marginBottom: 3 }}>{msg.senderName}</div>}
+                {!isMe && <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 3 }}>{msg.senderName}</div>}
                 <div style={{
-                  background: isMe ? '#3182F6' : 'rgba(255,255,255,0.07)',
-                  color: '#fff',
+                  background: isMe ? COLORS.primary : COLORS.surfaceDim,
+                  color: isMe ? '#fff' : COLORS.text,
                   borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                   padding: '9px 13px',
                   fontSize: 13,
@@ -108,7 +109,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
                 }}>
                   {msg.content}
                 </div>
-                <div style={{ fontSize: 10, color: '#5c5c7a', marginTop: 3 }}>{formatTime(msg.createdAt)}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 3 }}>{formatTime(msg.createdAt)}</div>
               </div>
             </div>
           );
@@ -117,7 +118,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
       </div>
 
       {/* input */}
-      {error && <div style={{ color: '#f87171', fontSize: 12, padding: '4px 8px' }}>{error}</div>}
+      {error && <div style={{ color: COLORS.danger, fontSize: 12, padding: '4px 8px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: 8, padding: '10px 0 0' }}>
         <textarea
           value={text}
@@ -127,11 +128,11 @@ export default function MeetChat({ meetId, currentMemberId }) {
           rows={2}
           style={{
             flex: 1,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: COLORS.surfaceDim,
+            border: `1px solid ${COLORS.border}`,
             borderRadius: 10,
             padding: '9px 12px',
-            color: '#fff',
+            color: COLORS.text,
             fontSize: 13,
             resize: 'none',
             outline: 'none',
@@ -142,7 +143,7 @@ export default function MeetChat({ meetId, currentMemberId }) {
           onClick={handleSend}
           disabled={sending || !text.trim()}
           style={{
-            background: sending || !text.trim() ? 'rgba(49,130,246,0.3)' : '#3182F6',
+            background: sending || !text.trim() ? COLORS.textHint : COLORS.primary,
             border: 'none',
             borderRadius: 10,
             color: '#fff',

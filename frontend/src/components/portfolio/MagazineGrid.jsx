@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../constants/colors';
 
 function MagazineCell({ photo, onClick, style = {} }) {
   const [hovered, setHovered] = useState(false);
@@ -9,7 +10,7 @@ function MagazineCell({ photo, onClick, style = {} }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         overflow: 'hidden', cursor: 'pointer', position: 'relative',
-        background: '#1a1a1a', ...style,
+        background: COLORS.surfaceDim, ...style,
       }}
     >
       <img
@@ -42,7 +43,7 @@ function MagazineCell({ photo, onClick, style = {} }) {
 
 export default function MagazineGrid({ photos = [], onPhotoClick }) {
   if (!photos.length) return (
-    <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(255,255,255,0.2)', fontSize: 15 }}>
+    <div style={{ textAlign: 'center', padding: '80px 0', color: COLORS.textHint, fontSize: 15 }}>
       사진을 추가하면 포트폴리오가 완성됩니다.
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { COLORS } from '../../constants/colors';
 
 const KAKAO_KEY = process.env.REACT_APP_KAKAO_MAP_KEY || '';
 const GOOGLE_MAPS_KEY = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
@@ -112,11 +113,11 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
   }
 
   if (readOnly) {
-    if (!value?.locationName) return <div style={{ color: '#9090b0', fontSize: 13 }}>장소 미정</div>;
+    if (!value?.locationName) return <div style={{ color: COLORS.textMuted, fontSize: 13 }}>장소 미정</div>;
     return (
       <div>
-        <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>📍 {value.locationName}</div>
-        {value.locationAddress && <div style={{ color: '#9090b0', fontSize: 12, marginTop: 2 }}>{value.locationAddress}</div>}
+        <div style={{ color: COLORS.text, fontWeight: 600, fontSize: 14 }}>📍 {value.locationName}</div>
+        {value.locationAddress && <div style={{ color: COLORS.textMuted, fontSize: 12, marginTop: 2 }}>{value.locationAddress}</div>}
         <GoogleMapsLinks
           locationName={value.locationName}
           locationAddress={value.locationAddress}
@@ -138,7 +139,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
   if (useTextMode) {
     return (
       <div>
-        <div style={{ color: '#9090b0', fontSize: 11, marginBottom: 8 }}>지도 API 키 미설정 — 텍스트로 입력</div>
+        <div style={{ color: COLORS.textMuted, fontSize: 11, marginBottom: 8 }}>지도 API 키 미설정 — 텍스트로 입력</div>
         <input
           value={textName}
           onChange={e => setTextName(e.target.value)}
@@ -153,7 +154,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
         />
         <button onClick={handleTextSave} style={saveBtnStyle}>저장</button>
         {value?.locationName && (
-          <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(49,130,246,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
+          <div style={{ marginTop: 8, padding: '8px 12px', background: COLORS.primaryLight, borderRadius: 8, color: COLORS.textSecondary, fontSize: 13 }}>
             📍 {value.locationName}{value.locationAddress ? ` — ${value.locationAddress}` : ''}
             <GoogleMapsLinks locationName={value.locationName} locationAddress={value.locationAddress} />
           </div>
@@ -176,28 +177,28 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
       </div>
 
       {results.length > 0 && (
-        <div style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
           {results.map(p => (
             <div
               key={p.id}
               onClick={() => handleSelect(p)}
-              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(49,130,246,0.15)'}
+              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${COLORS.borderLight}`, transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = COLORS.primaryLight}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              <div style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>{p.place_name}</div>
-              <div style={{ color: '#9090b0', fontSize: 11, marginTop: 2 }}>{p.road_address_name || p.address_name}</div>
+              <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 500 }}>{p.place_name}</div>
+              <div style={{ color: COLORS.textMuted, fontSize: 11, marginTop: 2 }}>{p.road_address_name || p.address_name}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div ref={mapRef} style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden', background: '#12122a' }} />
+      <div ref={mapRef} style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden', background: COLORS.surfaceDim }} />
 
       {value?.locationName && (
-        <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(49,130,246,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
+        <div style={{ marginTop: 8, padding: '8px 12px', background: COLORS.primaryLight, borderRadius: 8, color: COLORS.textSecondary, fontSize: 13 }}>
           📍 {value.locationName}
-          {value.locationAddress && <span style={{ color: '#9090b0' }}> — {value.locationAddress}</span>}
+          {value.locationAddress && <span style={{ color: COLORS.textMuted }}> — {value.locationAddress}</span>}
         </div>
       )}
     </div>
@@ -206,18 +207,18 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
 
 const inputStyle = {
   width: '100%',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: COLORS.surfaceDim,
+  border: `1px solid ${COLORS.border}`,
   borderRadius: 8,
   padding: '8px 12px',
-  color: '#fff',
+  color: COLORS.text,
   fontSize: 13,
   outline: 'none',
   boxSizing: 'border-box',
 };
 
 const saveBtnStyle = {
-  background: '#3182F6',
+  background: COLORS.primary,
   border: 'none',
   borderRadius: 8,
   color: '#fff',

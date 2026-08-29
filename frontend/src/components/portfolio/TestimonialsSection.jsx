@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../constants/colors';
 
 const QUOTE = '“';
 const QUOTE_END = '”';
+
+function themeTokens(dark) {
+  return dark
+    ? {
+        surface: COLORS.darkSurface, border: COLORS.darkBorder,
+        text: COLORS.darkText, textSecondary: COLORS.darkTextSub, textMuted: COLORS.darkTextHint,
+        badgeBg: 'rgba(49,130,246,0.15)', badgeBorder: 'rgba(49,130,246,0.3)',
+      }
+    : {
+        surface: COLORS.surface, border: COLORS.border,
+        text: COLORS.text, textSecondary: COLORS.textSecondary, textMuted: COLORS.textMuted,
+        badgeBg: COLORS.primaryLight, badgeBorder: COLORS.primaryTonal,
+      };
+}
 
 function StarRating({ n = 5 }) {
   return (
@@ -13,11 +28,11 @@ function StarRating({ n = 5 }) {
   );
 }
 
-function TestimonialCard({ item, delay = 0 }) {
+function TestimonialCard({ item, delay = 0, t }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: t.surface,
+      border: `1px solid ${t.border}`,
       borderRadius: 16,
       padding: '28px 24px',
       minWidth: 280,
@@ -29,7 +44,7 @@ function TestimonialCard({ item, delay = 0 }) {
       <p style={{
         fontSize: 14,
         lineHeight: 1.8,
-        color: 'rgba(255,255,255,0.72)',
+        color: t.textSecondary,
         fontStyle: 'italic',
         marginBottom: 20,
         wordBreak: 'keep-all',
@@ -46,14 +61,14 @@ function TestimonialCard({ item, delay = 0 }) {
           {item.clientName?.charAt(0) ?? '?'}
         </div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>
             {item.clientName}
           </div>
           {item.clientRole && (
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{item.clientRole}</div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>{item.clientRole}</div>
           )}
           {item.shootDate && (
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 1 }}>{item.shootDate}</div>
+            <div style={{ fontSize: 11, color: t.textMuted, marginTop: 1 }}>{item.shootDate}</div>
           )}
         </div>
       </div>
@@ -61,16 +76,17 @@ function TestimonialCard({ item, delay = 0 }) {
   );
 }
 
-export default function TestimonialsSection({ testimonials = [] }) {
+export default function TestimonialsSection({ testimonials = [], theme = 'light' }) {
   const [expanded, setExpanded] = useState(false);
   if (testimonials.length === 0) return null;
+  const t = themeTokens(theme === 'dark');
 
   const visible = expanded ? testimonials : testimonials.slice(0, 4);
 
   return (
     <section style={{
       padding: '72px 0 56px',
-      borderTop: '1px solid rgba(255,255,255,0.05)',
+      borderTop: `1px solid ${t.border}`,
     }}>
       <style>{`
         @keyframes fadeSlideUp {
@@ -84,18 +100,18 @@ export default function TestimonialsSection({ testimonials = [] }) {
         <div style={{
           display: 'inline-block',
           padding: '4px 14px', borderRadius: 20,
-          background: 'rgba(49,130,246,0.15)',
-          border: '1px solid rgba(49,130,246,0.3)',
+          background: t.badgeBg,
+          border: `1px solid ${t.badgeBorder}`,
           fontSize: 11, fontWeight: 700,
-          color: '#a0a8ff', letterSpacing: '0.1em',
+          color: COLORS.primary, letterSpacing: '0.1em',
           textTransform: 'uppercase', marginBottom: 16,
         }}>Client Reviews</div>
         <h2 style={{
           fontSize: 'clamp(22px, 3.5vw, 34px)', fontWeight: 800,
-          color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.02em',
+          color: t.text, letterSpacing: '-0.02em',
           marginBottom: 10,
         }}>고객 추천사</h2>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', lineHeight: 1.7 }}>
+        <p style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.7 }}>
           함께한 클라이언트들의 솔직한 이야기
         </p>
       </div>
@@ -107,7 +123,7 @@ export default function TestimonialsSection({ testimonials = [] }) {
         justifyContent: 'center',
       }}>
         {visible.map((item, i) => (
-          <TestimonialCard key={item.id} item={item} delay={i * 80} />
+          <TestimonialCard key={item.id} item={item} delay={i * 80} t={t} />
         ))}
       </div>
 
@@ -118,12 +134,12 @@ export default function TestimonialsSection({ testimonials = [] }) {
             onClick={() => setExpanded(v => !v)}
             style={{
               padding: '8px 24px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-              border: '1px solid rgba(255,255,255,0.15)',
-              background: 'transparent', color: 'rgba(255,255,255,0.4)',
+              border: `1px solid ${t.border}`,
+              background: 'transparent', color: t.textMuted,
               cursor: 'pointer', transition: 'all 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+            onMouseEnter={e => { e.currentTarget.style.color = t.textSecondary; }}
+            onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; }}
           >
             {expanded ? '접기 ↑' : `더 보기 +${testimonials.length - 4}`}
           </button>

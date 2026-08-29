@@ -205,7 +205,7 @@ const S = {
   nameInput: {
     flex: 1, padding: '2px 6px', borderRadius: 4,
     border: `1px solid ${COLORS.primary}`,
-    background: '#12122a', color: '#eeeeff',
+    background: COLORS.darkSurface, color: COLORS.darkText,
     fontSize: 12, outline: 'none', minWidth: 0,
   },
   applyBtn: {
@@ -234,8 +234,8 @@ const S = {
   },
   cancelBtn: {
     padding: '4px 8px', borderRadius: 6,
-    border: '1px solid #2a2a50', background: 'none',
-    color: '#6060a0', fontSize: 11, cursor: 'pointer', flexShrink: 0,
+    border: `1px solid ${COLORS.darkBorder}`, background: 'none',
+    color: COLORS.darkTextSub, fontSize: 11, cursor: 'pointer', flexShrink: 0,
   },
 };
 

@@ -287,9 +287,9 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
 
       {/* 신뢰 신호 — 추천사 · 언론/수상 · 협업 클라이언트 (데이터가 없으면 각 컴포넌트가 null 반환) */}
       <div style={{ position: 'relative', zIndex: 2 }}>
-        <TestimonialsSection testimonials={testimonials} />
-        <PressAwardsSection press={press} achievements={achievements} />
-        <ClientLogoWall brands={brands} />
+        <TestimonialsSection testimonials={testimonials} theme="dark" />
+        <PressAwardsSection press={press} achievements={achievements} theme="dark" />
+        <ClientLogoWall brands={brands} theme="dark" />
       </div>
 
       {/* Footer */}

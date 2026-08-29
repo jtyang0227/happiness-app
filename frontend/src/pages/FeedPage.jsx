@@ -68,7 +68,7 @@ function FeedCard({ photo, onClick }) {
       {/* 이미지 */}
       <div
         onClick={() => onClick(photo.id)}
-        style={{ position: 'relative', aspectRatio: '4/3', background: '#0e0e0e', overflow: 'hidden', cursor: 'pointer' }}
+        style={{ position: 'relative', aspectRatio: '4/3', background: COLORS.surfaceDim, overflow: 'hidden', cursor: 'pointer' }}
       >
         <img
           src={photo.thumbnailUrl || photo.imageUrl}

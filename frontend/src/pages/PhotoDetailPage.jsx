@@ -347,17 +347,17 @@ export default function PhotoDetailPage() {
       {/* 보정 설정 */}
       {adjSummary.length > 0 && (
         <div style={{
-          background: '#12122a', borderRadius: 10, padding: '12px 14px',
-          border: '1px solid #1e1e3a', marginBottom: 20,
+          background: COLORS.surfaceDim, borderRadius: 10, padding: '12px 14px',
+          border: `1px solid ${COLORS.border}`, marginBottom: 20,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#6060a0', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
             보정 설정
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {adjSummary.map((item, i) => (
               <span key={i} style={{
                 padding: '2px 8px', borderRadius: 6,
-                background: '#1e1e3a', color: '#9090cc', fontSize: 11, fontWeight: 600,
+                background: COLORS.surface, color: COLORS.textSecondary, fontSize: 11, fontWeight: 600,
               }}>
                 {item}
               </span>

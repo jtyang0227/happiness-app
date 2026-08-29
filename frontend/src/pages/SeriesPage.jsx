@@ -519,7 +519,7 @@ export default function SeriesPage() {
           description="여러 사진을 하나의 프로젝트로 묶어 포트폴리오를 구성해 보세요."
           actionLabel="첫 번째 시리즈 만들기"
           onAction={() => setModal('create')}
-          theme="dark"
+          theme="light"
           style={{ minHeight: '50vh' }}
         />
       ) : (

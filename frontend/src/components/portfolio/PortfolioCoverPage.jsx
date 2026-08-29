@@ -32,7 +32,7 @@ export default function PortfolioCoverPage({
       ) : (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, #0a0a18 0%, #12122a 60%, #1e1040 100%)',
+          background: 'linear-gradient(135deg, #111417 0%, #1A1E22 60%, #22262B 100%)',
         }} />
       )}
 

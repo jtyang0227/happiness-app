@@ -1,35 +1,34 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../constants/colors';
 
-function BrandItem({ brand }) {
+function themeTokens(dark) {
+  return dark
+    ? { surface: COLORS.darkSurface, border: COLORS.darkBorder, textSecondary: COLORS.darkTextSub, textMuted: COLORS.darkTextHint }
+    : { surface: COLORS.surface, border: COLORS.border, textSecondary: COLORS.textSecondary, textMuted: COLORS.textMuted };
+}
+
+function BrandItem({ brand, t }) {
   const [err, setErr] = useState(false);
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '16px 28px', borderRadius: 12,
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.06)',
+      background: t.surface,
+      border: `1px solid ${t.border}`,
       minWidth: 120, height: 72, flexShrink: 0,
-      transition: 'background 0.2s, opacity 0.2s',
+      transition: 'box-shadow 0.2s',
     }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.opacity = '1'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.opacity = '0.7'; }}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '16px 28px', borderRadius: 12,
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        minWidth: 120, height: 72, flexShrink: 0,
-        opacity: 0.7,
-      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
     >
       {brand.logoUrl && !err ? (
         <img
           src={brand.logoUrl} alt={brand.name}
           onError={() => setErr(true)}
-          style={{ maxHeight: 36, maxWidth: 100, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+          style={{ maxHeight: 36, maxWidth: 100, objectFit: 'contain' }}
         />
       ) : (
-        <span style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: t.textSecondary, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           {brand.name}
         </span>
       )}
@@ -37,18 +36,19 @@ function BrandItem({ brand }) {
   );
 }
 
-export default function ClientLogoWall({ brands = [] }) {
+export default function ClientLogoWall({ brands = [], theme = 'light' }) {
   if (brands.length === 0) return null;
+  const t = themeTokens(theme === 'dark');
 
   return (
     <section style={{
       padding: '56px 24px 48px',
-      borderTop: '1px solid rgba(255,255,255,0.05)',
+      borderTop: `1px solid ${t.border}`,
       textAlign: 'center',
     }}>
       <div style={{
         fontSize: 11, fontWeight: 700, letterSpacing: '0.15em',
-        color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', marginBottom: 28,
+        color: t.textMuted, textTransform: 'uppercase', marginBottom: 28,
       }}>
         함께한 브랜드
       </div>
@@ -59,7 +59,7 @@ export default function ClientLogoWall({ brands = [] }) {
         flexWrap: brands.length < 6 ? 'wrap' : 'nowrap',
       }}>
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-        {brands.map(b => <BrandItem key={b.id} brand={b} />)}
+        {brands.map(b => <BrandItem key={b.id} brand={b} t={t} />)}
       </div>
     </section>
   );

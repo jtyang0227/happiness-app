@@ -103,7 +103,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       display: 'flex', flexDirection: 'column',
-      background: '#0a0a18', color: '#fff',
+      background: '#111417', color: '#fff',
     }}>
       {/* 상단 바 */}
       <div style={{

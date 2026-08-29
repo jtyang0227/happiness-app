@@ -343,7 +343,7 @@ export default function ExplorePage() {
             ))}
           </div>
         ) : error ? (
-          <div style={{ textAlign: 'center', color: '#e53e3e', padding: '80px 0' }}>{error}</div>
+          <div style={{ textAlign: 'center', color: COLORS.danger, padding: '80px 0' }}>{error}</div>
         ) : photos.length === 0 ? (
           <DotEmptyState
             icon={query.keyword || query.genre ? '🔍' : '📷'}

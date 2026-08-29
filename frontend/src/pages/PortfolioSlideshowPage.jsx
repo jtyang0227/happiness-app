@@ -143,7 +143,7 @@ export default function PortfolioSlideshowPage() {
           .slideshow-controls { display: none !important; }
           .slide-page { page-break-after: always; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
           .slide-image { max-width: 100%; max-height: 90vh; object-fit: contain; }
-          .cover-page { background: #0a0a18 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .cover-page { background: #111417 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 0; size: A4 landscape; }
         }
       `}</style>

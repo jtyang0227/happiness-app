@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MOOD_COLORS } from '../../../constants/colors';
+import { MOOD_COLORS, COLORS } from '../../../constants/colors';
 import { mq } from '../../../constants/breakpoints';
 import MagazineGrid from '../MagazineGrid';
 import { seriesApi } from '../../../services/api';
@@ -104,18 +104,19 @@ function SeriesScrollCard({ series, onPhotoClick }) {
         onClick={handleClick}
         style={{
           width: 240, borderRadius: 12, overflow: 'hidden',
-          cursor: 'pointer', background: '#12122a',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          cursor: 'pointer', background: COLORS.surface,
+          border: `1px solid ${COLORS.border}`,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
           transition: 'transform 0.2s',
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        <div style={{ position: 'relative', height: 135, background: '#0a0a18', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: 135, background: COLORS.surfaceDim, overflow: 'hidden' }}>
           {(() => {
             const imgs = (series.previewPhotos?.length ? series.previewPhotos : [series.coverImageUrl]).filter(Boolean);
             if (imgs.length === 0) {
-              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#3a3a6a' }}>✦</div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: COLORS.textHint }}>✦</div>;
             }
             if (imgs.length === 1) {
               return <img src={imgs[0]} alt={series.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />;
@@ -144,9 +145,9 @@ function SeriesScrollCard({ series, onPhotoClick }) {
           </div>
         </div>
         <div style={{ padding: '10px 12px' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#d0d0f0', marginBottom: 2 }}>{series.title}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>{series.title}</div>
           {series.description && (
-            <div style={{ fontSize: 11, color: '#6060a0', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {series.description}
             </div>
           )}
@@ -154,7 +155,7 @@ function SeriesScrollCard({ series, onPhotoClick }) {
       </div>
 
       {open && detail && (
-        <div style={{ marginTop: 8, background: '#12122a', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+        <div style={{ marginTop: 8, background: COLORS.surfaceDim, borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
           {(detail.photos ?? []).slice(0, 6).map(p => (
             <div key={p.id} onClick={() => onPhotoClick(p.id)}
               style={{ aspectRatio: '1', borderRadius: 6, overflow: 'hidden', cursor: 'pointer' }}
@@ -224,7 +225,7 @@ export default function TemplateEditorial({
   const pName = member?.profileName || profileName || '';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0e0e0e', color: '#e8e8f0' }}>
+    <div style={{ minHeight: '100vh', background: COLORS.bg, color: COLORS.text }}>
       <style>{`
         @media (prefers-reduced-motion: reduce) {
           .portfolio-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
@@ -237,9 +238,7 @@ export default function TemplateEditorial({
           <img src={member.coverUrl} alt="커버"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         ) : (
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #12122a 0%, #0a0a18 50%, #0e0e0e 100%)' }}>
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle at 25% 35%, #3182F6 0%, transparent 50%), radial-gradient(circle at 75% 65%, #4E9FFF 0%, transparent 50%)' }} />
-          </div>
+          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, ${COLORS.darkSurface} 0%, ${COLORS.darkBg} 100%)` }} />
         )}
 
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.92) 100%)' }} />
@@ -280,7 +279,7 @@ export default function TemplateEditorial({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'rotate(-10deg)', marginBottom: 2,
             }}>
-              <span style={{ fontSize: 18, color: '#ff5a5f', fontWeight: 900 }}>✦</span>
+              <span style={{ fontSize: 18, color: COLORS.primary, fontWeight: 900 }}>✦</span>
             </div>
           </div>
 
@@ -369,17 +368,17 @@ export default function TemplateEditorial({
       {/* BIO */}
       {member?.bio && (
         <Reveal style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 32px', textAlign: 'center' }}>
-          <p style={{ fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.55)', fontStyle: 'italic', wordBreak: 'keep-all' }}>"{member.bio}"</p>
+          <p style={{ fontSize: 15, lineHeight: 1.8, color: COLORS.textSecondary, fontStyle: 'italic', wordBreak: 'keep-all' }}>"{member.bio}"</p>
         </Reveal>
       )}
 
       {/* SPECIALTIES */}
       {specialties.length > 0 && (
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: `${member?.bio ? '0' : '52px'} 32px 40px`, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: `${member?.bio ? '0' : '52px'} 32px 40px`, borderBottom: `1px solid ${COLORS.border}` }}>
           <Reveal style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>전문 분야</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.textHint, letterSpacing: '0.15em', textTransform: 'uppercase' }}>전문 분야</span>
+            <div style={{ flex: 1, height: 1, background: COLORS.border }} />
           </Reveal>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
             {specialties.map(sp => {
@@ -400,12 +399,11 @@ export default function TemplateEditorial({
                 <div key={sp} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '10px 20px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(8px)',
+                  background: COLORS.surfaceDim,
+                  border: `1px solid ${COLORS.border}`,
                 }}>
                   <span style={{ fontSize: 16 }}>{emoji}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.01em' }}>{sp}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, letterSpacing: '0.01em' }}>{sp}</span>
                 </div>
               );
             })}
@@ -415,16 +413,16 @@ export default function TemplateEditorial({
 
       {/* MOOD FILTER */}
       {availableMoods.length > 0 && (
-        <div ref={filterBarRef} style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(14,14,14,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '12px 20px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
+        <div ref={filterBarRef} style={{ position: 'sticky', top: 0, zIndex: 10, background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}`, padding: '12px 20px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
           <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? '1.5px solid #3182F6' : '1.5px solid rgba(255,255,255,0.1)', background: !moodFilter ? 'rgba(49,130,246,0.2)' : 'transparent', color: !moodFilter ? '#a0a0ff' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>전체 {photos.length}</button>
+          <button onClick={() => setMoodFilter('')} style={{ flexShrink: 0, padding: '5px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: !moodFilter ? `1.5px solid ${COLORS.primary}` : `1.5px solid ${COLORS.border}`, background: !moodFilter ? COLORS.primaryLight : 'transparent', color: !moodFilter ? COLORS.primary : COLORS.textMuted, cursor: 'pointer' }}>전체 {photos.length}</button>
           {availableMoods.map(mood => {
             const md = MOOD_COLORS?.[mood];
             if (!md) return null;
             const active = moodFilter === mood;
             const count = photos.filter(p => p.colorMood === mood).length;
             return (
-              <button key={mood} onClick={() => setMoodFilter(active ? '' : mood)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: `1.5px solid ${active ? md.dot : 'rgba(255,255,255,0.1)'}`, background: active ? `${md.dot}22` : 'transparent', color: active ? md.dot : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
+              <button key={mood} onClick={() => setMoodFilter(active ? '' : mood)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: `1.5px solid ${active ? md.dot : COLORS.border}`, background: active ? `${md.dot}1a` : 'transparent', color: active ? md.dot : COLORS.textMuted, cursor: 'pointer' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: md.dot, display: 'inline-block' }} />
                 {md.label} {count}
               </button>
@@ -437,7 +435,7 @@ export default function TemplateEditorial({
       <style>{`.portfolio-masonry { columns: 4 220px; column-gap: 4px; } ${mq.tablet} { .portfolio-masonry { columns: 3; } } ${mq.mobile} { .portfolio-masonry { columns: 2; } }`}</style>
 
       {filteredPhotos.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '100px 0', color: 'rgba(255,255,255,0.2)', fontSize: 15 }}>
+        <div style={{ textAlign: 'center', padding: '100px 0', color: COLORS.textHint, fontSize: 15 }}>
           {moodFilter ? '해당 분위기의 작품이 없습니다.' : '아직 등록된 작품이 없습니다.'}
         </div>
       ) : isMagazine ? (
@@ -454,12 +452,12 @@ export default function TemplateEditorial({
 
       {/* SERIES */}
       {series?.length > 0 && (
-        <div style={{ padding: '60px 0 48px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding: '60px 0 48px', borderTop: `1px solid ${COLORS.border}` }}>
           <div style={{ padding: '0 24px 20px' }}>
             <Reveal style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>컬렉션 · {series.length}</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: '0.15em', textTransform: 'uppercase' }}>컬렉션 · {series.length}</span>
+              <div style={{ flex: 1, height: 1, background: COLORS.border }} />
             </Reveal>
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
@@ -476,25 +474,25 @@ export default function TemplateEditorial({
       <Reveal><ClientLogoWall brands={brands} /></Reveal>
 
       {/* FOOTER CTA */}
-      <div style={{ padding: '64px 24px 48px', textAlign: 'center', background: 'linear-gradient(180deg, transparent 0%, rgba(18,18,42,0.4) 100%)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>Get in Touch</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: 8, letterSpacing: '-0.01em' }}>함께 작업하고 싶으신가요?</h2>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28, lineHeight: 1.7 }}>촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.</p>
+      <div style={{ padding: '64px 24px 48px', textAlign: 'center', background: COLORS.surfaceDim, borderTop: `1px solid ${COLORS.border}` }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: COLORS.textHint, marginBottom: 16 }}>Get in Touch</div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, marginBottom: 8, letterSpacing: '-0.01em' }}>함께 작업하고 싶으신가요?</h2>
+        <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 28, lineHeight: 1.7 }}>촬영 의뢰, 협업 제안, 작품 구매 문의를 보내주세요.</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate(`/inquiry/${pName}?memberId=${member?.id ?? ''}`)}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: '#3182F6', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 24px rgba(49,130,246,0.4)' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: 'none', background: COLORS.primary, color: '#fff', cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.background = COLORS.primaryDark; }}
+            onMouseLeave={e => { e.currentTarget.style.background = COLORS.primary; }}>
             ✉ 촬영 문의하기
           </button>
           <a href={`/booking/${pName}`}
-            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: '1px solid #4E9FFF', background: 'rgba(78,159,255,0.12)', color: '#4E9FFF', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'rgba(78,159,255,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(78,159,255,0.12)'; }}>
+            style={{ padding: '14px 36px', borderRadius: 28, fontSize: 14, fontWeight: 700, border: `1px solid ${COLORS.primary}`, background: COLORS.primaryLight, color: COLORS.primary, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
+            onMouseEnter={e => { e.currentTarget.style.background = COLORS.primaryTonal; }}
+            onMouseLeave={e => { e.currentTarget.style.background = COLORS.primaryLight; }}>
             📅 촬영 예약
           </a>
         </div>
-        <div style={{ marginTop: 40, fontSize: 11, color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em' }}>✦ Happiness — 포트폴리오 갤러리</div>
+        <div style={{ marginTop: 40, fontSize: 11, color: COLORS.textHint, letterSpacing: '0.08em' }}>✦ Happiness — 포트폴리오 갤러리</div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { COLORS } from '../constants/colors';
 import meetApi from '../services/meetApi';
 import MeetCalendar from '../components/meet/MeetCalendar';
 import MeetLocationPicker from '../components/meet/MeetLocationPicker';
@@ -38,11 +39,11 @@ function buildGoogleCalendarUrl(meet, otherName) {
 }
 
 const STATUS_LABELS = {
-  PENDING: { label: '대기중 ⏳', color: '#f59e0b' },
-  NEGOTIATING: { label: '날짜 조율 중 📅', color: '#60a5fa' },
-  CONFIRMED: { label: '확정 ✅', color: '#10b981' },
-  COMPLETED: { label: '완료 🎉', color: '#9090b0' },
-  CANCELLED: { label: '취소됨 ✗', color: '#f87171' },
+  PENDING: { label: '대기중 ⏳', color: '#B45309' },
+  NEGOTIATING: { label: '날짜 조율 중 📅', color: COLORS.primary },
+  CONFIRMED: { label: '확정 ✅', color: COLORS.success },
+  COMPLETED: { label: '완료 🎉', color: COLORS.textMuted },
+  CANCELLED: { label: '취소됨 ✗', color: COLORS.danger },
 };
 
 export default function MeetDetailPage() {
@@ -115,14 +116,14 @@ export default function MeetDetailPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#090909', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#9090b0' }}>불러오는 중…</div>
+    <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: COLORS.textMuted }}>불러오는 중…</div>
     </div>
   );
 
   if (!meet && error) return (
-    <div style={{ minHeight: '100vh', background: '#090909', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#f87171' }}>{error}</div>
+    <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: COLORS.danger }}>{error}</div>
     </div>
   );
 
@@ -130,18 +131,18 @@ export default function MeetDetailPage() {
   const isClosed = meet.status === 'CANCELLED' || meet.status === 'COMPLETED';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#090909', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: COLORS.bg, paddingBottom: 80 }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
         {/* back + header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <button onClick={() => navigate('/meets')} style={{ background: 'none', border: 'none', color: '#9090b0', fontSize: 20, cursor: 'pointer', padding: 4 }}>←</button>
+          <button onClick={() => navigate('/meets')} style={{ background: 'none', border: 'none', color: COLORS.textMuted, fontSize: 20, cursor: 'pointer', padding: 4 }}>←</button>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: other.avatar ? `url(${other.avatar}) center/cover` : '#1B64DA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: other.avatar ? `url(${other.avatar}) center/cover` : COLORS.primaryDark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
                 {!other.avatar && (other.name?.[0] || '?')}
               </div>
               <div>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{other.name}</div>
+                <div style={{ color: COLORS.text, fontWeight: 700, fontSize: 16 }}>{other.name}</div>
                 <div style={{ fontSize: 12, color: statusInfo.color }}>{statusInfo.label}</div>
               </div>
             </div>
@@ -149,7 +150,7 @@ export default function MeetDetailPage() {
           {!isClosed && (
             <button
               onClick={() => doAction(() => meetApi.cancel(id), '약속을 취소했습니다.')}
-              style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 8, color: '#f87171', padding: '6px 12px', cursor: 'pointer', fontSize: 12 }}
+              style={{ background: COLORS.dangerTonal, border: `1px solid ${COLORS.dangerTonal}`, borderRadius: 8, color: COLORS.danger, padding: '6px 12px', cursor: 'pointer', fontSize: 12 }}
             >
               취소
             </button>
@@ -157,14 +158,14 @@ export default function MeetDetailPage() {
         </div>
 
         {/* alerts */}
-        {success && <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, padding: '10px 14px', color: '#10b981', fontSize: 13, marginBottom: 14 }}>{success}</div>}
-        {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: 13, marginBottom: 14 }}>{error}</div>}
+        {success && <div style={{ background: COLORS.successTonal, border: `1px solid ${COLORS.successTonal}`, borderRadius: 8, padding: '10px 14px', color: COLORS.success, fontSize: 13, marginBottom: 14 }}>{success}</div>}
+        {error && <div style={{ background: COLORS.dangerTonal, border: `1px solid ${COLORS.dangerTonal}`, borderRadius: 8, padding: '10px 14px', color: COLORS.danger, fontSize: 13, marginBottom: 14 }}>{error}</div>}
 
         {/* PENDING — receiver responds */}
         {meet.status === 'PENDING' && isReceiver && (
           <div style={actionCard}>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: 15, marginBottom: 6 }}>약속 요청이 도착했습니다</div>
-            {meet.initialMessage && <div style={{ color: '#ccc', fontSize: 13, marginBottom: 14, fontStyle: 'italic' }}>"{meet.initialMessage}"</div>}
+            <div style={{ color: COLORS.text, fontWeight: 600, fontSize: 15, marginBottom: 6 }}>약속 요청이 도착했습니다</div>
+            {meet.initialMessage && <div style={{ color: COLORS.textSecondary, fontSize: 13, marginBottom: 14, fontStyle: 'italic' }}>"{meet.initialMessage}"</div>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => doAction(() => meetApi.respond(id, 'accept'), '수락했습니다! 날짜 조율을 시작하세요.')}
@@ -186,9 +187,9 @@ export default function MeetDetailPage() {
 
         {/* CONFIRMED info */}
         {meet.status === 'CONFIRMED' && (
-          <div style={{ ...actionCard, borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.07)' }}>
-            <div style={{ color: '#10b981', fontWeight: 600, marginBottom: 4 }}>📅 확정된 약속</div>
-            <div style={{ color: '#fff', fontSize: 15 }}>{meet.confirmedDate} {meet.confirmedTime && `· ${meet.confirmedTime}`}</div>
+          <div style={{ ...actionCard, border: `1px solid ${COLORS.successTonal}`, background: COLORS.successTonal }}>
+            <div style={{ color: COLORS.success, fontWeight: 600, marginBottom: 4 }}>📅 확정된 약속</div>
+            <div style={{ color: COLORS.text, fontSize: 15 }}>{meet.confirmedDate} {meet.confirmedTime && `· ${meet.confirmedTime}`}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <a
                 href={buildGoogleCalendarUrl(meet, other.name)}
@@ -196,13 +197,13 @@ export default function MeetDetailPage() {
                 rel="noopener noreferrer"
                 style={{
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  background: 'rgba(66,133,244,0.15)', border: '1px solid rgba(66,133,244,0.35)',
+                  background: '#EAF1FE', border: '1px solid #C9DBFB',
                   borderRadius: 8, color: '#4285f4', padding: '9px 0',
                   fontSize: 12, fontWeight: 600, textDecoration: 'none',
                   transition: 'background 0.15s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(66,133,244,0.25)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(66,133,244,0.15)'}
+                onMouseEnter={e => e.currentTarget.style.background = '#D9E6FD'}
+                onMouseLeave={e => e.currentTarget.style.background = '#EAF1FE'}
               >
                 📆 구글 캘린더에 추가
               </a>
@@ -218,7 +219,7 @@ export default function MeetDetailPage() {
         )}
 
         {/* section tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: 20 }}>
           {[
             { key: 'calendar', label: '📅 날짜' },
             { key: 'location', label: '📍 장소' },
@@ -231,8 +232,8 @@ export default function MeetDetailPage() {
                 onClick={() => setActiveSection(s.key)}
                 style={{
                   background: 'none', border: 'none',
-                  borderBottom: active ? '2px solid #fff' : '2px solid transparent',
-                  color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                  borderBottom: active ? `2px solid ${COLORS.primary}` : '2px solid transparent',
+                  color: active ? COLORS.primary : COLORS.textMuted,
                   fontWeight: active ? 700 : 400,
                   fontSize: 13, padding: '10px 20px', cursor: 'pointer',
                   marginBottom: -1, transition: 'all 0.15s',
@@ -264,8 +265,8 @@ export default function MeetDetailPage() {
 
             {/* confirm date (NEGOTIATING, both parties) */}
             {meet.status === 'NEGOTIATING' && (
-              <div style={{ marginTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
-                <div style={{ color: '#ccc', fontSize: 13, marginBottom: 10 }}>날짜 확정 (양측 합의 후)</div>
+              <div style={{ marginTop: 20, borderTop: `1px solid ${COLORS.border}`, paddingTop: 16 }}>
+                <div style={{ color: COLORS.textSecondary, fontSize: 13, marginBottom: 10 }}>날짜 확정 (양측 합의 후)</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <input
                     type="date"
@@ -341,36 +342,36 @@ export default function MeetDetailPage() {
 }
 
 const sectionCard = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.07)',
+  background: COLORS.surface,
+  border: `1px solid ${COLORS.border}`,
   borderRadius: 14,
   padding: 20,
 };
 
 const actionCard = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: COLORS.surfaceDim,
+  border: `1px solid ${COLORS.border}`,
   borderRadius: 14,
   padding: '16px 20px',
   marginBottom: 20,
 };
 
 const primaryBtn = {
-  background: '#3182F6', border: 'none', borderRadius: 8,
+  background: COLORS.primary, border: 'none', borderRadius: 8,
   color: '#fff', padding: '9px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
 };
 
 const dangerBtn = {
-  background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)',
-  borderRadius: 8, color: '#f87171', padding: '9px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+  background: COLORS.dangerTonal, border: `1px solid ${COLORS.dangerTonal}`,
+  borderRadius: 8, color: COLORS.danger, padding: '9px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
 };
 
 const secondaryBtn = {
-  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: 8, color: '#ccc', padding: '9px 18px', cursor: 'pointer', fontSize: 13,
+  background: COLORS.surfaceDim, border: `1px solid ${COLORS.border}`,
+  borderRadius: 8, color: COLORS.textSecondary, padding: '9px 18px', cursor: 'pointer', fontSize: 13,
 };
 
 const dateInputStyle = {
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, outline: 'none',
+  background: COLORS.surfaceDim, border: `1px solid ${COLORS.border}`,
+  borderRadius: 8, padding: '8px 12px', color: COLORS.text, fontSize: 13, outline: 'none',
 };
