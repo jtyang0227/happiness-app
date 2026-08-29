@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { uploadImage } from '../../services/uploadApi';
+import { COLORS } from '../../constants/colors';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE_MB = 20;
@@ -111,7 +112,7 @@ const styles = {
   preview: { maxWidth: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 6 },
   placeholder: { color: '#888', fontSize: 14 },
   progressBar: { height: 6, backgroundColor: '#eee', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#4f46e5', transition: 'width 0.2s ease' },
+  progressFill: { height: '100%', backgroundColor: COLORS.primary, transition: 'width 0.2s ease' },
   progressText: { fontSize: 12, color: '#666', margin: 0 },
   error: { color: '#e53e3e', fontSize: 13, margin: 0 },
 };

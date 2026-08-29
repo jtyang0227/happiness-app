@@ -416,7 +416,7 @@ function TagRow({ tag, index, total, onDelete }) {
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-          background: isUnused ? '#f7f7fb' : '#f0f0ff',
+          background: isUnused ? '#f7f7fb' : '#E8F3FF',
           color: isUnused ? '#9090b0' : '#3182F6',
           border: `1px solid ${isUnused ? '#e5e5ed' : 'rgba(49,130,246,0.2)'}`,
         }}>

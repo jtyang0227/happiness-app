@@ -41,7 +41,7 @@ export default function ImageUploadButton({ onUploadSuccess, folder = 'photos' }
 
       {uploading && (
         <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#4f46e5" />
+          <ActivityIndicator size="large" color="#3182F6" />
           <Text style={styles.uploadingText}>업로드 중...</Text>
         </View>
       )}
@@ -52,7 +52,7 @@ export default function ImageUploadButton({ onUploadSuccess, folder = 'photos' }
 const styles = StyleSheet.create({
   container: { alignItems: 'center', gap: 12 },
   button: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: '#3182F6',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -60,5 +60,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   preview: { width: '100%', height: 220, borderRadius: 8 },
   overlay: { alignItems: 'center', gap: 8 },
-  uploadingText: { color: '#4f46e5', fontSize: 13 },
+  uploadingText: { color: '#3182F6', fontSize: 13 },
 });
