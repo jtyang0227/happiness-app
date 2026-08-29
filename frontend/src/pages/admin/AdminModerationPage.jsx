@@ -234,7 +234,7 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
                 <button
                   onClick={() => setExpanded(v => !v)}
                   style={{
-                    background: 'none', border: 'none', color: '#E8121A',
+                    background: 'none', border: 'none', color: '#3182F6',
                     cursor: 'pointer', fontSize: 11, padding: '0 2px', fontWeight: 600,
                   }}
                 >{expanded ? '접기' : '더보기'}</button>
@@ -456,7 +456,7 @@ export default function AdminModerationPage() {
             <div style={{ padding: '60px 0', textAlign: 'center', color: '#9090b0' }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', margin: '0 auto 12px',
-                border: '3px solid #e5e5ed', borderTopColor: '#E8121A',
+                border: '3px solid #e5e5ed', borderTopColor: '#3182F6',
                 animation: 'spin 0.8s linear infinite',
               }} />
               불러오는 중...

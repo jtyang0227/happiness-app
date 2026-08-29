@@ -98,7 +98,7 @@ export default function PhotoSortPage() {
         <div style={{
           position: 'sticky', top: 58, zIndex: 50,
           background: COLORS.primaryLight,
-          borderBottom: '1px solid rgba(232, 18, 26,0.2)',
+          borderBottom: '1px solid rgba(49,130,246,0.2)',
           padding: '10px 16px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           margin: '0 -20px 16px',
@@ -203,7 +203,7 @@ export default function PhotoSortPage() {
               onDragEnter={e => {
                 if (dragIdxRef.current !== idx) {
                   e.currentTarget.style.borderColor = COLORS.primary;
-                  e.currentTarget.style.boxShadow = `0 4px 20px rgba(232, 18, 26,0.2)`;
+                  e.currentTarget.style.boxShadow = `0 4px 20px rgba(49,130,246,0.2)`;
                 }
               }}
               onDragLeave={e => {

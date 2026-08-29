@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
-import { C, G, gStyle, glass, glassDark, SPRING } from '../../constants/glass';
+import { COLORS } from '../../constants/colors';
+import { SPRING } from '../../constants/animations';
 import { BP, mq } from '../../constants/breakpoints';
 import { inquiryApi } from '../../services/api';
 import meetApi from '../../services/meetApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
-import AkiraLogo from '../common/AkiraLogo';
+import Logo from '../common/Logo';
 
 const NAV_ITEMS = [
   { to: '/explore',   label: '탐색'     },
@@ -48,14 +49,14 @@ function LangSwitcher() {
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           height: 34, padding: '0 12px', borderRadius: 10,
-          background: open ? '#f5f5fa' : 'transparent',
-          border: `1px solid ${open ? '#c8c8de' : '#e2e2ee'}`,
-          color: open ? '#1a1a2e' : '#5c5c7a',
+          background: open ? COLORS.surfaceDim : 'transparent',
+          border: `1px solid ${open ? COLORS.textHint : COLORS.border}`,
+          color: open ? COLORS.text : COLORS.textSecondary,
           fontSize: 13, fontWeight: 500, cursor: 'pointer',
           transition: 'all 0.15s',
         }}
-        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = '#f5f5fa'; e.currentTarget.style.color = '#1a1a2e'; }}}
-        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}}
+        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = COLORS.surfaceDim; e.currentTarget.style.color = COLORS.text; }}}
+        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.textSecondary; }}}
       >
         🌐 {lang.toUpperCase()} ▾
       </button>
@@ -63,14 +64,14 @@ function LangSwitcher() {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          width: 160, background: '#ffffff',
-          border: '1px solid #e2e2ee', borderRadius: 14,
+          width: 160, background: COLORS.surface,
+          border: `1px solid ${COLORS.border}`, borderRadius: 14,
           boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
           padding: 6, zIndex: 300,
         }}>
           <p style={{
             margin: 0, padding: '6px 10px 4px',
-            fontSize: 11, fontWeight: 600, color: '#9090b0',
+            fontSize: 11, fontWeight: 600, color: COLORS.textMuted,
             letterSpacing: '0.5px', textTransform: 'uppercase',
           }}>
             언어 선택
@@ -86,16 +87,16 @@ function LangSwitcher() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '9px 10px', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? 'rgba(232, 18, 26,0.10)' : 'transparent',
-                  color: isActive ? '#A80D14' : '#5c5c7a',
+                  background: isActive ? COLORS.primaryLight : 'transparent',
+                  color: isActive ? COLORS.primary : COLORS.textSecondary,
                   fontSize: 14, transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#f5f5fa'; }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = COLORS.surfaceDim; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
               >
                 <span style={{ fontSize: 18 }}>{meta.flag}</span>
                 <span style={{ flex: 1 }}>{meta.nativeLabel}</span>
-                {isActive && <span style={{ fontSize: 14, color: '#A80D14', fontWeight: 700 }}>✓</span>}
+                {isActive && <span style={{ fontSize: 14, color: COLORS.primary, fontWeight: 700 }}>✓</span>}
               </button>
             );
           })}
@@ -143,13 +144,13 @@ export default function Header() {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 13px; border-radius: 10px;
           font-size: 14px; font-weight: 500;
-          color: #5c5c7a; text-decoration: none;
+          color: ${COLORS.textSecondary}; text-decoration: none;
           transition: color 0.15s;
           position: relative;
         }
-        .nav-link:hover { color: #1a1a2e; }
+        .nav-link:hover { color: ${COLORS.text}; }
         .nav-link.active {
-          color: #1a1a2e;
+          color: ${COLORS.text};
           font-weight: 700;
         }
         .avatar-btn { transition: transform 0.2s ${SPRING}; }
@@ -160,8 +161,8 @@ export default function Header() {
       <header className="h-pc" style={{
         position: 'sticky', top: 0, zIndex: 200,
         height: 58,
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e2ee',
+        background: COLORS.surface,
+        borderBottom: `1px solid ${COLORS.border}`,
         borderRadius: 0,
       }}>
         <div style={{
@@ -172,8 +173,8 @@ export default function Header() {
         }}>
           {/* Logo */}
           <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
-            <AkiraLogo variant="black" size={22} />
-            <span style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <Logo variant="black" size={22} />
+            <span style={{ fontSize: 15, fontWeight: 800, color: COLORS.text, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
             </span>
           </NavLink>
@@ -190,7 +191,7 @@ export default function Header() {
                   {label}
                   {badge && badgeCount > 0 && (
                     <span style={{
-                      background: C.danger, color: '#fff',
+                      background: COLORS.danger, color: '#fff',
                       fontSize: 9, fontWeight: 800,
                       minWidth: 15, height: 15, borderRadius: 99,
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -217,12 +218,12 @@ export default function Header() {
                 width: 32, height: 32, borderRadius: '50%',
                 background: user?.avatarUrl
                   ? 'transparent'
-                  : 'linear-gradient(135deg, #E8121A, #22D3EE)',
+                  : COLORS.primary,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700, color: '#fff',
                 overflow: 'hidden', flexShrink: 0,
-                border: `1.5px solid ${dropdownOpen ? '#E8121A' : '#e2e2ee'}`,
-                boxShadow: dropdownOpen ? '0 0 0 3px rgba(232,18,26,0.18)' : 'none',
+                border: `1.5px solid ${dropdownOpen ? COLORS.primary : COLORS.border}`,
+                boxShadow: dropdownOpen ? `0 0 0 3px ${COLORS.primaryLight}` : 'none',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
               }}>
                 {user?.avatarUrl
@@ -235,21 +236,21 @@ export default function Header() {
             {dropdownOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                background: '#ffffff',
-                border: '1px solid #e2e2ee',
+                background: COLORS.surface,
+                border: `1px solid ${COLORS.border}`,
                 borderRadius: 16,
                 minWidth: 210, zIndex: 300,
                 overflow: 'hidden',
                 boxShadow: '0 16px 48px rgba(0,0,0,0.16)',
-                animation: `glassIn 0.28s ${SPRING} both`,
+                animation: `fadeInUp 0.28s ${SPRING} both`,
               }}>
                 <div style={{
                   padding: '14px 16px',
-                  borderBottom: `1px solid #e2e2ee`,
+                  borderBottom: `1px solid ${COLORS.border}`,
                 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{user?.name || '사용자'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{user?.name || '사용자'}</div>
                   {user?.profileName && (
-                    <div style={{ fontSize: 11, color: '#9090b0', marginTop: 2 }}>@{user.profileName}</div>
+                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>@{user.profileName}</div>
                   )}
                 </div>
                 <button
@@ -257,24 +258,24 @@ export default function Header() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     width: '100%', padding: '11px 16px',
-                    fontSize: 14, color: '#5c5c7a', textAlign: 'left',
+                    fontSize: 14, color: COLORS.textSecondary, textAlign: 'left',
                     transition: 'background 0.12s, color 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#f5f5fa'; e.currentTarget.style.color = '#1a1a2e'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#5c5c7a'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.surfaceDim; e.currentTarget.style.color = COLORS.text; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.textSecondary; }}
                 >
                   <span>◎</span> 프로필 보기
                 </button>
-                <div style={{ height: 1, background: '#e2e2ee', margin: '4px 0' }} />
+                <div style={{ height: 1, background: COLORS.border, margin: '4px 0' }} />
                 <button
                   onClick={handleLogout}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     width: '100%', padding: '11px 16px',
-                    fontSize: 14, color: '#e53e3e', textAlign: 'left',
+                    fontSize: 14, color: COLORS.danger, textAlign: 'left',
                     transition: 'background 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,62,62,0.08)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.dangerTonal; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <span>🚪</span> 로그아웃
@@ -297,12 +298,10 @@ function BottomNav({ unreadCount }) {
       position: 'fixed', left: 12, right: 12, zIndex: 200,
       bottom: 'calc(10px + env(safe-area-inset-bottom))',
       height: 60,
-      background: 'rgba(255,255,255,0.90)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: COLORS.surface,
       borderRadius: 999,
-      border: '1px solid #e2e2ee',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+      border: `1px solid ${COLORS.border}`,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
     }}>
       {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
@@ -312,7 +311,7 @@ function BottomNav({ unreadCount }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
             textDecoration: 'none', flex: 1, padding: '6px 0',
-            color: isActive && !isCenter ? '#1a1a2e' : '#9090b0',
+            color: isActive && !isCenter ? COLORS.text : COLORS.textMuted,
             transition: `color 0.2s, transform 0.25s ${SPRING}`,
             transform: 'scale(1)',
             position: 'relative',
@@ -325,16 +324,15 @@ function BottomNav({ unreadCount }) {
                   position: 'absolute', top: 0, left: '50%',
                   transform: 'translateX(-50%)',
                   width: 24, height: 2, borderRadius: 99,
-                  background: '#E8121A',
+                  background: COLORS.primary,
                 }} />
               )}
               {isCenter ? (
                 <div style={{
                   width: 46, height: 46, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
+                  background: COLORS.primary,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 22, fontWeight: 700,
-                  boxShadow: '0 4px 20px rgba(232, 18, 26,0.45)',
                 }}>+</div>
               ) : (
                 <>

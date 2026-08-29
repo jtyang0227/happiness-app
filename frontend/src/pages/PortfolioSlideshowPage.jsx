@@ -114,7 +114,7 @@ export default function PortfolioSlideshowPage() {
   /* ── Loading / Error ── */
   if (loading) return (
     <div style={{ height: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#E8121A', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #1e1e3a', borderTopColor: '#3182F6', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -122,7 +122,7 @@ export default function PortfolioSlideshowPage() {
   if (error) return (
     <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <div style={{ color: '#6060a0', fontSize: 14 }}>{error}</div>
-      <button onClick={() => navigate(-1)} style={{ padding: '8px 20px', borderRadius: 8, background: '#E8121A', border: 'none', color: '#fff', cursor: 'pointer' }}>돌아가기</button>
+      <button onClick={() => navigate(-1)} style={{ padding: '8px 20px', borderRadius: 8, background: '#3182F6', border: 'none', color: '#fff', cursor: 'pointer' }}>돌아가기</button>
     </div>
   );
 

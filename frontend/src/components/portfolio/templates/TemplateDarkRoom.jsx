@@ -86,7 +86,7 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
               </h1>
               <div style={{
                 width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                border: '1.5px solid #E8121A', background: 'rgba(232,18,26,0.12)',
+                border: '1.5px solid #3182F6', background: 'rgba(49,130,246,0.12)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transform: 'rotate(-10deg)',
               }}>

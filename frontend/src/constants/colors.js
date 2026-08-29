@@ -1,48 +1,48 @@
 /*
- * Stitch 디자인 교체:
- * 1. src/styles/theme.css :root 값 교체 → CSS 전역 반영
- * 2. 아래 COLORS hex 값 교체 → JS inline style 반영
+ * Toss 디자인 시스템 (2026-08-29) — DESIGN_PROMPTS/design/DESIGN_PROMPT_toss-design-system.md
  *
- * AKIRA Neo-Tokyo 액센트 (2026-08-18) — DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md
- * primary/accent만 교체된 것이며 bg/surface/text/border는 의도적으로 유지한다.
- * (레드는 CTA·활성 상태 등 기존 primary 사용처에만 등장해야 하며 배경을 칠하는 용도로 쓰지 않는다.)
+ * 기존 AKIRA Neo-Tokyo(레드/시안) + Cosmos 화이트 체계를 전면 폐기하고
+ * 토스(Toss)의 시각 언어(블루 단일 브랜드 컬러, 회색조, 플랫 서페이스)로 교체했다.
+ * - primary는 블루 하나뿐이며 배경을 칠하는 용도로 쓰지 않고 CTA·활성 상태에만 사용한다.
+ * - danger/success/warning은 의미 전달용이며 브랜드 액센트가 아니다.
+ * - 그림자에 브랜드 컬러를 tint하지 않는다(플랫 디자인 — 컬러 있는 glow 금지).
  */
 export const COLORS = {
-  primary:       '#E8121A',
-  primaryDark:   '#A80D14',
-  primaryLight:  '#ffe9e7',
-  primaryTonal:  '#ffd2cd',
-  accent:        '#22D3EE',
+  primary:       '#3182F6',   // Toss Blue
+  primaryDark:   '#1B64DA',   // hover/pressed
+  primaryLight:  '#E8F3FF',   // 옅은 블루 배경(배지, 태그, 선택 상태)
+  primaryTonal:  '#C9E2FF',
+  accent:        '#4E9FFF',   // 그라디언트 등 보조용, 단독 배경 칠하기 금지
 
-  bg:            '#f5f5fa',
+  bg:            '#F2F4F6',
   surface:       '#ffffff',
-  surfaceDim:    '#ededf4',
-  border:        '#e2e2ee',
-  borderLight:   '#ededf5',
+  surfaceDim:    '#F5F6F8',
+  border:        '#E5E8EB',
+  borderLight:   '#EEF1F4',
 
-  text:          '#1a1a2e',
-  textSecondary: '#5c5c7a',
-  textMuted:     '#9090b0',
-  textHint:      '#b8b8d0',
+  text:          '#191F28',
+  textSecondary: '#4E5968',
+  textMuted:     '#8B95A1',
+  textHint:      '#B0B8C1',
 
-  danger:        '#e53e3e',
-  dangerTonal:   '#fff0f0',
-  success:       '#2ea44f',
-  successTonal:  '#f0fff4',
-  warning:       '#f59e0b',
+  danger:        '#F04452',
+  dangerTonal:   '#FFEEEF',
+  success:       '#00C471',
+  successTonal:  '#E5F9F0',
+  warning:       '#FFB800',
 
-  // Dark theme (Login / Signup)
-  darkBg:        '#0a0a18',
-  darkSurface:   '#12122a',
-  darkElevated:  '#1a1a3a',
-  darkBorder:    '#2a2a50',
-  darkText:      '#eeeeff',
-  darkTextSub:   '#8888cc',
-  darkTextHint:  '#5555aa',
+  // Dark 예외 영역 전용 (이미지 뷰어/에디터 — 사진 감상 목적, 브랜드 테마와 무관)
+  darkBg:        '#111417',
+  darkSurface:   '#1A1E22',
+  darkElevated:  '#22262B',
+  darkBorder:    '#2E3338',
+  darkText:      '#F2F4F6',
+  darkTextSub:   '#8B95A1',
+  darkTextHint:  '#5B6472',
 
-  // Gallery
-  galleryBg:     '#0e0e0e',
-  galleryBorder: '#1e1e1e',
+  // Gallery / 이미지 뷰어 전용
+  galleryBg:     '#111417',
+  galleryBorder: '#22262B',
 };
 
 export const MOOD_COLORS = {

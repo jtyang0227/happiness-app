@@ -153,7 +153,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
         />
         <button onClick={handleTextSave} style={saveBtnStyle}>저장</button>
         {value?.locationName && (
-          <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(232, 18, 26,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
+          <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(49,130,246,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
             📍 {value.locationName}{value.locationAddress ? ` — ${value.locationAddress}` : ''}
             <GoogleMapsLinks locationName={value.locationName} locationAddress={value.locationAddress} />
           </div>
@@ -182,7 +182,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
               key={p.id}
               onClick={() => handleSelect(p)}
               style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(232, 18, 26,0.15)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(49,130,246,0.15)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <div style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>{p.place_name}</div>
@@ -195,7 +195,7 @@ export default function MeetLocationPicker({ value, onChange, readOnly = false }
       <div ref={mapRef} style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden', background: '#12122a' }} />
 
       {value?.locationName && (
-        <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(232, 18, 26,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
+        <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(49,130,246,0.12)', borderRadius: 8, color: '#ccc', fontSize: 13 }}>
           📍 {value.locationName}
           {value.locationAddress && <span style={{ color: '#9090b0' }}> — {value.locationAddress}</span>}
         </div>
@@ -217,7 +217,7 @@ const inputStyle = {
 };
 
 const saveBtnStyle = {
-  background: '#E8121A',
+  background: '#3182F6',
   border: 'none',
   borderRadius: 8,
   color: '#fff',

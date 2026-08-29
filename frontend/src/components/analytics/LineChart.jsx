@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-export default function LineChart({ data = [], color = '#E8121A', height = 180 }) {
+export default function LineChart({ data = [], color = '#3182F6', height = 180 }) {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [width, setWidth] = useState(300);

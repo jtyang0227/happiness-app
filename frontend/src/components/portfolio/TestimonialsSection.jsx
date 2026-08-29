@@ -39,7 +39,7 @@ function TestimonialCard({ item, delay = 0 }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
+          background: 'linear-gradient(135deg, #3182F6, #4E9FFF)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0,
         }}>
@@ -84,8 +84,8 @@ export default function TestimonialsSection({ testimonials = [] }) {
         <div style={{
           display: 'inline-block',
           padding: '4px 14px', borderRadius: 20,
-          background: 'rgba(232, 18, 26,0.15)',
-          border: '1px solid rgba(232, 18, 26,0.3)',
+          background: 'rgba(49,130,246,0.15)',
+          border: '1px solid rgba(49,130,246,0.3)',
           fontSize: 11, fontWeight: 700,
           color: '#a0a8ff', letterSpacing: '0.1em',
           textTransform: 'uppercase', marginBottom: 16,

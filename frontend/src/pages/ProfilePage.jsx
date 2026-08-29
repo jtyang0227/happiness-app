@@ -846,5 +846,5 @@ const primaryBtn = (disabled) => ({
   background: disabled ? COLORS.textMuted : COLORS.primary,
   color: '#fff', fontSize: 14, fontWeight: 700,
   cursor: disabled ? 'not-allowed' : 'pointer',
-  boxShadow: disabled ? 'none' : '0 2px 12px rgba(232, 18, 26,0.3)',
+  boxShadow: disabled ? 'none' : '0 2px 12px rgba(49,130,246,0.3)',
 });

@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2, borderLeftColor: COLORS.border },
   replyIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginHorizontal: SPACING.lg, marginTop: SPACING.sm,
-    backgroundColor: '#ffe9e7', borderRadius: RADIUS.md, padding: SPACING.sm },
+    backgroundColor: '#E8F3FF', borderRadius: RADIUS.md, padding: SPACING.sm },
   replyIndicatorText: { color: COLORS.primary, fontSize: FONT.sm, fontWeight: '600' },
   cancelReply: { color: COLORS.textMuted, fontWeight: '700', paddingHorizontal: 8 },
   commentInput: { flexDirection: 'row', alignItems: 'flex-end',

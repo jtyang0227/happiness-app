@@ -9,7 +9,7 @@ import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 
 const STATUS_STYLE = {
-  PENDING:     { label: '대기중', bg: 'rgba(232,18,26,0.12)', color: COLORS.primary },
+  PENDING:     { label: '대기중', bg: 'rgba(49,130,246,0.12)', color: COLORS.primary },
   NEGOTIATING: { label: '날짜조율', bg: 'rgba(6,182,212,0.12)', color: '#0891b2' },
   CONFIRMED:   { label: '확정', bg: 'rgba(46,164,79,0.12)', color: '#2ea44f' },
   COMPLETED:   { label: '완료', bg: 'rgba(144,144,176,0.15)', color: COLORS.textMuted },

@@ -64,7 +64,7 @@ export default function PortfolioLayoutPicker({ value = 'grid', onChange }) {
               {/* 미리보기 */}
               <div style={{
                 borderRadius: '10px 10px 0 0', overflow: 'hidden',
-                background: active ? '#ffd2cd' : '#f0f0f8',
+                background: active ? '#C9E2FF' : '#f0f0f8',
                 minHeight: 62,
               }}>
                 {layout.preview}

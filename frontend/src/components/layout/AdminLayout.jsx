@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { glass, GLASS, BG } from '../../constants/glass';
+import { COLORS } from '../../constants/colors';
 import { mq } from '../../constants/breakpoints';
 
 const NAV_ITEMS = [
@@ -29,16 +29,14 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
   const sidebar = (
     <div style={{
       width: SIDEBAR_W, minHeight: '100vh',
-      ...glass('strong'),
-      borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
-      borderRight: '1px solid rgba(255,255,255,0.50)',
-      boxShadow: '4px 0 24px rgba(232, 18, 26,0.08), inset -1px 0 0 rgba(255,255,255,0.50)',
+      background: COLORS.surface,
+      borderRight: `1px solid ${COLORS.border}`,
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, zIndex: 200,
     }}>
       {/* 로고 */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid rgba(255,255,255,0.38)` }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#E8121A' }}>🛠️ Happiness Admin</div>
+      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${COLORS.border}` }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.primary }}>🛠️ Happiness Admin</div>
       </div>
 
       {/* 네비게이션 */}
@@ -57,16 +55,14 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       </nav>
 
       {/* 로그아웃 */}
-      <div style={{ padding: '12px 8px', borderTop: `1px solid rgba(255,255,255,0.38)` }}>
+      <div style={{ padding: '12px 8px', borderTop: `1px solid ${COLORS.border}` }}>
         <button
           onClick={handleLogout}
           style={{
             width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-            border: '1px solid rgba(229,62,62,0.25)',
-            background: 'rgba(255,245,245,0.72)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            color: '#e53e3e', cursor: 'pointer', textAlign: 'left',
+            border: `1px solid ${COLORS.dangerTonal}`,
+            background: COLORS.dangerTonal,
+            color: COLORS.danger, cursor: 'pointer', textAlign: 'left',
           }}
         >
           🚪 로그아웃
@@ -76,15 +72,15 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: BG.light, backgroundAttachment: 'fixed' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: COLORS.bg }}>
       {/* 데스크탑 사이드바 */}
       <style>{`
         ${mq.mobile} { .admin-sidebar { display: none !important; } }
         ${mq.tabletUp} { .admin-mobile-overlay { display: none !important; } }
-        .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: #5c5c7a; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
-        .admin-nav-link:hover { background: rgba(232, 18, 26,0.07); color: #E8121A; }
-        .admin-nav-link--active { background: rgba(232, 18, 26,0.12); color: #E8121A; border-left: 3px solid #E8121A; }
-        .admin-nav-link--active:hover { background: rgba(232, 18, 26,0.14); }
+        .admin-nav-link { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 2px; text-decoration: none; font-size: 13px; font-weight: 600; color: ${COLORS.textSecondary}; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s; }
+        .admin-nav-link:hover { background: ${COLORS.surfaceDim}; color: ${COLORS.primary}; }
+        .admin-nav-link--active { background: ${COLORS.primaryLight}; color: ${COLORS.primary}; border-left: 3px solid ${COLORS.primary}; }
+        .admin-nav-link--active:hover { background: ${COLORS.primaryLight}; }
       `}</style>
       <div className="admin-sidebar">{sidebar}</div>
 
@@ -93,7 +89,7 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
         <div
           className="admin-mobile-overlay"
           onClick={() => setMobileOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,24,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 190 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 190 }}
         >
           <div onClick={e => e.stopPropagation()}>{sidebar}</div>
         </div>
@@ -103,11 +99,10 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
       <div style={{ flex: 1, marginLeft: 0, display: 'flex', flexDirection: 'column' }}>
         <style>{`${mq.tabletUp} { .admin-content { margin-left: ${SIDEBAR_W}px !important; } }`}</style>
 
-        {/* 상단바 — V2 glass('strong') */}
+        {/* 상단바 */}
         <div style={{
-          ...glass('strong'),
-          borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none',
-          borderBottom: '1px solid rgba(255,255,255,0.50)',
+          background: COLORS.surface,
+          borderBottom: `1px solid ${COLORS.border}`,
           padding: '0 24px', height: 58, display: 'flex', alignItems: 'center',
           gap: 16, position: 'sticky', top: 0, zIndex: 100,
         }}>
@@ -117,13 +112,13 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
             onClick={() => setMobileOpen(v => !v)}
             style={{
               background: 'none', border: 'none', fontSize: 20, cursor: 'pointer',
-              color: '#5c5c7a', padding: 4,
+              color: COLORS.textSecondary, padding: 4,
             }}
           >☰</button>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', flex: 1, margin: 0 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, flex: 1, margin: 0 }}>
             {currentPageTitle}
           </h2>
-          <span style={{ fontSize: 12, color: '#9090b0' }}>{user?.email}</span>
+          <span style={{ fontSize: 12, color: COLORS.textMuted }}>{user?.email}</span>
         </div>
 
         {/* 페이지 콘텐츠 */}

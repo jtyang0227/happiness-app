@@ -133,64 +133,62 @@ Loop 수행 순서:
 기술 스택: React 18 SPA, React Router v6, inline style (CSS-in-JS 없음)
 아이콘: 이모지 또는 유니코드 기호 사용 (외부 아이콘 라이브러리 없음)
 
-현재 컬러 시스템 (AKIRA Neo-Tokyo 액센트, 2026-08-18~):
-  primary:       '#E8121A'
-  primaryDark:   '#A80D14'
-  primaryLight:  '#ffe9e7'
-  accent:        '#22D3EE'
-  bg:            '#f5f5fa'
+현재 컬러 시스템 (Toss 디자인 시스템, 2026-08-29~):
+  primary:       '#3182F6'
+  primaryDark:   '#1B64DA'
+  primaryLight:  '#E8F3FF'
+  accent:        '#4E9FFF'
+  bg:            '#F2F4F6'
   surface:       '#ffffff'
-  border:        '#e2e2ee'
-  text:          '#1a1a2e'
-  textSecondary: '#5c5c7a'
-  textMuted:     '#9090b0'
-  danger:        '#e53e3e'
-  darkBg:        '#0a0a18'
-  darkSurface:   '#12122a'
-  galleryBg:     '#0e0e0e'
+  border:        '#E5E8EB'
+  text:          '#191F28'
+  textSecondary: '#4E5968'
+  textMuted:     '#8B95A1'
+  danger:        '#F04452'
+  darkBg:        '#111417'
+  darkSurface:   '#1A1E22'
+  galleryBg:     '#111417'
 
 규칙:
 - export default 함수형 컴포넌트 1개만 반환
 - style은 inline object 사용
 - 외부 라이브러리 import 없음 (react, react-router-dom만 허용)
 - 한국어 UI 텍스트
+- backdrop-filter/blur, 브랜드 컬러 tint된 그림자, 그라디언트 오브 장식 금지 — 플랫 서페이스만 사용
+- 그림자는 중립 회색(rgba(0,0,0,0.04~0.12))만 사용
 ```
 
 4. 생성된 디자인 프롬프트 MD는 작업 후 `DESIGN_PROMPTS/design/` 폴더에 정리한다
 5. **항상** 디자인 작업 시 Claude.ai에서 아티팩트로 요청할 수 있는 디자인 프롬프트를 `DESIGN_PROMPTS/design/DESIGN_PROMPT_<feature>.md` 형식으로 먼저 작성한다
 
-### 현재 디자인 방향 (2026-06-23 기준, 2026-08-18 액센트 갱신)
+### 현재 디자인 방향 (2026-08-29 기준 — Toss 디자인 시스템으로 전면 교체)
 
-> **Cosmos × Pinterest 다크 에디토리얼** 스타일 채택  
-> iOS 26 Liquid Glass 컨셉 제거 (`deprecated/21_IOS26_LIQUID_GLASS_DESIGN.md` 등 → `DESIGN_PROMPTS/deprecated/` 폴더로 이동)  
-> 참고: `DESIGN_PROMPTS/design/31_COSMOS_PINTEREST_DESIGN_SYSTEM.md`
-
-> **AKIRA Neo-Tokyo 액센트 (2026-08-18)** — 레이아웃/배경(`#090909` 블랙)은 그대로, 브랜드 액센트만
-> 인디고/라벤더 → **아키라 레드(`#E8121A`) + 네온 시안(`#22D3EE`)** 로 교체. 레드는 CTA·활성 탭·배지 등
-> 기존 primary 사용처에만 등장하며 배경을 칠하지 않음(비율 유지). 상세: `DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md`
+> **Toss 디자인 시스템** 채택 — 이전의 AKIRA Neo-Tokyo(레드+시안) 액센트와
+> Cosmos × Pinterest 다크 에디토리얼 방향을 전면 폐기했다.
+> 과거 방향 문서는 모두 `DESIGN_PROMPTS/deprecated/`로 이동했다 (iOS 26 Liquid Glass,
+> Cosmos/dot-concept, AKIRA Neo-Tokyo 관련 문서 전부 포함).
+> 상세: `DESIGN_PROMPTS/design/DESIGN_PROMPT_toss-design-system.md`
 
 **핵심 원칙:**
-- **다크 퍼스트**: 앱 배경 `#090909` (순수 블랙), 이미지 집중 — **구현 완료** (global.css body + App.jsx bg)
-- **이미지 온리**: 카드에 테두리·그림자 없음, 이미지가 배경에 직접 얹힘 — **구현 완료** (PhotoCard, ExplorePage)
-- **마소닉 그리드**: 2(모바일) → 3(태블릿) → 4컬럼(데스크탑), 가변 높이
-- **보드 시스템**: 시리즈 = 보드 카드 (3개 썸네일 콜라주 + 제목 + @handle)
-- **미니멀 네비**: 하단 탭바 3-4 아이콘, Cosmos 스타일 — **구현 완료** (BottomNav dark blur + active accent line)
-- **에디터 예외**: 이미지 에디터는 짙은 네이비-블랙 (`#080810`), 프리미엄 다크
-- **어드민 예외**: 어드민 패널은 glass.js light 계열 유지 (운영 편의성)
+- **단일 브랜드 컬러**: Toss Blue(`#3182F6`) 하나만 CTA·활성 탭·배지에 사용, 배경을 칠하지 않음
+- **플랫 서페이스**: 블러/글래스모피즘/그라디언트 오브 금지, 그림자는 중립 회색만 사용 — **구현 완료** (`constants/glass.js` 삭제)
+- **밝은 회색조 배경**: 앱 기본 배경 `#F2F4F6`, 카드 `#ffffff` — **구현 완료** (global.css body, App.jsx bg)
+- **의미 컬러 분리**: success/danger/warning은 브랜드 액센트와 무관한 상태 전달 전용
+- **다크 예외 영역**: 이미지 뷰어/에디터는 계속 어둡게 유지하되 남색/보라 undertone 없는 중립
+  웜그레이-블랙(`#111417`/`#1A1E22`/`#22262B`)으로 통일
+- **장식 애니메이션 최소화**: RGB 글리치·aurora 배경·pulseGlow 등 old-era 모션 제거, `spin`/`pulse`/
+  `fadeInUp`/`slideUp` 정도의 실용적 모션만 유지 (`constants/animations.js`)
+- **어드민도 동일 적용**: 어드민 패널의 glass.js light 계열 예외를 폐지하고 플랫 Toss 서페이스로 통일
 
-**구현 완료 (Feature 31 — Cosmos 디자인 마이그레이션):**
-- `styles/global.css`: body bg `#090909`, scrollbar 다크(4px rgba(255,255,255,0.15))
-- `Header.jsx`: PC헤더 solid #090909 + white nav links, BottomNav blur + active top-accent
-- `GalleryPage.jsx`: 배경 `#090909`, 플레이스홀더 `#0f0f0f`
-- `PhotoCard.jsx`: border-radius 8px, no border/shadow, hover scale(1.01) + author overlay + 🔖 저장 버튼
-- `ExplorePage.jsx`: 배경 `#090909`, pill 검색바(`#1c1c1c`, 🔍+정렬 인라인 통합), Cosmos 언더라인 장르탭, 마소닉 CSS columns 2→3→4컬럼. 무드/비율/태그 필터 제거로 심플화 (2026-06-29)
-
-**Cosmos 앱 분석 (참고 앱):**
-- 배경: 순수 블랙, 헤더: 중앙 로고 + 흰 텍스트
-- 검색바: pill 형태 (`#1c1c1c`), 카테고리 탭: 수평 스크롤 + 하단 흰선
-- 보드 카드: 3이미지 콜라주 + 메타 (verified 배지, element 수)
-- 마소닉 그리드: 대형+소형 혼합, 편집적 레이아웃
-- 하단 네비: 3 아이콘만 (홈/탐색/프로필)
+**구현 완료 (Toss 디자인 시스템 전환):**
+- `constants/colors.js`(웹) / `constants/colors.js`(모바일): Toss 팔레트로 전면 교체
+- `constants/glass.js` 삭제 — `constants/animations.js`(GLOBAL_KEYFRAMES, SPRING/EASE)로 대체
+- `components/common/AkiraLogo.jsx` → `Logo.jsx`: RGB 글리치 애니메이션 제거, 정적 렌더링
+- `App.jsx`, `Header.jsx`, `AdminLayout.jsx`, `GalleryPage.jsx`, `ListPage.jsx`, `SeriesPage.jsx`,
+  `LoginPage.jsx`, `SignUpPage.jsx`: glass 유틸/다크 아우라 배경 제거, 플랫 서페이스로 재작성
+- `styles/theme.css`, `styles/global.css`: CSS 변수 토큰 및 전역 keyframes/스크롤바/포커스링/
+  셀렉션 색상 교체, 다크 body 배경(`#090909`) → 밝은 배경(`#F2F4F6`)
+- 나머지 40여 개 파일의 raw AKIRA hex 리터럴을 Toss 블루 계열로 일괄 치환 (웹+모바일)
 
 ### 디자인 작업 우선순위 로드맵
 

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
-import { glassDark, SPRING } from '../constants/glass';
-import AkiraLogo from '../components/common/AkiraLogo';
+import { COLORS } from '../constants/colors';
+import Logo from '../components/common/Logo';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 const PHONE_RE = /^01[0-9]-\d{3,4}-\d{4}$/;
@@ -127,94 +127,95 @@ export default function SignUpPage() {
     <div style={{
       minHeight: '100vh',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px 20px', position: 'relative', zIndex: 1,
+      padding: '24px 20px', background: COLORS.bg,
     }}>
       <div style={{
         width: '100%', maxWidth: 420,
-        animation: 'glassIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both',
+        animation: 'fadeInUp 0.4s ease both',
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-            <AkiraLogo variant="white" size={48} />
+            <Logo variant="black" size={44} />
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+          <div style={{ color: COLORS.textMuted, fontSize: 13 }}>
             새 계정 만들기
           </div>
         </div>
 
-        {/* Glass card */}
+        {/* Card */}
         <div style={{
-          ...glassDark('dark'),
-          borderRadius: 28,
+          background: COLORS.surface,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 20,
           padding: '28px 24px 24px',
         }}>
-          <h2 style={{ color: '#f0f0ff', fontSize: 18, fontWeight: 700, marginBottom: 20, letterSpacing: '-0.4px' }}>
+          <h2 style={{ color: COLORS.text, fontSize: 18, fontWeight: 700, marginBottom: 20, letterSpacing: '-0.4px' }}>
             회원가입
           </h2>
 
           {apiErr && (
             <div style={{
-              background: 'rgba(255,77,109,0.12)',
-              border: '0.5px solid rgba(255,77,109,0.35)',
+              background: COLORS.dangerTonal,
+              border: `1px solid ${COLORS.dangerTonal}`,
               borderRadius: 12, padding: '11px 14px',
-              color: '#ff8098', fontSize: 13, marginBottom: 16,
+              color: COLORS.danger, fontSize: 13, marginBottom: 16,
             }}>{apiErr}</div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <DarkField label="이름" error={errors.name}>
+            <Field label="이름" error={errors.name}>
               <input
                 type="text" name="name" value={form.name}
                 onChange={handleChange} placeholder="홍길동"
                 autoComplete="name"
-                style={darkInput(!!errors.name)}
+                style={inputStyle(!!errors.name)}
               />
-            </DarkField>
+            </Field>
 
-            <DarkField label="이메일" error={errors.email} success={success.email}>
+            <Field label="이메일" error={errors.email} success={success.email}>
               <div style={{ position: 'relative' }}>
                 <input
                   type="email" name="email" value={form.email}
                   onChange={handleChange} onBlur={checkEmail}
                   placeholder="your@email.com"
                   autoComplete="email"
-                  style={darkInput(!!errors.email)}
+                  style={inputStyle(!!errors.email)}
                 />
                 {checking.email && (
                   <span style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    fontSize: 11, color: 'rgba(255,255,255,0.35)',
+                    fontSize: 11, color: COLORS.textHint,
                   }}>확인 중...</span>
                 )}
               </div>
-            </DarkField>
+            </Field>
 
-            <DarkField label="비밀번호" error={errors.password}>
+            <Field label="비밀번호" error={errors.password}>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPw.password ? 'text' : 'password'} name="password" value={form.password}
                   onChange={handleChange} placeholder="최소 8자 이상"
                   autoComplete="new-password"
-                  style={{ ...darkInput(!!errors.password), paddingRight: 44 }}
+                  style={{ ...inputStyle(!!errors.password), paddingRight: 44 }}
                 />
                 <EyeToggle shown={showPw.password} onClick={() => toggleShowPw('password')} />
               </div>
-            </DarkField>
+            </Field>
 
-            <DarkField label="비밀번호 확인" error={errors.confirmPassword}>
+            <Field label="비밀번호 확인" error={errors.confirmPassword}>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPw.confirmPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword}
                   onChange={handleChange} placeholder="비밀번호를 다시 입력하세요"
                   autoComplete="new-password"
-                  style={{ ...darkInput(!!errors.confirmPassword), paddingRight: 44 }}
+                  style={{ ...inputStyle(!!errors.confirmPassword), paddingRight: 44 }}
                 />
                 <EyeToggle shown={showPw.confirmPassword} onClick={() => toggleShowPw('confirmPassword')} />
               </div>
-            </DarkField>
+            </Field>
 
-            <DarkField label="포트폴리오 주소" error={errors.profileName} success={success.profileName}
+            <Field label="포트폴리오 주소" error={errors.profileName} success={success.profileName}
               hint="영문 소문자, 숫자, 하이픈만 사용 가능">
               <div style={{ position: 'relative' }}>
                 <input
@@ -222,34 +223,34 @@ export default function SignUpPage() {
                   onChange={handleChange} onBlur={checkProfileName}
                   placeholder="my-portfolio"
                   autoComplete="off"
-                  style={darkInput(!!errors.profileName)}
+                  style={inputStyle(!!errors.profileName)}
                 />
                 {checking.profileName && (
                   <span style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    fontSize: 11, color: 'rgba(255,255,255,0.35)',
+                    fontSize: 11, color: COLORS.textHint,
                   }}>확인 중...</span>
                 )}
               </div>
-            </DarkField>
+            </Field>
 
-            <DarkField label="전화번호 (선택)" error={errors.tel}>
+            <Field label="전화번호 (선택)" error={errors.tel}>
               <input
                 type="tel" name="tel" value={form.tel}
                 onChange={handleChange} placeholder="010-0000-0000"
                 autoComplete="tel" inputMode="numeric" maxLength={13}
-                style={darkInput(!!errors.tel)}
+                style={inputStyle(!!errors.tel)}
               />
-            </DarkField>
+            </Field>
 
-            <DarkField label="인스타그램 ID (선택)">
+            <Field label="인스타그램 ID (선택)">
               <input
                 type="text" name="instagramId" value={form.instagramId}
                 onChange={handleChange} placeholder="instagram_id"
                 autoComplete="off"
-                style={darkInput(false)}
+                style={inputStyle(false)}
               />
-            </DarkField>
+            </Field>
 
             <label style={{
               display: 'flex', alignItems: 'flex-start', gap: 8,
@@ -262,14 +263,14 @@ export default function SignUpPage() {
                   setForm(p => ({ ...p, termsAgreed: e.target.checked }));
                   setErrors(p => ({ ...p, termsAgreed: '' }));
                 }}
-                style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', accentColor: '#E8121A' }}
+                style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', accentColor: COLORS.primary }}
               />
-              <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+              <span style={{ fontSize: 12.5, color: COLORS.textSecondary, lineHeight: 1.5 }}>
                 이용약관 및 개인정보처리방침에 동의합니다.
               </span>
             </label>
             {errors.termsAgreed && (
-              <div style={{ color: '#ff8098', fontSize: 11, marginTop: -12, marginBottom: 14 }}>
+              <div style={{ color: COLORS.danger, fontSize: 11, marginTop: -12, marginBottom: 14 }}>
                 {errors.termsAgreed}
               </div>
             )}
@@ -279,9 +280,9 @@ export default function SignUpPage() {
             </PrimaryBtn>
           </form>
 
-          <div style={{ marginTop: 18, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+          <div style={{ marginTop: 18, textAlign: 'center', color: COLORS.textMuted, fontSize: 13 }}>
             이미 계정이 있으신가요?{' '}
-            <Link to="/login" style={{ color: '#22D3EE', fontWeight: 700 }}>로그인</Link>
+            <Link to="/login" style={{ color: COLORS.primary, fontWeight: 700 }}>로그인</Link>
           </div>
         </div>
       </div>
@@ -291,21 +292,21 @@ export default function SignUpPage() {
 
 /* ── Sub-components ───────────────────────────────────── */
 
-function DarkField({ label, error, success, hint, children }) {
+function Field({ label, error, success, hint, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{
-        display: 'block', color: 'rgba(255,255,255,0.5)',
+        display: 'block', color: COLORS.textSecondary,
         fontSize: 12, fontWeight: 600, marginBottom: 6, letterSpacing: '0.04em',
       }}>{label}</label>
       {children}
       {hint && !error && !success && (
-        <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: 11, marginTop: 4 }}>{hint}</div>
+        <div style={{ color: COLORS.textHint, fontSize: 11, marginTop: 4 }}>{hint}</div>
       )}
       {!error && success && (
-        <div style={{ color: '#4ade80', fontSize: 11, marginTop: 4 }}>✓ {success}</div>
+        <div style={{ color: COLORS.success, fontSize: 11, marginTop: 4 }}>✓ {success}</div>
       )}
-      {error && <div style={{ color: '#ff8098', fontSize: 11, marginTop: 4 }}>{error}</div>}
+      {error && <div style={{ color: COLORS.danger, fontSize: 11, marginTop: 4 }}>{error}</div>}
     </div>
   );
 }
@@ -321,7 +322,7 @@ function EyeToggle({ shown, onClick }) {
         width: 32, height: 32, borderRadius: 8, border: 'none',
         background: 'transparent', cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 16, color: 'rgba(255,255,255,0.45)',
+        fontSize: 16, color: COLORS.textMuted,
       }}
     >
       {shown ? '🙈' : '👁'}
@@ -329,19 +330,14 @@ function EyeToggle({ shown, onClick }) {
   );
 }
 
-function darkInput(hasError) {
+function inputStyle(hasError) {
   return {
     width: '100%', padding: '11px 14px',
     borderRadius: 12,
-    background: 'rgba(255,255,255,0.07)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: `0.5px solid ${hasError ? 'rgba(255,77,109,0.5)' : 'rgba(255,255,255,0.12)'}`,
-    color: '#f0f0ff', fontSize: 14, outline: 'none',
-    boxShadow: hasError
-      ? '0 0 0 3px rgba(255,77,109,0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
-      : 'inset 0 1px 0 rgba(255,255,255,0.06)',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
+    background: COLORS.surfaceDim,
+    border: `1px solid ${hasError ? COLORS.danger : COLORS.border}`,
+    color: COLORS.text, fontSize: 14, outline: 'none',
+    transition: 'border-color 0.2s',
   };
 }
 
@@ -350,42 +346,18 @@ function PrimaryBtn({ children, loading, type = 'submit' }) {
     <button
       type={type}
       disabled={loading}
-      className="akira-sweep-btn"
       style={{
         width: '100%', padding: '13px',
         borderRadius: 14, border: 'none',
-        background: loading
-          ? 'rgba(232, 18, 26,0.4)'
-          : 'linear-gradient(135deg, #E8121A 0%, #22D3EE 100%)',
+        background: loading ? COLORS.textHint : COLORS.primary,
         color: '#fff', fontSize: 15, fontWeight: 700,
         cursor: loading ? 'not-allowed' : 'pointer',
-        boxShadow: loading
-          ? 'none'
-          : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
-        transition: `all 0.2s ${SPRING}`,
+        transition: 'background 0.15s',
         marginTop: 6, letterSpacing: '-0.2px',
-        position: 'relative', overflow: 'hidden',
       }}
-      onMouseEnter={e => {
-        if (!loading) {
-          e.currentTarget.style.transform = 'scale(1.02)';
-          e.currentTarget.style.boxShadow = '0 6px 28px rgba(232, 18, 26,0.6), inset 0 1px 0 rgba(255,255,255,0.25)';
-        }
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 20px rgba(232, 18, 26,0.45), inset 0 1px 0 rgba(255,255,255,0.25)';
-      }}
+      onMouseEnter={e => { if (!loading) e.currentTarget.style.background = COLORS.primaryDark; }}
+      onMouseLeave={e => { if (!loading) e.currentTarget.style.background = COLORS.primary; }}
     >
-      <style>{`
-        .akira-sweep-btn .akira-sweep-line { position: absolute; top: 0; left: -40%; width: 30%; height: 100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent); transform: skewX(-18deg); pointer-events: none; }
-        .akira-sweep-btn:hover .akira-sweep-line { animation: akiraSweep 0.5s ease; }
-        @keyframes akiraSweep { from { left: -40%; } to { left: 130%; } }
-        @media (prefers-reduced-motion: reduce) {
-          .akira-sweep-btn:hover .akira-sweep-line { animation: none; }
-        }
-      `}</style>
-      <span className="akira-sweep-line" />
       {children}
     </button>
   );

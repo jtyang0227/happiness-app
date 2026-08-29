@@ -88,7 +88,7 @@ export default function AdminMembersPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{
                           width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                          background: 'linear-gradient(135deg, #E8121A, #22D3EE)',
+                          background: 'linear-gradient(135deg, #3182F6, #4E9FFF)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 11, fontWeight: 700, color: '#fff', overflow: 'hidden',
                         }}>
@@ -103,9 +103,9 @@ export default function AdminMembersPage() {
                     <td style={{ padding: '12px 14px' }}>
                       <span style={{
                         padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                        background: m.role === 'ADMIN' ? '#ffe9e7' : '#f7f7fb',
-                        color: m.role === 'ADMIN' ? '#E8121A' : '#9090b0',
-                        border: `1px solid ${m.role === 'ADMIN' ? 'rgba(232, 18, 26,0.2)' : '#e5e5ed'}`,
+                        background: m.role === 'ADMIN' ? '#E8F3FF' : '#f7f7fb',
+                        color: m.role === 'ADMIN' ? '#3182F6' : '#9090b0',
+                        border: `1px solid ${m.role === 'ADMIN' ? 'rgba(49,130,246,0.2)' : '#e5e5ed'}`,
                       }}>{m.role || 'USER'}</span>
                     </td>
                     <td style={{ padding: '12px 14px', fontSize: 12, color: '#9090b0' }}>

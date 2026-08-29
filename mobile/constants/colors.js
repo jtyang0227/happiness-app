@@ -1,52 +1,49 @@
 /*
- * Stitch 디자인 교체 방법 (React Native):
- * 이 파일의 값을 Stitch 팔레트로 교체하면 앱 전체에 반영됩니다.
- * frontend/src/styles/theme.css 와 값을 일치시켜 주세요.
- *
- * AKIRA Neo-Tokyo 액센트 (2026-08-18) — DESIGN_PROMPTS/design/DESIGN_PROMPT_akira-neo-tokyo-concept.md
+ * Toss 디자인 시스템 (2026-08-29)
+ * 웹(frontend/src/constants/colors.js)과 동일한 팔레트를 사용한다.
  */
 export const COLORS = {
   /* ── Brand ── */
-  primary:   '#E8121A',
-  primaryDark: '#A80D14',
-  accent:    '#22D3EE',
+  primary:   '#3182F6',
+  primaryDark: '#1B64DA',
+  accent:    '#4E9FFF',
   liked:     '#ec4899',
   fav:       '#f59e0b',
   share:     '#10b981',
 
   /* ── Feedback ── */
-  success:   '#34c759',
-  danger:    '#ff3b30',
-  warning:   '#f59e0b',
+  success:   '#00C471',
+  danger:    '#F04452',
+  warning:   '#FFB800',
   cancel:    '#a9a9ac',
 
   /* ── Surface ── */
-  bg:        '#f7f7fb',
+  bg:        '#F2F4F6',
   white:     '#ffffff',
   card:      '#ffffff',
-  inputBg:   '#f9fafb',
-  statsBg:   '#f9fafb',
+  inputBg:   '#F5F6F8',
+  statsBg:   '#F5F6F8',
 
-  /* ── Dark (Login / Signup) ── */
-  dark:      '#1a1a2e',
-  darkDeep:  '#0a0a1a',
-  darkAlt:   '#16163a',
+  /* ── Dark (Login / Signup, 사진 뷰어) ── */
+  dark:      '#1A1E22',
+  darkDeep:  '#111417',
+  darkAlt:   '#22262B',
 
   /* ── Border ── */
-  border:      '#e3e6ef',
-  borderLight: '#d1d5db',
+  border:      '#E5E8EB',
+  borderLight: '#EEF1F4',
   borderDark:  '#374151',
 
   /* ── Text ── */
-  textPrimary:   '#1a1a2e',
-  textSecondary: '#4f4f4f',
-  textMuted:     '#6b7280',
-  textHint:      '#9ca3af',
+  textPrimary:   '#191F28',
+  textSecondary: '#4E5968',
+  textMuted:     '#8B95A1',
+  textHint:      '#B0B8C1',
   textLight:     '#d1d5db',
 
   /* ── Tag ── */
-  tagBg:   '#ffe9e7',
-  tagText: '#E8121A',
+  tagBg:   '#E8F3FF',
+  tagText: '#3182F6',
 };
 
 export const GENRE_META = {

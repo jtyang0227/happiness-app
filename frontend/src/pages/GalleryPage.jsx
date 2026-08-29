@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { mq } from '../constants/breakpoints';
-import { glass } from '../constants/glass';
 import PhotoCard from '../components/photo/PhotoCard';
 import PhotoModal from '../components/photo/PhotoModal';
 import DotEmptyState from '../components/common/DotEmptyState';
@@ -187,9 +186,7 @@ export default function GalleryPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', gap: 10, flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 10,
-        ...glass('light'),
-        borderRadius: 0,
-        borderLeft: 'none', borderRight: 'none', borderTop: 'none',
+        background: COLORS.surface,
         borderBottom: `1px solid ${COLORS.border}`,
       }}>
 
@@ -206,7 +203,6 @@ export default function GalleryPage() {
                 ...(sortIdx === idx
                   ? {
                       background: COLORS.primary, color: '#fff',
-                      boxShadow: '0 2px 10px rgba(232, 18, 26,0.35), inset 0 1.5px 0 rgba(255,255,255,0.25)',
                     }
                   : { background: COLORS.surfaceDim, color: COLORS.textSecondary }
                 ),
@@ -427,6 +423,5 @@ const primaryBtn = {
   color: '#fff', border: 'none',
   borderRadius: 10, cursor: 'pointer',
   fontWeight: 700, fontSize: 13,
-  boxShadow: '0 2px 10px rgba(232, 18, 26,0.3)',
   transition: 'opacity 0.15s',
 };

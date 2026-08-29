@@ -266,8 +266,8 @@ export default function GalleryPanel() {
                   onClick={() => set('genre', active ? '' : code)}
                   style={{
                     padding: '4px 7px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
-                    background: active ? 'rgba(232, 18, 26,0.30)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
+                    background: active ? 'rgba(49,130,246,0.30)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${active ? '#3182F6' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
                   }}
@@ -304,8 +304,8 @@ export default function GalleryPanel() {
                   onClick={() => set('imageRatio', r.value)}
                   style={{
                     padding: '4px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer',
-                    background: active ? 'rgba(232, 18, 26,0.25)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${active ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
+                    background: active ? 'rgba(49,130,246,0.25)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${active ? '#3182F6' : 'rgba(255,255,255,0.08)'}`,
                     color: active ? '#a0a8ff' : 'rgba(160,160,200,0.65)',
                     transition: 'all 0.15s',
                   }}
@@ -319,14 +319,14 @@ export default function GalleryPanel() {
         <div style={sec}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
             <label style={{ ...lbl, marginBottom: 0 }}>그리드 너비</label>
-            <span style={{ fontSize: 10, color: 'rgba(232, 18, 26,0.85)' }}>{form.gridColSpan}/12</span>
+            <span style={{ fontSize: 10, color: 'rgba(49,130,246,0.85)' }}>{form.gridColSpan}/12</span>
           </div>
           <input
             type="range"
             min={1} max={12}
             value={form.gridColSpan}
             onChange={e => set('gridColSpan', Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#E8121A', cursor: 'pointer' }}
+            style={{ width: '100%', accentColor: '#3182F6', cursor: 'pointer' }}
           />
         </div>
 
@@ -363,13 +363,13 @@ export default function GalleryPanel() {
             width: '100%', padding: '12px 0', borderRadius: 10,
             background: (saving || !currentImage)
               ? 'rgba(255,255,255,0.05)'
-              : 'linear-gradient(135deg, #E8121A 0%, #7c5cfc 100%)',
+              : 'linear-gradient(135deg, #3182F6 0%, #7c5cfc 100%)',
             border: 'none',
             color: (saving || !currentImage) ? 'rgba(120,120,160,0.40)' : '#fff',
             fontSize: 13, fontWeight: 700,
             cursor: (saving || !currentImage) ? 'not-allowed' : 'pointer',
             opacity: saving ? 0.7 : 1,
-            boxShadow: (!saving && currentImage) ? '0 3px 16px rgba(232, 18, 26,0.40)' : 'none',
+            boxShadow: (!saving && currentImage) ? '0 3px 16px rgba(49,130,246,0.40)' : 'none',
             letterSpacing: '0.04em',
             transition: 'opacity 0.2s, box-shadow 0.2s',
           }}

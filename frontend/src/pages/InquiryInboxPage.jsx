@@ -20,7 +20,7 @@ function InquiryCard({ inquiry, onRead, onDelete }) {
     <div style={{
       background: COLORS.surface, borderRadius: 14,
       border: `1.5px solid ${inquiry.isRead ? COLORS.border : COLORS.primary}`,
-      boxShadow: inquiry.isRead ? 'none' : '0 2px 12px rgba(232, 18, 26,0.12)',
+      boxShadow: inquiry.isRead ? 'none' : '0 2px 12px rgba(49,130,246,0.12)',
       marginBottom: 12, overflow: 'hidden', transition: 'border-color 0.2s',
     }}>
       {/* 헤더 */}

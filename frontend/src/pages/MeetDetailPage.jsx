@@ -137,7 +137,7 @@ export default function MeetDetailPage() {
           <button onClick={() => navigate('/meets')} style={{ background: 'none', border: 'none', color: '#9090b0', fontSize: 20, cursor: 'pointer', padding: 4 }}>←</button>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: other.avatar ? `url(${other.avatar}) center/cover` : '#A80D14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: other.avatar ? `url(${other.avatar}) center/cover` : '#1B64DA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
                 {!other.avatar && (other.name?.[0] || '?')}
               </div>
               <div>
@@ -356,7 +356,7 @@ const actionCard = {
 };
 
 const primaryBtn = {
-  background: '#E8121A', border: 'none', borderRadius: 8,
+  background: '#3182F6', border: 'none', borderRadius: 8,
   color: '#fff', padding: '9px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
 };
 

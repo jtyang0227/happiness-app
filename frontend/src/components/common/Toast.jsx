@@ -27,12 +27,12 @@ const CONFIGS = {
     shadow: '0 8px 32px rgba(221,107,32,0.14), 0 2px 8px rgba(0,0,0,0.06)',
   },
   info: {
-    icon: 'i', bar: '#E8121A',
+    icon: 'i', bar: '#3182F6',
     bg: 'rgba(240,242,255,0.80)',
     blur: 'blur(32px) saturate(200%) brightness(103%)',
     text: '#3d51cc', border: 'rgba(199,207,254,0.72)',
     specular: 'inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 -0.5px 0 rgba(0,0,0,0.04)',
-    shadow: '0 8px 32px rgba(232, 18, 26,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+    shadow: '0 8px 32px rgba(49,130,246,0.14), 0 2px 8px rgba(0,0,0,0.06)',
   },
 };
 

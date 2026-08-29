@@ -60,18 +60,18 @@ export default function MeetRequestModal({ receiverId, receiverName, onClose, on
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: '50%',
-                  background: i <= step ? '#E8121A' : 'rgba(255,255,255,0.08)',
-                  border: i === step ? '2px solid #22D3EE' : '2px solid transparent',
+                  background: i <= step ? '#3182F6' : 'rgba(255,255,255,0.08)',
+                  border: i === step ? '2px solid #4E9FFF' : '2px solid transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 12, color: i <= step ? '#fff' : '#5c5c7a', fontWeight: 600,
                   transition: 'all 0.2s',
                 }}>
                   {i < step ? '✓' : i + 1}
                 </div>
-                <div style={{ fontSize: 10, color: i === step ? '#22D3EE' : '#5c5c7a', marginTop: 4, whiteSpace: 'nowrap' }}>{label}</div>
+                <div style={{ fontSize: 10, color: i === step ? '#4E9FFF' : '#5c5c7a', marginTop: 4, whiteSpace: 'nowrap' }}>{label}</div>
               </div>
               {i < STEPS.length - 1 && (
-                <div style={{ height: 2, flex: 1, background: i < step ? '#E8121A' : 'rgba(255,255,255,0.08)', margin: '0 4px', marginBottom: 16, transition: 'background 0.2s' }} />
+                <div style={{ height: 2, flex: 1, background: i < step ? '#3182F6' : 'rgba(255,255,255,0.08)', margin: '0 4px', marginBottom: 16, transition: 'background 0.2s' }} />
               )}
             </div>
           ))}
@@ -83,7 +83,7 @@ export default function MeetRequestModal({ receiverId, receiverName, onClose, on
             <div>
               <div style={{ color: '#ccc', fontSize: 13, marginBottom: 14 }}>
                 만날 수 있는 날을 모두 선택하세요.
-                <span style={{ color: '#E8121A', marginLeft: 8 }}>{selectedDates.length}일 선택됨</span>
+                <span style={{ color: '#3182F6', marginLeft: 8 }}>{selectedDates.length}일 선택됨</span>
               </div>
               <MeetCalendar
                 myDates={selectedDates}
@@ -189,7 +189,7 @@ const closeBtnStyle = {
 };
 
 const primaryBtnStyle = {
-  background: '#E8121A', border: 'none', borderRadius: 10,
+  background: '#3182F6', border: 'none', borderRadius: 10,
   color: '#fff', padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14,
 };
 

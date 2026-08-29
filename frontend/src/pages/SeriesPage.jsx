@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { seriesApi, photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
-import { glass, GLASS, SPRING } from '../constants/glass';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 import PhotoModal from '../components/photo/PhotoModal';
 import DotEmptyState from '../components/common/DotEmptyState';
@@ -12,10 +11,11 @@ import DotEmptyState from '../components/common/DotEmptyState';
 function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
   return (
     <div style={{
-      ...glass('light'),
+      background: COLORS.surface,
+      border: `1px solid ${COLORS.border}`,
       borderRadius: 20,
       overflow: 'hidden',
-      transition: `transform 0.22s ${SPRING}, box-shadow 0.22s ease`,
+      transition: 'transform 0.22s ease, box-shadow 0.22s ease',
     }}>
       {/* 커버 — 사진 3장 이상이면 Cosmos 스타일 콜라주(좌측 큰 이미지 + 우측 2분할) */}
       <div style={{
@@ -94,8 +94,8 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }
             onClick={() => onMagazineView(series)}
             style={{
               padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-              border: `1px solid #22D3EE`, background: '#f3f0ff',
-              color: '#7c3aed', cursor: 'pointer',
+              border: `1px solid ${COLORS.border}`, background: COLORS.surfaceDim,
+              color: COLORS.textSecondary, cursor: 'pointer',
             }}
           >
             ⊟ 매거진
@@ -255,7 +255,7 @@ function PickerPhotoCell({ photo, selected, saving, onToggle, onPreview }) {
       {selected && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(232, 18, 26,0.3)',
+          background: 'rgba(49, 130, 246, 0.30)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none',
         }}>

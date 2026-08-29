@@ -40,7 +40,7 @@ function Highlight({ text, keyword }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: '#E8121A', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
+      <mark style={{ background: '#3182F6', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
         {text.slice(idx, idx + keyword.length)}
       </mark>
       {text.slice(idx + keyword.length)}
@@ -221,7 +221,7 @@ export default function ExplorePage() {
           <div style={{
             display: 'flex', alignItems: 'center',
             background: '#f5f5fa',
-            border: `1px solid ${showDrop && dropItems.length ? '#E8121A' : '#e2e2ee'}`,
+            border: `1px solid ${showDrop && dropItems.length ? '#3182F6' : '#e2e2ee'}`,
             borderRadius: 9999,
             padding: '0 16px',
             transition: 'border-color 0.2s',

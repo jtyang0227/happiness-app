@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a1a' },
   inner: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 32 },
   logoWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  logoIcon: { fontSize: 28, color: '#22D3EE', marginRight: 8 },
+  logoIcon: { fontSize: 28, color: '#4E9FFF', marginRight: 8 },
   logoText: { fontSize: 32, fontWeight: '800', color: '#fff', letterSpacing: 2 },
   title: { fontSize: 22, fontWeight: '700', color: '#fff', textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 14, color: '#9ca3af', textAlign: 'center', marginBottom: 28 },
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   btnPrimary: {
-    backgroundColor: '#E8121A',
+    backgroundColor: '#3182F6',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   btnAppleText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   signupLink:      { marginTop: 20, alignItems: 'center' },
   signupLinkText:  { color: '#9ca3af', fontSize: 13 },
-  signupLinkBold:  { color: '#22D3EE', fontWeight: '700' },
+  signupLinkBold:  { color: '#4E9FFF', fontWeight: '700' },
 
   legalRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
     marginTop: 20, gap: 8 },

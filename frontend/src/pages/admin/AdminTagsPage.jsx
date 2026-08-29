@@ -50,8 +50,8 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
             onClick={onConfirm}
             style={{
               padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-              border: `1.5px solid ${danger ? '#fecaca' : 'rgba(232, 18, 26,0.3)'}`,
-              background: danger ? '#e53e3e' : '#E8121A',
+              border: `1.5px solid ${danger ? '#fecaca' : 'rgba(49,130,246,0.3)'}`,
+              background: danger ? '#e53e3e' : '#3182F6',
               color: '#fff', cursor: 'pointer',
             }}
           >{confirmLabel}</button>
@@ -138,8 +138,8 @@ function MergeModal({ tags, onMerge, onClose }) {
 
           {canMerge && (
             <div style={{
-              padding: '10px 14px', borderRadius: 8, background: '#ffe9e7',
-              fontSize: 12, color: '#E8121A', marginBottom: 16,
+              padding: '10px 14px', borderRadius: 8, background: '#E8F3FF',
+              fontSize: 12, color: '#3182F6', marginBottom: 16,
             }}>
               <strong>"{sourceTag}"</strong> 태그의 사진을 <strong>"{targetTag}"</strong> 태그로 이동합니다.
             </div>
@@ -159,7 +159,7 @@ function MergeModal({ tags, onMerge, onClose }) {
               style={{
                 padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                 border: 'none',
-                background: canMerge ? '#E8121A' : '#e5e5ed',
+                background: canMerge ? '#3182F6' : '#e5e5ed',
                 color: canMerge ? '#fff' : '#9090b0',
                 cursor: canMerge ? 'pointer' : 'not-allowed',
               }}
@@ -263,7 +263,7 @@ export default function AdminTagsPage() {
           {/* 통계 카드 */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {[
-              { label: '전체 태그 수', value: tags.length, color: '#E8121A', bg: '#ffe9e7' },
+              { label: '전체 태그 수', value: tags.length, color: '#3182F6', bg: '#E8F3FF' },
               { label: '사용된 태그', value: usedCount, color: '#059669', bg: '#ecfdf5' },
               { label: '미사용 태그', value: unusedCount, color: '#e53e3e', bg: '#fff5f5' },
             ].map(({ label, value, color, bg }) => (
@@ -310,9 +310,9 @@ export default function AdminTagsPage() {
             disabled={tags.length < 2}
             style={{
               padding: '9px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-              border: '1.5px solid rgba(232, 18, 26,0.3)',
-              background: tags.length >= 2 ? '#ffe9e7' : '#f7f7fb',
-              color: tags.length >= 2 ? '#E8121A' : '#9090b0',
+              border: '1.5px solid rgba(49,130,246,0.3)',
+              background: tags.length >= 2 ? '#E8F3FF' : '#f7f7fb',
+              color: tags.length >= 2 ? '#3182F6' : '#9090b0',
               cursor: tags.length >= 2 ? 'pointer' : 'not-allowed',
             }}
           >🔀 태그 병합</button>
@@ -324,7 +324,7 @@ export default function AdminTagsPage() {
             <div style={{ padding: '60px 0', textAlign: 'center', color: '#9090b0' }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', margin: '0 auto 12px',
-                border: '3px solid #e5e5ed', borderTopColor: '#E8121A',
+                border: '3px solid #e5e5ed', borderTopColor: '#3182F6',
                 animation: 'spin 0.8s linear infinite',
               }} />
               불러오는 중...
@@ -417,8 +417,8 @@ function TagRow({ tag, index, total, onDelete }) {
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
           background: isUnused ? '#f7f7fb' : '#f0f0ff',
-          color: isUnused ? '#9090b0' : '#E8121A',
-          border: `1px solid ${isUnused ? '#e5e5ed' : 'rgba(232, 18, 26,0.2)'}`,
+          color: isUnused ? '#9090b0' : '#3182F6',
+          border: `1px solid ${isUnused ? '#e5e5ed' : 'rgba(49,130,246,0.2)'}`,
         }}>
           #{tag.name}
         </span>

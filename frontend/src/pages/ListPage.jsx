@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePhotos } from '../hooks/usePhotos';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
-import { glass, GLASS, SPRING } from '../constants/glass';
 
 export default function ListPage() {
   const { photos, loading, error, refetch } = usePhotos();
@@ -75,17 +74,20 @@ export default function ListPage() {
                   alignItems: 'center',
                   gap: 16,
                   padding: '12px 16px',
-                  ...glass('light'),
+                  background: COLORS.surface,
+                  border: `1px solid ${COLORS.border}`,
                   borderRadius: 16,
                   cursor: 'pointer',
-                  transition: `box-shadow 0.22s ease, transform 0.22s ${SPRING}`,
+                  transition: 'box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.boxShadow = GLASS.light.shadowStrong;
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.borderColor = COLORS.textHint;
                   e.currentTarget.style.transform = 'translateX(4px)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.boxShadow = GLASS.light.shadow;
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.borderColor = COLORS.border;
                   e.currentTarget.style.transform = 'translateX(0)';
                 }}
               >
@@ -95,7 +97,7 @@ export default function ListPage() {
                     width: 28,
                     height: 28,
                     borderRadius: 8,
-                    background: '#f0f0f8',
+                    background: COLORS.surfaceDim,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -116,7 +118,7 @@ export default function ListPage() {
                     borderRadius: 10,
                     overflow: 'hidden',
                     flexShrink: 0,
-                    background: '#eee',
+                    background: COLORS.surfaceDim,
                   }}
                 >
                   <img

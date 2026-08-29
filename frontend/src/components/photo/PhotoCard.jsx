@@ -39,7 +39,7 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
     >
       <style>{`
         [role="button"]:focus-visible {
-          outline: 2px solid #E8121A !important;
+          outline: 2px solid #3182F6 !important;
           outline-offset: 2px;
         }
       `}</style>

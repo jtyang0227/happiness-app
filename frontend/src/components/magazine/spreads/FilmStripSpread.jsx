@@ -51,7 +51,7 @@ export default function FilmStripSpread({ photo, supportPhotos = [] }) {
             style={{
               flexShrink: 0, width: 260, height: 260,
               scrollSnapAlign: 'center', cursor: 'pointer',
-              border: `2px solid ${activeIdx === i ? '#E8121A' : 'rgba(255,255,255,0.08)'}`,
+              border: `2px solid ${activeIdx === i ? '#3182F6' : 'rgba(255,255,255,0.08)'}`,
               transition: 'border-color 0.2s', position: 'relative',
             }}
           >

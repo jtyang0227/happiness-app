@@ -5,7 +5,7 @@ import { inquiryApi, photoApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { GENRE_META } from '../../constants/colors';
 
-function StatCard({ icon, label, value, color = '#E8121A', loading }) {
+function StatCard({ icon, label, value, color = '#3182F6', loading }) {
   return (
     <div style={{
       background: '#fff', borderRadius: 14, padding: '20px 24px',
@@ -120,8 +120,8 @@ export default function AdminDashboardPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-          <StatCard icon="📷" label="전체 사진"      value={stats?.photos}      loading={loading} color="#E8121A" />
-          <StatCard icon="👥" label="전체 회원"      value={stats?.members}     loading={loading} color="#22D3EE" />
+          <StatCard icon="📷" label="전체 사진"      value={stats?.photos}      loading={loading} color="#3182F6" />
+          <StatCard icon="👥" label="전체 회원"      value={stats?.members}     loading={loading} color="#4E9FFF" />
           <StatCard icon="✉"  label="미읽음 문의"    value={stats?.inquiries}   loading={loading} color="#e53e3e" />
           <StatCard icon="🏷️" label="장르 분류 완료" value={stats?.categorized} loading={loading} color="#43a047" />
         </div>
@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
             <span style={{ fontSize: 18 }}>⚠️</span>
             <div>
               <div style={{ fontWeight: 700, color: '#f57c00', fontSize: 13 }}>미분류 사진 {uncategorized}장</div>
-              <div style={{ fontSize: 12, color: '#9090b0' }}>장르가 지정되지 않은 사진이 있습니다. <a href="/admin/photos" style={{ color: '#E8121A' }}>사진 관리</a>에서 분류하세요.</div>
+              <div style={{ fontSize: 12, color: '#9090b0' }}>장르가 지정되지 않은 사진이 있습니다. <a href="/admin/photos" style={{ color: '#3182F6' }}>사진 관리</a>에서 분류하세요.</div>
             </div>
           </div>
         )}
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
                           <span style={{ fontSize: 12, color: '#9090b0' }}>{item.count}장 ({pct}%)</span>
                         </div>
                         <div style={{ height: 4, borderRadius: 2, background: '#f0f0f0' }}>
-                          <div style={{ height: '100%', borderRadius: 2, background: meta?.color ?? '#E8121A', width: `${pct}%`, transition: 'width 0.5s' }} />
+                          <div style={{ height: '100%', borderRadius: 2, background: meta?.color ?? '#3182F6', width: `${pct}%`, transition: 'width 0.5s' }} />
                         </div>
                       </div>
                     </div>
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
                 fontSize: 13, fontWeight: 600, color: '#5c5c7a',
                 transition: 'background 0.15s',
               }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#ffe9e7'; e.currentTarget.style.color = '#E8121A'; }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#E8F3FF'; e.currentTarget.style.color = '#3182F6'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#f7f7fb'; e.currentTarget.style.color = '#5c5c7a'; }}
               >
                 {item.icon} {item.label}

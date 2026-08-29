@@ -5,7 +5,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import Header from './components/layout/Header';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import useAuthStore from './store/authStore';
-import { BG, AMBIENT_ORBS, GLASS_CSS } from './constants/glass';
+import { GLOBAL_KEYFRAMES } from './constants/animations';
 
 import LoginPage    from './pages/LoginPage';
 import SignUpPage   from './pages/SignUpPage';
@@ -54,8 +54,6 @@ const STANDALONE_PATHS = [
 
 function AppShell() {
   const location = useLocation();
-  const isDark       = DARK_PATHS.includes(location.pathname);
-  const isGallery    = location.pathname === '/';
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
     || location.pathname.startsWith('/proof/')
@@ -64,26 +62,20 @@ function AppShell() {
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
     || /^\/photo\/\d+\/edit$/.test(location.pathname);
 
-  // Background: dark aurora for login/signup, Cosmos 화이트 에디토리얼 for everything else
-  const bg = isDark ? BG.dark : '#ffffff';
+  // Toss 플랫 디자인 — 로그인/회원가입 포함 전 화면 동일한 화이트 배경
+  const bg = '#ffffff';
 
   return (
     <div style={{
       minHeight: '100vh',
       background: bg,
       position: 'relative',
-      overflow: isDark ? 'hidden' : undefined,
     }}>
-      <style>{GLASS_CSS}{`
+      <style>{GLOBAL_KEYFRAMES}{`
         @media (max-width: 767px) {
           .happiness-main { padding-bottom: calc(60px + env(safe-area-inset-bottom) + 16px) !important; }
         }
       `}</style>
-
-      {/* Animated ambient orbs — only on dark aurora pages */}
-      {isDark && AMBIENT_ORBS.map((orb, i) => (
-        <div key={i} style={orb.style} />
-      ))}
 
       {!isStandalone && <Header />}
       <main className="happiness-main" style={{ paddingBottom: 40 }}>
