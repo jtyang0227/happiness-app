@@ -23,4 +23,9 @@ public interface BookingBlockedDateRepository extends JpaRepository<BookingBlock
     List<BookingBlockedDate> findByMemberIdAndBlockedDateBetween(Long memberId, LocalDate from, LocalDate to);
 
     Optional<BookingBlockedDate> findByMemberIdAndId(Long memberId, Long id);
+
+    /** 배치: 30일 이전 과거 차단 날짜 일괄 삭제 */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM BookingBlockedDate b WHERE b.blockedDate < :cutoff")
+    int deleteOldBlockedDates(@Param("cutoff") LocalDate cutoff);
 }

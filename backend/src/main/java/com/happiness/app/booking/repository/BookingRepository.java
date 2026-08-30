@@ -2,6 +2,7 @@ package com.happiness.app.booking.repository;
 
 import com.happiness.app.booking.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -29,4 +30,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     Optional<Booking> findByIdAndMemberId(Long id, Long memberId);
+
+    /** 배치: shootDate가 지난 REQUESTED 예약을 CANCELLED로 일괄 전환 */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Booking b SET b.status = 'CANCELLED' WHERE b.status = 'REQUESTED' AND b.shootDate < :today")
+    int cancelExpiredRequestedBookings(@Param("today") LocalDate today);
 }
