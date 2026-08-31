@@ -25,6 +25,7 @@ const TABS = [
   { key: 'series',    label: '시리즈' },
   { key: 'analytics', label: '분석' },
   { key: 'bookings',  label: '예약' },
+  { key: 'reports',   label: '신고내역' },
   { key: 'settings',  label: '설정' },
 ];
 
@@ -554,6 +555,25 @@ export default function ProfilePage() {
                     style={{ display: 'inline-block', padding: '12px 28px', borderRadius: 12, border: 'none', background: COLORS.primary, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                   >
                     예약 관리 페이지로 이동
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── 신고내역 ── */}
+            {activeTab === 'reports' && (
+              <div style={{ padding: '20px 16px' }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>🚨</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>내가 신고한 내역</div>
+                  <div style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 20, lineHeight: 1.6 }}>
+                    제출한 신고의 처리 상태를 확인하세요.
+                  </div>
+                  <button
+                    onClick={() => navigate('/reports/mine')}
+                    style={{ display: 'inline-block', padding: '12px 28px', borderRadius: 12, border: 'none', background: COLORS.primary, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    신고 내역 보기
                   </button>
                 </div>
               </div>

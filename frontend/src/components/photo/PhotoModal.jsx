@@ -3,12 +3,15 @@ import { photoApi } from '../../services/api';
 import { MOOD_COLORS } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import CommentsSection from './CommentsSection';
+import ReportModal from './ReportModal';
 
 export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const { user } = useAuth();
   const [photo, setPhoto] = useState(initial);
   const [liking, setLiking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
 
@@ -153,9 +156,31 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
           {/* 댓글 섹션 */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 18px' }}>
             <CommentsSection photoId={photo.id} currentUser={user} theme="dark" />
+
+            {reportSubmitted ? (
+              <div style={{ marginTop: 16, fontSize: 12, color: '#34d399' }}>
+                ✓ 신고가 접수되었습니다.
+              </div>
+            ) : user?.id && photo.memberId !== user.id && (
+              <button
+                onClick={() => setReportOpen(true)}
+                style={{
+                  marginTop: 16, background: 'none', border: 'none',
+                  color: '#6b7280', fontSize: 12, cursor: 'pointer', padding: 0,
+                }}
+              >🚨 이 사진 신고하기</button>
+            )}
           </div>
         </div>
       </div>
+
+      {reportOpen && (
+        <ReportModal
+          photoId={photo.id}
+          onClose={() => setReportOpen(false)}
+          onSubmitted={() => setReportSubmitted(true)}
+        />
+      )}
     </div>
   );
 }

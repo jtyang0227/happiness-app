@@ -11,6 +11,7 @@ import PhotoViewer from '../components/photo/PhotoViewer';
 import PhotoNavigation from '../components/photo/PhotoNavigation';
 import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
+import ReportModal from '../components/photo/ReportModal';
 import useColorExtraction from '../hooks/useColorExtraction';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 
@@ -42,6 +43,8 @@ export default function PhotoDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < BP.md);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= BP.md && window.innerWidth < BP.lg);
 
@@ -322,7 +325,36 @@ export default function PhotoDetailPage() {
           }}
           className="no-print"
         >🖨️</button>
+        {user?.id && photo.memberId !== user.id && (
+          <button
+            onClick={() => setReportOpen(true)}
+            style={{
+              height: 40, padding: '0 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+              border: `1.5px solid ${COLORS.border}`, background: '#fff',
+              color: COLORS.textMuted, cursor: 'pointer',
+            }}
+            className="no-print"
+          >🚨 신고</button>
+        )}
       </div>
+
+      {reportSubmitted && (
+        <div style={{
+          background: COLORS.successTonal, color: COLORS.success,
+          fontSize: 13, fontWeight: 600, padding: '10px 14px',
+          borderRadius: 10, marginBottom: 18,
+        }}>
+          ✓ 신고가 접수되었습니다. 검토 후 처리 결과를 알려드릴게요.
+        </div>
+      )}
+
+      {reportOpen && (
+        <ReportModal
+          photoId={photo.id}
+          onClose={() => setReportOpen(false)}
+          onSubmitted={() => setReportSubmitted(true)}
+        />
+      )}
 
       {/* 태그 */}
       {photo.tags && photo.tags.length > 0 && (

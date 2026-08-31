@@ -40,6 +40,7 @@ import BookingPage           from './pages/BookingPage';
 import BookingDashboard      from './pages/BookingDashboard';
 import MeetsPage             from './pages/MeetsPage';
 import MeetDetailPage        from './pages/MeetDetailPage';
+import MyReportsPage         from './pages/MyReportsPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -117,6 +118,9 @@ function AppShell() {
           {/* Meets */}
           <Route path="/meets" element={<ProtectedRoute><MeetsPage /></ProtectedRoute>} />
           <Route path="/meets/:id" element={<ProtectedRoute><MeetDetailPage /></ProtectedRoute>} />
+
+          {/* Reports */}
+          <Route path="/reports/mine" element={<ProtectedRoute><MyReportsPage /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />
