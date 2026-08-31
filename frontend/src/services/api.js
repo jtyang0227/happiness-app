@@ -151,6 +151,39 @@ export const portfolioApi = {
     apiClient.put(`/portfolio/${profileName}/template`, data).then(r => r.data),
 };
 
+/** 신고 관련 API */
+export const reportApi = {
+  /** 어드민 — 신고 목록 (페이징). status 생략 시 전체 */
+  list: ({ status, page = 0, size = 20 } = {}) =>
+    apiClient.get('/admin/reports', {
+      params: {
+        ...(status && status !== 'ALL' ? { status } : {}),
+        page,
+        size,
+      },
+    }).then(r => r.data),
+
+  /** 어드민 — 신고 상태 변경 (RESOLVED / DISMISSED) */
+  update: (id, { status, resolutionNote } = {}) =>
+    apiClient.put(`/admin/reports/${id}`, { status, resolutionNote }).then(r => r.data),
+
+  /** 일반 사용자 — 신고 접수 */
+  submit: (photoId, { reason, detail, evidenceUrl } = {}) =>
+    apiClient.post(`/photos/${photoId}/report`, { reason, detail, evidenceUrl }).then(r => r.data),
+
+  /** 일반 사용자 — 내 신고 목록 */
+  myReports: () =>
+    apiClient.get('/photos/reports/mine').then(r => r.data),
+
+  /** 일반 사용자 — 읽지 않은 처리 결과 수 */
+  myUnreadCount: () =>
+    apiClient.get('/photos/reports/mine/unread-count').then(r => r.data),
+
+  /** 일반 사용자 — 처리 결과 확인 처리 */
+  markSeen: (id) =>
+    apiClient.put(`/photos/reports/mine/${id}/seen`).then(r => r.data),
+};
+
 // Re-export new feature APIs for convenience
 export { deliveryApi } from './deliveryApi';
 export { analyticsApi } from './analyticsApi';

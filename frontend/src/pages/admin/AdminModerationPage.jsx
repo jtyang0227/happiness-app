@@ -1,82 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { photoApi } from '../../services/api';
-
-// ─── 목 데이터 (백엔드 신고 API 구현 전까지 사용) ───────────────────────────
-// TODO: 백엔드에 GET /api/admin/reports, PUT /api/admin/reports/:id (dismiss/resolve),
-//       DELETE /api/admin/reports/:id/photo 엔드포인트 구현 후 아래 mock을 실제 API로 교체
-const MOCK_REPORTS = [
-  {
-    id: 1,
-    photo: {
-      id: 101,
-      title: '도심 야경 시리즈 #3',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&h=80&fit=crop',
-    },
-    reason: '저작권 침해',
-    reporterName: '김민준',
-    reporterEmail: 'kim@example.com',
-    reportedAt: '2026-06-22T14:30:00',
-    status: 'PENDING',
-    detail: '해당 사진이 제 원본 작품과 동일합니다. 출처 표기 없이 무단 사용하고 있습니다.',
-  },
-  {
-    id: 2,
-    photo: {
-      id: 102,
-      title: '포트레이트 스튜디오 #7',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop',
-    },
-    reason: '부적절한 콘텐츠',
-    reporterName: '이서연',
-    reporterEmail: 'lee@example.com',
-    reportedAt: '2026-06-21T09:15:00',
-    status: 'PENDING',
-    detail: '커뮤니티 가이드라인을 위반하는 이미지입니다.',
-  },
-  {
-    id: 3,
-    photo: {
-      id: 103,
-      title: '거리 스냅 컬렉션',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=80&h=80&fit=crop',
-    },
-    reason: '개인정보 침해',
-    reporterName: '박지훈',
-    reporterEmail: 'park@example.com',
-    reportedAt: '2026-06-20T16:45:00',
-    status: 'RESOLVED',
-    detail: '동의 없이 제 얼굴이 촬영되었습니다.',
-  },
-  {
-    id: 4,
-    photo: {
-      id: 104,
-      title: '풍경 모음집',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=80&h=80&fit=crop',
-    },
-    reason: '스팸',
-    reporterName: '최수아',
-    reporterEmail: 'choi@example.com',
-    reportedAt: '2026-06-19T11:20:00',
-    status: 'DISMISSED',
-    detail: '동일한 사진을 반복 업로드하고 있습니다.',
-  },
-  {
-    id: 5,
-    photo: {
-      id: 105,
-      title: '웨딩 스냅 #12',
-      thumbnailUrl: null,
-    },
-    reason: '저작권 침해',
-    reporterName: '정현우',
-    reporterEmail: 'jung@example.com',
-    reportedAt: '2026-06-18T08:00:00',
-    status: 'PENDING',
-    detail: '전문 사진작가가 촬영한 이미지를 무단으로 사용 중입니다.',
-  },
-];
+import { photoApi, reportApi } from '../../services/api';
 
 const STATUS_META = {
   PENDING:   { label: '대기중',  color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
@@ -109,7 +33,6 @@ function DeletePhotoDialog({ report, onConfirm, onCancel, processing }) {
         boxShadow: '0 20px 60px rgba(0,0,0,0.22)',
         border: `2px solid ${DANGER_RED}22`,
       }}>
-        {/* 위험 헤더 */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
           padding: '10px 14px', borderRadius: 8,
@@ -181,9 +104,13 @@ function DeletePhotoDialog({ report, onConfirm, onCancel, processing }) {
 
 // ─── 신고 카드 행 ────────────────────────────────────────────────────────────
 function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoading }) {
-  const [hovered, setHovered] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered]         = useState(false);
+  const [expanded, setExpanded]       = useState(false);
+  const [dismissNote, setDismissNote] = useState('');
+  const [showDismiss, setShowDismiss] = useState(false);
   const meta = STATUS_META[report.status] || STATUS_META.PENDING;
+
+  const detail = report.detail || '';
 
   return (
     <>
@@ -191,7 +118,7 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          borderBottom: !expanded && index < total - 1 ? '1px solid #f0f0f8' : 'none',
+          borderBottom: !expanded && !showDismiss && index < total - 1 ? '1px solid #f0f0f8' : 'none',
           background: hovered ? '#f9f9fd' : '#fff',
           transition: 'background 0.1s',
           cursor: 'default',
@@ -227,10 +154,10 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
               display: 'inline-block', padding: '1px 6px', borderRadius: 4,
               background: '#f0f0f8', fontSize: 10, fontWeight: 600, color: '#5c5c7a',
               marginRight: 5,
-            }}>{report.reason}</span>
-            {report.detail.length > 40 ? (
+            }}>{REASON_LABEL[report.reason] || report.reason}</span>
+            {detail.length > 40 ? (
               <>
-                {expanded ? report.detail : `${report.detail.slice(0, 40)}...`}
+                {expanded ? detail : `${detail.slice(0, 40)}...`}
                 <button
                   onClick={() => setExpanded(v => !v)}
                   style={{
@@ -239,7 +166,7 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
                   }}
                 >{expanded ? '접기' : '더보기'}</button>
               </>
-            ) : report.detail}
+            ) : detail}
           </div>
         </td>
 
@@ -269,11 +196,11 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
           {report.status === 'PENDING' ? (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap' }}>
               <button
-                onClick={() => onDismiss(report)}
+                onClick={() => setShowDismiss(v => !v)}
                 disabled={actionLoading === report.id}
                 style={{
                   padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                  border: '1.5px solid #e5e5ed', background: '#fff',
+                  border: '1.5px solid #e5e5ed', background: showDismiss ? '#f0f0f8' : '#fff',
                   color: '#5c5c7a', cursor: actionLoading === report.id ? 'not-allowed' : 'pointer',
                   whiteSpace: 'nowrap',
                 }}
@@ -297,16 +224,90 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
         </td>
       </tr>
 
-      {/* 확장된 상세 설명 */}
+      {/* 무시 메모 입력 (인라인 확장) */}
+      {showDismiss && (
+        <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f8' }}>
+          <td colSpan={6} style={{ padding: '0 16px 14px 88px' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 11, color: '#9090b0', marginBottom: 4 }}>
+                  무시 사유 메모 (선택, 신고자에게 표시됩니다)
+                </div>
+                <input
+                  value={dismissNote}
+                  onChange={e => setDismissNote(e.target.value)}
+                  placeholder="예: 커뮤니티 가이드라인 위반에 해당하지 않습니다."
+                  maxLength={300}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '7px 10px', borderRadius: 6, fontSize: 12,
+                    border: '1.5px solid #e5e5ed', outline: 'none', color: '#1a1a2e',
+                  }}
+                />
+              </div>
+              <button
+                onClick={() => {
+                  onDismiss(report, dismissNote);
+                  setShowDismiss(false);
+                  setDismissNote('');
+                }}
+                disabled={actionLoading === report.id}
+                style={{
+                  padding: '7px 16px', borderRadius: 6, fontSize: 12, fontWeight: 700,
+                  border: '1.5px solid #e5e5ed', background: '#fff', color: '#5c5c7a',
+                  cursor: actionLoading === report.id ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >확인 — 무시</button>
+              <button
+                onClick={() => { setShowDismiss(false); setDismissNote(''); }}
+                style={{
+                  padding: '7px 12px', borderRadius: 6, fontSize: 12,
+                  border: '1.5px solid #e5e5ed', background: '#fff', color: '#9090b0',
+                  cursor: 'pointer',
+                }}
+              >취소</button>
+            </div>
+          </td>
+        </tr>
+      )}
+
+      {/* 확장된 상세 + 증거 URL + 처리 메모 */}
       {expanded && (
         <tr style={{ borderBottom: index < total - 1 ? '1px solid #f0f0f8' : 'none' }}>
           <td colSpan={6} style={{ padding: '0 16px 12px 88px' }}>
             <div style={{
               padding: '10px 14px', borderRadius: 8, background: '#f7f7fb',
               fontSize: 12, color: '#5c5c7a', lineHeight: 1.6,
-              border: '1px solid #e5e5ed',
+              border: '1px solid #e5e5ed', display: 'flex', flexDirection: 'column', gap: 8,
             }}>
-              {report.detail}
+              {detail && (
+                <div>
+                  <span style={{ fontWeight: 700, color: '#1a1a2e' }}>신고 내용: </span>
+                  {detail}
+                </div>
+              )}
+              {report.evidenceUrl && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontWeight: 700, color: '#1a1a2e' }}>증거:</span>
+                  <a
+                    href={report.evidenceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#3182F6', textDecoration: 'none', fontWeight: 600 }}
+                  >증거 보기 ↗</a>
+                </div>
+              )}
+              {report.resolutionNote && (
+                <div style={{
+                  padding: '6px 10px', borderRadius: 6,
+                  background: STATUS_META[report.status]?.bg || '#f7f7fb',
+                  border: `1px solid ${STATUS_META[report.status]?.border || '#e5e5ed'}`,
+                }}>
+                  <span style={{ fontWeight: 700, color: '#1a1a2e' }}>처리 메모: </span>
+                  {report.resolutionNote}
+                </div>
+              )}
             </div>
           </td>
         </tr>
@@ -314,6 +315,15 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
     </>
   );
 }
+
+/** 백엔드 reason 코드 → 한국어 표시 */
+const REASON_LABEL = {
+  COPYRIGHT:    '저작권 침해',
+  INAPPROPRIATE:'부적절한 콘텐츠',
+  PRIVACY:      '개인정보 침해',
+  SPAM:         '스팸',
+  OTHER:        '기타',
+};
 
 // ─── 빈 상태 ─────────────────────────────────────────────────────────────────
 function EmptyState({ filterTab }) {
@@ -336,25 +346,32 @@ function EmptyState({ filterTab }) {
 
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 export default function AdminModerationPage() {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filterTab, setFilterTab] = useState('ALL');
-  const [actionLoading, setActionLoading] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [reports,          setReports]          = useState([]);
+  const [loading,          setLoading]          = useState(true);
+  const [filterTab,        setFilterTab]        = useState('ALL');
+  const [actionLoading,    setActionLoading]    = useState(null);
+  const [deleteTarget,     setDeleteTarget]     = useState(null);
   const [deleteProcessing, setDeleteProcessing] = useState(false);
+  const [error,            setError]            = useState(null);
 
-  useEffect(() => {
-    // TODO: 실제 API — GET /api/admin/reports?status=&page=&size= 로 교체
-    // apiClient.get('/admin/reports').then(res => setReports(res.data)).catch(() => setReports([])).finally(() => setLoading(false));
-    setTimeout(() => {
-      setReports(MOCK_REPORTS);
+  const loadReports = useCallback(async (tab) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await reportApi.list({ status: tab === 'ALL' ? undefined : tab, page: 0, size: 100 });
+      // Spring Page 응답: data.content
+      setReports(data.content || []);
+    } catch (e) {
+      setError('신고 목록을 불러오는 데 실패했습니다.');
+      setReports([]);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   }, []);
 
-  const filtered = filterTab === 'ALL'
-    ? reports
-    : reports.filter(r => r.status === filterTab);
+  useEffect(() => {
+    loadReports(filterTab);
+  }, [filterTab, loadReports]);
 
   const counts = {
     ALL:       reports.length,
@@ -363,12 +380,18 @@ export default function AdminModerationPage() {
     DISMISSED: reports.filter(r => r.status === 'DISMISSED').length,
   };
 
-  const handleDismiss = async (report) => {
+  // filtered: 로컬 상태에서 탭 기준 필터 (서버가 이미 필터했지만, 탭 전환 전 캐시 보호)
+  const filtered = filterTab === 'ALL'
+    ? reports
+    : reports.filter(r => r.status === filterTab);
+
+  const handleDismiss = async (report, resolutionNote) => {
     setActionLoading(report.id);
     try {
-      // TODO: 실제 API — PUT /api/admin/reports/:id { status: 'DISMISSED' } 로 교체
-      await new Promise(r => setTimeout(r, 300)); // 모의 지연
-      setReports(prev => prev.map(r => r.id === report.id ? { ...r, status: 'DISMISSED' } : r));
+      await reportApi.update(report.id, { status: 'DISMISSED', resolutionNote: resolutionNote || undefined });
+      setReports(prev => prev.map(r =>
+        r.id === report.id ? { ...r, status: 'DISMISSED', resolutionNote: resolutionNote || r.resolutionNote } : r
+      ));
     } catch {
       alert('처리에 실패했습니다.');
     } finally {
@@ -380,11 +403,10 @@ export default function AdminModerationPage() {
     if (!deleteTarget) return;
     setDeleteProcessing(true);
     try {
-      // TODO: 실제 API — 순서:
-      //   1. DELETE /api/photos/:photoId (사진 삭제)
-      //   2. PUT /api/admin/reports/:reportId { status: 'RESOLVED' }
-      await photoApi.remove(deleteTarget.photo.id).catch(() => {}); // 없으면 무시
-      await new Promise(r => setTimeout(r, 400)); // 모의 지연
+      // 1. 사진 삭제 (존재하지 않으면 무시)
+      await photoApi.remove(deleteTarget.photo.id).catch(() => {});
+      // 2. 신고 RESOLVED 처리
+      await reportApi.update(deleteTarget.id, { status: 'RESOLVED' });
       setReports(prev => prev.map(r =>
         r.id === deleteTarget.id ? { ...r, status: 'RESOLVED' } : r
       ));
@@ -419,7 +441,7 @@ export default function AdminModerationPage() {
           {FILTER_TABS.map(({ key, label }) => {
             const isActive = filterTab === key;
             const count = counts[key];
-            const hasPending = key !== 'ALL' && key === 'PENDING' && count > 0;
+            const hasPending = key === 'PENDING' && count > 0;
 
             return (
               <button
@@ -450,6 +472,24 @@ export default function AdminModerationPage() {
           })}
         </div>
 
+        {/* 에러 배너 */}
+        {error && (
+          <div style={{
+            padding: '12px 16px', borderRadius: 8, marginBottom: 16,
+            background: '#fff5f5', border: '1px solid #fecaca',
+            fontSize: 13, color: DANGER_RED, fontWeight: 600,
+          }}>
+            ⚠️ {error}
+            <button
+              onClick={() => loadReports(filterTab)}
+              style={{
+                marginLeft: 12, fontSize: 12, color: '#3182F6',
+                background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600,
+              }}
+            >다시 시도</button>
+          </div>
+        )}
+
         {/* 테이블 */}
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5ed', overflow: 'hidden' }}>
           {loading ? (
@@ -467,7 +507,7 @@ export default function AdminModerationPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #e5e5ed', background: '#f7f7fb' }}>
-                  {['사진', '신고 내용', '신고자', '신고일', '상태', '액션'].map((h, i) => (
+                  {['사진', '신고 내용', '신고자', '신고일', '상태', '액션'].map((h) => (
                     <th key={h} style={{
                       padding: '10px 16px', textAlign: 'left',
                       fontSize: 11, fontWeight: 700, color: '#9090b0',

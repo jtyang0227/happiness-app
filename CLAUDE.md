@@ -66,8 +66,8 @@ Loop 수행 순서:
 - 어드민 UI는 실수를 방지하는 방향으로 설계한다 (위험 액션은 빨간색 + 이중 확인)
 - 운영 데이터 접근 로그는 서버 콘솔에 INFO 레벨로 남긴다
 - **Claude Code 에이전트**: `.claude/agents/admin.md` — 어드민 패널/운영 데이터 총괄 에이전트 (subagent_type: `admin`).
-  회원·사진·태그·신고 관리 기능 구현, 위험 액션 이중 확인 강제, `AdminModerationPage`(현재 mock 데이터,
-  백엔드 `/api/admin/reports` 미구현 — 알려진 갭) 같은 어드민 기능 완성 담당. "어드민 기능 추가",
+  회원·사진·태그·신고 관리 기능 구현, 위험 액션 이중 확인 강제, `AdminModerationPage`(백엔드 연동 완료 —
+  `report/` 패키지, `GET /api/admin/reports`, `PUT /api/admin/reports/:id`) 같은 어드민 기능 완성 담당. "어드민 기능 추가",
   "회원 관리 기능", "해피니스 앱 관리해줘" 요청 시 호출.
 
 ---
@@ -398,6 +398,7 @@ Feature-based package layout:
 - **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
 - **analytics/** — 방문자 분석. `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
 - **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. IDOR 검사: findByIdAndMemberId. `BookingBatchService.expireStaleBookings()` — `@Scheduled(cron="0 0 2 * * *")` 매일 02:00, `shootDate` 가 지난 REQUESTED 예약을 CANCELLED로 일괄 전환(bulk `@Modifying @Query`, 달력 슬롯 영구 점유 버그 해소) + `blockedDate` 30일 초과 `BookingBlockedDate` 삭제. 예외 발생 시 catch(Exception)+log.error로 스킵 후 다음날 재시도(delivery cleanup과 동일 패턴).
+- **report/** — 콘텐츠 신고. `PhotoReportController` (`/api/photos`) — 사용자 신고 접수(`POST /api/photos/{photoId}/report`, reason 유효성 검사, OTHER이면 detail 필수, rate limit 10분 5건), 내 신고 목록(`GET /api/photos/reports/mine`), 읽지 않은 처리 결과 수(`GET /api/photos/reports/mine/unread-count`, `{"count":N}`), 결과 확인 처리(`PUT /api/photos/reports/mine/{id}/seen`). `AdminReportController` (`/api/admin/reports`) — 목록 페이징(`GET ?status=&page=&size=`), 상태 변경(`PUT /{id}`, RESOLVED/DISMISSED + resolutionNote). `Report` 엔티티 (photoId/reporterId/reason/detail/evidenceUrl/status/resolutionNote/reporterSeen/createdAt/resolvedAt). 배치 조회로 N+1 방지. 운영 로그 INFO 레벨.
 - **testimonial/** — `TestimonialController` (`/api/testimonials`). `Testimonial` 엔티티 (memberId/clientName/clientRole/content/shootDate/featured/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id} (IDOR 검사).
 - **press/** — `PressController` (`/api/press`). `PressFeature` 엔티티 (publication/title/url/publishedDate/logoUrl), `Achievement` 엔티티 (type AWARD|EXHIBITION|PUBLICATION/title/organizer/location/yearMonth). 공개: GET `/member/{memberId}` → `{press:[], achievements:[]}`. 인증: POST/DELETE (각각).
 - **pricing/** — `PricingController` (`/api/pricing`). `PricingPackage` 엔티티 (name/price/priceLabel/description/features TEXT/featured/displayOrder/active). 공개: GET `/member/{memberId}` (active만). 인증: GET `/my` (전체), POST/PUT/{id}/DELETE/{id}.
@@ -647,6 +648,23 @@ CREATE TABLE IF NOT EXISTS meet_messages (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_meet_messages_meet_id ON meet_messages(meet_id);
+-- Module: report — 콘텐츠 신고 (PhotoReportController / AdminReportController)
+CREATE TABLE IF NOT EXISTS reports (
+  id              BIGSERIAL PRIMARY KEY,
+  photo_id        BIGINT NOT NULL,
+  reporter_id     BIGINT NOT NULL,
+  reason          VARCHAR(30) NOT NULL,     -- COPYRIGHT | INAPPROPRIATE | PRIVACY | SPAM | OTHER
+  detail          TEXT,                    -- reason=OTHER 일 때 필수, 그 외 선택
+  evidence_url    VARCHAR(500),
+  status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING | RESOLVED | DISMISSED
+  resolution_note VARCHAR(300),
+  reporter_seen   BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+  resolved_at     TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_reports_photo_id    ON reports(photo_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status      ON reports(status);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
@@ -753,6 +771,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/analyticsApi.js** — `track(data)` raw fetch 사용(JWT 없음, 무음 실패). `getSummary/getDaily/getTopPhotos/getGenreDistribution` — Axios + JWT.
 - **services/bookingApi.js** — `getAvailability/createBooking/getMyBookings/confirmBooking/rejectBooking/cancelBooking/getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate` (10 메서드).
 - **services/meetApi.js** (Feature 35) — `create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage` (13 메서드). import: `apiClient from '../api/apiClient'`. 모든 호출 → `r.data` 자동 언래핑.
+- **services/api.js `reportApi`** — `list({status,page,size})` → GET /admin/reports (Page&lt;AdminReportResponse&gt;). `update(id,{status,resolutionNote})` → PUT /admin/reports/{id}. `submit(photoId,{reason,detail,evidenceUrl})` → POST /photos/{photoId}/report. `myReports()` → GET /photos/reports/mine. `myUnreadCount()` → GET /photos/reports/mine/unread-count. `markSeen(id)` → PUT /photos/reports/mine/{id}/seen.
 - **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
 - **services/api.js `portfolioApi`** — `getConfig(profileName)` → GET /portfolio/{profileName}/config (공개). `updateTemplate(profileName, data)` → PUT /portfolio/{profileName}/template (인증 필요).
 - **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)

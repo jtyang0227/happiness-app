@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
-import apiClient from '../api/apiClient';
+import { reportApi } from '../services/api';
 
 const REASON_LABELS = {
   COPYRIGHT: '저작권 침해',
@@ -25,16 +25,16 @@ export default function MyReportsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    apiClient.get('/photos/reports/mine')
-      .then(res => {
+    reportApi.myReports()
+      .then(list => {
         if (cancelled) return;
-        const list = res.data?.data ?? res.data ?? [];
-        setReports(Array.isArray(list) ? list : []);
+        const safeList = Array.isArray(list) ? list : [];
+        setReports(safeList);
         // 처리 완료/반려된 신고 중 아직 확인 안 한 것들을 확인 처리
-        list
+        safeList
           .filter(r => r.status !== 'PENDING' && !r.reporterSeen)
           .forEach(r => {
-            apiClient.put(`/photos/reports/mine/${r.id}/seen`).catch(() => {});
+            reportApi.markSeen(r.id).catch(() => {});
           });
       })
       .catch(() => setError('신고 내역을 불러오지 못했습니다.'))

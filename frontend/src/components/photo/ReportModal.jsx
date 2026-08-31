@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/colors';
-import apiClient from '../../api/apiClient';
+import { reportApi } from '../../services/api';
 import { uploadImage } from '../../services/uploadApi';
 
 const REASONS = [
@@ -42,7 +42,7 @@ export default function ReportModal({ photoId, onClose, onSubmitted }) {
     setSubmitting(true);
     setError('');
     try {
-      await apiClient.post(`/photos/${photoId}/report`, {
+      await reportApi.submit(photoId, {
         reason,
         detail: detail.trim() || null,
         evidenceUrl: evidenceUrl || null,
