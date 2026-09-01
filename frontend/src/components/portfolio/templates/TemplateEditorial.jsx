@@ -261,11 +261,11 @@ export default function TemplateEditorial({
           }}>
             <div style={{
               width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #3182F6, #4E9FFF)',
+              background: COLORS.primary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 28, fontWeight: 800, color: '#fff',
               border: '2.5px solid rgba(255,255,255,0.25)', overflow: 'hidden',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
             }}>
               {member?.avatarUrl
                 ? <img src={member.avatarUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -301,7 +301,7 @@ export default function TemplateEditorial({
             {joinYear && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>· Since {joinYear}</span>}
             {member?.location && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>· {member.location}</span>}
             {specialties.map(sp => (
-              <span key={sp} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(6px)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)' }}>{sp}</span>
+              <span key={sp} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.22)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)' }}>{sp}</span>
             ))}
           </div>
 
@@ -311,31 +311,31 @@ export default function TemplateEditorial({
             transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1) 0.24s, transform 0.6s cubic-bezier(0.4,0,0.2,1) 0.24s',
           }}>
             {member?.websiteUrl && (
-              <a href={member.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <a href={member.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.24)', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
                 🔗 웹사이트
               </a>
             )}
             {member?.instagramId && (
-              <a href={`https://instagram.com/${member.instagramId}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <a href={`https://instagram.com/${member.instagramId}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.24)', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
                 @ Instagram
               </a>
             )}
             {onFollow && (
-              <button onClick={onFollow} disabled={followLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: following ? '1px solid rgba(255,255,255,0.2)' : 'none', background: following ? 'rgba(255,255,255,0.1)' : '#3182F6', color: '#fff', cursor: followLoading ? 'not-allowed' : 'pointer', opacity: followLoading ? 0.7 : 1, backdropFilter: 'blur(8px)' }}>
+              <button onClick={onFollow} disabled={followLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: following ? '1px solid rgba(255,255,255,0.2)' : 'none', background: following ? 'rgba(255,255,255,0.22)' : '#3182F6', color: '#fff', cursor: followLoading ? 'not-allowed' : 'pointer', opacity: followLoading ? 0.7 : 1 }}>
                 {following ? '✓ 팔로잉' : '+ 팔로우'}
               </button>
             )}
             <button
               onClick={() => onInquiry ? onInquiry() : navigate(`/inquiry/${pName}?memberId=${member?.id ?? ''}`)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', cursor: 'pointer' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(49,130,246,0.6)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 24, fontSize: 13, fontWeight: 700, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.28)', color: '#fff', cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(49,130,246,0.7)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.28)'; }}
             >✉ 촬영 문의하기</button>
             <button
               onClick={() => onSlideshow ? onSlideshow() : navigate(`/portfolio/${pName}/slideshow`)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 24, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#e8e8f0', cursor: 'pointer', backdropFilter: 'blur(8px)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 24, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.2)', color: '#f2f2f5', cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.28)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
             >▶ 슬라이드쇼</button>
           </div>
         </div>
@@ -343,7 +343,7 @@ export default function TemplateEditorial({
         {/* Stats Bar */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)',
+          background: 'rgba(0,0,0,0.65)',
           borderTop: '1px solid rgba(255,255,255,0.07)',
           display: 'flex', justifyContent: 'center', gap: 0,
         }}>

@@ -41,28 +41,6 @@ export default function CenterCanvas() {
   const spaceDownRef  = useRef(false);
   const panStartRef   = useRef(null);
 
-  // ── Load image ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!currentImage) {
-      originalPixelsRef.current = null;
-      return;
-    }
-    const img = new Image();
-    img.onload = () => {
-      imgElRef.current = img;
-      const offscreen = document.createElement('canvas');
-      offscreen.width  = img.naturalWidth;
-      offscreen.height = img.naturalHeight;
-      const ctx = offscreen.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      originalPixelsRef.current = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
-      offscreenRef.current = offscreen;
-      if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
-      renderCanvas();   // renderCanvas is a stable ref — no stale closure
-    };
-    img.src = currentImage.objectUrl;
-  }, [currentImage?.id, renderCanvas]);
-
   // Store latest values in refs so renderCanvas never needs to be recreated
   const editStateRef = useRef(currentEditState);
   const zoomRef      = useRef(zoom);
@@ -117,6 +95,28 @@ export default function CenterCanvas() {
       drawOverlays(ctx, es.overlays, dw, dh);
     });
   }).current;
+
+  // ── Load image ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentImage) {
+      originalPixelsRef.current = null;
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      imgElRef.current = img;
+      const offscreen = document.createElement('canvas');
+      offscreen.width  = img.naturalWidth;
+      offscreen.height = img.naturalHeight;
+      const ctx = offscreen.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      originalPixelsRef.current = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+      offscreenRef.current = offscreen;
+      if (!grainTileRef.current) grainTileRef.current = generateGrainTile();
+      renderCanvas();   // renderCanvas is a stable ref — no stale closure
+    };
+    img.src = currentImage.objectUrl;
+  }, [currentImage?.id, renderCanvas]);
 
   // ── Re-render when editState or zoom/pan changes ──────────────
   useEffect(() => {

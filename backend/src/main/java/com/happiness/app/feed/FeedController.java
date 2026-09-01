@@ -2,6 +2,8 @@ package com.happiness.app.feed;
 
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.follow.FollowService;
+import com.happiness.app.member.entity.Member;
+import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.entity.Photo;
 import com.happiness.app.photo.repository.PhotoRepository;
@@ -11,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -20,6 +24,7 @@ public class FeedController {
 
     private final FollowService followService;
     private final PhotoRepository photoRepository;
+    private final MemberRepository memberRepository;
 
     /**
      * GET /api/feed?memberId=&page=0&size=20
@@ -41,6 +46,11 @@ public class FeedController {
         List<PhotoResponse> responses = photos.stream()
                 .map(PhotoResponse::fromEntity)
                 .collect(Collectors.toList());
+
+        Set<Long> memberIds = responses.stream().map(PhotoResponse::getMemberId).collect(Collectors.toSet());
+        Map<Long, Member> memberMap = memberRepository.findAllById(memberIds).stream()
+                .collect(Collectors.toMap(Member::getId, m -> m));
+        PhotoResponse.attachMembers(responses, memberMap);
 
         return ResponseEntity.ok(ApiResponse.ok(responses));
     }

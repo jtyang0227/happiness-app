@@ -25,7 +25,7 @@ function FollowListModal({ title, members, loading, onClose }) {
           <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
         ) : members.map(m => (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${COLORS.borderLight}` }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, #3182F6, #4E9FFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
               {m.avatarUrl ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name?.charAt(0)}
             </div>
             <div>

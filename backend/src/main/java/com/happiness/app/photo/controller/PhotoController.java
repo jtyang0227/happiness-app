@@ -2,6 +2,8 @@ package com.happiness.app.photo.controller;
 
 import com.happiness.app.common.util.ImageProcessingUtil;
 import com.happiness.app.common.util.ImageVariantUtil;
+import com.happiness.app.member.entity.Member;
+import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoRequest;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.dto.PhotoTagDto;
@@ -46,6 +48,7 @@ public class PhotoController {
     private final ImageVariantUtil imageVariantUtil;
     private final SupabaseStorageService supabaseStorageService;
     private final AutoTagService autoTagService;
+    private final MemberRepository memberRepository;
 
     // ── 사진 조회 ─────────────────────────────────────────────────────
 
@@ -108,10 +111,21 @@ public class PhotoController {
             photos = photos.stream().filter(p -> ids.contains(p.getId())).collect(Collectors.toList());
         }
 
+        attachMemberInfo(photos);
+
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
         result.put("data", photos);
         return ResponseEntity.ok(result);
+    }
+
+    /** 목록에 등장하는 memberId를 배치 조회해 작성자 이름/아바타를 채운다 (N+1 방지) */
+    private void attachMemberInfo(List<PhotoResponse> photos) {
+        Set<Long> memberIds = photos.stream().map(PhotoResponse::getMemberId).collect(Collectors.toSet());
+        if (memberIds.isEmpty()) return;
+        Map<Long, Member> memberMap = memberRepository.findAllById(memberIds).stream()
+                .collect(Collectors.toMap(Member::getId, m -> m));
+        PhotoResponse.attachMembers(photos, memberMap);
     }
 
     /** GET /api/photos/suggestions?q=검색어 — 자동완성용 제목 목록 (최대 5건) */
@@ -130,9 +144,12 @@ public class PhotoController {
     public ResponseEntity<?> getPhoto(@PathVariable Long id) {
         return photoRepository.findById(id)
                 .map(photo -> {
+                    PhotoResponse response = PhotoResponse.fromEntity(photo);
+                    memberRepository.findById(photo.getMemberId())
+                            .ifPresent(m -> PhotoResponse.attachMember(response, m));
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");
-                    result.put("data", PhotoResponse.fromEntity(photo));
+                    result.put("data", response);
                     return ResponseEntity.ok(result);
                 })
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));

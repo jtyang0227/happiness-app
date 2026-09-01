@@ -1,6 +1,7 @@
 package com.happiness.app.photo.dto;
 
 import com.happiness.app.common.util.ImageVariantUtil;
+import com.happiness.app.member.entity.Member;
 import com.happiness.app.photo.entity.Photo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -18,6 +20,10 @@ import java.util.List;
 public class PhotoResponse {
     private Long id;
     private Long memberId;
+    /** 작성자 정보 — 목록/상세 컨트롤러가 Member 배치 조회 후 채워넣음 (엔티티에는 없음) */
+    private String memberName;
+    private String memberAvatarUrl;
+    private String memberProfileName;
     private String title;
     private String imageUrl;
     private String thumbnailUrl;
@@ -88,6 +94,24 @@ public class PhotoResponse {
                 .createdAt(photo.getCreatedAt())
                 .updatedAt(photo.getUpdatedAt())
                 .build();
+    }
+
+    /** 배치 조회한 Member 맵으로 작성자 정보를 채운다. 컨트롤러의 N+1 방지 패턴과 짝을 이룬다 */
+    public static void attachMembers(List<PhotoResponse> photos, Map<Long, Member> memberMap) {
+        for (PhotoResponse p : photos) {
+            Member m = memberMap.get(p.getMemberId());
+            if (m == null) continue;
+            p.setMemberName(m.getName());
+            p.setMemberAvatarUrl(m.getAvatarUrl());
+            p.setMemberProfileName(m.getProfileName());
+        }
+    }
+
+    public static void attachMember(PhotoResponse photo, Member member) {
+        if (member == null) return;
+        photo.setMemberName(member.getName());
+        photo.setMemberAvatarUrl(member.getAvatarUrl());
+        photo.setMemberProfileName(member.getProfileName());
     }
 
     private static List<String> parseSubGenres(String subGenresJson) {
