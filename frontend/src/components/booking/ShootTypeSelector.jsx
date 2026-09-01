@@ -1,7 +1,7 @@
 import React from 'react';
 import { COLORS } from '../../constants/colors';
 
-const SHOOT_TYPES = [
+export const SHOOT_TYPES = [
   { key: 'WEDDING',    emoji: '💍', label: '웨딩',    duration: '8시간' },
   { key: 'SNAP',       emoji: '📷', label: '스냅',    duration: '2시간' },
   { key: 'PROFILE',    emoji: '👤', label: '프로필',  duration: '1시간' },

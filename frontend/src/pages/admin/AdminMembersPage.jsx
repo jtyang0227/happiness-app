@@ -10,7 +10,7 @@ export default function AdminMembersPage() {
 
   useEffect(() => {
     apiClient.get('/auth/members')
-      .then(res => setMembers(res?.data ?? []))
+      .then(res => setMembers(res?.data?.data ?? []))
       .catch(() => setMembers([]))
       .finally(() => setLoading(false));
   }, []);

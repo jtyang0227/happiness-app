@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
 import { bookingApi } from '../services/bookingApi';
 import StepWizard from '../components/booking/StepWizard';
-import ShootTypeSelector from '../components/booking/ShootTypeSelector';
+import ShootTypeSelector, { SHOOT_TYPES } from '../components/booking/ShootTypeSelector';
 import BookingCalendar from '../components/booking/BookingCalendar';
 import TimeSlotPicker from '../components/booking/TimeSlotPicker';
 import BookingForm from '../components/booking/BookingForm';
@@ -193,7 +193,7 @@ export default function BookingPage() {
               <div style={{ background: COLORS.bg, borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 13, color: COLORS.text }}>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
                   <span style={{ color: COLORS.textMuted }}>촬영 종류</span>
-                  <span style={{ fontWeight: 700 }}>{shootType}</span>
+                  <span style={{ fontWeight: 700 }}>{SHOOT_TYPES.find(t => t.key === shootType)?.label ?? shootType}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <span style={{ color: COLORS.textMuted }}>일시</span>

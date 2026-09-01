@@ -101,7 +101,7 @@ export default function AdminDashboardPage() {
 
       setStats({
         photos:    photoCount,
-        members:   Array.isArray(members) ? members.length : (members?.totalElements ?? '—'),
+        members:   Array.isArray(members) ? members.length : (members?.data?.length ?? members?.totalElements ?? '—'),
         inquiries: typeof inquiryRes === 'number' ? inquiryRes : (inquiryRes?.count ?? 0),
         categorized,
       });

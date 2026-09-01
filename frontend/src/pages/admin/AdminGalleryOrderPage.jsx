@@ -30,7 +30,7 @@ export default function AdminGalleryOrderPage() {
   // 회원 목록
   useEffect(() => {
     apiClient.get('/auth/members')
-      .then(res => setMembers(res?.data ?? []))
+      .then(res => setMembers(res?.data?.data ?? []))
       .catch(() => setMembers([]))
       .finally(() => setLoadingMembers(false));
   }, []);
