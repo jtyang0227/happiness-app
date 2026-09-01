@@ -1,0 +1,56 @@
+<!--
+  Evaluation set for happiness-mcp-server.
+
+  Reproducibility: these questions and answers assume a FRESH backend
+  (H2 in-memory DB) seeded with EXACTLY the fixed dataset produced by
+  eval/seed.mjs, and no other photos/series added afterward. To reproduce:
+
+    1. Restart the backend so H2 resets (`cd backend && ./gradlew bootRun`)
+    2. cd mcp-server && node eval/seed.mjs
+    3. Run the evaluation harness against dist/index.js (see reference/evaluation.md)
+
+  All 10 answers were verified by calling the actual MCP tools against this
+  exact seed before being recorded here.
+-->
+<evaluation>
+  <qa_pair>
+    <question>이 플랫폼에서 '루나 김'이라는 이름의 사진작가를 찾아라. 이 작가가 등록한 웨딩(WEDDING) 장르 사진 중 좋아요 수가 가장 많은 사진의 제목은 무엇인가?</question>
+    <answer>축하의 순간</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>사진작가 '마르코 정'이 등록한 사진 중 스트리트(STREET) 장르 사진은 총 몇 장인가? 숫자만 답하시오.</question>
+    <answer>2</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>제목에 '국수'라는 단어가 포함된 사진의 색감 무드(color mood) 값은 무엇인가? 대문자 영문 코드로 답하시오.</question>
+    <answer>WARM</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>'루나 김' 작가의 시리즈 중 제목이 '봄날의 웨딩'인 시리즈에는 사진이 총 몇 장 포함되어 있는가? 숫자만 답하시오.</question>
+    <answer>3</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>'마르코 정' 작가의 포트폴리오 전체 좋아요 수(total_likes)는 얼마인가? 숫자만 답하시오.</question>
+    <answer>0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>'루나 김' 작가가 등록한 사진들 중 등록일(created_at) 기준으로 가장 최근에 등록된 사진의 제목은 무엇인가?</question>
+    <answer>새벽 산 능선</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>PORTRAIT, LANDSCAPE, STREET, FOOD 네 장르 중, 이 플랫폼에 현재 등록된 공개 사진이 단 한 장도 없는 장르는 무엇인가? 장르 코드로만 답하시오.</question>
+    <answer>PORTRAIT</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>제목이 '축하의 순간'인 사진을 등록한 작가의 포트폴리오 프로필 주소(profile_name)는 무엇인가?</question>
+    <answer>luna-eval</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>이 플랫폼에 현재 등록되어 있는 공개 사진은 필터 없이 검색했을 때 총 몇 장인가? 숫자만 답하시오.</question>
+    <answer>7</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>'루나 김' 작가가 등록한 '반지 교환'이라는 제목의 사진은 좋아요를 몇 개 받았는가? 숫자만 답하시오.</question>
+    <answer>0</answer>
+  </qa_pair>
+</evaluation>

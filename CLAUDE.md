@@ -937,10 +937,11 @@ API base URL:
 `happiness-mcp-server` — 백엔드의 **공개·인증불필요 GET 엔드포인트만** 감싸는 읽기 전용 MCP(Model Context Protocol) 서버. Claude Desktop 등 MCP 클라이언트가 로그인 없이 사진/포트폴리오를 탐색할 수 있게 해준다. 쓰기/삭제/인증 필요 엔드포인트는 절대 노출하지 않음(`services/apiClient.ts`가 GET만 지원하도록 구조적으로 제한).
 
 - **스택**: Node/TypeScript, `@modelcontextprotocol/sdk`, Zod, stdio transport(로컬 실행 전용)
-- **도구 5종**: `happiness_search_photos`(`GET /photos`), `happiness_get_photo`(`GET /photos/:id`), `happiness_get_portfolio`(`GET /portfolio/:profileName`), `happiness_get_portfolio_config`(`GET /portfolio/:profileName/config`), `happiness_list_series`(`GET /series?memberId=`)
+- **도구 5종**: `happiness_search_photos`(`GET /photos`), `happiness_get_photo`(`GET /photos/:id`), `happiness_get_portfolio`(`GET /portfolio/:profileName`), `happiness_get_portfolio_config`(`GET /portfolio/:profileName/config`), `happiness_list_series`(`GET /series?memberId=`). 모든 사진/작가 응답에 `author_member_id`/`member.member_id`를 포함시켜 `happiness_list_series`가 요구하는 numeric member_id를 다른 도구 결과만으로 실제로 발견할 수 있도록 함(초기 설계 시 이 값이 어디에도 노출되지 않아 해당 도구가 사실상 도달 불가능했던 문제를 mcp-builder 평가셋 설계 중 발견해 수정).
 - **의도적으로 제외**: `GET /photos/genres/stats` — 문서상 공개처럼 보이지만 실제로는 JWT 인증이 필요함을 curl로 직접 확인 후 제외(추측 금지 원칙)
 - **설정**: `HAPPINESS_API_URL` 환경변수(기본 `http://localhost:8080/api`)
 - **실행**: `cd mcp-server && npm install && npm run build && npm start`
+- **평가셋**(`mcp-server/eval/`): `seed.mjs`(2명의 작가·사진 7장·시리즈 1개로 구성된 고정 시드 데이터 생성) + `evaluation.xml`(mcp-builder 스킬 가이드 형식의 QA 10쌍, 실제 도구 호출로 정답 검증 완료)
 - 상세 사용법·Claude Desktop 연동 예시는 `mcp-server/README.md` 참고
 
 ### Docker

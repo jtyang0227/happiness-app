@@ -22,11 +22,12 @@ Args:
 
 Returns JSON with:
   {
-    "member": { name, profile_name, bio, location, specialties, website_url, joined_at },
+    "member": { member_id, name, profile_name, bio, location, specialties, website_url, joined_at },
     "photo_count": number, "follower_count": number, "following_count": number, "total_likes": number,
     "photos": [ ...same shape as happiness_search_photos results... ],
     "series": [{ id, title, description, photo_count }]
   }
+  Use member.member_id as the input to happiness_list_series to see this photographer's series.
 
 Error Handling:
   - Returns "Error: ... not found (404)" if no photographer uses that profile name.
@@ -44,6 +45,7 @@ Error Handling:
         const data = await getJson<PortfolioResponse>(`/portfolio/${profile_name}`);
         const output = {
           member: {
+            member_id: data.member.id,
             name: data.member.name,
             profile_name: data.member.profileName,
             bio: data.member.bio,
@@ -127,7 +129,7 @@ Error Handling:
       description: `List a photographer's photo series (curated collections/albums) by their member ID.
 
 Args:
-  - member_id (number, required): the photographer's numeric member ID (find it via happiness_get_portfolio or happiness_search_photos)
+  - member_id (number, required): the photographer's numeric member ID — read it from 'member.member_id' in a happiness_get_portfolio result, or 'author_member_id' on any photo returned by happiness_search_photos / happiness_get_photo
 
 Returns JSON: { "count": number, "series": [{ id, title, description, photo_count, cover_image_url }] }
 
