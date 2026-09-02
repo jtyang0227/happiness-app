@@ -1,5 +1,19 @@
 import React, { useEffect } from 'react';
 
+/**
+ * 전체화면 뷰어 전용 "글라스" 머티리얼(Apple Liquid Glass 참고) — 슬라이드쇼(
+ * PortfolioSlideshowPage.jsx)와 동일한 레시피. 풀블리드 사진 위에 뜨는 이 뷰어의
+ * 컨트롤(닫기·이전·다음 버튼)에만 국한된 로컬 스타일 — 전역 유틸/토큰은 아니다.
+ */
+const glass = (extra = {}) => ({
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  background: 'rgba(255,255,255,0.10)',
+  border: '1px solid rgba(255,255,255,0.18)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 32px rgba(0,0,0,0.24)',
+  ...extra,
+});
+
 export default function PhotoViewer({
   isOpen, imageUrl, title,
   onClose, onPrev, onNext,
@@ -30,15 +44,15 @@ export default function PhotoViewer({
       style={{
         position: 'absolute', top: '50%', transform: 'translateY(-50%)',
         [side]: 12, width: 50, height: 50, borderRadius: '50%',
-        background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
         color: '#fff', fontSize: 26, cursor: visible ? 'pointer' : 'default',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         opacity: visible ? 1 : 0.2, pointerEvents: visible ? 'auto' : 'none',
         transition: 'background 0.2s',
         zIndex: 2,
+        ...glass(),
       }}
-      onMouseEnter={e => { if (visible) e.currentTarget.style.background = 'rgba(255,255,255,0.32)'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
+      onMouseEnter={e => { if (visible) e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
     >{icon}</button>
   );
 
@@ -66,12 +80,12 @@ export default function PhotoViewer({
           onClick={onClose}
           style={{
             width: 36, height: 36, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.15)', border: 'none',
             color: '#fff', fontSize: 20, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            ...glass(),
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.28)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
         >×</button>
       </div>
 

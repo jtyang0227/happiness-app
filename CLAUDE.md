@@ -785,7 +785,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **components/photo/GenreBadge** — 단일 장르 뱃지 + SubGenreBadges (PhotoDetail 사용)
 - **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
 - **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
-- **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비)
+- **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비). **Apple Glass 강화**: 닫기·이전·다음 버튼에 슬라이드쇼(PortfolioSlideshowPage.jsx)와 동일한 `glass()` 레시피 적용 — 풀블리드 사진 위에 뜨는 컨트롤에 한정, 배경/이미지 자체는 변경 없음.
 - **components/photo/PhotoNavigation** — 사진 이전/다음 화살표 오버레이 (키보드 ← →)
 - **components/photo/ShareButton** — Web Share API / clipboard 공유 버튼
 - **components/assistant/ChatWidget** — 플로팅 AI 어시스턴트(Gemini 연동) 위젯. `App.jsx`에서 `!isStandalone`일 때 `Header`와 함께 전역 마운트, 컴포넌트 내부에서 모드를 스스로 결정: 로그인 상태면 `workspace`(회원 전용 앱 사용법 안내, `POST /assistant/chat/workspace`), 비로그인 + `/portfolio/:profileName` 경로면 `portfolio`(방문객 상담, 공개 `POST /assistant/chat`), 그 외에는 렌더링하지 않음. DB 조회 없이 시스템 프롬프트 응답만 하므로 대화 history는 클라이언트 state로만 유지하고 매 요청에 실어 보낸다(서버 미저장). 현재는 웹 프론트엔드에만 적용, mobile(RN)은 별도 작업 필요.
