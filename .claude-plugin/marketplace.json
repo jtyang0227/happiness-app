@@ -1,0 +1,12 @@
+{
+  "name": "happiness-app-plugins",
+  "owner": { "name": "jtyang0227" },
+  "plugins": [
+    {
+      "name": "claude-md-management",
+      "source": "./plugins/claude-md-management",
+      "description": "CLAUDE.md 건강 점검(감사) 플러그인 — 죽은 참조, 중복/모순, 포맷 이탈, 장황함, 모바일/웹 형평성을 점검하고 리포트만 생성한다.",
+      "version": "1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "claude-md-management",
+  "description": "happiness-app CLAUDE.md 건강 점검(감사) 플러그인 — 죽은 파일/API 참조, 중복·모순, 포맷 이탈, 장황함, 모바일/웹 형평성을 점검하고 리포트만 생성한다(CLAUDE.md를 직접 수정하지 않음).",
+  "version": "1.0.0"
+}

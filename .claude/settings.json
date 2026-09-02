@@ -12,6 +12,14 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "extraKnownMarketplaces": {
+    "happiness-app-plugins": {
+      "source": { "source": "directory", "path": "." }
+    }
+  },
+  "enabledPlugins": {
+    "claude-md-management@happiness-app-plugins": true
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
