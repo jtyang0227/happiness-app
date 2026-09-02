@@ -11,6 +11,19 @@ const MOOD_LABELS = {
   ENERGETIC: '에너지', DARK: '어두움',
 };
 
+/**
+ * 슬라이드쇼 플로팅 컨트롤 전용 "글라스" 머티리얼(Apple Liquid Glass 참고).
+ * 이 화면(풀블리드 사진 위 컨트롤 크롬)에만 국한된 로컬 스타일 — 전역 유틸/토큰은 아니다.
+ */
+const glass = (extra = {}) => ({
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  background: 'rgba(255,255,255,0.10)',
+  border: '1px solid rgba(255,255,255,0.18)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 32px rgba(0,0,0,0.24)',
+  ...extra,
+});
+
 export default function PortfolioSlideshowPage() {
   const { profileName } = useParams();
   const navigate = useNavigate();
@@ -177,29 +190,30 @@ export default function PortfolioSlideshowPage() {
         ) : null}
       </div>
 
-      {/* ── 상단 바 ── */}
+      {/* ── 상단 바 (글라스) ── */}
       <div
         className="slideshow-controls"
         style={{
-          position: 'fixed', top: 0, left: 0, right: 0, height: 72, zIndex: 10,
-          background: 'linear-gradient(rgba(0,0,0,0.55) 0%, transparent 100%)',
+          position: 'fixed', top: 16, left: 16, right: 16, height: 60, zIndex: 10,
+          borderRadius: 20,
           display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12,
           opacity: showControls ? 1 : 0, transition: 'opacity 0.4s',
           pointerEvents: showControls ? 'auto' : 'none',
+          ...glass(),
         }}
       >
         <button
           onClick={() => navigate(`/portfolio/${profileName}`)}
           style={{
             padding: '6px 14px', borderRadius: 8, fontSize: 13, background: 'rgba(255,255,255,0.12)',
-            border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)',
+            border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)',
             cursor: 'pointer',
           }}
         >← 갤러리로</button>
 
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{member.name ?? profileName}</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>@{profileName}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>@{profileName}</div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -212,49 +226,50 @@ export default function PortfolioSlideshowPage() {
               border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
             }}
           >{'</>'} 임베드</button>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', minWidth: 50, textAlign: 'right' }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', minWidth: 50, textAlign: 'right' }}>
             {index + 1} / {total}
           </span>
         </div>
       </div>
 
-      {/* ── 이전 버튼 ── */}
+      {/* ── 이전 버튼 (글라스) ── */}
       <button
         className="slideshow-controls"
         onClick={goPrev}
         style={{
           position: 'fixed', left: 16, top: '50%', transform: 'translateY(-50%)',
           width: 50, height: 50, borderRadius: '50%', fontSize: 20,
-          background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
           color: '#fff', cursor: index === 0 ? 'default' : 'pointer',
           opacity: showControls ? (index === 0 ? 0.3 : 1) : 0,
           transition: 'opacity 0.4s', zIndex: 10, pointerEvents: showControls && index > 0 ? 'auto' : 'none',
+          ...glass(),
         }}
       >‹</button>
 
-      {/* ── 다음 버튼 ── */}
+      {/* ── 다음 버튼 (글라스) ── */}
       <button
         className="slideshow-controls"
         onClick={goNext}
         style={{
           position: 'fixed', right: 16, top: '50%', transform: 'translateY(-50%)',
           width: 50, height: 50, borderRadius: '50%', fontSize: 20,
-          background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
           color: '#fff', cursor: index === total - 1 ? 'default' : 'pointer',
           opacity: showControls ? (index === total - 1 ? 0.3 : 1) : 0,
           transition: 'opacity 0.4s', zIndex: 10, pointerEvents: showControls && index < total - 1 ? 'auto' : 'none',
+          ...glass(),
         }}
       >›</button>
 
-      {/* ── 하단 바 ── */}
+      {/* ── 하단 바 (글라스) ── */}
       <div
         className="slideshow-controls"
         style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, height: 80, zIndex: 10,
-          background: 'linear-gradient(transparent 0%, rgba(0,0,0,0.55) 100%)',
+          position: 'fixed', bottom: 16, left: 16, right: 16, height: 72, zIndex: 10,
+          borderRadius: 20,
           display: 'flex', alignItems: 'center', padding: '0 20px',
           opacity: showControls ? 1 : 0, transition: 'opacity 0.4s',
           pointerEvents: showControls ? 'auto' : 'none',
+          ...glass(),
         }}
       >
         {/* 제목 + 무드 */}
@@ -291,8 +306,8 @@ export default function PortfolioSlideshowPage() {
             onClick={() => setPlaying(p => !p)}
             style={{
               width: 36, height: 36, borderRadius: '50%', fontSize: 14,
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
               color: '#fff', cursor: 'pointer',
+              ...glass(),
             }}
           >{playing ? '⏸' : '▶'}</button>
         </div>

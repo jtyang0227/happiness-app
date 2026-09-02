@@ -341,6 +341,17 @@ export default function ProfileScreen({ navigation = {} }) {
             <Text style={styles.legalChevron}>›</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => {
+            if (!user?.profileName) {
+              Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+              return;
+            }
+            navigation.navigate && navigation.navigate('PortfolioSlideshow', { profileName: user.profileName });
+          }}>
+          <Text style={styles.legalItemText}>🎞 슬라이드쇼로 보기</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 법적 고지 */}
