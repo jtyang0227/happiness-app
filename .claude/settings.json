@@ -46,6 +46,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/notify-page-change.sh\"",
+            "statusMessage": "화면 파일 변경 확인 중..."
+          }
+        ]
+      }
     ]
   }
 }

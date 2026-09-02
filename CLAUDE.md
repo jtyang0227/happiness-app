@@ -960,6 +960,36 @@ backend/Dockerfile:
 
 ---
 
+## Claude Code 자동화 — 화면 변경 스크린샷 이메일 알림 (Stop hook)
+
+happiness-admin 저장소(`.claude/hooks/notify-page-change.sh`, 별도 프로젝트)에서 이미 검증된 방식을 이 프로젝트에도
+동일하게 적용. 화면 관련 파일이 바뀐 채로 턴이 끝나면(Stop 이벤트), Claude를 멈추지 않고 "변경된 페이지만
+스크린샷 찍어 Gmail로 보내라"는 지시를 다시 주입한다.
+
+- **감시 경로**: `frontend/src/pages`(웹, `.jsx`, `admin/` 하위 포함) + `mobile/screens`(모바일, `.js`) — happiness-admin은
+  프론트엔드가 하나뿐이라 경로 1개만 봤지만, 이 프로젝트는 웹/모바일 두 화면 디렉터리를 모두 감시하도록 확장.
+  `frontend/src/pages/admin/**`은 별도 제외하지 않음 — 사용자가 대비시킨 "어드민"은 별도 저장소인 happiness-admin을
+  가리키는 것이지, 이 저장소 내부의 `/admin/**` 서브페이지가 아니기 때문.
+- **동작 방식** (`.claude/hooks/notify-page-change.sh`, Stop hook으로 등록): Stop hook은 이번 턴에 어떤 도구가
+  호출됐는지 알 수 없으므로, `git status --porcelain` + `git diff`를 감시 경로에 대해 직접 실행해 화면 파일 변경
+  여부를 스스로 판단한다. 커밋 여부와 무관하게 "지금 워킹트리 상태"를 기준으로 하고(대부분 작업은 여러 턴에 걸쳐
+  커밋 전 상태로 진행되므로), 두 명령의 출력을 합쳐 SHA256 해시를 낸 뒤 `.claude/.page-change-notify-marker`
+  (로컬 상태, `.gitignore` 처리)에 저장해 같은 미완료 변경에 대해 매 턴 반복 알림이 뜨지 않게 한다. 변경이 없거나
+  이미 알린 변경과 동일하면 조용히 `exit 0`. 새 변경이면 `jq`로 안전하게 이스케이프한
+  `{"decision": "block", "reason": "..."}` JSON을 출력해 agent-browser 스크린샷 + Gmail MCP 발송 지시를 재주입.
+- **수신 이메일**: `jtyang0227@gmail.com` (스크립트에 하드코딩).
+- **스크린샷 첨부 시 필수 규칙** (happiness-admin에서 실제로 겪은 실패 사례 반영): Gmail MCP 첨부파일은 base64를
+  도구 호출 파라미터로 직접 넣어야 하는데, 원본 스크린샷을 그대로 base64 인코딩하면 문자열이 너무 길어(수만 자)
+  도구 호출로 옮겨 적는 과정에서 깨져 Gmail이 "base64 디코딩 실패"로 거부한다. 따라서 첨부 전 반드시 Python(PIL)
+  등으로 가로 200~250px, JPEG 품질 40~50% 수준으로 리사이즈·압축 후 base64 인코딩하고, 인코딩된 문자열이 5000자를
+  넘으면 더 줄인다. Gmail MCP가 이 채팅에 꺼져 있으면 조용히 실패하지 말고 사용자에게 켜달라고 반드시 알린다.
+  (hook의 `reason` 필드 자체에 이 4가지 규칙이 이미 포함되어 매 실행마다 Claude에게 재주입됨.)
+- **검증**: 화면 파일 없이 실행 → 무출력 exit 0 확인. 화면 파일(웹+모바일 각 1개) 변경 후 실행 → 올바르게 이스케이프된
+  `{"decision":"block", ...}` JSON 확인. 동일 변경 상태로 재실행 → 무출력(중복 알림 없음) 확인. 새 파일이 추가로
+  바뀌면 다시 알림이 뜨는 것까지 확인.
+
+---
+
 ## CI/CD (GitHub Actions)
 
 파일: `.github/workflows/deploy.yml`
