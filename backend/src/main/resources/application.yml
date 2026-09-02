@@ -54,6 +54,11 @@ supabase:
     bucket: ${SUPABASE_BUCKET:images}
     public-url: ${SUPABASE_URL:}/storage/v1/object/public
 
+# Gemini (AI 어시스턴트 챗봇) — 키 미설정 시 GeminiClient가 사용자 친화적 오류로 안내
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.0-flash}
+
 # CORS
 app:
   cors:

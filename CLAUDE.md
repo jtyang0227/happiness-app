@@ -399,6 +399,10 @@ CORS_ALLOWED_ORIGINS=https://app.example.com
 # Spring
 SPRING_PROFILES_ACTIVE=prod  # 운영 | dev (기본값)
 
+# Gemini (AI 어시스턴트 챗봇 — 백엔드 전용, aistudio.google.com/apikey 에서 발급)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_MODEL=gemini-2.0-flash  # 선택, 미설정 시 기본값
+
 # Kakao OAuth (프론트엔드 — .env.development / Vercel)
 REACT_APP_KAKAO_APP_KEY=YOUR_KAKAO_REST_API_KEY
 REACT_APP_KAKAO_REDIRECT_URI=https://app.example.com/oauth/kakao/callback
@@ -451,6 +455,7 @@ Feature-based package layout:
 - **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
 - **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
 - **meet/** — `MeetController` (`/api/meets`) — 모델·작가 약속 커뮤니케이션 공간 (Feature 35). `Meet` 엔티티 (status PENDING/NEGOTIATING/CONFIRMED/COMPLETED/CANCELLED, locationName/Address/Lat/Lng, confirmedDate DATE, confirmedTime VARCHAR(10), initialMessage TEXT, @PrePersist/@PreUpdate updatedAt). `MeetAvailability` (meetId+memberId UNIQUE, availableDates/Times TEXT 콤마구분). `MeetMessage` (senderId/senderName/senderAvatar/content TEXT). IDOR 검사: `findByIdAndMemberId()` — 요청자·수신자 외 접근 차단. XSS: `sanitize()` HTML 태그 제거. 좌표 검증: lat(-90~90)/lng(-180~180). 상태 전환: PENDING→NEGOTIATING(accept), NEGOTIATING→CONFIRMED(confirmDate), CONFIRMED→COMPLETED(complete), 언제나→CANCELLED. 인증 필요(모든 엔드포인트): POST(생성), GET(목록/상세/pending-count), PUT(respond/confirm/location/cancel/complete), GET/POST(messages), GET/POST(availability). `MeetBatchService.completeExpiredMeets()` — `@Scheduled(cron="0 0 3 * * *")` 매일 03:00, `confirmedDate` 가 지난 CONFIRMED 약속을 COMPLETED로 일괄 전환(bulk `@Modifying @Query`). PENDING/NEGOTIATING 장기 무응답 자동 취소는 컷오프 일수 제품 결정 필요로 P1 보류 (`DESIGN_PROMPTS/planning/PLANNING_batch-jobs.md` 참고).
+- **assistant/** — AI 어시스턴트 챗봇 (Gemini 연동). `AssistantController` (`/api/assistant`) — 공개: `POST /chat`(포트폴리오 방문객 상담, IP 기준 10req/min). 인증: `POST /chat/workspace`(로그인 회원용 앱 사용법 안내, 회원 기준 20req/min). `GeminiClient` — Google Gemini `generateContent` REST API(`v1beta/models/{model}:generateContent`) 호출, 인증은 쿼리 파라미터가 아닌 `x-goog-api-key` 헤더 사용(access 로그에 키 노출 방지). DB 조회 없이 시스템 프롬프트만 사용하는 stateless 설계 — 대화 history는 프론트엔드가 클라이언트 메모리에서만 들고 있다가 매 요청에 실어 보내고, 서버는 저장하지 않는다. `gemini.api-key`(`GEMINI_API_KEY` 환경변수) 미설정 시 `AssistantException`으로 503 + 안내 메시지 반환(조용히 실패하지 않음). 메시지 길이(2000자)·history 턴 수(20턴) 상한으로 비용 폭주 방지.
 - **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
 
 #### Spring 프로파일 구성
@@ -783,6 +788,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비)
 - **components/photo/PhotoNavigation** — 사진 이전/다음 화살표 오버레이 (키보드 ← →)
 - **components/photo/ShareButton** — Web Share API / clipboard 공유 버튼
+- **components/assistant/ChatWidget** — 플로팅 AI 어시스턴트(Gemini 연동) 위젯. `App.jsx`에서 `!isStandalone`일 때 `Header`와 함께 전역 마운트, 컴포넌트 내부에서 모드를 스스로 결정: 로그인 상태면 `workspace`(회원 전용 앱 사용법 안내, `POST /assistant/chat/workspace`), 비로그인 + `/portfolio/:profileName` 경로면 `portfolio`(방문객 상담, 공개 `POST /assistant/chat`), 그 외에는 렌더링하지 않음. DB 조회 없이 시스템 프롬프트 응답만 하므로 대화 history는 클라이언트 state로만 유지하고 매 요청에 실어 보낸다(서버 미저장). 현재는 웹 프론트엔드에만 적용, mobile(RN)은 별도 작업 필요.
 - **components/photo/RelatedPhotos** — 같은 작가 관련 사진 3열 그리드 (최대 6개)
 - **components/layout/AdminLayout** — 어드민 사이드바+상단바 셸 (모바일 햄버거 지원)
 - **hooks/useColorExtraction** — Canvas K-means(k=5) 대표 색상 추출 훅 (캐싱 포함)
@@ -819,6 +825,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 - **services/meetApi.js** (Feature 35) — `create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage` (13 메서드). import: `apiClient from '../api/apiClient'`. 모든 호출 → `r.data` 자동 언래핑.
 - **services/api.js `reportApi`** — `list({status,page,size})` → GET /admin/reports (Page&lt;AdminReportResponse&gt;). `update(id,{status,resolutionNote})` → PUT /admin/reports/{id}. `submit(photoId,{reason,detail,evidenceUrl})` → POST /photos/{photoId}/report. `myReports()` → GET /photos/reports/mine. `myUnreadCount()` → GET /photos/reports/mine/unread-count. `markSeen(id)` → PUT /photos/reports/mine/{id}/seen.
 - **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
+- **services/assistantApi.js** — `chatPublic(message, history)` → POST /assistant/chat(공개), `chatWorkspace(message, history)` → POST /assistant/chat/workspace(인증). `ChatWidget`에서 사용.
 - **services/api.js `portfolioApi`** — `getConfig(profileName)` → GET /portfolio/{profileName}/config (공개). `updateTemplate(profileName, data)` → PUT /portfolio/{profileName}/template (인증 필요).
 - **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)
 - **components/portfolio/PressAwardsSection** — "As Seen In" 로고 카드 + 수상 타임라인 (AWARD/EXHIBITION/PUBLICATION 배지)

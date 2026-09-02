@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import Header from './components/layout/Header';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import ChatWidget from './components/assistant/ChatWidget';
 import useAuthStore from './store/authStore';
 import { GLOBAL_KEYFRAMES } from './constants/animations';
 
@@ -79,6 +80,7 @@ function AppShell() {
       `}</style>
 
       {!isStandalone && <Header />}
+      {!isStandalone && <ChatWidget />}
       <main className="happiness-main" style={{ paddingBottom: 40 }}>
         <Routes>
           {/* Standalone */}

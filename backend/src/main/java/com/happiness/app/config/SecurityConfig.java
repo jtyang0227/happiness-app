@@ -108,6 +108,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,  "/api/brands/member/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/newsletter/subscribe/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/newsletter/unsubscribe/**").permitAll()
+                // AI 어시스턴트 — 포트폴리오 방문객용만 공개, /chat/workspace(회원용)는 기본값(인증 필요) 유지
+                .requestMatchers(HttpMethod.POST, "/api/assistant/chat").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용
