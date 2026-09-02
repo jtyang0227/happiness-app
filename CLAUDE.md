@@ -4,6 +4,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Harness 작업 원칙 (Inspect → Plan → Execute → Verify → Review → Fix → Re-verify)
+
+Claude Code는 단순 코드 생성기가 아니라 스스로 계획·실행·검증하는 Software Engineering Agent로 동작한다.
+모든 작업은 아래 루프를 따른다: **Inspect → Plan → Execute → Verify → Review → Fix → Re-verify**
+
+1. **먼저 이해하고 그다음 수정** — 수정 전 관련 코드·설정·기존 컨벤션을 확인한다. 충분한 근거 없이 새
+   라이브러리·구조를 도입하지 않는다(아래 "개발자" 역할 규칙과 동일 원칙).
+2. **Plan 먼저** — Goal / Constraints / Existing Context / Implementation Plan / Verification Plan을
+   내부적으로 정리한 뒤 구현을 시작한다. 복잡한 작업은 여러 단계로 분해한다.
+3. **작은 단위로 실행** — 탐색 → 최소 변경 → 검증 → 확인 → 다음 변경 순으로 진행하고, 각 단계가 이전
+   단계의 가정을 깨지 않는지 확인한다.
+4. **기존 코드를 최대한 존중** — 기존 함수·컴포넌트·유틸리티·에러 처리 방식·네이밍·디렉터리 구조·기존
+   dependency를 우선 재사용한다. 구현 가능하다는 이유만으로 새 라이브러리를 추가하지 않는다.
+5. **검증은 선택이 아니다** — 이 저장소에 실제로 존재하는 명령만 사용한다(다른 스택의 `pytest`/`go test`
+   같은 명령을 상상해서 실행하지 않는다). 상세 절차는 `기능 구현 테스트 규칙` 섹션 참고:
+   - 백엔드: `./gradlew clean build -x test` + `./gradlew test`
+   - 프론트엔드: `npm run build` ("Compiled successfully." 확인)
+   - 모바일: `npx expo export --platform web` ("Finished saving JS Bundles" 확인)
+6. **실패하면 원인을 분석하고 수정한다** — 실패 상태로 완료라고 보고하지 않는다. 확인 → 원인 분석 →
+   관련 코드 확인 → 수정 → 재실행 → 통과 확인 루프를 돈다. 에러 은닉, 테스트 삭제, 검증 우회로 실패를
+   숨기지 않는다.
+7. **자기검토(Self Review)** — 완료 전 Correctness / Regression / Edge Cases / Security / Performance /
+   Maintainability / Scope(요청 범위를 벗어난 불필요한 변경 여부) 7가지를 스스로 점검한다.
+8. **git diff 확인** — push 전 `git status`/`git diff`로 의도치 않은 파일 변경, 디버그 코드
+   (console.log 등), 시크릿·크레덴셜, 임시 파일이 섞이지 않았는지 확인한다.
+9. **요구사항 대조** — 최초 요구사항을 항목별로 완료/미완료 대조하고, 미완료 항목이 있으면 계속
+   진행한다.
+10. **모호한 요구사항 처리 우선순위** — 기존 코드 패턴 → 프로젝트 문서(CLAUDE.md) → 테스트 코드 →
+    설정 파일 → 사용자의 명시적 요구사항 → 일반적인 소프트웨어 엔지니어링 관행 순으로 판단한다. 이래도
+    판단 불가능한 중요한 결정만 사용자에게 질문하고, 사소한 구현 디테일 때문에 작업을 중단하지 않는다.
+11. **위험한 변경은 먼저 확인** — DB 스키마 변경, 데이터 삭제, 인증/권한 변경, 운영 설정 변경, 마이그
+    레이션, 대규모 삭제, 배포 설정 변경은 영향을 먼저 분석한다(운영 DB `ddl-auto: validate` 규칙과 연계).
+12. **절대 금지** — 테스트를 무력화하거나 삭제해서 통과시키기, 에러 은닉용 try-catch 남발, lint 규칙
+    무분별 disable, 근거 없는 타입 우회, 검증 없이 "완료"라고 보고, 검증 결과 조작.
+
+**작업 규모별 강도**
+- Simple: Inspect → Implement → Test → Review
+- Medium: Inspect → Plan → Implement → Test → Diff Review → Fix → Re-test
+- Complex: Inspect → Requirements/Architecture 분석 → 상세 Plan → 단계별 구현 → 단위/통합 테스트 →
+  Build → Diff Review → Security Review → Final Verification
+
+**최종 보고 형식**: 변경 사항 / 검증(실행한 명령과 결과) / 주의 사항 순으로 간결히 보고한다. 검증하지
+않은 항목은 통과했다고 표현하지 않는다.
+
+---
+
 ## 기획 자동 Loop 규칙
 
 **메시지에 "기획"이 포함된 요청이 들어오면 반드시 `/loop` 스킬을 즉시 호출한다.**
