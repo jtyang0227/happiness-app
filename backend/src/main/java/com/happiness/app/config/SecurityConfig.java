@@ -110,6 +110,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,  "/api/newsletter/unsubscribe/**").permitAll()
                 // AI 어시스턴트 — 포트폴리오 방문객용만 공개, /chat/workspace(회원용)는 기본값(인증 필요) 유지
                 .requestMatchers(HttpMethod.POST, "/api/assistant/chat").permitAll()
+                // Gathering — 공개 조회 (목록/상세).
+                // /my, /{id}/participants, /{id}/close-recruitment 등 인증 엔드포인트는 anyRequest().authenticated() 처리.
+                // GET /api/gatherings/my 가 아래 /* 패턴에 걸리지 않도록 명시적으로 먼저 선언.
+                .requestMatchers(HttpMethod.GET, "/api/gatherings/my").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/gatherings").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/gatherings/*").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용

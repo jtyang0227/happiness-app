@@ -455,6 +455,7 @@ Feature-based package layout:
 - **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
 - **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
 - **meet/** — `MeetController` (`/api/meets`) — 모델·작가 약속 커뮤니케이션 공간 (Feature 35). `Meet` 엔티티 (status PENDING/NEGOTIATING/CONFIRMED/COMPLETED/CANCELLED, locationName/Address/Lat/Lng, confirmedDate DATE, confirmedTime VARCHAR(10), initialMessage TEXT, @PrePersist/@PreUpdate updatedAt). `MeetAvailability` (meetId+memberId UNIQUE, availableDates/Times TEXT 콤마구분). `MeetMessage` (senderId/senderName/senderAvatar/content TEXT). IDOR 검사: `findByIdAndMemberId()` — 요청자·수신자 외 접근 차단. XSS: `sanitize()` HTML 태그 제거. 좌표 검증: lat(-90~90)/lng(-180~180). 상태 전환: PENDING→NEGOTIATING(accept), NEGOTIATING→CONFIRMED(confirmDate), CONFIRMED→COMPLETED(complete), 언제나→CANCELLED. 인증 필요(모든 엔드포인트): POST(생성), GET(목록/상세/pending-count), PUT(respond/confirm/location/cancel/complete), GET/POST(messages), GET/POST(availability). `MeetBatchService.completeExpiredMeets()` — `@Scheduled(cron="0 0 3 * * *")` 매일 03:00, `confirmedDate` 가 지난 CONFIRMED 약속을 COMPLETED로 일괄 전환(bulk `@Modifying @Query`). PENDING/NEGOTIATING 장기 무응답 자동 취소는 컷오프 일수 제품 결정 필요로 P1 보류 (`DESIGN_PROMPTS/planning/PLANNING_batch-jobs.md` 참고).
+- **gathering/** — 사진 모임(Photo Gathering) SNS (Feature 37, 기획: `DESIGN_PROMPTS/planning/37_PHOTO_GATHERING_SNS.md`). **`meet/`(Feature 35, 1:1 모델-작가 약속)와 이름이 겹치지 않도록 의도적으로 `gathering`으로 명명** — 완전히 다른 기능(N명 그룹 촬영 모집)이니 혼동 금지. 이번 라운드는 STEP3의 첫 슬라이스(모임 CRUD + 참여/미참여 + 대기자 승격)만 구현 — 사진/글 업로드·피드·좋아요/댓글·달력·자동 상태전환 배치·Instagram 공유는 아직 미구현(다음 슬라이스). `GatheringController`(`/api/gatherings`) — 공개: GET 목록(`?status=&page=&size=`)/상세. 인증: POST(생성, 아무 로그인 회원이나 가능 — 별도 운영자 역할 없음)/PUT·DELETE(수정·삭제, IDOR `findByIdAndCreatedBy`)/GET `/my`(생성+참여중 모임)/POST·DELETE `/{id}/participation`(참여·미참여 응답/취소)/GET `/{id}/participants`(참여자·대기자 목록, 생성자 전용)/POST `/{id}/close-recruitment`(수동 모집 마감). `Gathering` 엔티티 — status는 `Meet`/`Booking`과 동일하게 plain `String`(RECRUITING/RECRUITMENT_CLOSED/SCHEDULED/ONGOING/ENDED, 뒤 3개는 이번 슬라이스 미사용·차기 배치 전용). `GatheringParticipant` 엔티티(UNIQUE gathering_id+member_id, status PARTICIPATING/WAITING/NOT_PARTICIPATING/CANCELLED) — 참여 응답 시 정원 초과면 서버가 자동으로 WAITING 배정, 참여 취소 시 대기자 1순위(`joinedAt` 기준)를 같은 트랜잭션에서 자동 승격(동시 취소 경합 시 과소승격 가능성 있음 — `MeetBatchService`와 동일하게 별도 락 없이 허용, 기존 컨벤션 준수). `reason`(미참여 사유)은 서비스/DTO 레이어에서 생성자 전용 응답에만 채워짐. 모집 종료 후에는 참여/미참여 응답 API가 400을 반환. Member.instagramId(이미 구현되어 있던 필드) 재사용 예정 — 이번 슬라이스에는 아직 노출 안 함(다음 슬라이스인 Instagram 공유에서 사용).
 - **assistant/** — AI 어시스턴트 챗봇 (Gemini 연동). `AssistantController` (`/api/assistant`) — 공개: `POST /chat`(포트폴리오 방문객 상담, IP 기준 10req/min). 인증: `POST /chat/workspace`(로그인 회원용 앱 사용법 안내, 회원 기준 20req/min). `GeminiClient` — Google Gemini `generateContent` REST API(`v1beta/models/{model}:generateContent`) 호출, 인증은 쿼리 파라미터가 아닌 `x-goog-api-key` 헤더 사용(access 로그에 키 노출 방지). DB 조회 없이 시스템 프롬프트만 사용하는 stateless 설계 — 대화 history는 프론트엔드가 클라이언트 메모리에서만 들고 있다가 매 요청에 실어 보내고, 서버는 저장하지 않는다. `gemini.api-key`(`GEMINI_API_KEY` 환경변수) 미설정 시 `AssistantException`으로 503 + 안내 메시지 반환(조용히 실패하지 않음). 메시지 길이(2000자)·history 턴 수(20턴) 상한으로 비용 폭주 방지.
 - **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
 
@@ -716,6 +717,42 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS idx_reports_photo_id    ON reports(photo_id);
 CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON reports(reporter_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status      ON reports(status);
+-- Module: gathering — 사진 모임 SNS (Feature 37, 첫 슬라이스만 — 모임 CRUD + 참여/대기자)
+CREATE TABLE IF NOT EXISTS gatherings (
+  id                        BIGSERIAL PRIMARY KEY,
+  title                     VARCHAR(200) NOT NULL,
+  description               TEXT,
+  detail_description        TEXT,
+  location                  VARCHAR(300) NOT NULL,
+  start_date_time           TIMESTAMP NOT NULL,
+  end_date_time             TIMESTAMP NOT NULL,
+  max_participants          INTEGER NOT NULL,
+  recruitment_end_date_time TIMESTAMP NOT NULL,
+  status                    VARCHAR(20) NOT NULL DEFAULT 'RECRUITING',
+  thumbnail_url             VARCHAR(500),
+  preparation_note         TEXT,
+  fee                       VARCHAR(100),
+  shoot_theme               VARCHAR(200),
+  location_intro            TEXT,
+  reference_image_url       VARCHAR(500),
+  hashtags                  VARCHAR(300),
+  created_by                BIGINT NOT NULL,
+  created_at                TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gatherings_status     ON gatherings(status);
+CREATE INDEX IF NOT EXISTS idx_gatherings_start_date ON gatherings(start_date_time);
+CREATE INDEX IF NOT EXISTS idx_gatherings_created_by ON gatherings(created_by);
+CREATE TABLE IF NOT EXISTS gathering_participants (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  status       VARCHAR(20) NOT NULL,  -- PARTICIPATING | WAITING | NOT_PARTICIPATING | CANCELLED
+  reason       VARCHAR(200),          -- 미참여 사유, 생성자만 조회
+  joined_at    TIMESTAMP NOT NULL,
+  UNIQUE (gathering_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_participants_gathering ON gathering_participants(gathering_id, status);
+CREATE INDEX IF NOT EXISTS idx_gathering_participants_member    ON gathering_participants(member_id);
 ```
 
 #### PhotoRepository 주요 쿼리 메서드
