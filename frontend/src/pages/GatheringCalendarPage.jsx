@@ -37,7 +37,7 @@ function formatDateKo(dateKey) {
 }
 
 /* ── 날짜별 모임 목록 카드 ─────────────────────────────── */
-function DayGatheringRow({ gathering, onClick }) {
+function DayGatheringRow({ gathering, onClick, index = 0 }) {
   const [hovered, setHovered] = useState(false);
   const statusMeta = STATUS_META[gathering.status] || STATUS_META.RECRUITING;
   return (
@@ -50,7 +50,9 @@ function DayGatheringRow({ gathering, onClick }) {
         padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
         background: hovered ? COLORS.surfaceDim : COLORS.surface,
         border: `1px solid ${hovered ? COLORS.textHint : COLORS.border}`,
-        transition: 'all 0.12s ease',
+        transition: 'background-color 0.12s ease, border-color 0.12s ease',
+        animation: 'fadeInUp 0.25s ease-out both',
+        animationDelay: `${Math.min(index, 6) * 40}ms`,
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -239,8 +241,8 @@ export default function GatheringCalendarPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {selectedGatherings.map(g => (
-                  <DayGatheringRow key={g.id} gathering={g} onClick={handleGatheringClick} />
+                {selectedGatherings.map((g, i) => (
+                  <DayGatheringRow key={g.id} gathering={g} onClick={handleGatheringClick} index={i} />
                 ))}
               </div>
             )}

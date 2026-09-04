@@ -95,9 +95,21 @@ export default function GatheringPostComposerModal({ gatheringId, onClose, onSuc
         position: 'fixed', inset: 0, zIndex: 500,
         background: 'rgba(0,0,0,0.52)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        animation: 'gpcm-backdrop-in 0.15s ease both',
       }}
     >
+      <style>{`
+        @keyframes gpcm-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes gpcm-sheet-in {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .gpcm-sheet { animation: gpcm-backdrop-in 0.15s ease both !important; transform: none !important; }
+        }
+      `}</style>
       <div
+        className="gpcm-sheet"
         onClick={e => e.stopPropagation()}
         style={{
           background: COLORS.surface,
@@ -106,6 +118,7 @@ export default function GatheringPostComposerModal({ gatheringId, onClose, onSuc
           padding: '24px 20px 40px',
           maxHeight: '92vh', overflowY: 'auto',
           boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
+          animation: 'gpcm-sheet-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both',
         }}
       >
         {/* ── 헤더 ───────────────────────────────────── */}

@@ -18,12 +18,14 @@ function formatDate(iso) {
 }
 
 /* ── 참여자 행 ─────────────────────────────────────────── */
-function ParticipantRow({ entry, statusLabel, statusColor, statusBg, showReason }) {
+function ParticipantRow({ entry, statusLabel, statusColor, statusBg, showReason, index = 0 }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 16px',
       borderBottom: `1px solid ${COLORS.borderLight}`,
+      animation: 'fadeInUp 0.3s ease-out both',
+      animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
       {/* 아바타 placeholder — 서버가 memberId만 반환함 */}
       <div style={{
@@ -296,7 +298,7 @@ export default function GatheringManagePage() {
 
         {/* 참여자 */}
         <Section title="참여자" count={participating.length} emptyText="아직 참여자가 없습니다">
-          {participating.map(entry => (
+          {participating.map((entry, i) => (
             <ParticipantRow
               key={entry.id}
               entry={entry}
@@ -304,6 +306,7 @@ export default function GatheringManagePage() {
               statusColor={COLORS.success}
               statusBg={COLORS.successTonal}
               showReason={false}
+              index={i}
             />
           ))}
         </Section>
@@ -311,7 +314,7 @@ export default function GatheringManagePage() {
         {/* 대기자 */}
         {waiting.length > 0 && (
           <Section title="대기자" count={waiting.length} emptyText="">
-            {waiting.map(entry => (
+            {waiting.map((entry, i) => (
               <ParticipantRow
                 key={entry.id}
                 entry={entry}
@@ -319,6 +322,7 @@ export default function GatheringManagePage() {
                 statusColor="#B45309"
                 statusBg="#FFF6E5"
                 showReason={false}
+                index={i}
               />
             ))}
           </Section>
@@ -327,7 +331,7 @@ export default function GatheringManagePage() {
         {/* 미참여 — reason은 이 페이지에서만 노출 */}
         {notParticipating.length > 0 && (
           <Section title="미참여" count={notParticipating.length} emptyText="">
-            {notParticipating.map(entry => (
+            {notParticipating.map((entry, i) => (
               <ParticipantRow
                 key={entry.id}
                 entry={entry}
@@ -335,6 +339,7 @@ export default function GatheringManagePage() {
                 statusColor={COLORS.textMuted}
                 statusBg={COLORS.surfaceDim}
                 showReason={true}
+                index={i}
               />
             ))}
           </Section>

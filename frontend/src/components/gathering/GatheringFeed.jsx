@@ -90,7 +90,7 @@ function SkeletonPost() {
 }
 
 /* ── 포스트 카드 ─────────────────────────────────────────── */
-function PostCard({ post, currentUserId, isParticipating, onDelete }) {
+function PostCard({ post, currentUserId, isParticipating, onDelete, index = 0 }) {
   const [liked, setLiked] = useState(post.likedByMe || false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -166,6 +166,8 @@ function PostCard({ post, currentUserId, isParticipating, onDelete }) {
     <div style={{
       background: COLORS.surface, border: `1px solid ${COLORS.border}`,
       borderRadius: 16, overflow: 'hidden', marginBottom: 12,
+      animation: 'fadeInUp 0.3s ease-out both',
+      animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
       {/* ── 헤더: 아바타 + 이름 + 시간 + 삭제 ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 0' }}>
@@ -307,7 +309,14 @@ function PostCard({ post, currentUserId, isParticipating, onDelete }) {
           }}
           aria-label="좋아요"
         >
-          {liked ? '♥' : '♡'} {likeCount}
+          <span style={{
+            display: 'inline-block',
+            transform: liked ? 'scale(1.15)' : 'scale(1)',
+            transition: 'transform 0.15s ease-out',
+          }}>
+            {liked ? '♥' : '♡'}
+          </span>
+          {' '}{likeCount}
         </button>
         <button
           onClick={() => setShowComments(v => !v)}
@@ -568,10 +577,11 @@ export default function GatheringFeed({ gatheringId, status, isParticipating, cu
         />
       ) : (
         <>
-          {posts.map(post => (
+          {posts.map((post, i) => (
             <PostCard
               key={post.id}
               post={post}
+              index={i}
               currentUserId={currentUser?.id}
               isParticipating={isParticipating}
               onDelete={handlePostDeleted}

@@ -58,12 +58,16 @@ function formatDate(iso) {
 }
 
 /* ── GatheringCard ─────────────────────────────────────── */
-function GatheringCard({ gathering, onClick }) {
+function GatheringCard({ gathering, onClick, index = 0 }) {
   const [hovered, setHovered] = useState(false);
   const statusMeta = STATUS_META[gathering.status] || STATUS_META.RECRUITING;
   const isFull = gathering.participantCount >= gathering.maxParticipants;
 
+  // 등장 애니메이션(fadeInUp)도 transform을 쓰므로, hover의 translateY와 같은 속성을
+  // 동시에 건드리면 animation의 fill-mode가 hover 값을 영구히 덮어써버린다.
+  // 그래서 등장 모션은 바깥의 인케이스용 wrapper에, hover 리프트는 안쪽 카드에 분리한다.
   return (
+    <div style={{ animation: 'fadeInUp 0.35s ease-out both', animationDelay: `${Math.min(index, 8) * 40}ms` }}>
     <div
       onClick={() => onClick(gathering.id)}
       onMouseEnter={() => setHovered(true)}
@@ -76,7 +80,7 @@ function GatheringCard({ gathering, onClick }) {
         cursor: 'pointer',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
         boxShadow: hovered ? '0 4px 20px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
-        transition: 'all 0.15s ease',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
       }}
     >
       {/* 썸네일 */}
@@ -163,11 +167,12 @@ function GatheringCard({ gathering, onClick }) {
         )}
       </div>
     </div>
+    </div>
   );
 }
 
 /* ── 내 모임 컴팩트 행 ─────────────────────────────────── */
-function MyGatheringRow({ gathering, onClick }) {
+function MyGatheringRow({ gathering, onClick, index = 0 }) {
   const [hovered, setHovered] = useState(false);
   const statusMeta = STATUS_META[gathering.status] || STATUS_META.RECRUITING;
 
@@ -182,7 +187,9 @@ function MyGatheringRow({ gathering, onClick }) {
         background: hovered ? COLORS.surfaceDim : COLORS.surface,
         border: `1px solid ${hovered ? COLORS.textHint : COLORS.border}`,
         borderRadius: 12, cursor: 'pointer',
-        transition: 'all 0.12s ease',
+        transition: 'background-color 0.12s ease, border-color 0.12s ease',
+        animation: 'fadeInUp 0.3s ease-out both',
+        animationDelay: `${Math.min(index, 8) * 40}ms`,
       }}
     >
       {/* 썸네일 미니 */}
@@ -341,8 +348,8 @@ export default function GatheringsPage() {
           ) : (
             <>
               <div className="gathering-grid">
-                {gatherings.map(g => (
-                  <GatheringCard key={g.id} gathering={g} onClick={handleCardClick} />
+                {gatherings.map((g, i) => (
+                  <GatheringCard key={g.id} gathering={g} onClick={handleCardClick} index={i} />
                 ))}
               </div>
               {page + 1 < totalPages && (
@@ -377,8 +384,8 @@ export default function GatheringsPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {myGatherings.map(g => (
-                  <MyGatheringRow key={g.id} gathering={g} onClick={handleCardClick} />
+                {myGatherings.map((g, i) => (
+                  <MyGatheringRow key={g.id} gathering={g} onClick={handleCardClick} index={i} />
                 ))}
               </div>
             )}

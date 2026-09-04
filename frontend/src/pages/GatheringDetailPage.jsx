@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
+import { EASE_OUT } from '../constants/animations';
 import gatheringApi from '../services/gatheringApi';
 import useAuthStore from '../store/authStore';
 import GatheringFeed from '../components/gathering/GatheringFeed';
+
+/* ── 모달 등장 애니메이션 — 배경 페이드 + 카드 스케일업(scale(0)로 시작하지 않음) ── */
+const MODAL_KEYFRAMES = `
+  @keyframes gdp-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gdp-card-in {
+    from { opacity: 0; transform: scale(0.97) translateY(4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gdp-modal-backdrop, .gdp-modal-card { animation: gdp-backdrop-in 0.15s ease both !important; transform: none !important; }
+  }
+`;
+const modalBackdropAnim = { animation: 'gdp-backdrop-in 0.15s ease both' };
+const modalCardAnim = { animation: `gdp-card-in 0.2s ${EASE_OUT} both` };
 
 /* ── 상태 메타 ─────────────────────────────────────────── */
 const STATUS_META = {
@@ -43,19 +58,23 @@ function NotParticipatingModal({ participantCount, maxParticipants, onConfirm, o
   const finalReason = isCustom ? customReason.trim() : selected;
 
   return (
-    <div style={{
+    <div className="gdp-modal-backdrop" style={{
       position: 'fixed', inset: 0, zIndex: 400,
       background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
+      ...modalBackdropAnim,
     }} onClick={onClose}>
+      <style>{MODAL_KEYFRAMES}</style>
       <div
+        className="gdp-modal-card"
         onClick={e => e.stopPropagation()}
         style={{
           background: COLORS.surface,
           borderRadius: 20, padding: '24px 20px',
           width: '100%', maxWidth: 400,
           boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+          ...modalCardAnim,
         }}
       >
         <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700, color: COLORS.text }}>
@@ -142,19 +161,23 @@ function ParticipateConfirmModal({ participantCount, maxParticipants, onConfirm,
   const spotsLeft = maxParticipants - participantCount;
   const willWait = spotsLeft <= 0;
   return (
-    <div style={{
+    <div className="gdp-modal-backdrop" style={{
       position: 'fixed', inset: 0, zIndex: 400,
       background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
+      ...modalBackdropAnim,
     }} onClick={onClose}>
+      <style>{MODAL_KEYFRAMES}</style>
       <div
+        className="gdp-modal-card"
         onClick={e => e.stopPropagation()}
         style={{
           background: COLORS.surface,
           borderRadius: 20, padding: '24px 20px',
           width: '100%', maxWidth: 380,
           boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+          ...modalCardAnim,
         }}
       >
         <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 700, color: COLORS.text }}>

@@ -56,7 +56,7 @@ function relativeTime(iso) {
 }
 
 /* ── NotifRow ─────────────────────────────────────────── */
-function NotifRow({ notif, onRead }) {
+function NotifRow({ notif, onRead, index = 0 }) {
   const [hovered, setHovered] = useState(false);
   const meta = TYPE_META[notif.type] || { icon: '🔔', label: '알림' };
   const unread = !notif.isRead;
@@ -78,6 +78,8 @@ function NotifRow({ notif, onRead }) {
         /* unread left accent border */
         borderLeft: unread ? `3px solid ${COLORS.primary}` : '3px solid transparent',
         paddingLeft: unread ? 17 : 20,
+        animation: 'fadeInUp 0.3s ease-out both',
+        animationDelay: `${Math.min(index, 8) * 40}ms`,
       }}
     >
       {/* 아이콘 */}
@@ -246,8 +248,8 @@ export default function GatheringNotificationsPage() {
             </div>
           ) : (
             <>
-              {notifications.map(notif => (
-                <NotifRow key={notif.id} notif={notif} onRead={handleRead} />
+              {notifications.map((notif, i) => (
+                <NotifRow key={notif.id} notif={notif} onRead={handleRead} index={i} />
               ))}
 
               {page + 1 < totalPages && (

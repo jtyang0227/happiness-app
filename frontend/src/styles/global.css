@@ -58,6 +58,13 @@ body {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
+/* 모션 최소화 선호 시 위치 이동은 빼고 페이드만 남긴다(이해를 돕는 전환은 유지). */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fadeInUp { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeUp   { from { opacity: 0; } to { opacity: 1; } }
+}
+
 /* ── Shimmer Skeleton ──────────────────────────────────────────────────── */
 
 .skeleton {

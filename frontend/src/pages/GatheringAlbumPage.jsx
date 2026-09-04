@@ -66,10 +66,13 @@ function StatItem({ icon, label, value }) {
 }
 
 /* ── 사진 카드 (라이트박스 없이 단순 클릭 가능) ─────────── */
-function AlbumPhoto({ photo }) {
+function AlbumPhoto({ photo, index = 0 }) {
   const [hovered, setHovered] = useState(false);
 
+  // 등장 애니메이션(fadeInUp)과 hover의 scale이 같은 transform 속성을 다투지 않도록
+  // 등장은 바깥 wrapper, hover 확대는 안쪽 카드로 분리한다.
   return (
+    <div style={{ animation: 'fadeInUp 0.3s ease-out both', animationDelay: `${Math.min(index, 12) * 30}ms` }}>
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -83,7 +86,7 @@ function AlbumPhoto({ photo }) {
         boxShadow: hovered
           ? '0 4px 18px rgba(0,0,0,0.12)'
           : '0 1px 4px rgba(0,0,0,0.04)',
-        transition: 'all 0.15s ease',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
       }}
     >
       <img
@@ -118,6 +121,7 @@ function AlbumPhoto({ photo }) {
           {formatDate(photo.createdAt)}
         </div>
       )}
+    </div>
     </div>
   );
 }
@@ -266,7 +270,7 @@ export default function GatheringAlbumPage() {
                 </div>
                 <div className="album-grid">
                   {album.photos.map((photo, i) => (
-                    <AlbumPhoto key={photo.postId ? `${photo.postId}-${i}` : i} photo={photo} />
+                    <AlbumPhoto key={photo.postId ? `${photo.postId}-${i}` : i} photo={photo} index={i} />
                   ))}
                 </div>
               </>
