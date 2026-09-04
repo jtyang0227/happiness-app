@@ -8,7 +8,7 @@ export const bookingApi = {
     apiClient.post(`/booking/${profileName}`, data).then(r => r.data),
 
   getMyBookings: (status) =>
-    apiClient.get('/booking/my', { params: status ? { status } : {} }).then(r => r.data),
+    apiClient.get('/booking', { params: status ? { status } : {} }).then(r => r.data),
 
   confirmBooking: (id) =>
     apiClient.put(`/booking/${id}/confirm`).then(r => r.data),
