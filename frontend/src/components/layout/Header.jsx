@@ -7,6 +7,7 @@ import { SPRING } from '../../constants/animations';
 import { BP, mq } from '../../constants/breakpoints';
 import { inquiryApi } from '../../services/api';
 import meetApi from '../../services/meetApi';
+import { gatheringApi } from '../../services/gatheringApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
 import Logo from '../common/Logo';
 
@@ -18,7 +19,7 @@ const NAV_ITEMS = [
   { to: '/photo/new', label: '등록/편집' },
   { to: '/inbox',     label: '문의함', badge: 'inquiry' },
   { to: '/meets',       label: '약속',   badge: 'meets'   },
-  { to: '/gatherings', label: '모임'                    },
+  { to: '/gatherings', label: '모임', badge: 'gatherings' },
   { to: '/profile',    label: '프로필'   },
 ];
 
@@ -112,6 +113,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingMeets, setPendingMeets] = useState(0);
+  const [gatheringNotifCount, setGatheringNotifCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -122,6 +124,9 @@ export default function Header() {
       .catch(() => {});
     meetApi.getPendingCount()
       .then(count => setPendingMeets(count || 0))
+      .catch(() => {});
+    gatheringApi.getUnreadCount()
+      .then(data => setGatheringNotifCount(typeof data === 'number' ? data : data?.count ?? 0))
       .catch(() => {});
   }, [user?.id]);
 
@@ -183,7 +188,7 @@ export default function Header() {
           {/* Nav */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
             {NAV_ITEMS.map(({ to, label, end, badge }) => {
-              const badgeCount = badge === 'inquiry' ? unreadCount : badge === 'meets' ? pendingMeets : 0;
+              const badgeCount = badge === 'inquiry' ? unreadCount : badge === 'meets' ? pendingMeets : badge === 'gatherings' ? gatheringNotifCount : 0;
               return (
                 <NavLink
                   key={to} to={to} end={end}

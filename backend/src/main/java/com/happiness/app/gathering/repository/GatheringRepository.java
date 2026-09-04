@@ -50,4 +50,22 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Gathering g SET g.status = 'ENDED' WHERE g.status = 'ONGOING' AND g.endDateTime < :now")
     int endDueGatherings(@Param("now") LocalDateTime now);
+
+    // ── 배치 알림용 — 상태 전환 직전에 영향받는 모임 ID+title을 SELECT ─────────────
+
+    /** 모집 자동 마감 대상 모임 ID 목록 (RECRUITING & recruitmentEndDateTime < now) */
+    @Query("SELECT g.id FROM Gathering g WHERE g.status = 'RECRUITING' AND g.recruitmentEndDateTime < :now")
+    List<Long> findIdsByRecruitingAndRecruitmentEndBefore(@Param("now") LocalDateTime now);
+
+    /** 모임 시작 대상 모임 ID 목록 (SCHEDULED & startDateTime < now) */
+    @Query("SELECT g.id FROM Gathering g WHERE g.status = 'SCHEDULED' AND g.startDateTime < :now")
+    List<Long> findIdsByScheduledAndStartBefore(@Param("now") LocalDateTime now);
+
+    /** 모임 종료 대상 모임 ID 목록 (ONGOING & endDateTime < now) */
+    @Query("SELECT g.id FROM Gathering g WHERE g.status = 'ONGOING' AND g.endDateTime < :now")
+    List<Long> findIdsByOngoingAndEndBefore(@Param("now") LocalDateTime now);
+
+    /** title 조회 (배치 알림 메시지 생성용 — id IN 절) */
+    @Query("SELECT g FROM Gathering g WHERE g.id IN :ids")
+    List<Gathering> findByIds(@Param("ids") List<Long> ids);
 }

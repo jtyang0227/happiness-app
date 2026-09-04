@@ -114,7 +114,10 @@ public class SecurityConfig {
                 // /my, /{id}/participants, /{id}/close-recruitment 등 인증 엔드포인트는 anyRequest().authenticated() 처리.
                 // GET /api/gatherings/my 가 아래 /* 패턴에 걸리지 않도록 명시적으로 먼저 선언.
                 // Slice 3: GET /*/posts(피드), GET /*/album(앨범)은 /*와 다른 패턴(다중 세그먼트)이므로 별도 등록.
+                // Phase 1 알림: /api/gatherings/notifications 및 하위 경로는 /* 패턴보다 먼저 authenticated() 선언.
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/my").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/gatherings/notifications").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/gatherings/notifications/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/gatherings").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/*/posts").permitAll()

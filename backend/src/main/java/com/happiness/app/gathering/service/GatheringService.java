@@ -24,6 +24,7 @@ public class GatheringService {
 
     private final GatheringRepository gatheringRepository;
     private final GatheringParticipantRepository participantRepository;
+    private final GatheringNotificationService notificationService;
 
     // ── XSS 방지 ──────────────────────────────────────────────────────────────
 
@@ -318,6 +319,16 @@ public class GatheringService {
                             participantRepository.save(waiter);
                             log.info("[GATHERING] 대기자 승격: gatheringId={}, memberId={}",
                                     gatheringId, waiter.getMemberId());
+                            try {
+                                notificationService.notify(
+                                        waiter.getMemberId(), gatheringId,
+                                        "PARTICIPATION_CONFIRMED",
+                                        "'" + gathering.getTitle() + "' 모임 참여가 확정되었습니다.",
+                                        null);
+                            } catch (Exception e) {
+                                log.error("[GATHERING_NOTIFICATION] 대기자 승격 알림 실패: gatheringId={}, memberId={}: {}",
+                                        gatheringId, waiter.getMemberId(), e.getMessage());
+                            }
                         });
             }
         }
@@ -346,6 +357,31 @@ public class GatheringService {
         gathering.setStatus("RECRUITMENT_CLOSED");
         gathering = gatheringRepository.save(gathering);
         log.info("[GATHERING] 모집 마감: id={}, closedBy={}", gatheringId, memberId);
+
+        // 참여 확정 + 대기자 모두에게 모집 마감 알림
+        final String gatheringTitle = gathering.getTitle();
+        final Long finalGatheringId = gatheringId;
+        try {
+            List<GatheringParticipant> toNotify = participantRepository
+                    .findByGatheringIdAndStatus(gatheringId, "PARTICIPATING");
+            toNotify.addAll(participantRepository.findByGatheringIdAndStatus(gatheringId, "WAITING"));
+            for (GatheringParticipant p : toNotify) {
+                try {
+                    notificationService.notify(
+                            p.getMemberId(), finalGatheringId,
+                            "RECRUITMENT_CLOSED",
+                            "'" + gatheringTitle + "' 모집이 마감되었습니다.",
+                            null);
+                } catch (Exception e) {
+                    log.error("[GATHERING_NOTIFICATION] 모집 마감 알림 실패: gatheringId={}, memberId={}: {}",
+                            finalGatheringId, p.getMemberId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("[GATHERING_NOTIFICATION] 모집 마감 알림 목록 조회 실패: gatheringId={}: {}",
+                    finalGatheringId, e.getMessage());
+        }
+
         return toResponse(gathering);
     }
 

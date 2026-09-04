@@ -48,6 +48,7 @@ import GatheringDetailPage   from './pages/GatheringDetailPage';
 import GatheringManagePage   from './pages/GatheringManagePage';
 import GatheringAlbumPage    from './pages/GatheringAlbumPage';
 import GatheringCalendarPage from './pages/GatheringCalendarPage';
+import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -130,8 +131,9 @@ function AppShell() {
           {/* Reports */}
           <Route path="/reports/mine" element={<ProtectedRoute><MyReportsPage /></ProtectedRoute>} />
 
-          {/* Gatherings — list/detail/album public; new/edit/manage require auth */}
+          {/* Gatherings — list/detail/album public; new/edit/manage/notifications require auth */}
           <Route path="/gatherings" element={<GatheringsPage />} />
+          <Route path="/gatherings/notifications" element={<ProtectedRoute><GatheringNotificationsPage /></ProtectedRoute>} />
           <Route path="/gatherings/new" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id" element={<GatheringDetailPage />} />
           <Route path="/gatherings/:id/edit" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />

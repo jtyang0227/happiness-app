@@ -72,6 +72,23 @@ export const gatheringApi = {
   // Public, only when ENDED — flattened photo album
   getAlbum: (id) =>
     apiClient.get(`${BASE}/${id}/album`).then(r => r.data),
+
+  // ── Notifications ────────────────────────────────────────
+  // Auth — paginated list of notifications for current user (newest first)
+  getNotifications: (params = {}) =>
+    apiClient.get(`${BASE}/notifications`, { params }).then(r => r.data),
+
+  // Auth — unread notification count { count: N }
+  getUnreadCount: () =>
+    apiClient.get(`${BASE}/notifications/unread-count`).then(r => r.data),
+
+  // Auth — mark single notification as read
+  markNotificationRead: (id) =>
+    apiClient.put(`${BASE}/notifications/${id}/read`).then(r => r.data),
+
+  // Auth — mark all notifications read for current user
+  markAllNotificationsRead: () =>
+    apiClient.post(`${BASE}/notifications/read-all`).then(r => r.data),
 };
 
 export default gatheringApi;

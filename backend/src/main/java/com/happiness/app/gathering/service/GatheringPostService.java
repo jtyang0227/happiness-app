@@ -40,6 +40,7 @@ public class GatheringPostService {
     private final GatheringPostLikeRepository likeRepository;
     private final GatheringPostCommentRepository commentRepository;
     private final MemberRepository memberRepository;
+    private final GatheringNotificationService notificationService;
 
     // ── XSS 방지 ──────────────────────────────────────────────────────────────
 
@@ -116,6 +117,27 @@ public class GatheringPostService {
 
         log.info("[GATHERING_POST] 게시물 작성: gatheringId={}, postId={}, memberId={}",
                 gatheringId, postId, memberId);
+
+        // 새 게시물 알림 — 작성자를 제외한 나머지 PARTICIPATING 참여자에게
+        try {
+            List<GatheringParticipant> others = participantRepository
+                    .findByGatheringIdAndStatus(gatheringId, "PARTICIPATING");
+            for (GatheringParticipant p : others) {
+                if (p.getMemberId().equals(memberId)) continue;
+                try {
+                    notificationService.notify(
+                            p.getMemberId(), gatheringId,
+                            "NEW_POST",
+                            "'" + gathering.getTitle() + "'에 새 사진이 올라왔습니다.",
+                            postId);
+                } catch (Exception e) {
+                    log.error("[GATHERING_NOTIFICATION] NEW_POST 알림 실패: gatheringId={}, memberId={}: {}",
+                            gatheringId, p.getMemberId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("[GATHERING_NOTIFICATION] NEW_POST 참여자 조회 실패: gatheringId={}: {}", gatheringId, e.getMessage());
+        }
 
         return buildPostResponse(post, savedPhotos, 0L, Collections.emptyList(), false);
     }
@@ -212,6 +234,19 @@ public class GatheringPostService {
                 .gatheringPostId(postId)
                 .memberId(memberId)
                 .build());
+
+        // 좋아요 알림 — 게시물 작성자에게 (자신의 게시물에 자신이 좋아요 제외)
+        if (!memberId.equals(post.getMemberId())) {
+            try {
+                notificationService.notify(
+                        post.getMemberId(), post.getGatheringId(),
+                        "NEW_LIKE",
+                        "회원님의 게시물에 좋아요를 받았습니다.",
+                        postId);
+            } catch (Exception e) {
+                log.error("[GATHERING_NOTIFICATION] NEW_LIKE 알림 실패: postId={}: {}", postId, e.getMessage());
+            }
+        }
     }
 
     @Transactional
@@ -257,6 +292,19 @@ public class GatheringPostService {
                 .content(sanitize(req.getContent()))
                 .build();
         comment = commentRepository.save(comment);
+
+        // 댓글 알림 — 게시물 작성자에게 (자신의 게시물에 자신이 댓글 달 경우 제외)
+        if (!memberId.equals(post.getMemberId())) {
+            try {
+                notificationService.notify(
+                        post.getMemberId(), post.getGatheringId(),
+                        "NEW_COMMENT",
+                        "회원님의 게시물에 댓글이 달렸습니다.",
+                        postId);
+            } catch (Exception e) {
+                log.error("[GATHERING_NOTIFICATION] NEW_COMMENT 알림 실패: postId={}: {}", postId, e.getMessage());
+            }
+        }
 
         return toCommentResponse(comment);
     }

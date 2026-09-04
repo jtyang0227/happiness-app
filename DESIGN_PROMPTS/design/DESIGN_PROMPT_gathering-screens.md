@@ -315,3 +315,67 @@ primary, primaryLight, primaryTonal
 text, textSecondary, textMuted, textHint
 danger, dangerTonal
 ```
+
+---
+
+## 7. GatheringNotificationsPage `/gatherings/notifications`
+> 2026-09-04 | 슬라이스 4 — 알림 벨
+
+### 와이어프레임
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 모임 알림                          [✓ 모두 읽음]      │
+│ 사진 모임 관련 알림을 확인하세요                       │
+├─────────────────────────────────────────────────────┤
+│ ┃ 👥 [BOLD] 홍길동 님이 참여 확정되었습니다  ● (dot) │
+│ ┃    참여 확정  방금 전                              │
+│─────────────────────────────────────────────────────│
+│   📸 가을 감성 촬영 — 새 게시물이 올라왔습니다         │
+│      새 게시물  3시간 전                             │
+│─────────────────────────────────────────────────────│
+│   🏁 모임이 종료되었습니다. 앨범을 확인하세요          │
+│      모임 종료  2일 전                              │
+│─────────────────────────────────────────────────────│
+│              [더 보기]                               │
+└─────────────────────────────────────────────────────┘
+```
+
+- 미읽음 행: `borderLeft 3px solid primary`, 배경 `primaryLight`, 메시지 `fontWeight 700`, 우측 파란 dot(8px)
+- 읽은 행: 투명 왼쪽 보더, 배경 `surface`, `fontWeight 400`
+- hover: `surfaceDim` 배경
+
+### 알림 타입 아이콘
+
+| type | icon | label |
+|------|------|-------|
+| PARTICIPATION_CONFIRMED | 👥 | 참여 확정 |
+| RECRUITMENT_CLOSED | 🔒 | 모집 마감 |
+| GATHERING_STARTED | 🎬 | 모임 시작 |
+| NEW_POST | 📸 | 새 게시물 |
+| NEW_COMMENT | 💬 | 새 댓글 |
+| NEW_LIKE | ♥ | 좋아요 |
+| GATHERING_ENDED | 🏁 | 모임 종료 |
+
+### Header 배지 연동
+
+- `NAV_ITEMS`의 모임 항목에 `badge: 'gatherings'` 추가
+- `gatheringApi.getUnreadCount()` → `{count: N}` — 로그인 시 inquiryApi, meetApi와 동일한 한 번 폴링
+- `badgeCount` 계산 ternary에 `badge === 'gatherings' ? gatheringNotifCount : ...` 연장
+- 배지 스타일: 기존 빨간 숫자 배지와 동일(`COLORS.danger` 배경, 9px bold, borderRadius 99)
+
+### 상태 정의
+
+- 로딩: shimmer 스켈레톤 5행 (아이콘 원 + 텍스트 2줄)
+- 빈 상태: DotEmptyState — 🔔 "새 알림이 없습니다"
+- 더 보기: 페이지네이션 버튼 (totalPages 초과 시만 표시)
+
+### 상호작용
+
+- 행 클릭 → 낙관적 읽음 처리(`markNotificationRead`) → `navigate('/gatherings/{gatheringId}')`
+- 모두 읽음 버튼 → 낙관적 전체 읽음 → `markAllNotificationsRead()` (미읽음 행이 있을 때만 표시)
+
+### 반응형
+
+- 최대 너비 680px, 중앙 정렬
+- 모바일: 전체 너비, padding 20px
