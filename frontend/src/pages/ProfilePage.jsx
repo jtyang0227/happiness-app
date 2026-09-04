@@ -29,6 +29,62 @@ const TABS = [
   { key: 'settings',  label: '설정' },
 ];
 
+const TAB_ICONS = {
+  photos: '🖼️', saved: '🔖', series: '📚',
+  analytics: '📊', bookings: '📅', reports: '🚨', settings: '⚙️',
+};
+
+/* ── 태블릿(768~1023px)/데스크탑(≥1024px) 2컬럼 레이아웃 ──────────────
+   모바일: 단일 세로 컬럼(기존 동작 유지). 768px 이상에서 좌 사이드바
+   (아바타/통계/수직 탭 메뉴) + 우 콘텐츠 2컬럼으로 전환한다.
+   (DESIGN_PROMPT_tablet-layouts.md C-2 스펙) */
+const PROFILE_LAYOUT_CSS = `
+  .profile-layout { max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+  .profile-tabs {
+    display: flex; border-bottom: 1px solid ${COLORS.border}; background: ${COLORS.surface};
+    position: sticky; top: 56px; z-index: 10; overflow-x: auto;
+  }
+  .profile-tab-btn {
+    flex: 1; padding: 14px 0; border: none; background: none; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: ${COLORS.textSecondary};
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .profile-tab-btn.active { font-weight: 700; color: ${COLORS.primary}; border-bottom-color: ${COLORS.primary}; }
+  .profile-tab-icon { display: none; }
+
+  @media (min-width: 768px) {
+    .profile-layout { max-width: none; margin: 0; padding-bottom: 0; display: flex; flex-direction: row; min-height: calc(100vh - 60px); }
+    .profile-sidebar {
+      width: 260px; flex-shrink: 0; border-right: 1px solid ${COLORS.border};
+      overflow-y: auto; padding: 28px 20px; background: ${COLORS.surface};
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+    }
+    .profile-cover { display: none; }
+    .profile-avatar-wrap { margin-top: 0 !important; margin-left: 0 !important; }
+    .profile-info { padding: 12px 0 0 !important; text-align: center; }
+    .profile-info a { justify-content: center; }
+    .profile-stats { margin-top: 16px !important; border-bottom: none !important; width: 100%; }
+    .profile-content { flex: 1; overflow-y: auto; padding: 28px 24px; }
+
+    .profile-tabs {
+      flex-direction: column; position: static; overflow-x: visible; gap: 4px;
+      border-bottom: none; background: transparent; width: 100%;
+      margin-top: 20px; padding-top: 16px; border-top: 1px solid ${COLORS.border};
+    }
+    .profile-tab-btn {
+      flex: none; text-align: left; padding: 10px 14px; border-radius: 8px;
+      border-bottom: none; font-size: 14px;
+    }
+    .profile-tab-btn.active { background: ${COLORS.primaryLight}; font-weight: 600; border-bottom-color: transparent; }
+    .profile-tab-icon { display: inline-block; margin-right: 8px; font-size: 16px; }
+  }
+
+  @media (min-width: 1024px) {
+    .profile-sidebar { width: 300px; padding: 32px 24px; }
+    .profile-content { padding: 32px 32px; }
+  }
+`;
+
 const PHOTO_SORTS = [
   { label: '최신순',   sortBy: 'createdAt',   order: 'desc' },
   { label: '오래된순', sortBy: 'createdAt',   order: 'asc'  },
@@ -378,7 +434,8 @@ export default function ProfilePage() {
 
   /* ── 렌더 ──────────────────────── */
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 80 }}>
+    <div className="profile-layout">
+      <style>{PROFILE_LAYOUT_CSS}</style>
 
       {/* Toast */}
       {toast && (
@@ -390,8 +447,11 @@ export default function ProfilePage() {
         }}>{toast}</div>
       )}
 
+      <aside className="profile-sidebar">
+
       {/* Cover */}
       <div
+        className="profile-cover"
         style={{ position: 'relative', height: 180, cursor: 'pointer', overflow: 'hidden' }}
         onMouseEnter={() => setCoverHover(true)}
         onMouseLeave={() => setCoverHover(false)}
@@ -410,7 +470,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Avatar */}
-      <div style={{ position: 'relative', marginTop: -42, marginLeft: 24, display: 'inline-block' }}>
+      <div className="profile-avatar-wrap" style={{ position: 'relative', marginTop: -42, marginLeft: 24, display: 'inline-block' }}>
         <div
           style={{
             width: 84, height: 84, borderRadius: '50%',
@@ -435,7 +495,7 @@ export default function ProfilePage() {
       </div>
 
       {/* User info */}
-      <div style={{ padding: '12px 24px 0' }}>
+      <div className="profile-info" style={{ padding: '12px 24px 0' }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user?.name || '-'}</div>
         {user?.profileName && <div style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>@{user.profileName}</div>}
         {user?.bio && <div style={{ fontSize: 13, color: COLORS.text, marginTop: 6, lineHeight: 1.6 }}>{user.bio}</div>}
@@ -449,7 +509,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'flex', margin: '16px 0 0', borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface }}>
+      <div className="profile-stats" style={{ display: 'flex', margin: '16px 0 0', borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface }}>
         {statItems.map(({ label, value }, i) => (
           <div key={label} style={{ flex: 1, textAlign: 'center', padding: '12px 0', borderRight: i < statItems.length - 1 ? `1px solid ${COLORS.border}` : 'none' }}>
             <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.text }}>{value}</div>
@@ -459,19 +519,23 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface, position: 'sticky', top: 56, zIndex: 10 }}>
+      <div className="profile-tabs">
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
-            flex: 1, padding: '14px 0', border: 'none', background: 'none', cursor: 'pointer',
-            fontSize: 13, fontWeight: activeTab === t.key ? 700 : 500,
-            color: activeTab === t.key ? COLORS.primary : COLORS.textSecondary,
-            borderBottom: activeTab === t.key ? `2px solid ${COLORS.primary}` : '2px solid transparent',
-          }}>{t.label}</button>
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`profile-tab-btn${activeTab === t.key ? ' active' : ''}`}
+          >
+            <span className="profile-tab-icon">{TAB_ICONS[t.key]}</span>
+            {t.label}
+          </button>
         ))}
       </div>
 
+      </aside>
+
       {/* Tab content */}
-      <div style={{ paddingTop: 8 }}>
+      <div className="profile-content">
         {loadingTab && activeTab !== 'settings' ? (
           <div style={{ textAlign: 'center', padding: 40, color: COLORS.textMuted }}>불러오는 중...</div>
         ) : (
