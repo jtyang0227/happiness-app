@@ -6,6 +6,15 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 import DotEmptyState from '../components/common/DotEmptyState';
 import { SkeletonFeedCard } from '../components/common/Skeleton';
 
+const FEED_LAYOUT_CSS = `
+  .feed-container { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
+  .feed-grid { display: flex; flex-direction: column; gap: 20px; }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .feed-container { max-width: none; padding: 32px 24px 60px; }
+    .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  }
+`;
+
 function FeedCard({ photo, onClick }) {
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
   const authorName = photo.memberName || photo.member?.name || '익명';
@@ -140,7 +149,8 @@ export default function FeedPage() {
       minHeight: '100vh',
       background: COLORS.bg,
     }}>
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 60px' }}>
+    <style>{FEED_LAYOUT_CSS}</style>
+    <div className="feed-container">
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>📰 피드</h2>
@@ -159,7 +169,7 @@ export default function FeedPage() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="feed-grid">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonFeedCard key={i} />)}
         </div>
       ) : photos.length === 0 ? (
@@ -173,7 +183,7 @@ export default function FeedPage() {
         />
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="feed-grid">
             {photos.map(photo => (
               <FeedCard key={photo.id} photo={photo} onClick={id => navigate(`/photo/${id}`)} />
             ))}
