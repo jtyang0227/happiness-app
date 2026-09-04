@@ -46,6 +46,7 @@ import GatheringsPage        from './pages/GatheringsPage';
 import GatheringFormPage     from './pages/GatheringFormPage';
 import GatheringDetailPage   from './pages/GatheringDetailPage';
 import GatheringManagePage   from './pages/GatheringManagePage';
+import GatheringAlbumPage    from './pages/GatheringAlbumPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -128,12 +129,13 @@ function AppShell() {
           {/* Reports */}
           <Route path="/reports/mine" element={<ProtectedRoute><MyReportsPage /></ProtectedRoute>} />
 
-          {/* Gatherings — list/detail public; new/edit/manage require auth */}
+          {/* Gatherings — list/detail/album public; new/edit/manage require auth */}
           <Route path="/gatherings" element={<GatheringsPage />} />
           <Route path="/gatherings/new" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id" element={<GatheringDetailPage />} />
           <Route path="/gatherings/:id/edit" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id/manage" element={<ProtectedRoute><GatheringManagePage /></ProtectedRoute>} />
+          <Route path="/gatherings/:id/album" element={<GatheringAlbumPage />} />
 
           {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />

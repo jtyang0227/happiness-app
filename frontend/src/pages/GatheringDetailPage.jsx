@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
 import gatheringApi from '../services/gatheringApi';
 import useAuthStore from '../store/authStore';
+import GatheringFeed from '../components/gathering/GatheringFeed';
 
 /* ── 상태 메타 ─────────────────────────────────────────── */
 const STATUS_META = {
@@ -597,21 +598,33 @@ export default function GatheringDetailPage() {
           </div>
         )}
 
-        {/* ── 진행중 / 종료 ─────────────────────────────── */}
+        {/* ── 진행중 / 종료: 실제 피드 ─────────────────── */}
         {isActiveOrEnded && (
-          <div style={{
-            padding: '24px 20px', borderRadius: 16, marginBottom: 20,
-            background: COLORS.surface, border: `1px solid ${COLORS.border}`,
-            textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📸</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>
-              {gathering.status === 'ONGOING' ? '모임이 진행 중입니다' : '모임이 종료되었습니다'}
-            </div>
-            <div style={{ fontSize: 13, color: COLORS.textMuted }}>
-              모임 피드는 다음 업데이트에서 제공됩니다
-            </div>
-          </div>
+          <>
+            <GatheringFeed
+              gatheringId={id}
+              status={gathering.status}
+              isParticipating={myStatus === 'PARTICIPATING'}
+              currentUser={user}
+            />
+            {gathering.status === 'ENDED' && (
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <Link
+                  to={`/gatherings/${id}/album`}
+                  style={{
+                    display: 'inline-block',
+                    padding: '10px 24px', borderRadius: 10,
+                    background: COLORS.primaryLight,
+                    border: `1px solid ${COLORS.primaryTonal}`,
+                    color: COLORS.primary, fontSize: 14, fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  📷 사진 앨범 보기
+                </Link>
+              </div>
+            )}
+          </>
         )}
 
         {/* 해시태그 */}

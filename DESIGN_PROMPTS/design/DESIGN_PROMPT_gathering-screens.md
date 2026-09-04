@@ -208,5 +208,110 @@
 사진 모임(Photo Gathering) 목록·상세·폼·관리 4개 화면을 구현해주세요:
 1. GatheringsPage - 모집중인 모임 카드 그리드 + 내 모임 목록 (로그인 시)
 2. GatheringFormPage - 모임 생성/수정 폼 (필수 필드 검증 포함)
-3. GatheringDetailPage - 상태별 렌더링 (RECRUITING: 참여/미참여 버튼, CLOSED/SCHEDULED: 마감 공지, ONGOING/ENDED: 피드 준비중 공지)
+3. GatheringDetailPage - 상태별 렌더링 (RECRUITING: 참여/미참여 버튼, CLOSED/SCHEDULED: 마감 공지, ONGOING/ENDED: GatheringFeed 피드)
 4. GatheringManagePage - 생성자 전용 참여자/대기자/미참여자 관리
+
+---
+
+## 피드 & 앨범 슬라이스 (2026-09-03 추가)
+
+### 5. GatheringFeed 컴포넌트 `/src/components/gathering/GatheringFeed.jsx`
+
+```
+┌─────────────────────────────────────────────────┐
+│ 📸 모임 피드              [진행 중 / 종료됨]      │
+├─────────────────────────────────────────────────┤
+│ (ONGOING + 참여자만)                              │
+│  [📷 사진 올리기]  [✏️ 글 작성]                  │
+├─────────────────────────────────────────────────┤
+│ PostCard:                                        │
+│  [Avatar] 홍길동                    2시간 전 [···] │
+│  게시글 내용 텍스트                               │
+│  #해시태그 #촬영                                  │
+│  ┌──────────────────────────────────┐            │
+│  │ 사진 1장: 전폭 이미지             │            │
+│  └──────────────────────────────────┘            │
+│  또는 → 가로 스크롤 멀티 사진 스트립               │
+│  ♡ 5   💬 2                                       │
+│  ─────────────────────────────────────────────   │
+│  댓글 목록 (showComments 토글)                    │
+│  [입력창] [게시] (참여자만)                       │
+├─────────────────────────────────────────────────┤
+│           [더 보기]                              │
+└─────────────────────────────────────────────────┘
+```
+
+**컴포넌트 스펙:**
+- `gatheringId`, `status`, `isParticipating`, `currentUser` props
+- Spring Page 페이지네이션 (page/size=10)
+- 좋아요 optimistic toggle (참여자 게이트)
+- 댓글 Enter 전송 지원
+- 삭제: 본인 포스트만 visible, 2단계 확인(취소/삭제 버튼 인라인)
+- 빈상태: DotEmptyState(theme='light', icon='📸')
+- 스켈레톤: 3개 SkeletonPost (shimmer 애니메이션)
+
+### 6. GatheringPostComposerModal `/src/components/gathering/GatheringPostComposerModal.jsx`
+
+```
+┌─────────────────────────────────────────────────┐ ← 하단 시트
+│ 📸 사진 올리기                              [✕]  │
+├─────────────────────────────────────────────────┤
+│ [textarea: 모임에서의 순간을 나눠보세요...]        │
+│ [input: #해시태그]                               │
+│ ┌──────┐ ┌──────┐ ┌──────┐                      │
+│ │ 사진1 │ │ 사진2 │ │ 사진3 │  (3열 그리드)         │
+│ │ [✕]  │ │ [✕]  │ │ [✕]  │                      │
+│ │캡션  │ │ 캡션  │ │ 캡션  │  (각 11px 입력)       │
+│ └──────┘ └──────┘ └──────┘                      │
+│ [- - - 📷 사진 추가 (n/10) - - -]               │
+│ [         게시하기          ]                    │
+└─────────────────────────────────────────────────┘
+```
+
+**컴포넌트 스펙:**
+- 배경 클릭 시 닫힘 (stopPropagation)
+- 최대 10장, uploadImage(file, 'gatherings', onProgress) per 파일
+- 업로드 진행 중: 오버레이 퍼센티지 표시
+- 유효성: content OR 사진 ≥1장
+- 제출 중 비활성 상태 처리
+
+### 7. GatheringAlbumPage `/gatherings/:id/album` (공개)
+
+```
+┌─────────────────────────────────────────────────┐
+│ ← 모임 피드   모임 목록                           │
+├─────────────────────────────────────────────────┤
+│ 모임 앨범                            [종료됨]    │
+│ 이번 모임 제목                                   │
+│ 📷 사진 20장   📝 게시물 5개   👥 참여자 8명       │
+├─────────────────────────────────────────────────┤
+│ 총 20장          피드에서 자세히 보기 →           │
+│ ┌────┐ ┌────┐ ┌────┐                            │
+│ │사진│ │사진│ │사진│    (3열 CSS grid, 1:1 비율)  │
+│ └────┘ └────┘ └────┘                            │
+│ ┌────┐ ┌────┐ ┌────┐                            │
+│ │사진│ │사진│ │사진│    hover: 캡션 오버레이       │
+│ └────┘ └────┘ └────┘                            │
+└─────────────────────────────────────────────────┘
+```
+
+**컴포넌트 스펙:**
+- public route, 인증 불필요
+- ENDED 아니면 400 에러 메시지 처리
+- 스켈레톤 헤더 + 9칸 그리드 shimmer
+- hover: translateY(-2px), 캡션 오버레이, 날짜 배지
+- 반응형: ≥1024px 3컬럼, <1024px 2컬럼, <768px 2컬럼(gap 6px)
+- 빈상태: DotEmptyState(theme='light')
+
+**API:**
+- `GET /api/gatherings/{id}/album` → `{gatheringId, title, photoCount, postCount, participantCount, photos: [{imageUrl, caption, postId, createdAt}]}`
+
+**라우트:** `<Route path="/gatherings/:id/album" element={<GatheringAlbumPage />} />`
+
+**컬러 토큰:**
+```
+surface, border, borderLight, bg, surfaceDim
+primary, primaryLight, primaryTonal
+text, textSecondary, textMuted, textHint
+danger, dangerTonal
+```
