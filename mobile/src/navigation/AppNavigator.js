@@ -22,6 +22,9 @@ import LegalScreen       from '../../screens/LegalScreen';
 import MeetsScreen       from '../../screens/MeetsScreen';
 import MeetDetailScreen  from '../../screens/MeetDetailScreen';
 import PortfolioSlideshowScreen from '../../screens/PortfolioSlideshowScreen';
+import GatheringsScreen             from '../../screens/GatheringsScreen';
+import GatheringDetailScreen        from '../../screens/GatheringDetailScreen';
+import GatheringInstagramShareScreen from '../../screens/GatheringInstagramShareScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -144,6 +147,15 @@ function MainStack() {
           headerTintColor: '#fff', title: '약속' }} />
       <Stack.Screen name="MeetDetail"  component={MeetDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PortfolioSlideshow" component={PortfolioSlideshowScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Gatherings"  component={GatheringsScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
+          headerTintColor: '#fff', title: '사진 모임' }} />
+      <Stack.Screen name="GatheringDetail" component={GatheringDetailScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
+          headerTintColor: '#fff', title: '모임 상세' }} />
+      <Stack.Screen name="GatheringInstagramShare" component={GatheringInstagramShareScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
+          headerTintColor: '#fff', title: 'Instagram Story 공유' }} />
       <Stack.Screen name="Legal"       component={LegalScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#1a1a2e', title: '법적 고지' }} />

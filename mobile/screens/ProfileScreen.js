@@ -326,6 +326,11 @@ export default function ProfileScreen({ navigation = {} }) {
       <View style={styles.legalSection}>
         <Text style={styles.legalTitle}>메뉴</Text>
         <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Gatherings')}>
+          <Text style={styles.legalItemText}>📷 사진 모임</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
           onPress={() => navigation.navigate && navigation.navigate('Meets')}>
           <Text style={styles.legalItemText}>🤝 약속</Text>
           <Text style={styles.legalChevron}>›</Text>
