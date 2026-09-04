@@ -4,6 +4,20 @@ import useAuthStore from '../store/authStore';
 import { COLORS } from '../constants/colors';
 import meetApi from '../services/meetApi';
 import MeetRequestModal from '../components/meet/MeetRequestModal';
+import Button from '../components/common/Button';
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= 1024
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isDesktop;
+}
 
 const TABS = [
   { key: 'all', label: '전체' },
@@ -24,11 +38,13 @@ const STATUS_LABELS = {
 export default function MeetsPage() {
   const auth = useAuthStore(s => s.user);
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
   const [meets, setMeets] = useState([]);
   const [tab, setTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -52,147 +68,236 @@ export default function MeetsPage() {
     return new Date(iso).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: COLORS.bg, paddingBottom: 80 }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
-        {/* header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div>
-            <h1 style={{ color: COLORS.text, fontSize: 22, fontWeight: 700, margin: 0 }}>약속</h1>
-            <p style={{ color: COLORS.textMuted, fontSize: 13, margin: '4px 0 0' }}>모델·작가와의 촬영 약속을 관리합니다</p>
-          </div>
-          <button onClick={() => setShowModal(true)} style={newBtnStyle}>
-            + 새 약속
-          </button>
-        </div>
-
-        {/* underline tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: 20, overflowX: 'auto' }}>
-          {TABS.map(t => {
-            const count = t.key === 'all' ? meets.length : meets.filter(m => m.status === t.key).length;
-            const active = tab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: active ? `2px solid ${COLORS.primary}` : '2px solid transparent',
-                  color: active ? COLORS.primary : COLORS.textMuted,
-                  fontWeight: active ? 700 : 400,
-                  fontSize: 13,
-                  padding: '10px 16px',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  marginBottom: -1,
-                  transition: 'all 0.15s',
-                }}
-              >
-                {t.label}
-                {count > 0 && (
-                  <span style={{
-                    marginLeft: 5, fontSize: 11, background: active ? COLORS.primaryLight : COLORS.surfaceDim,
-                    borderRadius: 10, padding: '1px 6px', color: active ? COLORS.primary : COLORS.textMuted,
-                  }}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* content */}
-        {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ height: 88, borderRadius: 14, background: COLORS.surfaceDim, animation: 'pulse 1.5s infinite' }} />
-            ))}
-          </div>
-        )}
-
-        {!loading && error && (
-          <div style={{ color: COLORS.danger, textAlign: 'center', padding: 40, fontSize: 14 }}>{error}</div>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>📅</div>
-            <div style={{ color: COLORS.textSecondary, fontSize: 15 }}>약속이 없습니다</div>
-            <div style={{ color: COLORS.textHint, fontSize: 13, marginTop: 8 }}>
-              새 약속 버튼을 눌러 모델이나 작가에게 약속을 요청해보세요
-            </div>
-          </div>
-        )}
-
-        {!loading && filtered.map(meet => {
-          const other = getOther(meet);
-          const status = STATUS_LABELS[meet.status] || STATUS_LABELS.PENDING;
-          const isRequester = meet.requesterId === auth?.id;
-
+  function renderTabs(compact) {
+    return (
+      <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: compact ? 12 : 20, overflowX: 'auto' }}>
+        {TABS.map(t => {
+          const count = t.key === 'all' ? meets.length : meets.filter(m => m.status === t.key).length;
+          const active = tab === t.key;
           return (
-            <div
-              key={meet.id}
-              onClick={() => navigate(`/meets/${meet.id}`)}
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                background: COLORS.surface,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 14,
-                padding: '16px 18px',
+                background: 'none',
+                border: 'none',
+                borderBottom: active ? `2px solid ${COLORS.primary}` : '2px solid transparent',
+                color: active ? COLORS.primary : COLORS.textMuted,
+                fontWeight: active ? 700 : 400,
+                fontSize: compact ? 12 : 13,
+                padding: compact ? '8px 10px' : '10px 16px',
                 cursor: 'pointer',
-                marginBottom: 10,
-                transition: 'box-shadow 0.15s',
+                whiteSpace: 'nowrap',
+                marginBottom: -1,
+                transition: 'color 0.15s ease, border-color 0.15s ease',
               }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
             >
-              {/* avatar */}
-              <div style={{
-                width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
-                background: other.avatar ? `url(${other.avatar}) center/cover` : COLORS.primaryDark,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontWeight: 700, fontSize: 18,
-              }}>
-                {!other.avatar && (other.name?.[0] || '?')}
-              </div>
-
-              {/* info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ color: COLORS.text, fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {other.name}
-                  </span>
-                  <span style={{
-                    fontSize: 11, padding: '2px 8px', borderRadius: 20,
-                    background: status.bg, color: status.color, whiteSpace: 'nowrap',
-                  }}>
-                    {status.label}
-                  </span>
-                </div>
-                <div style={{ color: COLORS.textMuted, fontSize: 12 }}>
-                  {isRequester ? '내가 요청' : '받은 요청'}
-                  {meet.locationName && ` · 📍 ${meet.locationName}`}
-                  {meet.confirmedDate && ` · ${meet.confirmedDate}`}
-                </div>
-              </div>
-
-              {/* right info */}
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                {meet.messageCount > 0 && (
-                  <div style={{ fontSize: 11, color: COLORS.primary, background: COLORS.primaryLight, borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
-                    💬 {meet.messageCount}
-                  </div>
-                )}
-                <div style={{ fontSize: 11, color: COLORS.textMuted }}>{formatDate(meet.updatedAt)}</div>
-              </div>
-            </div>
+              {t.label}
+              {count > 0 && (
+                <span style={{
+                  marginLeft: 5, fontSize: 11, background: active ? COLORS.primaryLight : COLORS.surfaceDim,
+                  borderRadius: 10, padding: '1px 6px', color: active ? COLORS.primary : COLORS.textMuted,
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
           );
         })}
       </div>
+    );
+  }
+
+  function renderList(compact) {
+    if (loading) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ height: compact ? 72 : 88, borderRadius: 14, background: COLORS.surfaceDim, animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </div>
+      );
+    }
+    if (error) {
+      return <div style={{ color: COLORS.danger, textAlign: 'center', padding: 40, fontSize: 14 }}>{error}</div>;
+    }
+    if (filtered.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📅</div>
+          <div style={{ color: COLORS.textSecondary, fontSize: 15 }}>약속이 없습니다</div>
+          <div style={{ color: COLORS.textHint, fontSize: 13, marginTop: 8 }}>
+            새 약속 버튼을 눌러 모델이나 작가에게 약속을 요청해보세요
+          </div>
+        </div>
+      );
+    }
+    return filtered.map(meet => {
+      const other = getOther(meet);
+      const status = STATUS_LABELS[meet.status] || STATUS_LABELS.PENDING;
+      const isRequester = meet.requesterId === auth?.id;
+      const selected = compact && selectedId === meet.id;
+
+      return (
+        <div
+          key={meet.id}
+          onClick={() => (compact ? setSelectedId(meet.id) : navigate(`/meets/${meet.id}`))}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: compact ? 12 : 14,
+            background: selected ? COLORS.primaryLight : COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderLeft: selected ? `3px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
+            borderRadius: compact ? 10 : 14,
+            padding: compact ? '14px 16px' : '16px 18px',
+            cursor: 'pointer',
+            marginBottom: compact ? 8 : 10,
+            transition: 'background-color 0.1s ease, box-shadow 0.15s ease',
+          }}
+          onMouseEnter={e => { if (!selected) e.currentTarget.style.background = COLORS.surfaceDim; e.currentTarget.style.boxShadow = compact ? 'none' : '0 2px 10px rgba(0,0,0,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = selected ? COLORS.primaryLight : COLORS.surface; e.currentTarget.style.boxShadow = 'none'; }}
+        >
+          {/* avatar */}
+          <div style={{
+            width: compact ? 40 : 46, height: compact ? 40 : 46, borderRadius: '50%', flexShrink: 0,
+            background: other.avatar ? `url(${other.avatar}) center/cover` : COLORS.primaryDark,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 700, fontSize: compact ? 15 : 18,
+          }}>
+            {!other.avatar && (other.name?.[0] || '?')}
+          </div>
+
+          {/* info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ color: COLORS.text, fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {other.name}
+              </span>
+              <span style={{
+                fontSize: 11, padding: '2px 8px', borderRadius: 20,
+                background: status.bg, color: status.color, whiteSpace: 'nowrap',
+              }}>
+                {status.label}
+              </span>
+            </div>
+            <div style={{ color: COLORS.textMuted, fontSize: 12 }}>
+              {isRequester ? '내가 요청' : '받은 요청'}
+              {!compact && meet.locationName && ` · 📍 ${meet.locationName}`}
+              {meet.confirmedDate && ` · ${meet.confirmedDate}`}
+            </div>
+          </div>
+
+          {/* right info */}
+          {!compact && (
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              {meet.messageCount > 0 && (
+                <div style={{ fontSize: 11, color: COLORS.primary, background: COLORS.primaryLight, borderRadius: 10, padding: '2px 8px', marginBottom: 4 }}>
+                  💬 {meet.messageCount}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: COLORS.textMuted }}>{formatDate(meet.updatedAt)}</div>
+            </div>
+          )}
+        </div>
+      );
+    });
+  }
+
+  function renderPreviewPanel() {
+    const selected = meets.find(m => m.id === selectedId);
+    if (!selected) {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🤝</div>
+          <div style={{ fontSize: 16, color: COLORS.textMuted }}>약속을 선택하세요</div>
+        </div>
+      );
+    }
+    const other = getOther(selected);
+    const status = STATUS_LABELS[selected.status] || STATUS_LABELS.PENDING;
+    return (
+      <div style={{ maxWidth: 480 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
+            background: other.avatar ? `url(${other.avatar}) center/cover` : COLORS.primaryDark,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 700, fontSize: 24,
+          }}>
+            {!other.avatar && (other.name?.[0] || '?')}
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>{other.name}</div>
+            <span style={{ fontSize: 12, padding: '2px 10px', borderRadius: 20, background: status.bg, color: status.color }}>
+              {status.label}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, margin: '20px 0' }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14, color: COLORS.text }}>
+          {selected.confirmedDate && (
+            <div>확정 날짜: {selected.confirmedDate}{selected.confirmedTime ? ` ${selected.confirmedTime}` : ''}</div>
+          )}
+          {selected.locationName && <div>장소: {selected.locationName}</div>}
+          {selected.messageCount > 0 && (
+            <div style={{ color: COLORS.textSecondary }}>메시지 {selected.messageCount}개</div>
+          )}
+        </div>
+
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, margin: '20px 0' }} />
+
+        <Button variant="secondary" onClick={() => navigate(`/meets/${selected.id}`)}>
+          채팅으로 이동 →
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: COLORS.bg, paddingBottom: isDesktop ? 0 : 80 }}>
+      {isDesktop ? (
+        <div style={{ display: 'flex', flexDirection: 'row', height: 'calc(100vh - 60px)' }}>
+          {/* left panel */}
+          <div style={{ width: 320, flexShrink: 0, borderRight: `1px solid ${COLORS.border}`, overflowY: 'auto', background: COLORS.surface, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 16px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h1 style={{ color: COLORS.text, fontSize: 18, fontWeight: 700, margin: 0 }}>약속</h1>
+                <button onClick={() => setShowModal(true)} style={{ ...newBtnStyle, padding: '6px 12px', fontSize: 12 }}>
+                  + 새 약속
+                </button>
+              </div>
+              {renderTabs(true)}
+            </div>
+            <div style={{ padding: '0 12px 12px' }}>
+              {renderList(true)}
+            </div>
+          </div>
+
+          {/* right preview panel */}
+          <div style={{ flex: 1, padding: '32px 40px', overflowY: 'auto', background: COLORS.bg }}>
+            {renderPreviewPanel()}
+          </div>
+        </div>
+      ) : (
+        <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
+          {/* header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div>
+              <h1 style={{ color: COLORS.text, fontSize: 22, fontWeight: 700, margin: 0 }}>약속</h1>
+              <p style={{ color: COLORS.textMuted, fontSize: 13, margin: '4px 0 0' }}>모델·작가와의 촬영 약속을 관리합니다</p>
+            </div>
+            <button onClick={() => setShowModal(true)} style={newBtnStyle}>
+              + 새 약속
+            </button>
+          </div>
+
+          {renderTabs(false)}
+          {renderList(false)}
+        </div>
+      )}
 
       {/* new meet modal — uses search instead of fixed receiver for now */}
       {showModal && (

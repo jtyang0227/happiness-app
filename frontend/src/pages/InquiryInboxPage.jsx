@@ -164,7 +164,7 @@ export default function InquiryInboxPage() {
   const unreadCount = inquiries.filter(i => !i.isRead).length;
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 60px' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 20px 60px' }}>
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
