@@ -301,7 +301,10 @@ export default function GatheringsPage() {
             </p>
           </div>
           {user && (
-            <NewButton onClick={() => navigate('/gatherings/new')} />
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <CalendarButton onClick={() => navigate('/gatherings/calendar')} />
+              <NewButton onClick={() => navigate('/gatherings/new')} />
+            </div>
           )}
         </div>
 
@@ -383,6 +386,27 @@ export default function GatheringsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function CalendarButton({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '9px 16px', borderRadius: 10,
+        background: hovered ? COLORS.surfaceDim : COLORS.surface,
+        color: COLORS.textSecondary, border: `1px solid ${COLORS.border}`,
+        cursor: 'pointer', fontSize: 14, fontWeight: 600,
+        transition: 'all 0.15s ease',
+      }}
+    >
+      📅 달력
+    </button>
   );
 }
 
