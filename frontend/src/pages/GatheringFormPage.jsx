@@ -3,6 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
 import gatheringApi from '../services/gatheringApi';
 
+/* 태블릿(768px) 이상에서 좌: 기본 정보 / 우: 장소·일정·참여 정보·이미지
+ * 2컬럼으로 전환 (DESIGN_PROMPT_tablet-layouts.md C-4). 모바일은 기존
+ * 단일 컬럼 순서(기본정보→장소→일정→참여정보→이미지) 그대로 유지. */
+const GFORM_LAYOUT_CSS = `
+  .gform-container { max-width: 640px; }
+  .gform-columns { display: flex; flex-direction: column; gap: 20px; }
+  .gform-left, .gform-right { display: flex; flex-direction: column; gap: 20px; }
+  @media (min-width: 768px) {
+    .gform-container { max-width: 900px; }
+    .gform-columns { flex-direction: row; align-items: flex-start; }
+    .gform-left, .gform-right { flex: 1; min-width: 0; }
+  }
+`;
+
 /* ── 유틸: ISO LocalDateTime ↔ datetime-local input ───────
  * datetime-local: "2026-09-20T18:00"
  * 백엔드: "2026-09-20T18:00:00"
@@ -230,7 +244,8 @@ export default function GatheringFormPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.bg, paddingBottom: 80 }}>
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px' }}>
+      <style>{GFORM_LAYOUT_CSS}</style>
+      <div className="gform-container" style={{ margin: '0 auto', padding: '24px 20px' }}>
 
         {/* 뒤로가기 + 제목 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -261,75 +276,78 @@ export default function GatheringFormPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="gform-columns">
 
-            {/* 기본 정보 섹션 */}
-            <SectionCard title="기본 정보">
-              <Field label="모임 제목" required error={errors.title}>
-                <TextInput value={form.title} onChange={setField('title')} placeholder="모임 제목을 입력하세요" />
-              </Field>
-              <Field label="모임 소개">
-                <TextareaInput value={form.description} onChange={setField('description')} placeholder="모임을 소개해주세요" rows={3} />
-              </Field>
-              <Field label="모임 상세 설명">
-                <TextareaInput value={form.detailDescription} onChange={setField('detailDescription')} placeholder="자세한 진행 방식, 준비물 등을 알려주세요" rows={4} />
-              </Field>
-              <Field label="촬영 테마">
-                <TextInput value={form.shootTheme} onChange={setField('shootTheme')} placeholder="예: 도심 야경, 자연 인물, 패션" />
-              </Field>
-            </SectionCard>
+            {/* 좌: 기본 정보 */}
+            <div className="gform-left">
+              <SectionCard title="기본 정보">
+                <Field label="모임 제목" required error={errors.title}>
+                  <TextInput value={form.title} onChange={setField('title')} placeholder="모임 제목을 입력하세요" />
+                </Field>
+                <Field label="모임 소개">
+                  <TextareaInput value={form.description} onChange={setField('description')} placeholder="모임을 소개해주세요" rows={3} />
+                </Field>
+                <Field label="모임 상세 설명">
+                  <TextareaInput value={form.detailDescription} onChange={setField('detailDescription')} placeholder="자세한 진행 방식, 준비물 등을 알려주세요" rows={4} />
+                </Field>
+                <Field label="촬영 테마">
+                  <TextInput value={form.shootTheme} onChange={setField('shootTheme')} placeholder="예: 도심 야경, 자연 인물, 패션" />
+                </Field>
+              </SectionCard>
+            </div>
 
-            {/* 장소 섹션 */}
-            <SectionCard title="장소">
-              <Field label="장소" required error={errors.location}>
-                <TextInput value={form.location} onChange={setField('location')} placeholder="예: 서울 홍대 걷고 싶은 거리" />
-              </Field>
-              <Field label="장소 소개">
-                <TextareaInput value={form.locationIntro} onChange={setField('locationIntro')} placeholder="장소의 특징이나 접근 방법을 알려주세요" rows={2} />
-              </Field>
-            </SectionCard>
+            {/* 우: 장소·일정·참여 정보·이미지 */}
+            <div className="gform-right">
+              <SectionCard title="장소">
+                <Field label="장소" required error={errors.location}>
+                  <TextInput value={form.location} onChange={setField('location')} placeholder="예: 서울 홍대 걷고 싶은 거리" />
+                </Field>
+                <Field label="장소 소개">
+                  <TextareaInput value={form.locationIntro} onChange={setField('locationIntro')} placeholder="장소의 특징이나 접근 방법을 알려주세요" rows={2} />
+                </Field>
+              </SectionCard>
 
-            {/* 일정 섹션 */}
-            <SectionCard title="일정">
-              <Field label="시작 일시" required error={errors.startDateTime}>
-                <DateTimeInput value={form.startDateTime} onChange={setField('startDateTime')} />
-              </Field>
-              <Field label="종료 일시" required error={errors.endDateTime}>
-                <DateTimeInput value={form.endDateTime} onChange={setField('endDateTime')} />
-              </Field>
-              <Field label="모집 마감 일시" required error={errors.recruitmentEndDateTime}>
-                <DateTimeInput value={form.recruitmentEndDateTime} onChange={setField('recruitmentEndDateTime')} />
-                <span style={{ fontSize: 12, color: COLORS.textMuted }}>시작 일시 이전이어야 합니다</span>
-              </Field>
-            </SectionCard>
+              <SectionCard title="일정">
+                <Field label="시작 일시" required error={errors.startDateTime}>
+                  <DateTimeInput value={form.startDateTime} onChange={setField('startDateTime')} />
+                </Field>
+                <Field label="종료 일시" required error={errors.endDateTime}>
+                  <DateTimeInput value={form.endDateTime} onChange={setField('endDateTime')} />
+                </Field>
+                <Field label="모집 마감 일시" required error={errors.recruitmentEndDateTime}>
+                  <DateTimeInput value={form.recruitmentEndDateTime} onChange={setField('recruitmentEndDateTime')} />
+                  <span style={{ fontSize: 12, color: COLORS.textMuted }}>시작 일시 이전이어야 합니다</span>
+                </Field>
+              </SectionCard>
 
-            {/* 참여 정보 섹션 */}
-            <SectionCard title="참여 정보">
-              <Field label="최대 참여 인원" required error={errors.maxParticipants}>
-                <NumberInput value={form.maxParticipants} onChange={setField('maxParticipants')} min={1} max={500} />
-              </Field>
-              <Field label="참가비">
-                <TextInput value={form.fee} onChange={setField('fee')} placeholder="예: 무료, 5,000원" />
-              </Field>
-              <Field label="준비 안내">
-                <TextareaInput value={form.preparationNote} onChange={setField('preparationNote')} placeholder="참가자가 준비해야 할 사항을 알려주세요" rows={2} />
-              </Field>
-            </SectionCard>
+              <SectionCard title="참여 정보">
+                <Field label="최대 참여 인원" required error={errors.maxParticipants}>
+                  <NumberInput value={form.maxParticipants} onChange={setField('maxParticipants')} min={1} max={500} />
+                </Field>
+                <Field label="참가비">
+                  <TextInput value={form.fee} onChange={setField('fee')} placeholder="예: 무료, 5,000원" />
+                </Field>
+                <Field label="준비 안내">
+                  <TextareaInput value={form.preparationNote} onChange={setField('preparationNote')} placeholder="참가자가 준비해야 할 사항을 알려주세요" rows={2} />
+                </Field>
+              </SectionCard>
 
-            {/* 미디어 섹션 */}
-            <SectionCard title="이미지">
-              <Field label="썸네일 이미지 URL">
-                <TextInput value={form.thumbnailUrl} onChange={setField('thumbnailUrl')} placeholder="https://..." />
-              </Field>
-              <Field label="참고 이미지 URL">
-                <TextInput value={form.referenceImageUrl} onChange={setField('referenceImageUrl')} placeholder="https://..." />
-              </Field>
-              <Field label="해시태그">
-                <TextInput value={form.hashtags} onChange={setField('hashtags')} placeholder="#서울촬영 #인물사진 #주말모임" />
-              </Field>
-            </SectionCard>
+              <SectionCard title="이미지">
+                <Field label="썸네일 이미지 URL">
+                  <TextInput value={form.thumbnailUrl} onChange={setField('thumbnailUrl')} placeholder="https://..." />
+                </Field>
+                <Field label="참고 이미지 URL">
+                  <TextInput value={form.referenceImageUrl} onChange={setField('referenceImageUrl')} placeholder="https://..." />
+                </Field>
+                <Field label="해시태그">
+                  <TextInput value={form.hashtags} onChange={setField('hashtags')} placeholder="#서울촬영 #인물사진 #주말모임" />
+                </Field>
+              </SectionCard>
+            </div>
+          </div>
 
-            {/* 저장 버튼 */}
+          {/* 저장 버튼 */}
+          <div style={{ marginTop: 20 }}>
             <SubmitButton saving={saving} isEdit={isEdit} />
           </div>
         </form>
