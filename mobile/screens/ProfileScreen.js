@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator, Image, Linking, Share,
+  ScrollView, Alert, ActivityIndicator, Image, Linking, Share, RefreshControl,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../store/AuthContext';
-import { photoApi } from '../services/api';
+import { photoApi, authApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 import { getPortfolioUrl } from '../src/utils/portfolioUrl';
@@ -30,15 +30,21 @@ export default function ProfileScreen({ navigation = {} }) {
     specialties: user?.specialties ? user.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
   });
   const [avatarUri, setAvatarUri] = useState(user?.avatarUrl || null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetch(`/api/auth/member/${user.id}/stats`)
-        .then(r => r.json())
-        .then(res => setStats(res.data || res))
-        .catch(() => {});
-    }
+  const loadStats = React.useCallback(() => {
+    if (!user?.id) return Promise.resolve();
+    return authApi.getStats(user.id)
+      .then(res => setStats(res.data?.data || res.data))
+      .catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadStats().finally(() => setRefreshing(false));
+  };
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
@@ -129,7 +135,12 @@ export default function ProfileScreen({ navigation = {} }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+      }
+    >
       {/* 아바타 */}
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={editing ? handleAvatarPick : undefined} style={styles.avatarWrap}>
