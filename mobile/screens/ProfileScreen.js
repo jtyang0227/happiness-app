@@ -13,6 +13,10 @@ import { getPortfolioUrl } from '../src/utils/portfolioUrl';
 const PROFILE_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$/;
 const SPECIALTIES_OPTIONS = ['웨딩', '포트레이트', '풍경', '제품', '음식', '건축', '스트릿', '패션', '스포츠', '반려동물'];
 
+const WEB_CALENDAR_URL = __DEV__
+  ? 'http://localhost:3000/calendar'
+  : 'https://app.example.com/calendar';
+
 export default function ProfileScreen({ navigation = {} }) {
   const { user, updateProfile, logout } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -121,6 +125,12 @@ export default function ProfileScreen({ navigation = {} }) {
       return;
     }
     Linking.openURL(url).catch(() => {
+      Alert.alert('열기 실패', '브라우저를 열 수 없습니다.');
+    });
+  };
+
+  const handleOpenCalendar = () => {
+    Linking.openURL(WEB_CALENDAR_URL).catch(() => {
       Alert.alert('열기 실패', '브라우저를 열 수 없습니다.');
     });
   };
@@ -346,9 +356,13 @@ export default function ProfileScreen({ navigation = {} }) {
           <Text style={styles.legalItemText}>🤝 약속</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem} onPress={handleOpenCalendar}>
+          <Text style={styles.legalItemText}>📅 통합 일정</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.legalItem}
           onPress={() => navigation.navigate && navigation.navigate('Booking')}>
-          <Text style={styles.legalItemText}>📅 예약 관리</Text>
+          <Text style={styles.legalItemText}>🗓 예약 관리</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.legalItem}

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert, Linking, SectionList, StyleSheet, Text, TouchableOpacity, View,
+  Alert, SectionList, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { bookingApi } from '../src/api/bookingApi';
 import { COLORS } from '../constants/colors';
@@ -19,17 +19,13 @@ const SECTION_ORDER = [
   { key: 'CANCELLED', title: '취소/거절' },
 ];
 
-const WEB_BOOKING_SETTINGS_URL = __DEV__
-  ? 'http://localhost:3000/bookings'
-  : 'https://app.example.com/bookings';
-
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function BookingScreen() {
+export default function BookingScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -84,15 +80,8 @@ export default function BookingScreen() {
     ]);
   };
 
-  const openWebSettings = () => {
-    Alert.alert(
-      '가용 시간 설정',
-      '가용 시간 설정은 웹에서만 가능합니다. 브라우저에서 여시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        { text: '웹으로 이동', onPress: () => Linking.openURL(WEB_BOOKING_SETTINGS_URL) },
-      ]
-    );
+  const openAvailabilitySettings = () => {
+    navigation.navigate && navigation.navigate('AvailabilitySettings');
   };
 
   const sections = SECTION_ORDER
@@ -104,7 +93,7 @@ export default function BookingScreen() {
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>예약 관리</Text>
-          <TouchableOpacity onPress={openWebSettings}>
+          <TouchableOpacity onPress={openAvailabilitySettings}>
             <Text style={styles.settingsLink}>⚙ 설정</Text>
           </TouchableOpacity>
         </View>
@@ -121,7 +110,7 @@ export default function BookingScreen() {
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>예약 관리</Text>
-        <TouchableOpacity onPress={openWebSettings}>
+        <TouchableOpacity onPress={openAvailabilitySettings}>
           <Text style={styles.settingsLink}>⚙ 설정</Text>
         </TouchableOpacity>
       </View>
