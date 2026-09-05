@@ -4,6 +4,8 @@ import { bookingApi } from '../services/bookingApi';
 import AvailabilityModal from '../components/booking/AvailabilityModal';
 import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
+import ChecklistAccordion, { isDeliveryDeadlineNear } from '../components/booking/ChecklistAccordion';
+import PaymentToggle from '../components/booking/PaymentToggle';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -21,6 +23,7 @@ function useIsDesktop() {
 const STATUS_TABS = [
   { key: 'REQUESTED', label: '대기 중' },
   { key: 'CONFIRMED', label: '확정됨' },
+  { key: 'UNPAID', label: '미수금' },
   { key: 'COMPLETED', label: '완료' },
   { key: 'CANCELLED', label: '취소/거절' },
 ];
@@ -44,10 +47,28 @@ export default function BookingDashboard() {
 
   const load = (status) => {
     setLoading(true);
-    bookingApi.getMyBookings(status)
-      .then(data => setBookings(Array.isArray(data) ? data : []))
+    const apiStatus = status === 'UNPAID' ? 'CONFIRMED' : status;
+    bookingApi.getMyBookings(apiStatus)
+      .then(data => {
+        let list = Array.isArray(data) ? data : [];
+        if (status === 'UNPAID') {
+          list = list.filter(b => b.depositStatus === 'PENDING' || b.balanceStatus === 'PENDING');
+        }
+        setBookings(list);
+      })
       .catch(() => setError('예약 목록을 불러오는데 실패했습니다.'))
       .finally(() => setLoading(false));
+  };
+
+  const handleBookingUpdate = (updated) => {
+    setBookings(prev => {
+      const next = prev.map(b => b.id === updated.id ? { ...b, ...updated } : b);
+      // 미수금 탭에서는 상태가 RECEIVED로 바뀌면 목록에서 즉시 사라져야 자연스럽다
+      if (activeStatus === 'UNPAID') {
+        return next.filter(b => b.depositStatus === 'PENDING' || b.balanceStatus === 'PENDING');
+      }
+      return next;
+    });
   };
 
   useEffect(() => { load(activeStatus); setSelectedId(null); }, [activeStatus]);
@@ -195,8 +216,15 @@ export default function BookingDashboard() {
                   transition: 'background-color 0.1s ease',
                 }}
               >
-                <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 2 }}>
-                  {SHOOT_LABELS[b.shootType] || b.shootType || '촬영'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>
+                    {SHOOT_LABELS[b.shootType] || b.shootType || '촬영'}
+                  </div>
+                  {isDeliveryDeadlineNear(b.deliveryDeadline) && (
+                    <span style={{ padding: '2px 7px', borderRadius: 99, background: '#FFF6E5', color: '#B45309', fontSize: 10, fontWeight: 700 }}>
+                      🚚 납품 임박
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 2 }}>
                   👤 {b.clientName || b.name || '-'}
@@ -216,8 +244,15 @@ export default function BookingDashboard() {
           <div key={b.id} style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>
-                  {SHOOT_LABELS[b.shootType] || b.shootType || '촬영'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>
+                    {SHOOT_LABELS[b.shootType] || b.shootType || '촬영'}
+                  </div>
+                  {isDeliveryDeadlineNear(b.deliveryDeadline) && (
+                    <span style={{ padding: '2px 7px', borderRadius: 99, background: '#FFF6E5', color: '#B45309', fontSize: 10, fontWeight: 700 }}>
+                      🚚 납품 임박
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 2 }}>
                   📅 {formatDate(b.shootDate)} {b.shootTime && `· ${b.shootTime}`}
@@ -238,6 +273,12 @@ export default function BookingDashboard() {
               </div>
             </div>
             {renderActions(b, false)}
+            {b.status === 'CONFIRMED' && (
+              <>
+                <ChecklistAccordion booking={b} onUpdate={handleBookingUpdate} />
+                <PaymentToggle booking={b} onUpdate={handleBookingUpdate} />
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -271,11 +312,18 @@ export default function BookingDashboard() {
 
         {selected.status === 'CONFIRMED' && (
           <div style={{ padding: '12px 16px', borderRadius: 10, background: COLORS.successTonal || '#E5F9F0', color: COLORS.success, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
-            확정된 예약입니다
+            확정된 예약입니다{isDeliveryDeadlineNear(selected.deliveryDeadline) ? ' · 🚚 납품 임박' : ''}
           </div>
         )}
 
-        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 20 }}>
+        {selected.status === 'CONFIRMED' && (
+          <>
+            <ChecklistAccordion booking={selected} onUpdate={handleBookingUpdate} />
+            <PaymentToggle booking={selected} onUpdate={handleBookingUpdate} />
+          </>
+        )}
+
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 20, marginTop: 12 }}>
           {renderActions(selected, true)}
         </div>
       </div>

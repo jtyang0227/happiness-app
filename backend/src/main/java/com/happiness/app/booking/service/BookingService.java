@@ -201,6 +201,51 @@ public class BookingService {
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    // ── CHECKLIST (Feature 39-b) ──────────────────────────────────────────────
+
+    @Transactional
+    public BookingResponse updateChecklist(Long bookingId, Long authenticatedMemberId, UpdateChecklistRequest req) {
+        Booking booking = bookingRepository.findByIdAndMemberId(bookingId, authenticatedMemberId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"));
+
+        booking.setChecklistJson(req.getChecklistJson());
+        booking.setDeliveryDeadline(req.getDeliveryDeadline());
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    // ── PAYMENT (Feature 39-c) ────────────────────────────────────────────────
+
+    @Transactional
+    public BookingResponse updatePayment(Long bookingId, Long authenticatedMemberId, UpdatePaymentRequest req) {
+        Booking booking = bookingRepository.findByIdAndMemberId(bookingId, authenticatedMemberId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"));
+
+        if (req.getDepositStatus() != null) {
+            validatePaymentStatus(req.getDepositStatus());
+            booking.setDepositStatus(req.getDepositStatus());
+            booking.setDepositReceivedAt("RECEIVED".equals(req.getDepositStatus()) ? LocalDateTime.now() : null);
+        }
+        if (req.getDepositAmount() != null) {
+            booking.setDepositAmount(req.getDepositAmount());
+        }
+        if (req.getBalanceStatus() != null) {
+            validatePaymentStatus(req.getBalanceStatus());
+            booking.setBalanceStatus(req.getBalanceStatus());
+            booking.setBalanceReceivedAt("RECEIVED".equals(req.getBalanceStatus()) ? LocalDateTime.now() : null);
+        }
+        if (req.getBalanceAmount() != null) {
+            booking.setBalanceAmount(req.getBalanceAmount());
+        }
+
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    private void validatePaymentStatus(String status) {
+        if (!"PENDING".equals(status) && !"RECEIVED".equals(status)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수금 상태는 PENDING 또는 RECEIVED만 허용됩니다");
+        }
+    }
+
     // ── AVAILABILITY SETTINGS ─────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -284,6 +329,14 @@ public class BookingService {
                 .createdAt(b.getCreatedAt())
                 .confirmedAt(b.getConfirmedAt())
                 .cancelledAt(b.getCancelledAt())
+                .checklistJson(b.getChecklistJson())
+                .deliveryDeadline(b.getDeliveryDeadline())
+                .depositStatus(b.getDepositStatus())
+                .depositAmount(b.getDepositAmount())
+                .depositReceivedAt(b.getDepositReceivedAt())
+                .balanceStatus(b.getBalanceStatus())
+                .balanceAmount(b.getBalanceAmount())
+                .balanceReceivedAt(b.getBalanceReceivedAt())
                 .build();
     }
 

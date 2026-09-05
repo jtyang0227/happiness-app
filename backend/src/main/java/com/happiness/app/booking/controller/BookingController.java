@@ -85,6 +85,28 @@ public class BookingController {
     }
 
     /**
+     * PUT /api/booking/{id}/checklist — 촬영 준비 체크리스트 + 납품 기한 저장 (인증 필요, IDOR 검사)
+     */
+    @PutMapping("/{id}/checklist")
+    public ResponseEntity<BookingResponse> updateChecklist(
+            @PathVariable Long id,
+            @RequestBody UpdateChecklistRequest req) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        return ResponseEntity.ok(bookingService.updateChecklist(id, memberId, req));
+    }
+
+    /**
+     * PUT /api/booking/{id}/payment — 계약금/잔금 수금 상태 저장 (인증 필요, IDOR 검사)
+     */
+    @PutMapping("/{id}/payment")
+    public ResponseEntity<BookingResponse> updatePayment(
+            @PathVariable Long id,
+            @RequestBody UpdatePaymentRequest req) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        return ResponseEntity.ok(bookingService.updatePayment(id, memberId, req));
+    }
+
+    /**
      * GET /api/booking/availability-settings — 내 예약 설정 조회 (인증 필요)
      */
     @GetMapping("/availability-settings")

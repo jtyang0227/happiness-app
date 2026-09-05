@@ -56,9 +56,34 @@ public class Booking {
     private LocalDateTime confirmedAt;
     private LocalDateTime cancelledAt;
 
+    /** 촬영 준비 체크리스트: [{"id":"uuid","text":"카메라 바디","checked":false}, ...] */
+    @Column(columnDefinition = "TEXT")
+    private String checklistJson;
+
+    /** 납품 기한 */
+    private LocalDate deliveryDeadline;
+
+    /** PENDING / RECEIVED */
+    @Column(length = 20)
+    @Builder.Default
+    private String depositStatus = "PENDING";
+
+    private Integer depositAmount;
+    private LocalDateTime depositReceivedAt;
+
+    /** PENDING / RECEIVED */
+    @Column(length = 20)
+    @Builder.Default
+    private String balanceStatus = "PENDING";
+
+    private Integer balanceAmount;
+    private LocalDateTime balanceReceivedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) this.status = "REQUESTED";
+        if (this.depositStatus == null) this.depositStatus = "PENDING";
+        if (this.balanceStatus == null) this.balanceStatus = "PENDING";
     }
 }

@@ -23,4 +23,16 @@ public class BookingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime confirmedAt;
     private LocalDateTime cancelledAt;
+
+    // Feature 39(b) — 촬영 준비 체크리스트
+    private String checklistJson;
+    private LocalDate deliveryDeadline;
+
+    // Feature 39(c) — 계약금/잔금 수금 상태
+    private String depositStatus;
+    private Integer depositAmount;
+    private LocalDateTime depositReceivedAt;
+    private String balanceStatus;
+    private Integer balanceAmount;
+    private LocalDateTime balanceReceivedAt;
 }

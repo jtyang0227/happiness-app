@@ -33,4 +33,10 @@ export const bookingApi = {
 
   getBlockedDates: () =>
     apiClient.get('/booking/blocked-dates').then(r => r.data),
+
+  updateChecklist: (id, data) =>
+    apiClient.put(`/booking/${id}/checklist`, data).then(r => r.data),
+
+  updatePayment: (id, data) =>
+    apiClient.put(`/booking/${id}/payment`, data).then(r => r.data),
 };
