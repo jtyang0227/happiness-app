@@ -6,7 +6,9 @@ import {
 import { photoApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
-import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { FONT, SPACING } from '../constants/layout';
+import { SkeletonFeedCard } from '../components/SkeletonCard';
+import EmptyState from '../components/EmptyState';
 
 const PAGE_SIZE = 20;
 
@@ -94,24 +96,21 @@ export default function FeedScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.skeletonList}>
+        {[1, 2, 3].map(i => <SkeletonFeedCard key={i} />)}
       </View>
     );
   }
 
   if (photos.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyIcon}>📸</Text>
-        <Text style={styles.emptyTitle}>피드가 비어있습니다</Text>
-        <Text style={styles.emptyDesc}>
-          팔로우한 작가의 새 사진이 여기에 나타납니다.{'\n'}탐색 탭에서 마음에 드는 작가를 팔로우해보세요.
-        </Text>
-        <TouchableOpacity style={styles.exploreBtn} onPress={() => navigation.navigate('ExploreTab')}>
-          <Text style={styles.exploreBtnText}>탐색하러 가기</Text>
-        </TouchableOpacity>
-      </View>
+      <EmptyState
+        icon="📡"
+        title="팔로우한 작가가 없어요"
+        description="탐색 화면에서 마음에 드는 작가를 팔로우해보세요"
+        actionLabel="탐색하러 가기"
+        onAction={() => navigation.navigate('ExploreTab')}
+      />
     );
   }
 
@@ -137,9 +136,8 @@ export default function FeedScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: COLORS.bg, padding: SPACING.xl },
   list: { paddingBottom: 24, backgroundColor: COLORS.bg },
+  skeletonList: { backgroundColor: COLORS.bg, paddingTop: SPACING.md },
 
   card: { backgroundColor: COLORS.white, marginBottom: 12, overflow: 'hidden' },
   image: { width: '100%', height: 320, backgroundColor: '#e0e0e0' },
@@ -163,11 +161,4 @@ const styles = StyleSheet.create({
   date: { color: COLORS.textHint, fontSize: FONT.xs, marginLeft: 'auto' },
 
   noMore: { textAlign: 'center', color: COLORS.textHint, padding: SPACING.lg, fontSize: FONT.sm },
-
-  emptyIcon:  { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
-  emptyDesc:  { color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  exploreBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 28, paddingVertical: 12,
-    borderRadius: RADIUS.lg },
-  exploreBtnText: { color: '#fff', fontWeight: '700', fontSize: FONT.base },
 });

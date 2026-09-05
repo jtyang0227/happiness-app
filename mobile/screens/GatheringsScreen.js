@@ -7,6 +7,7 @@ import { gatheringApi } from '../src/api/gatheringApi';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { SkeletonGatheringCard } from '../components/SkeletonCard';
 
 const STATUS_STYLE = {
   RECRUITING:           { label: '모집중',    bg: 'rgba(0,196,113,0.12)',  color: '#00C471' },
@@ -125,8 +126,9 @@ export default function GatheringsScreen({ navigation }) {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.container}>
+        <SkeletonGatheringCard />
+        <SkeletonGatheringCard />
       </View>
     );
   }

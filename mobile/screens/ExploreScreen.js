@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, ScrollView, StyleSheet,
+  FlatList, Image, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { photoApi } from '../services/api';
 import { COLORS, MOOD_COLORS, GENRE_LIST } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { SkeletonPhotoCard } from '../components/SkeletonCard';
+import EmptyState from '../components/EmptyState';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
 const GENRES = [{ code: null, label: '전체', emoji: '✦' }, ...GENRE_LIST];
@@ -152,11 +154,17 @@ export default function ExploreScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.skeletonGrid}>
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <View key={i} style={styles.skeletonCol}>
+            <SkeletonPhotoCard />
+          </View>
+        ))}
       </View>
     );
   }
+
+  const isSearching = !!(keyword.trim() || moodFilter || genre);
 
   return (
     <FlatList
@@ -170,17 +178,24 @@ export default function ExploreScreen({ navigation }) {
       onRefresh={handleRefresh}
       refreshing={refreshing}
       ListEmptyComponent={
-        <Text style={styles.empty}>
-          {keyword.trim() || moodFilter || genre ? '검색 결과가 없습니다.' : '아직 등록된 사진이 없습니다.'}
-        </Text>
+        isSearching ? (
+          <EmptyState
+            icon="🔍"
+            title="검색 결과가 없습니다"
+            description="다른 키워드나 필터로 다시 검색해보세요"
+          />
+        ) : (
+          <EmptyState icon="🖼" title="아직 등록된 사진이 없습니다" />
+        )
       }
     />
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg },
   listContent: { paddingBottom: 24 },
+  skeletonGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', padding: 4, backgroundColor: COLORS.bg },
+  skeletonCol: { width: '50%' },
   row: { marginHorizontal: SPACING.md, marginBottom: 8 },
 
   searchRow: { flexDirection: 'row', margin: SPACING.md, marginBottom: SPACING.sm, gap: 8 },
@@ -225,6 +240,4 @@ const styles = StyleSheet.create({
   moodBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginBottom: 4, gap: 4 },
   likeText: { color: COLORS.textMuted, fontSize: FONT.xs },
-
-  empty: { textAlign: 'center', color: COLORS.textHint, marginTop: 60, fontSize: FONT.base },
 });

@@ -7,6 +7,7 @@ import { meetApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import EmptyState from '../components/EmptyState';
 
 const STATUS_STYLE = {
   PENDING:     { label: '대기중', bg: 'rgba(49,130,246,0.12)', color: COLORS.primary },
@@ -302,10 +303,11 @@ export default function MeetsScreen({ navigation }) {
           />
         )}
         ListEmptyComponent={
-          <View style={styles.center}>
-            <Text style={styles.emptyIcon}>🤝</Text>
-            <Text style={styles.emptyText}>아직 약속이 없어요.</Text>
-          </View>
+          <EmptyState
+            icon="🤝"
+            title="아직 약속이 없어요"
+            description="작가 또는 모델을 검색해 첫 약속을 요청해보세요"
+          />
         }
       />
 
