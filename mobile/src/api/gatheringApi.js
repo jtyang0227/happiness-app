@@ -46,6 +46,10 @@ export const gatheringApi = {
    */
   shareToInstagram: (id, data) =>
     apiClient.post(`${BASE}/${id}/instagram-share`, data).then(r => r.data),
+
+  /** 읽지 않은 모임 알림 수 — {"count": N} */
+  getUnreadCount: () =>
+    apiClient.get(`${BASE}/notifications/unread-count`).then(r => r.data),
 };
 
 export default gatheringApi;

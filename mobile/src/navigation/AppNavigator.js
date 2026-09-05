@@ -25,6 +25,9 @@ import PortfolioSlideshowScreen from '../../screens/PortfolioSlideshowScreen';
 import GatheringsScreen             from '../../screens/GatheringsScreen';
 import GatheringDetailScreen        from '../../screens/GatheringDetailScreen';
 import GatheringInstagramShareScreen from '../../screens/GatheringInstagramShareScreen';
+import BookingScreen     from '../../screens/BookingScreen';
+import DeliveryScreen    from '../../screens/DeliveryScreen';
+import GatheringNotifBadge from '../../components/GatheringNotifBadge';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -146,10 +149,13 @@ function MainStack() {
         options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
           headerTintColor: '#fff', title: '약속' }} />
       <Stack.Screen name="MeetDetail"  component={MeetDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Booking"     component={BookingScreen}    options={{ headerShown: false }} />
+      <Stack.Screen name="Delivery"    component={DeliveryScreen}   options={{ headerShown: false }} />
       <Stack.Screen name="PortfolioSlideshow" component={PortfolioSlideshowScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Gatherings"  component={GatheringsScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '사진 모임' }} />
+          headerTintColor: '#fff', title: '사진 모임',
+          headerRight: () => <GatheringNotifBadge /> }} />
       <Stack.Screen name="GatheringDetail" component={GatheringDetailScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
           headerTintColor: '#fff', title: '모임 상세' }} />

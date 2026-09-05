@@ -346,6 +346,16 @@ export default function ProfileScreen({ navigation = {} }) {
           <Text style={styles.legalItemText}>🤝 약속</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Booking')}>
+          <Text style={styles.legalItemText}>📅 예약 관리</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Delivery')}>
+          <Text style={styles.legalItemText}>📦 납품 관리</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
         <View style={styles.legalItem}>
           <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={handleOpenPortfolio}>
             <Text style={styles.legalItemText}>🌐 내 포트폴리오 보기</Text>
