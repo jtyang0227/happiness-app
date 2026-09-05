@@ -155,10 +155,26 @@ export default function MeetsPage() {
             padding: compact ? '14px 16px' : '16px 18px',
             cursor: 'pointer',
             marginBottom: compact ? 8 : 10,
-            transition: 'background-color 0.1s ease, box-shadow 0.15s ease',
+            transition: compact
+              ? 'background-color 0.1s ease'
+              : 'transform 0.15s ease, box-shadow 0.15s ease',
           }}
-          onMouseEnter={e => { if (!selected) e.currentTarget.style.background = COLORS.surfaceDim; e.currentTarget.style.boxShadow = compact ? 'none' : '0 2px 10px rgba(0,0,0,0.06)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = selected ? COLORS.primaryLight : COLORS.surface; e.currentTarget.style.boxShadow = 'none'; }}
+          onMouseEnter={e => {
+            if (compact) {
+              if (!selected) e.currentTarget.style.background = COLORS.surfaceDim;
+            } else {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+            }
+          }}
+          onMouseLeave={e => {
+            if (compact) {
+              e.currentTarget.style.background = selected ? COLORS.primaryLight : COLORS.surface;
+            } else {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }
+          }}
         >
           {/* avatar */}
           <div style={{

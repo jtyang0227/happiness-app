@@ -60,9 +60,7 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
           style={{
             position: 'absolute', top: 9, right: 9,
             display: 'flex', alignItems: 'center', gap: 4,
-            background: 'rgba(0,0,0,0.55)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            background: 'rgba(0,0,0,0.7)',
             borderRadius: 20, padding: '3px 9px',
             fontSize: 11, fontWeight: 600, color: '#fff',
           }}
@@ -100,9 +98,7 @@ export default function PhotoCard({ photo, onClick, showDetails = true }) {
           {/* Save button placeholder — visual only */}
           <div style={{
             width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            background: 'rgba(255,255,255,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 14, color: '#fff',
           }}>
