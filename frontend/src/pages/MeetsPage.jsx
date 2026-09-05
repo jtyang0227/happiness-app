@@ -5,6 +5,7 @@ import { COLORS } from '../constants/colors';
 import meetApi from '../services/meetApi';
 import MeetRequestModal from '../components/meet/MeetRequestModal';
 import Button from '../components/common/Button';
+import DotEmptyState from '../components/common/DotEmptyState';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -123,13 +124,14 @@ export default function MeetsPage() {
     }
     if (filtered.length === 0) {
       return (
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>📅</div>
-          <div style={{ color: COLORS.textSecondary, fontSize: 15 }}>약속이 없습니다</div>
-          <div style={{ color: COLORS.textHint, fontSize: 13, marginTop: 8 }}>
-            새 약속 버튼을 눌러 모델이나 작가에게 약속을 요청해보세요
-          </div>
-        </div>
+        <DotEmptyState
+          theme="light"
+          icon="🤝"
+          title="아직 약속이 없습니다"
+          description="작가/모델을 검색해 첫 약속을 요청해보세요"
+          actionLabel={tab === 'all' ? '+ 새 약속 요청하기' : undefined}
+          onAction={tab === 'all' ? () => setShowModal(true) : undefined}
+        />
       );
     }
     return filtered.map(meet => {

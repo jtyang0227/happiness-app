@@ -3,6 +3,7 @@ import { COLORS } from '../constants/colors';
 import { bookingApi } from '../services/bookingApi';
 import AvailabilityModal from '../components/booking/AvailabilityModal';
 import Button from '../components/common/Button';
+import DotEmptyState from '../components/common/DotEmptyState';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -163,13 +164,18 @@ export default function BookingDashboard() {
     }
     if (bookings.length === 0) {
       return (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: COLORS.textMuted }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
-          <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>예약이 없습니다</div>
-          <div style={{ fontSize: 13 }}>
-            {activeStatus === 'REQUESTED' ? '대기 중인 예약 요청이 없습니다.' : `${STATUS_TABS.find(t => t.key === activeStatus)?.label} 상태의 예약이 없습니다.`}
-          </div>
-        </div>
+        <DotEmptyState
+          theme="light"
+          icon="📅"
+          title="예약이 없습니다"
+          description={
+            activeStatus === 'REQUESTED'
+              ? '대기 중인 예약 요청이 없습니다. 가용 시간을 설정해두면 클라이언트가 예약을 요청할 수 있어요.'
+              : `${STATUS_TABS.find(t => t.key === activeStatus)?.label} 상태의 예약이 없습니다.`
+          }
+          actionLabel={activeStatus === 'REQUESTED' ? '⚙ 가용 시간 설정하기' : undefined}
+          onAction={activeStatus === 'REQUESTED' ? () => setShowAvailability(true) : undefined}
+        />
       );
     }
     if (compact) {

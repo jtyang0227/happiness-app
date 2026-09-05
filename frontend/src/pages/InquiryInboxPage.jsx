@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { inquiryApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
+import DotEmptyState from '../components/common/DotEmptyState';
 
 const SHOOT_TYPE_LABELS = {
   '결혼식': '💒 결혼식', '제품촬영': '📦 제품', '인물/프로필': '👤 인물',
@@ -206,15 +207,12 @@ export default function InquiryInboxPage() {
           불러오는 중...
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '80px 0',
-          border: `2px dashed ${COLORS.border}`, borderRadius: 20,
-        }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>✉</div>
-          <p style={{ color: COLORS.textSecondary, fontSize: 15 }}>
-            {filter === 'unread' ? '읽지 않은 문의가 없습니다.' : '아직 받은 문의가 없습니다.'}
-          </p>
-        </div>
+        <DotEmptyState
+          theme="light"
+          icon="✉"
+          title={filter === 'unread' ? '읽지 않은 문의가 없습니다' : '받은 문의가 없습니다'}
+          description={filter === 'unread' ? undefined : '포트폴리오를 공유해 첫 문의를 받아보세요'}
+        />
       ) : (
         filtered.map(inquiry => (
           <InquiryCard
