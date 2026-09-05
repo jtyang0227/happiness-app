@@ -48,6 +48,7 @@ import GatheringDetailPage   from './pages/GatheringDetailPage';
 import GatheringManagePage   from './pages/GatheringManagePage';
 import GatheringAlbumPage    from './pages/GatheringAlbumPage';
 import GatheringCalendarPage from './pages/GatheringCalendarPage';
+import IntegratedCalendarPage from './pages/IntegratedCalendarPage';
 import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
 
 const DARK_PATHS = ['/login', '/signup'];
@@ -123,6 +124,9 @@ function AppShell() {
           {/* Delivery & Booking (protected) */}
           <Route path="/deliveries" element={<ProtectedRoute><DeliveriesPage /></ProtectedRoute>} />
           <Route path="/bookings" element={<ProtectedRoute><BookingDashboard /></ProtectedRoute>} />
+
+          {/* Integrated calendar (Feature 39) */}
+          <Route path="/calendar" element={<ProtectedRoute><IntegratedCalendarPage /></ProtectedRoute>} />
 
           {/* Meets */}
           <Route path="/meets" element={<ProtectedRoute><MeetsPage /></ProtectedRoute>} />

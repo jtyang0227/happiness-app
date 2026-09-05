@@ -17,11 +17,13 @@ export default function AvailabilityModal({ onClose }) {
     bookingApi.getAvailabilitySettings()
       .then(data => {
         if (!data) return;
-        if (data.enabledDays) setEnabledDays(new Set(data.enabledDays));
-        if (data.timeSlots) setSlots(data.timeSlots);
-        if (data.blockedDates) setBlockedDates(data.blockedDates);
+        if (data.weekdays) setEnabledDays(new Set(data.weekdays.split(',').map(Number)));
+        if (data.timeSlots) setSlots(data.timeSlots.split(',').filter(Boolean));
       })
       .catch(() => {}); // Use defaults on error
+    bookingApi.getBlockedDates()
+      .then(data => setBlockedDates(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
 
   const toggleDay = (idx) => {
@@ -67,8 +69,9 @@ export default function AvailabilityModal({ onClose }) {
     setError('');
     try {
       await bookingApi.saveAvailabilitySettings({
-        enabledDays: Array.from(enabledDays),
-        timeSlots: slots,
+        weekdays: Array.from(enabledDays).sort().join(','),
+        timeSlots: slots.join(','),
+        isActive: true,
       });
       onClose();
     } catch {

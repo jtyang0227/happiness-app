@@ -226,8 +226,19 @@ public class BookingService {
 
     // ── BLOCKED DATES ──────────────────────────────────────────────────────────
 
+    @Transactional(readOnly = true)
+    public List<BlockedDateResponse> getBlockedDates(Long memberId) {
+        return blockedDateRepository.findByMemberId(memberId).stream()
+                .map(b -> BlockedDateResponse.builder()
+                        .id(b.getId())
+                        .date(b.getBlockedDate())
+                        .reason(b.getReason())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    public void addBlockedDate(Long memberId, AddBlockedDateRequest req) {
+    public BlockedDateResponse addBlockedDate(Long memberId, AddBlockedDateRequest req) {
         if (req.getDate() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "날짜를 입력해주세요");
         }
@@ -237,10 +248,15 @@ public class BookingService {
                 .reason(req.getReason())
                 .build();
         try {
-            blockedDateRepository.save(blocked);
+            blocked = blockedDateRepository.save(blocked);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 차단된 날짜입니다");
         }
+        return BlockedDateResponse.builder()
+                .id(blocked.getId())
+                .date(blocked.getBlockedDate())
+                .reason(blocked.getReason())
+                .build();
     }
 
     @Transactional

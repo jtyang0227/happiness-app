@@ -20,14 +20,17 @@ export const bookingApi = {
     apiClient.put(`/booking/${id}/cancel`).then(r => r.data),
 
   getAvailabilitySettings: () =>
-    apiClient.get('/booking/settings/availability').then(r => r.data),
+    apiClient.get('/booking/availability-settings').then(r => r.data),
 
   saveAvailabilitySettings: (data) =>
-    apiClient.put('/booking/settings/availability', data).then(r => r.data),
+    apiClient.put('/booking/availability-settings', data).then(r => r.data),
 
   addBlockedDate: (data) =>
-    apiClient.post('/booking/settings/blocked-dates', data).then(r => r.data),
+    apiClient.post('/booking/blocked-dates', data).then(r => r.data),
 
   deleteBlockedDate: (id) =>
-    apiClient.delete(`/booking/settings/blocked-dates/${id}`).then(r => r.data),
+    apiClient.delete(`/booking/blocked-dates/${id}`).then(r => r.data),
+
+  getBlockedDates: () =>
+    apiClient.get('/booking/blocked-dates').then(r => r.data),
 };

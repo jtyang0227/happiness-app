@@ -104,13 +104,22 @@ public class BookingController {
     }
 
     /**
+     * GET /api/booking/blocked-dates — 내 차단 날짜 목록 조회 (인증 필요)
+     */
+    @GetMapping("/blocked-dates")
+    public ResponseEntity<List<BlockedDateResponse>> getBlockedDates() {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        return ResponseEntity.ok(bookingService.getBlockedDates(memberId));
+    }
+
+    /**
      * POST /api/booking/blocked-dates — 차단 날짜 추가 (인증 필요)
      */
     @PostMapping("/blocked-dates")
-    public ResponseEntity<Void> addBlockedDate(@RequestBody AddBlockedDateRequest req) {
+    public ResponseEntity<BlockedDateResponse> addBlockedDate(@RequestBody AddBlockedDateRequest req) {
         Long memberId = SecurityUtil.getCurrentMemberId();
-        bookingService.addBlockedDate(memberId, req);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        BlockedDateResponse response = bookingService.addBlockedDate(memberId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**

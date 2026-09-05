@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { to: '/list',      label: '목록'     },
   { to: '/photo/new', label: '등록/편집' },
   { to: '/inbox',     label: '문의함', badge: 'inquiry' },
+  { to: '/calendar',  label: '📅 일정' },
   { to: '/meets',       label: '약속',   badge: 'meets'   },
   { to: '/gatherings', label: '모임', badge: 'gatherings' },
   { to: '/profile',    label: '프로필'   },
