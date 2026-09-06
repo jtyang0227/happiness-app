@@ -87,7 +87,7 @@ export default function AvailabilitySettingsScreen({ navigation }) {
         timeSlots: slots.join(','),
         bufferHours: parseInt(bufferHours, 10) || 0,
         bookingNote,
-        isActive: true,
+        active: true,
       });
       Alert.alert('저장 완료', '가용 시간 설정이 저장되었습니다.');
     } catch {

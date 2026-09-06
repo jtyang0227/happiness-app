@@ -71,7 +71,7 @@ export default function AvailabilityModal({ onClose }) {
       await bookingApi.saveAvailabilitySettings({
         weekdays: Array.from(enabledDays).sort().join(','),
         timeSlots: slots.join(','),
-        isActive: true,
+        active: true,
       });
       onClose();
     } catch {
