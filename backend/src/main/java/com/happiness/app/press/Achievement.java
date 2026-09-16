@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "achievements")
+@Table(name = "achievements", indexes = @Index(name = "idx_achievements_member_id", columnList = "member_id"))
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Achievement {
 

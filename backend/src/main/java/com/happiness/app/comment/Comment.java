@@ -5,7 +5,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "comments")
+@Table(name = "comments", indexes = {
+    @Index(name = "idx_comments_photo_id",  columnList = "photo_id"),
+    @Index(name = "idx_comments_parent_id", columnList = "parent_id")
+})
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Comment {
 

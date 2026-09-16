@@ -464,11 +464,22 @@ Feature-based package layout:
 ```
 src/main/resources/
 ├── application.yml          # 공통 설정 + 환경변수 바인딩
-├── application-dev.yml      # H2 in-memory, Redis localhost, SQL 로그 ON
-└── application-prod.yml     # PostgreSQL, Upstash Redis, SQL 로그 OFF, ddl-auto=validate
+├── application-dev.yml      # H2 in-memory, Redis localhost, SQL 로그 ON, ddl-auto=create-drop
+└── application-prod.yml     # PostgreSQL, Upstash Redis, SQL 로그 OFF, ddl-auto=update
 ```
 
-**운영 주의사항**: `application-prod.yml`의 `ddl-auto: validate` — 절대 `create`/`create-drop` 금지.
+**버그 수정(문서-코드 불일치, 인덱스 성능 개선 작업 중 발견)**: 이 섹션과 "DBA" 역할 규칙·보안
+체크리스트가 오래전부터 "운영 DB는 `ddl-auto: validate` 고정, `create`/`create-drop` 절대 금지"라고
+서술해왔으나, 실제 `application-prod.yml`은 `ddl-auto: update`로 설정되어 있다(`validate`가 아님).
+`update`는 Hibernate가 배포 시 스키마 차이를 자동으로 반영한다는 뜻이라 — 지금까지 각 Feature마다
+CLAUDE.md에 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`를 "수동 마이그레이션"으로 기록해왔지만
+실제로는 대부분 Hibernate가 배포 시점에 자동으로 이미 적용했을 가능성이 높다(그래서 별도로 수동
+psql 실행 없이도 배포가 계속 정상 동작해온 것으로 보인다). 이번에 추가한 인덱스들도 마찬가지로
+다음 배포에서 Hibernate가 자동 반영할 것으로 예상되지만, 검증 없이 자동 반영에만 의존하는 것은
+`update` 모드 특유의 위험(대규모 테이블에서 락 경합, 예상 밖의 컬럼 타입 변경 등)이 있으므로
+CLAUDE.md의 SQL 기록 관행 자체는 계속 유지한다. **`ddl-auto`를 실제로 `validate`로 되돌릴지는
+운영 정책 결정이 필요한 별도 사안** — 이번 작업(인덱스 추가)의 범위를 벗어나 임의로 변경하지
+않았다.
 
 **운영 DB 수동 마이그레이션 필요** (새 컬럼 추가 시):
 ```sql
@@ -827,7 +838,58 @@ ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_received_at TIMESTAMP;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_status      VARCHAR(20) DEFAULT 'PENDING';
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_amount      INTEGER;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_received_at TIMESTAMP;
+-- 성능 개선: 기존에 인덱스가 없던 채로 memberId/photoId 등으로 자주 필터링되던 테이블 17개에
+-- 인덱스 추가 (엔티티 @Table(indexes=...)에도 동일하게 반영, dev H2에서 DDL 생성 확인 완료).
+-- ddl-auto가 실제로는 prod에서도 update이므로 배포 시 Hibernate가 자동 생성하지만,
+-- 다른 마이그레이션과 동일하게 수동 참조용으로 기록한다.
+CREATE INDEX IF NOT EXISTS idx_photos_member_created        ON photos(member_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_photos_genre                 ON photos(genre);
+CREATE INDEX IF NOT EXISTS idx_photos_color_mood            ON photos(color_mood);
+CREATE INDEX IF NOT EXISTS idx_comments_photo_id            ON comments(photo_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id           ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_series_member_id             ON series(member_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_receiver_member_id ON inquiries(receiver_member_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_member_shoot_date   ON bookings(member_id, shoot_date);
+CREATE INDEX IF NOT EXISTS idx_bookings_status_shoot_date   ON bookings(status, shoot_date);
+CREATE INDEX IF NOT EXISTS idx_delivery_sets_member_id      ON delivery_sets(member_id);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id       ON testimonials(member_id);
+CREATE INDEX IF NOT EXISTS idx_press_features_member_id     ON press_features(member_id);
+CREATE INDEX IF NOT EXISTS idx_achievements_member_id       ON achievements(member_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_packages_member_id   ON pricing_packages(member_id);
+CREATE INDEX IF NOT EXISTS idx_client_brands_member_id      ON client_brands(member_id);
+CREATE INDEX IF NOT EXISTS idx_photo_shares_photo_id        ON photo_shares(photo_id);
+CREATE INDEX IF NOT EXISTS idx_photo_tags_photo_id          ON photo_tags(photo_id);
+CREATE INDEX IF NOT EXISTS idx_photo_saves_member_id        ON photo_saves(member_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following_id         ON follows(following_id);
+CREATE INDEX IF NOT EXISTS idx_members_provider             ON members(provider, provider_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_visitor_token      ON analytics_events(visitor_token, created_at);
 ```
+
+#### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
+
+`findBy*`/`countBy*`/`@Query` 메서드가 실제로 필터·정렬하는 컬럼을 모든 Repository에서 훑어
+기존 `@Table(indexes=...)`/`uniqueConstraints`로 이미 커버되는지 대조한 결과, 아래 17개 테이블이
+WHERE/ORDER BY 컬럼에 인덱스가 전혀 없거나(예: `photos.member_id` — 프로필 페이지 조회마다
+`findByMemberIdOrderByCreatedAtDesc` + likes/saves/shares 합계 쿼리 4개가 매번 풀스캔), 기존
+복합 유니크 제약의 후행 컬럼만 단독으로 필터링해 prefix 규칙의 혜택을 못 받고 있었다(예:
+`follows` — `UNIQUE(follower_id, following_id)`는 있지만 `countByFollowingId`/`findByFollowingId`
+는 후행 컬럼만 쓰므로 인덱스를 못 탐; `photo_saves`도 동일하게 `findByMemberId`가 후행 컬럼만 사용).
+엔티티의 `@Table(indexes=...)`에 추가하고 `./gradlew bootRun`으로 H2 dev에 실제 기동해 DDL 로그로
+21개(신규 17 + 기존 4) 인덱스가 전부 에러 없이 생성되는 것까지 확인했다(위 목록 참고). 대상:
+`photos`(member_id+created_at 복합, genre, color_mood), `comments`(photo_id, parent_id),
+`series`(member_id), `inquiries`(receiver_member_id), `bookings`(member_id+shoot_date 복합,
+status+shoot_date 복합 — 배치잡 `cancelExpiredRequestedBookings`용), `delivery_sets`/`testimonials`/
+`press_features`/`achievements`/`pricing_packages`/`client_brands`(각 member_id), `photo_shares`/
+`photo_tags`(각 photo_id), `photo_saves`(member_id), `follows`(following_id), `members`(provider+
+provider_id — OAuth 로그인 조회), `analytics_events`(visitor_token+created_at 복합 — 익명 방문자
+rate limit 체크가 트래킹 이벤트마다 호출됨).
+
+**저장 프로시저(procedure)는 도입하지 않았다** — 이 저장소는 처음부터 끝까지 JPA + JPQL, 배치 로직도
+전부 `@Modifying` bulk UPDATE를 서비스 레이어(BookingBatchService/MeetBatchService/GatheringBatchService)
+에서 실행하는 일관된 패턴이며 DB 프로시저가 단 하나도 없다. 이번에 훑어본 범위에서 프로시저가 필요할
+만큼 복잡한 다단계 집계·트랜잭션 로직(단순 GROUP BY 통계 몇 개, bulk UPDATE 배치가 전부)도 발견하지
+못했다. "기존 코드로 구현 가능한지 먼저 검토" 원칙에 따라, 근거 없이 새 패러다임(DB 프로시저)을
+들여오지 않고 인덱스 추가로 범위를 한정했다.
 
 #### PhotoRepository 주요 쿼리 메서드
 

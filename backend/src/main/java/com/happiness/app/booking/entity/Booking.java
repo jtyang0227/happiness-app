@@ -6,7 +6,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+    @Index(name = "idx_bookings_member_shoot_date", columnList = "member_id, shoot_date"),
+    @Index(name = "idx_bookings_status_shoot_date",  columnList = "status, shoot_date")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

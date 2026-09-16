@@ -9,7 +9,7 @@ import lombok.Builder.Default;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "members")
+@Table(name = "members", indexes = @Index(name = "idx_members_provider", columnList = "provider, provider_id"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
