@@ -1174,6 +1174,26 @@ backend/Dockerfile:
     - HEALTHCHECK: /actuator/health
 ```
 
+**Railway 배포 설정 — `backend/railway.toml`이 유일한 소스**: 과거 저장소 최초 커밋 시점부터
+루트 `railway.toml`(Nixpacks `cmd` 방식) + 루트 `nixpacks.toml`(동일 내용의 명시적 Nixpacks
+phases) + `backend/railway.toml`(Dockerfile 빌더 방식, `backend/Dockerfile` 사용) 3개 설정
+파일이 서로 다른 빌드 전략을 지정한 채 동시에 존재했다. git 이력상 이후 "SPRING_PROFILES_ACTIVE
+반영 재배포 트리거", "DB 연결 재검증을 위한 재배포 트리거" 같은 커밋들이 매번 `backend/railway.toml`
+만 갱신(`redeploy-trigger-5` → `-7`)하고 루트 파일들은 최초 커밋 이후 한 번도 건드리지 않은 것으로
+보아, 실제 Railway 서비스의 Root Directory는 `backend/`로 설정되어 있어 `backend/railway.toml`
++ `backend/Dockerfile`(멀티스테이지 Gradle 빌드)이 실제로 사용되던 설정이었을 가능성이 매우 높다.
+루트의 두 파일은 처음부터 죽은 설정이었을 것으로 판단해 삭제하고 `backend/railway.toml` 하나로
+단일화했다(`healthcheckTimeout`도 120→300으로 상향 — 컨테이너 리소스 제약 하 콜드 스타트 여유
+확보). **주의**: `.github/workflows/deploy.yml`의 `docker-build` job이 `backend/Dockerfile.prod`
+(사전 빌드된 JAR 복사)로 이미지를 만들어 GHCR에 push하지만, 이후 `deploy-backend` job은
+`railway up --service backend --detach`만 실행할 뿐 그 GHCR 이미지를 참조하는 옵션이 없다 —
+즉 Railway는 `backend/railway.toml`의 `builder = "DOCKERFILE"` 설정대로 `backend/Dockerfile`을
+직접 빌드해서 배포하는 것으로 보이며, GHCR에 push된 이미지는 현재 배포 경로에서 실제로 소비되지
+않고 있을 가능성이 있다(Railway 대시보드에서 이 서비스가 "Deploy from GitHub repo"인지 "Deploy
+from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `railway.toml`이 무시되고 있는 것이므로
+직접 확인 필요). 이 항목은 실제 Railway 대시보드 설정을 보지 못한 상태의 정황 추론이므로, 배포가
+여전히 실패한다면 Railway 대시보드의 Root Directory·Build/Deploy 로그를 직접 확인해야 한다.
+
 ---
 
 ## Claude Code 자동화 — 화면 변경 스크린샷 이메일 알림 (Stop hook)
@@ -1464,19 +1484,20 @@ PresetManager: MAX 5→20, 내보내기/불러오기(JSON), **XMP 내보내기**
 
 ```bash
 cd backend
-java -version           # openjdk 25.x.x 확인
+java -version           # 로컬 JDK 버전 확인 (21 이상이면 충분)
 ./gradlew -version      # Gradle 9.5.0 확인
-./gradlew clean build -x test  # BUILD SUCCESSFUL (Java 25 툴체인으로 컴파일)
+./gradlew clean build -x test  # BUILD SUCCESSFUL
 ```
 
-`build.gradle`의 툴체인 설정:
-```groovy
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
-```
+**버그 수정(문서-코드 불일치, 배포 트러블슈팅 중 발견)**: 이 섹션이 예전부터 `build.gradle`에
+`toolchain { languageVersion = JavaLanguageVersion.of(25) }`가 있고 Gradle이 빌드 시
+Adoptium에서 JDK 25를 네트워크로 자동 다운로드(auto-provision)한다고 서술해왔으나, 실제
+`build.gradle`은 `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_21`만
+선언되어 있고 toolchain 블록 자체가 없다(git 이력상 한때 `toolchain(21)`이 있었다가 제거됨,
+"25"가 실제 코드에 들어간 적은 없음) — 즉 Gradle을 실행하는 JDK(로컬 JDK 21+ 또는 CI의
+`actions/setup-java` 21)를 그대로 사용할 뿐 툴체인 자동 다운로드는 발생하지 않는다.
+`.github/workflows/deploy.yml`의 "Java 21로 Gradle 실행... Gradle이 Adoptium에서 JDK 25를
+자동 다운로드(auto-provision)함" 주석도 동일하게 사실과 다르므로 참고 시 유의.
 
 ---
 

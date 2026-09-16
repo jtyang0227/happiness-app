@@ -1,10 +1,14 @@
+# 이 서비스의 유일한 배포 설정 파일. 과거에 저장소 루트에도 railway.toml/nixpacks.toml이
+# 동시에 존재해 Railway가 어느 쪽을 읽는지 모호했다 — git 이력상 이 파일만 redeploy-trigger가
+# 5→7까지 반복 갱신된 것으로 보아 실제로 Railway가 읽고 있던 건 이 파일(Root Directory=backend)
+# 이었을 가능성이 높아, 중복된 두 파일을 삭제하고 이 파일로 단일화했다.
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 120
+healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-# redeploy-trigger-7
+# redeploy-trigger-8
