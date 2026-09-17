@@ -891,6 +891,45 @@ rate limit 체크가 트래킹 이벤트마다 호출됨).
 못했다. "기존 코드로 구현 가능한지 먼저 검토" 원칙에 따라, 근거 없이 새 패러다임(DB 프로시저)을
 들여오지 않고 인덱스 추가로 범위를 한정했다.
 
+#### DB 튜닝 — Hibernate/JDBC 설정 (`application.yml` 공통)
+
+인덱스 외에 커넥션·쿼리 실행 레벨에서 개선 가능한 부분을 조사해 아래 3가지를 dev/prod 공통
+`spring.jpa` 설정으로 추가했다(`application.yml`, 프로필별 파일이 아닌 공통 파일 — Spring Boot가
+base + profile 파일을 병합하므로 `application-prod.yml`의 `hibernate.jdbc.batch_size` 등 기존
+설정과 충돌 없이 함께 적용됨):
+
+- **`spring.jpa.open-in-view: false`** — 기본값(`true`)이면 HTTP 요청마다 커넥션을 응답 직렬화가
+  끝날 때까지 계속 붙잡아둔다(Open Session In View). 이 저장소는 순수 REST API라 뷰 렌더링 중
+  지연 로딩이 필요 없고, 실제로 엔티티 연관관계(`@ManyToOne`/`@OneToMany` 등) 기반 지연 로딩을
+  쓰는 곳이 저장소 전체에 `board/entity/Content.java` 딱 하나뿐인데 그마저 `board/`가 컨트롤러·
+  서비스가 없는 미사용 placeholder라 실제로 호출되는 코드 경로가 아님을 확인했다(`grep`으로
+  `ContentRepository`/`Content` 참조가 `board/` 패키지 밖에 전혀 없음 확인). 즉 끌 때 깨질 수 있는
+  지연 로딩 의존성이 전혀 없어 안전하게 껐다 — Hikari 풀(운영 max 10)이 요청당 커넥션을 실제
+  트랜잭션 구간에만 붙잡도록 바뀌어 동시 요청 처리량이 늘어난다. `./gradlew bootRun`으로 H2 dev
+  기동 시 기존에 매번 뜨던 "spring.jpa.open-in-view is enabled by default" 경고가 사라진 것과,
+  회원가입→포트폴리오 조회(`GET /api/portfolio/{profileName}`, 여러 배치 쿼리 후 DTO 직렬화)가
+  `LazyInitializationException` 없이 200으로 정상 동작하는 것까지 curl로 재확인했다.
+- **`hibernate.jdbc.fetch_size: 50`** — JDBC 드라이버가 한 번의 네트워크 왕복으로 가져오는 행 수를
+  제한한다. `PhotoRepository.search`/`findByMemberIdOrderByCreatedAtDesc` 등 다수의 조회 메서드가
+  `Pageable` 없이 `List<Photo>` 전체를 반환하는 구조라(아래 "알려진 갭" 참고), 사진 수가 늘어날 때
+  드라이버가 결과셋 전체를 한 번에 메모리로 끌어오는 것을 완화한다.
+- **`hibernate.query.in_clause_parameter_padding: true`** — 이 저장소의 지배적인 N+1 방지 패턴은
+  `findAllById(Set<Long>)`/`WHERE x IN :ids` 형태의 배치 조회다(`attachMemberInfo`,
+  `GatheringPhotoRepository.findByPostIds` 등 수십 곳). IN절 크기가 호출마다 달라지면(회원 2명 조회
+  vs 3명 조회) Hibernate가 매번 새 SQL 쿼리 플랜을 준비해 DB의 플랜 캐시 적중률이 떨어지는데, 이
+  옵션을 켜면 IN절 파라미터 수를 2의 거듭제곱(2,4,8,16...)으로 패딩해 플랜 재사용률을 높인다.
+
+**검증**: `./gradlew clean build -x test` BUILD SUCCESSFUL, `./gradlew bootRun`으로 H2 dev 기동 후
+`GET /api/photos`, `POST /api/auth/signup`, `GET /api/portfolio/{profileName}` curl 스모크 테스트
+모두 200 확인, 로그에 ERROR/Exception 없음.
+
+**알려진 갭 (이번엔 손대지 않음)**: `GET /api/photos`(`PhotoController.getAllPhotos`)가
+`Pageable` 없이 `List<Photo>` 전체를 반환한다 — 사진이 많아지면 이 엔드포인트 하나가 매번 테이블
+전체를 읽어 직렬화하는 구조적 병목이 된다. 다만 이걸 고치려면 응답 스키마가 배열(`data: [...]`)에서
+페이지 객체로 바뀌어야 해서 웹(`GalleryPage`/`ExplorePage`)·모바일(`ExploreScreen`) 양쪽의 소비 코드를
+함께 바꿔야 하는 API 계약 변경이 된다 — 이번 "설정 레벨 DB 튜닝" 범위를 벗어나는 별도 작업으로 판단해
+적용하지 않고 여기 기록만 남긴다.
+
 #### PhotoRepository 주요 쿼리 메서드
 
 ```java

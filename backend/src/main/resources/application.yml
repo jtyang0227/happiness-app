@@ -6,6 +6,17 @@ spring:
   web:
     resources:
       add-mappings: false
+  # DB 튜닝 (dev/prod 공통) — 순수 REST API라 뷰 렌더링 중 지연 로딩이 필요 없어 OSIV를 끔
+  # (엔티티 연관관계 기반 지연 로딩을 쓰는 곳이 board/Content 하나뿐이고 그마저 미사용 코드라 안전 확인됨).
+  # 매 HTTP 요청마다 커넥션을 트랜잭션 종료 후에도 응답 직렬화까지 계속 붙잡아두는 낭비를 줄인다.
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          fetch_size: 50            # 대량 결과 조회 시 JDBC 라운드트립당 가져오는 행 수 제한 (메모리 스파이크 방지)
+        query:
+          in_clause_parameter_padding: true  # findAllById(Set) 등 IN절 크기가 매번 달라지는 배치조회의 쿼리플랜 캐시 재사용률 향상
   servlet:
     multipart:
       enabled: true
