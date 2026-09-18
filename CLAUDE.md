@@ -863,6 +863,8 @@ CREATE INDEX IF NOT EXISTS idx_photo_saves_member_id        ON photo_saves(membe
 CREATE INDEX IF NOT EXISTS idx_follows_following_id         ON follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_members_provider             ON members(provider, provider_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_visitor_token      ON analytics_events(visitor_token, created_at);
+-- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
+CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -922,6 +924,60 @@ base + profile 파일을 병합하므로 `application-prod.yml`의 `hibernate.jd
 **검증**: `./gradlew clean build -x test` BUILD SUCCESSFUL, `./gradlew bootRun`으로 H2 dev 기동 후
 `GET /api/photos`, `POST /api/auth/signup`, `GET /api/portfolio/{profileName}` curl 스모크 테스트
 모두 200 확인, 로그에 ERROR/Exception 없음.
+
+#### DB 튜닝 2차 — PgJDBC 프리페어드 스테이트먼트 캐싱 + AnalyticsEvent 복합 인덱스
+
+1차 튜닝(인덱스 17개 + OSIV/fetch_size/in_clause_padding) 이후 추가로 조사해 적용한 2가지:
+
+- **`application-prod.yml`의 `spring.datasource.hikari.data-source-properties`에 PgJDBC 서버 사이드
+  프리페어드 스테이트먼트 캐싱 4종 추가** (`cachePrepStmts: true`, `prepStmtCacheSize: 250`,
+  `prepStmtCacheSqlLimit: 2048`, `useServerPrepStmts: true`) — HikariCP 공식 문서가 PostgreSQL
+  조합에서 명시적으로 권장하는 설정인데 기존에는 `sslmode`/`sslfactory`만 있고 이 4개가 전혀 없었다.
+  서버 사이드 프리페어드 스테이트먼트를 캐싱해 반복 실행되는 쿼리(예: `findByMemberIdOrderByCreatedAtDesc`,
+  `findAllById` 배치조회 등 이 저장소에서 가장 빈번한 쿼리 패턴)의 매 실행마다 발생하는 파싱·플래닝
+  비용을 줄인다 — 1차 튜닝의 `in_clause_parameter_padding`(IN절 파라미터 개수를 2의 거듭제곱으로
+  패딩)과 정확히 같은 목적(플랜 캐시 재사용률 향상)으로 서로 상호보완적인 설정이라 함께 적용하는 것이
+ 자연스럽다. **주의**: 이 설정은 PostgreSQL(prod)에만 적용되고 H2(dev)는 이 프로퍼티들을 사용하지 않으므로
+  H2 dev 기동으로는 PgJDBC 자체의 캐싱 동작(플랜 캐시 히트 여부 등)을 검증할 수 없다 — 이번 세션에서는
+  실제 운영 Postgres 접근 권한이 없어 `EXPLAIN ANALYZE` 등으로 캐시 적중 여부까지 확인하지 못했고,
+  설정값 자체가 공식 문서상 안전하고 널리 쓰이는 기본값 조합이라는 점에 근거해 적용했다.
+- **`AnalyticsEvent`에 `idx_analytics_member_type_created (member_id, event_type, created_at)`
+  복합 인덱스 추가** (기존 `idx_analytics_member_type (member_id, event_type)`는 그대로 유지, 완전히
+  새 인덱스를 추가 — 기존 인덱스의 컬럼 구성을 변경하면 `ddl-auto: update`가 실제로 `ALTER`/재생성을
+  보장하지 않아 위험하므로, 안전한 "순수 추가"만 선택). `AnalyticsEventRepository.countByMemberAndTypeSince`/
+  `dailyViewsByMember` 두 쿼리가 `WHERE memberId = :x AND eventType = '...' AND createdAt >= :since`
+  형태로 등치(member_id, event_type) 다음에 range 필터(created_at)를 거는데, 기존 2컬럼 인덱스로는 이
+  range 조건을 인덱스 레벨에서 못 거르고 힙 조회 후 필터링해야 했다 — leftmost-prefix 규칙상 3번째
+  컬럼(created_at)까지 포함해야 인덱스만으로 걸러진다. `AnalyticsController`의 방문자 분석 대시보드
+  (일별 조회수 차트, KPI 요약)가 호출하는 경로.
+- **투자했지만 적용하지 않은 것들**(근거와 함께 기록):
+  - **HikariCP `autoCommit: false` + `hibernate.connection.provider_disables_autocommit: true`
+    조합** — 트랜잭션 시작을 커넥션 체크아웃 시점이 아니라 실제 첫 쿼리 시점으로 늦춰 커넥션 점유
+    시간을 더 줄일 수 있는 잘 알려진 최적화이지만, 이 설정이 안전하려면 모든 쓰기 경로가 반드시
+    `@Transactional` 경계 안에 있어야 한다(그렇지 않은 쓰기는 오토커밋이 꺼진 상태에서 커밋 없이
+    끝나 롤백되거나 커넥션이 반환되지 않을 수 있음). 이 저장소 전체 서비스 레이어의 모든 쓰기
+    메서드가 `@Transactional`로 감싸여 있는지를 안전하게 보장하려면 전수조사가 필요한데, 이번
+    세션에서 grep으로 확인한 범위에서는 대부분 클래스 레벨 `@Transactional`을 쓰고 있었지만 100%
+    확신할 수 있는 근거(정적 분석 도구 등)가 없어 "설정 하나로 전체 쓰기 경로가 깨질 수 있는" 리스크
+    대비 이득이 크지 않다고 판단해 보류했다.
+  - **`application-dev.yml`에 `hibernate.jdbc.batch_size`/`order_inserts`/`order_updates` 추가**
+    (prod에는 이미 있음) — dev는 H2 in-memory라 배치 insert/update 성능이 실사용에 영향을 주지 않고,
+    프로필 간 완전한 대칭을 맞추는 것 자체가 목적이 되면 안 된다고 판단해 우선순위 낮음으로 보류.
+  - **N+1 재점검** — `BookingService`/`GatheringPostService`/`GatheringService`/`MemberService`/
+    `MeetService`/`DeliverySetService`의 모든 for/forEach 루프를 다시 훑었으나 전부 이미 배치 조회된
+    컬렉션을 메모리에서 순회하거나(예: `DeliverySetService`의 `findAllById` 결과 맵핑), 계정 삭제
+    cascade처럼 저빈도 관리자 경로에서만 발생하는 루프뿐이었다 — 추가로 고칠 만한 새 N+1 패턴은
+    발견하지 못했다.
+  - **`GET /api/photos` 페이지네이션 부재** — 1차 튜닝에서 이미 "알려진 갭"으로 기록한 API 계약 변경
+    사안. 이번에도 다시 검토했으나 결론은 동일 — 웹/모바일 소비 코드를 함께 바꿔야 하는 별도 작업.
+
+**검증**: `./gradlew clean build -x test` BUILD SUCCESSFUL. `./gradlew bootRun`으로 H2 dev 기동 후
+DDL 로그에서 `create index idx_analytics_member_type_created` 생성 확인, `Started HappinessAppApplication`
+정상 기동, ERROR/Exception 없음. curl 스모크 테스트: `POST /api/auth/signup`(termsAgreed 포함) 201,
+`GET /api/photos` 200, `GET /api/portfolio/{임의프로필}` 404(정상 — 존재하지 않는 프로필), `POST
+/api/analytics/track` 200, `GET /api/photos/genres/stats`(비로그인) 401(인증 경계 정상). PgJDBC
+프리페어드 스테이트먼트 캐싱 설정 자체는 위에 명시한 대로 H2 dev 환경에서는 실제 동작 검증이
+불가능함을 재차 밝힌다.
 
 **알려진 갭 (이번엔 손대지 않음)**: `GET /api/photos`(`PhotoController.getAllPhotos`)가
 `Pageable` 없이 `List<Photo>` 전체를 반환한다 — 사진이 많아지면 이 엔드포인트 하나가 매번 테이블

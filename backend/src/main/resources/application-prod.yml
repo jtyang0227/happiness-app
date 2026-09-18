@@ -13,6 +13,11 @@ spring:
       data-source-properties:
         sslmode: require
         sslfactory: org.postgresql.ssl.NonValidatingFactory
+        # PgJDBC 서버 사이드 프리페어드 스테이트먼트 캐싱 (HikariCP+PostgreSQL 공식 권장 조합)
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
   jpa:
     hibernate:
       ddl-auto: update
