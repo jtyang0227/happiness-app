@@ -1336,6 +1336,46 @@ API base URL:
 - **평가셋**(`mcp-server/eval/`): `seed.mjs`(2명의 작가·사진 7장·시리즈 1개로 구성된 고정 시드 데이터 생성) + `evaluation.xml`(mcp-builder 스킬 가이드 형식의 QA 10쌍, 실제 도구 호출로 정답 검증 완료)
 - 상세 사용법·Claude Desktop 연동 예시는 `mcp-server/README.md` 참고
 
+### Claude Code 개발 도구 MCP 서버 (`.mcp.json`)
+
+**주의**: 위 `mcp-server/`(`happiness-mcp-server`)는 이 앱의 제품 기능(공개 GET API를 감싸는 읽기 전용
+서버)이고, 이 섹션의 `.mcp.json`은 완전히 별개로 **Claude Code로 이 저장소를 개발할 때 쓰는 외부
+개발도구 MCP 서버 4종**을 프로젝트 스코프로 등록해둔 것이다. 저장소 루트 `.mcp.json`에 실제 API 키가
+아닌 `${VAR}` 플레이스홀더만 커밋되어 있으며(`.env.local`과 동일한 원칙 — 시크릿은 각자 환경변수로
+채움), Claude Code가 이 저장소를 열 때 자동으로 인식한다.
+
+```json
+{
+  "mcpServers": {
+    "perplexity": { "command": "npx", "args": ["-y", "server-perplexity-ask"],
+                     "env": { "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}" } },
+    "firecrawl":   { "command": "npx", "args": ["-y", "firecrawl-mcp"],
+                     "env": { "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}" } },
+    "playwright":  { "command": "npx", "args": ["-y", "@playwright/mcp@latest"] },
+    "composio":    { "type": "sse", "url": "${COMPOSIO_MCP_URL}" }
+  }
+}
+```
+
+- **perplexity** — 웹 검색/리서치. `server-perplexity-ask`(npm, 실존 확인됨) 사용, `PERPLEXITY_API_KEY`
+  필요(perplexity.ai API 설정에서 발급).
+- **firecrawl** — 웹페이지 크롤링/스크래핑. `firecrawl-mcp`(npm, 실존 확인됨) 사용, `FIRECRAWL_API_KEY`
+  필요(firecrawl.dev 대시보드에서 발급).
+- **playwright** — 브라우저 자동화. Microsoft 공식 `@playwright/mcp`(npm, 실존 확인됨) 사용, API 키
+  불필요. **주의**: 이 세션 환경에는 이미 `agent-browser` CLI + 사전 설치된 Chromium이 있어 브라우저
+  자동화가 가능하다 — Claude Code가 이 MCP 없이도 대부분의 브라우저 작업을 처리할 수 있다는 점을
+  알고 있을 것. 이 MCP는 다른 MCP 클라이언트(예: Claude Desktop)에서 이 저장소를 열 때를 위한 것.
+- **composio** — 수백 개 SaaS 툴(Slack/Gmail/Notion 등) 통합. 다른 3개와 달리 정적 npm 패키지가
+  아니라 **composio.dev 대시보드에서 로그인 후 발급받는 개인화된 MCP 엔드포인트 URL**이 필요하다 —
+  `COMPOSIO_MCP_URL` 환경변수에 그 URL을 넣어야 실제로 동작한다(placeholder 상태로는 연결 안 됨).
+
+**검증**: `npx -y @playwright/mcp@latest --version` 실행 → `Version 0.0.82` 정상 출력 확인(API 키
+불필요라 유일하게 이 세션에서 실제로 기동까지 검증 가능했음). `npm view server-perplexity-ask`/
+`npm view firecrawl-mcp`/`npm view @playwright/mcp` 3개 패키지 모두 npm 레지스트리에 실존함을
+확인(버전 각각 0.1.3/3.25.3/0.0.82). Perplexity·Firecrawl·Composio는 실제 API 키/URL이 없어
+이 세션에서 실제 연결까지는 검증하지 못했다 — 각자 키를 발급받아 환경변수로 채운 뒤 Claude Code를
+재시작하면 `/mcp` 명령으로 연결 상태를 직접 확인해야 한다.
+
 ### Docker
 
 **로컬 개발** (`docker-compose.yml`): backend + redis  
