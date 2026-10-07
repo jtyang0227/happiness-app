@@ -1280,6 +1280,12 @@ mobile/
 │   │                       REQUESTED 건에 확인/거절 Alert 액션. 우측 상단 "⚙ 설정"은 Feature 38 당시 웹 `/bookings` Linking
 │   │                       딥링크였으나, Feature 39(d)에서 네이티브 `AvailabilitySettingsScreen`으로 직접 이동하도록 교체(P3 보류 해제).
 │   │                       `ProfileScreen` 메뉴 "🗓 예약 관리"에서 진입.
+│                       (P1-3, 2026-10-07) CONFIRMED 카드에 `components/BookingWorkSection.js`(신규)의 `ChecklistSection`
+│                       (접힘 아코디언 — 항목 추가/체크/삭제 + 납품 기한 YYYY-MM-DD 텍스트 입력, 모든 조작 즉시 서버 저장·실패 시
+│                       롤백)·`PaymentSection`(계약금/잔금 독립 토글 + 선택 금액 입력) 추가, 납품 기한 0~3일 이내면 "🚚 납품 임박"
+│                       배지. 웹 `ChecklistAccordion`/`PaymentToggle`과 같은 계약 — `PUT /booking/{id}/checklist`는
+│                       checklistJson·deliveryDeadline을 둘 다 덮어쓰므로 항상 함께 전송, `/payment`는 null=변경 없음(그래서
+│                       금액 "삭제"는 미지원). 저장 응답으로 해당 예약만 교체. 웹의 "미수금" 탭은 모바일 미구현.
 │   ├── AvailabilitySettingsScreen.js # (신규, Feature 39-d) 가용 시간 설정 — 요일 토글 칩(백엔드 `weekdays`는 1=월..7=일
 │   │                       CSV, 화면 표시는 일~토 순서라 `uiIndexToBackend`/`backendToUiIndex`로 매핑), 시간 슬롯(HH:MM 텍스트
 │   │                       입력 + 정규식 검증, 외부 시간 피커 라이브러리 없음), 버퍼 시간, 예약 메모, 차단 날짜 목록 조회·추가·삭제.
@@ -1301,7 +1307,7 @@ mobile/
 │   │   ├── gatheringApi.js  # (신규, Feature 37) list/getMy/getDetail/respond/cancelParticipation/getFeed/getAlbum/getInstagramCandidates/shareToInstagram/likePost/unlikePost/addComment(P1-4) — 웹 gatheringApi.js의 부분집합(생성/수정/참여자관리/앨범페이지 없음, 모바일 범위 축소). getUnreadCount(신규, Feature 38-B4) 추가.
 │   │   ├── bookingApi.js    # (Feature 38-B4: getMyBookings/confirmBooking/rejectBooking → Feature 39-d 확장) cancelBooking/
 │   │   │                      getAvailabilitySettings/saveAvailabilitySettings/getBlockedDates/addBlockedDate/deleteBlockedDate
-│   │   │                      6개 추가(총 8 메서드) — 웹 bookingApi.js와 동일 엔드포인트 계약 사용
+│   │   │                      6개 추가 + (P1-3) updateChecklist/updatePayment(총 10 메서드) — 웹 bookingApi.js와 동일 엔드포인트 계약 사용
 │   │   └── deliveryApi.js   # (신규, Feature 38-B4) getMyList만 (세트 생성·상세·승인/거절은 범위 밖)
 │   ├── navigation/
 │   │   └── AppNavigator.js  # BottomTabNavigator(탐색/갤러리/등록/피드/프로필) + Stack(PhotoForm/Series/Meets/MeetDetail/Legal/Gatherings/GatheringDetail/GatheringInstagramShare)

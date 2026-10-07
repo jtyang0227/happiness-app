@@ -6,6 +6,7 @@ import { bookingApi } from '../src/api/bookingApi';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 import EmptyState from '../components/EmptyState';
+import { ChecklistSection, PaymentSection, isDeliveryDeadlineNear } from '../components/BookingWorkSection';
 
 const SHOOT_LABELS = {
   WEDDING: '💍 웨딩', SNAP: '📷 스냅', PROFILE: '👤 프로필',
@@ -80,6 +81,12 @@ export default function BookingScreen({ navigation }) {
     ]);
   };
 
+  // 체크리스트·수금 저장 응답(BookingResponse)으로 해당 예약만 교체 — 목록 전체를 다시 불러오지 않는다
+  const replaceBooking = (updated) => {
+    if (!updated?.id) return;
+    setBookings(prev => prev.map(b => (b.id === updated.id ? { ...b, ...updated } : b)));
+  };
+
   const openAvailabilitySettings = () => {
     navigation.navigate && navigation.navigate('AvailabilitySettings');
   };
@@ -126,7 +133,12 @@ export default function BookingScreen({ navigation }) {
         )}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.shootType}>{SHOOT_LABELS[item.shootType] || item.shootType || '촬영'}</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.shootType}>{SHOOT_LABELS[item.shootType] || item.shootType || '촬영'}</Text>
+              {item.status === 'CONFIRMED' && isDeliveryDeadlineNear(item.deliveryDeadline) && (
+                <Text style={styles.deadlineBadge}>🚚 납품 임박</Text>
+              )}
+            </View>
             <Text style={styles.meta}>📅 {formatDate(item.shootDate)} {item.shootTime ? `· ${item.shootTime}` : ''}</Text>
             <Text style={styles.client}>👤 {item.clientName || '-'}</Text>
             {item.clientPhone ? <Text style={styles.meta}>📞 {item.clientPhone}</Text> : null}
@@ -150,6 +162,13 @@ export default function BookingScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
             )}
+
+            {item.status === 'CONFIRMED' && (
+              <>
+                <ChecklistSection booking={item} onUpdate={replaceBooking} />
+                <PaymentSection booking={item} onUpdate={replaceBooking} />
+              </>
+            )}
           </View>
         )}
       />
@@ -172,7 +191,13 @@ const styles = StyleSheet.create({
     padding: SPACING.lg, marginBottom: SPACING.sm,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  shootType: { fontSize: FONT.base, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  shootType: { fontSize: FONT.base, fontWeight: '700', color: COLORS.textPrimary },
+  deadlineBadge: {
+    fontSize: 11, fontWeight: '700', color: '#B45309',
+    backgroundColor: 'rgba(180,83,9,0.10)', borderRadius: RADIUS.sm,
+    paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden',
+  },
   meta: { fontSize: FONT.sm, color: COLORS.textSecondary, marginBottom: 2 },
   client: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2 },
   memo: {
