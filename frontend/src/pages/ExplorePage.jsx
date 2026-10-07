@@ -6,6 +6,9 @@ import { mq } from '../constants/breakpoints';
 import GenreTabBar from '../components/common/GenreTabBar';
 import DotEmptyState from '../components/common/DotEmptyState';
 import DotSkeletonCard from '../components/common/DotSkeletonCard';
+import Button from '../components/common/Button';
+
+const PAGE_SIZE = 30;
 
 const HISTORY_KEY = 'searchHistory';
 const MAX_HISTORY  = 5;
@@ -118,6 +121,10 @@ export default function ExplorePage() {
   const [photos, setPhotos]             = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState('');
+  const [page, setPage]                 = useState(0);
+  const [hasNext, setHasNext]           = useState(false);
+  const [loadingMore, setLoadingMore]   = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState('');
   const [search, setSearch]             = useState('');
   const [sortIdx, setSortIdx]           = useState(0);
   const [selectedGenre, setSelectedGenre] = useState(() => searchParams.get('genre') || '');
@@ -139,8 +146,10 @@ export default function ExplorePage() {
     setLoading(true);
     setError('');
     try {
-      const res = await photoApi.search(query);
-      setPhotos(res?.data ?? (Array.isArray(res) ? res : []));
+      const res = await photoApi.search({ ...query, page: 0, size: PAGE_SIZE });
+      setPhotos(res?.data ?? []);
+      setPage(0);
+      setHasNext(Boolean(res?.hasNext));
     } catch {
       setError('사진을 불러오는데 실패했습니다.');
     } finally {
@@ -149,6 +158,25 @@ export default function ExplorePage() {
   }, [query]);
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    setLoadMoreError('');
+    try {
+      const next = page + 1;
+      const res = await photoApi.search({ ...query, page: next, size: PAGE_SIZE });
+      setPhotos(prev => {
+        const seen = new Set(prev.map(p => p.id));
+        return [...prev, ...(res?.data ?? []).filter(p => !seen.has(p.id))];
+      });
+      setPage(next);
+      setHasNext(Boolean(res?.hasNext));
+    } catch {
+      setLoadMoreError('사진을 더 불러오지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, query]);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
@@ -320,8 +348,8 @@ export default function ExplorePage() {
         {!loading && !error && (
           <div style={{ marginBottom: 16, fontSize: 13, color: '#9090b0' }}>
             {query.keyword
-              ? `"${query.keyword}" 검색 결과 ${photos.length}장`
-              : `${photos.length}장`}
+              ? `"${query.keyword}" 검색 결과 ${photos.length}${hasNext ? '+' : ''}장`
+              : `${photos.length}${hasNext ? '+' : ''}장`}
             {query.genre && (
               <span style={{ marginLeft: 8, color: '#b8b8d0' }}>
                 · {selectedGenre}
@@ -362,6 +390,15 @@ export default function ExplorePage() {
                 <ExplorePhotoCard photo={photo} keyword={query.keyword} />
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && !error && hasNext && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 0 40px' }}>
+            {loadMoreError && <div role="alert" style={{ color: COLORS.danger, fontSize: 13 }}>{loadMoreError}</div>}
+            <Button variant="secondary" loading={loadingMore} onClick={loadMore}>
+              {loadingMore ? '불러오는 중' : '사진 더 보기'}
+            </Button>
           </div>
         )}
       </div>

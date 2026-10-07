@@ -24,6 +24,7 @@ import com.happiness.app.storage.SupabaseStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,7 +71,9 @@ public class PhotoController {
             @RequestParam(required = false) String genre,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String order,
-            @RequestParam(required = false) String tags
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "30") int size
     ) {
         String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
@@ -89,27 +92,48 @@ public class PhotoController {
 
         List<PhotoResponse> photos;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
+        // page 파라미터를 보낸 요청만 페이지 단위로 자른다. 미지정 시엔 기존처럼 전체 목록 —
+        // 어드민/프로필/포트폴리오 등 전체 목록이 필요한 소비처가 조용히 잘리지 않도록.
+        boolean paged = page != null;
+        int pageNo = paged ? Math.max(page, 0) : 0;
+        int pageSize = Math.min(Math.max(size, 1), 100);
+        Boolean hasNext = null;
 
-        if (hasKeyword) {
-            try {
-                String cm = colorMood != null ? colorMood : "";
-                String ir = imageRatio != null ? imageRatio : "";
-                String gn = genre != null ? genre : "";
-                photos = photoRepository.searchFuzzy(keyword, cm, memberId, ir, gn)
-                        .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
-            } catch (DataAccessException e) {
-                photos = photoRepository.search(keyword, colorMood, memberId, imageRatio, genre, sort)
+        if (paged && !hasKeyword && taggedPhotoIds == null) {
+            Slice<Photo> slice = photoRepository.searchPage(
+                    null, colorMood, memberId, imageRatio, genre, PageRequest.of(pageNo, pageSize, sort));
+            photos = slice.getContent().stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+            hasNext = slice.hasNext();
+        } else {
+            if (hasKeyword) {
+                try {
+                    String cm = colorMood != null ? colorMood : "";
+                    String ir = imageRatio != null ? imageRatio : "";
+                    String gn = genre != null ? genre : "";
+                    photos = photoRepository.searchFuzzy(keyword, cm, memberId, ir, gn)
+                            .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+                } catch (DataAccessException e) {
+                    photos = photoRepository.search(keyword, colorMood, memberId, imageRatio, genre, sort)
+                            .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
+                }
+            } else {
+                photos = photoRepository.search(null, colorMood, memberId, imageRatio, genre, sort)
                         .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
             }
-        } else {
-            photos = photoRepository.search(null, colorMood, memberId, imageRatio, genre, sort)
-                    .stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
-        }
 
-        // tags 필터 적용
-        if (taggedPhotoIds != null) {
-            final Set<Long> ids = taggedPhotoIds;
-            photos = photos.stream().filter(p -> ids.contains(p.getId())).collect(Collectors.toList());
+            // tags 필터 적용
+            if (taggedPhotoIds != null) {
+                final Set<Long> ids = taggedPhotoIds;
+                photos = photos.stream().filter(p -> ids.contains(p.getId())).collect(Collectors.toList());
+            }
+
+            // 키워드·태그 검색은 결과가 이미 필터링된 목록이라 메모리에서 페이지를 자른다
+            if (paged) {
+                int from = Math.min(pageNo * pageSize, photos.size());
+                int to = Math.min(from + pageSize, photos.size());
+                hasNext = to < photos.size();
+                photos = new ArrayList<>(photos.subList(from, to));
+            }
         }
 
         attachMemberInfo(photos);
@@ -117,6 +141,11 @@ public class PhotoController {
         Map<String, Object> result = new HashMap<>();
         result.put("status", "success");
         result.put("data", photos);
+        if (paged) {
+            result.put("page", pageNo);
+            result.put("size", pageSize);
+            result.put("hasNext", hasNext);
+        }
         return ResponseEntity.ok(result);
     }
 

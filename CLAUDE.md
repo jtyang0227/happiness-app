@@ -1024,12 +1024,21 @@ DDL 로그에서 `create index idx_analytics_member_type_created` 생성 확인,
 프리페어드 스테이트먼트 캐싱 설정 자체는 위에 명시한 대로 H2 dev 환경에서는 실제 동작 검증이
 불가능함을 재차 밝힌다.
 
-**알려진 갭 (이번엔 손대지 않음)**: `GET /api/photos`(`PhotoController.getAllPhotos`)가
-`Pageable` 없이 `List<Photo>` 전체를 반환한다 — 사진이 많아지면 이 엔드포인트 하나가 매번 테이블
-전체를 읽어 직렬화하는 구조적 병목이 된다. 다만 이걸 고치려면 응답 스키마가 배열(`data: [...]`)에서
-페이지 객체로 바뀌어야 해서 웹(`GalleryPage`/`ExplorePage`)·모바일(`ExploreScreen`) 양쪽의 소비 코드를
-함께 바꿔야 하는 API 계약 변경이 된다 — 이번 "설정 레벨 DB 튜닝" 범위를 벗어나는 별도 작업으로 판단해
-적용하지 않고 여기 기록만 남긴다.
+**해소됨(P1-1, 2026-10-07) — `GET /api/photos` 페이지네이션**: 과거 이 자리에 "전체 `List<Photo>`를
+반환하는 구조적 병목, API 계약 변경이라 보류"라는 알려진 갭이 기록돼 있었다. 계약을 깨지 않도록
+**opt-in** 방식으로 해결했다 — `page` 파라미터를 보낸 요청만 페이지 단위로 응답하고(`size` 기본 30,
+1~100으로 클램프), 응답의 `data` 배열 형태는 그대로 유지한 채 `page`/`size`/`hasNext` 필드만 추가한다.
+`page`를 안 보내면 기존처럼 전체 목록을 반환하므로 어드민(`AdminPhotosPage`)·프로필·포트폴리오처럼
+전체 목록이 필요한 화면은 손대지 않았다(기본 size를 강제하면 이 화면들이 조용히 잘려 보이는 회귀가 남).
+키워드·태그가 없을 때는 `PhotoRepository.searchPage()`(`search()`와 같은 JPQL + `Pageable`, 반환 타입
+`Slice`라 COUNT 쿼리 없이 `hasNext`만 계산)로 DB 레벨 페이징, 키워드(pg_trgm fuzzy → LIKE fallback)·태그
+경로는 기존 전체 조회 결과를 메모리에서 잘라 응답한다(검색 결과는 원래 작은 집합이라 허용). 소비 코드:
+웹 `GalleryPage`·`ExplorePage`는 첫 30장 + 공통 `Button`(secondary) "사진 더 보기"(실패 시 버튼 위 인라인
+에러, 이미 불러온 목록은 유지, id 기준 중복 제거), 결과 수는 다음 페이지가 있으면 `30+장`처럼 `+` 표시.
+모바일 `ExploreScreen`은 `FeedScreen`과 같은 `onEndReached` 무한 스크롤. `GalleryPage`의 클라이언트 색상
+정렬(`clientSort`)·장르 필터는 지금까지 불러온 사진에만 적용된다는 한계가 있다(전체 기준 정렬이 필요하면
+서버 정렬로 옮겨야 함). `CoreFlowIntegrationTest`에 페이지 경계·hasNext·키워드 경로·page 미지정 시 전체
+반환 케이스를 추가했다.
 
 #### PhotoRepository 주요 쿼리 메서드
 

@@ -114,6 +114,37 @@ class CoreFlowIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void 사진_목록은_page_파라미터가_있으면_페이지_단위로_응답한다() throws Exception {
+        User u = signupAndLogin();
+        for (int i = 0; i < 5; i++) createPhoto(u);
+        String member = String.valueOf(u.id());
+
+        mvc.perform(get("/api/photos").param("memberId", member).param("page", "0").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.hasNext").value(true));
+        mvc.perform(get("/api/photos").param("memberId", member).param("page", "2").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.hasNext").value(false));
+
+        // 키워드 검색 경로(메모리 페이지 자르기)도 같은 응답 형태
+        mvc.perform(get("/api/photos").param("memberId", member).param("keyword", "테스트")
+                        .param("page", "0").param("size", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(3))
+                .andExpect(jsonPath("$.hasNext").value(true));
+
+        // page 미지정 시 기존처럼 전체 배열, 페이지 메타 없음
+        mvc.perform(get("/api/photos").param("memberId", member))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(5))
+                .andExpect(jsonPath("$.hasNext").doesNotExist());
+    }
+
     // ── IDOR: 남의 리소스는 건드릴 수 없다 ─────────────────────────────
 
     @Test

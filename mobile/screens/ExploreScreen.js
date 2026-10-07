@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  FlatList, Image, ScrollView, StyleSheet,
+  ActivityIndicator, FlatList, Image, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { photoApi } from '../services/api';
@@ -11,6 +11,7 @@ import EmptyState from '../components/EmptyState';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
 const GENRES = [{ code: null, label: '전체', emoji: '✦' }, ...GENRE_LIST];
+const PAGE_SIZE = 30;
 
 export default function ExploreScreen({ navigation }) {
   const [photos, setPhotos] = useState([]);
@@ -19,22 +20,54 @@ export default function ExploreScreen({ navigation }) {
   const [genre, setGenre] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [filters, setFilters] = useState({});
+
+  const buildParams = (kw, mood, g) => {
+    const params = {};
+    if (kw.trim()) params.keyword = kw.trim();
+    if (mood) params.colorMood = mood;
+    if (g) params.genre = g;
+    return params;
+  };
 
   const load = useCallback(async (kw = keyword, mood = moodFilter, g = genre) => {
+    const params = buildParams(kw, mood, g);
+    setFilters(params);
     try {
-      const params = {};
-      if (kw.trim()) params.keyword = kw.trim();
-      if (mood) params.colorMood = mood;
-      if (g) params.genre = g;
-      const res = await photoApi.getAll(params);
-      setPhotos(res.data || res || []);
+      const res = await photoApi.getAll({ ...params, page: 0, size: PAGE_SIZE });
+      setPhotos(res?.data || []);
+      setPage(0);
+      setHasNext(Boolean(res?.hasNext));
     } catch {
       setPhotos([]);
+      setHasNext(false);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [keyword, moodFilter, genre]);
+
+  const handleLoadMore = async () => {
+    if (!hasNext || loadingMore || loading || refreshing) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await photoApi.getAll({ ...filters, page: next, size: PAGE_SIZE });
+      setPhotos(prev => {
+        const seen = new Set(prev.map(p => p.id));
+        return [...prev, ...(res?.data || []).filter(p => !seen.has(p.id))];
+      });
+      setPage(next);
+      setHasNext(Boolean(res?.hasNext));
+    } catch {
+      // 다음 스크롤 끝 도달 시 다시 시도된다
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => { load(); }, []);
 
@@ -146,7 +179,7 @@ export default function ExploreScreen({ navigation }) {
 
       {!loading && (
         <Text style={styles.resultCount}>
-          {moodFilter || genre || keyword.trim() ? `검색 결과 ${photos.length}건` : `사진 ${photos.length}장`}
+          {moodFilter || genre || keyword.trim() ? `검색 결과 ${photos.length}${hasNext ? '+' : ''}건` : `사진 ${photos.length}${hasNext ? '+' : ''}장`}
         </Text>
       )}
     </View>
@@ -177,6 +210,11 @@ export default function ExploreScreen({ navigation }) {
       renderItem={renderPhoto}
       onRefresh={handleRefresh}
       refreshing={refreshing}
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.4}
+      ListFooterComponent={
+        loadingMore ? <ActivityIndicator style={styles.footerLoader} color={COLORS.primary} /> : null
+      }
       ListEmptyComponent={
         isSearching ? (
           <EmptyState
@@ -198,6 +236,7 @@ const styles = StyleSheet.create({
   skeletonCol: { width: '50%' },
   row: { marginHorizontal: SPACING.md, marginBottom: 8 },
 
+  footerLoader: { paddingVertical: SPACING.lg },
   searchRow: { flexDirection: 'row', margin: SPACING.md, marginBottom: SPACING.sm, gap: 8 },
   searchInput: {
     flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md,

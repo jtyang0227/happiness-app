@@ -2,6 +2,7 @@ package com.happiness.app.photo.repository;
 
 import com.happiness.app.photo.entity.Photo;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,6 +39,26 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             @Param("imageRatio") String imageRatio,
             @Param("genre")      String genre,
             Sort sort
+    );
+
+    /** search()와 같은 조건의 페이지 단위 조회 — Slice라 COUNT 쿼리 없이 hasNext만 계산한다 */
+    @Query("""
+        SELECT p FROM Photo p
+        WHERE (:keyword IS NULL OR :keyword = '' OR
+               LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+               LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:colorMood IS NULL OR :colorMood = '' OR p.colorMood = :colorMood)
+          AND (:memberId IS NULL OR p.memberId = :memberId)
+          AND (:imageRatio IS NULL OR :imageRatio = '' OR p.imageRatio = :imageRatio)
+          AND (:genre IS NULL OR :genre = '' OR p.genre = :genre)
+        """)
+    Slice<Photo> searchPage(
+            @Param("keyword")    String keyword,
+            @Param("colorMood")  String colorMood,
+            @Param("memberId")   Long memberId,
+            @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre,
+            Pageable pageable
     );
 
     /**

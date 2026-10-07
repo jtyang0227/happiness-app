@@ -10,6 +10,9 @@ import DotSkeletonCard from '../components/common/DotSkeletonCard';
 import { useGalleryLayout } from '../hooks/useGalleryLayout';
 import GenreTabBar from '../components/common/GenreTabBar';
 import MagazineViewer from '../components/magazine/MagazineViewer';
+import Button from '../components/common/Button';
+
+const PAGE_SIZE = 30;
 
 /* ── 색감 정렬 ── */
 const COLOR_ORDER = [
@@ -110,6 +113,10 @@ export default function GalleryPage() {
   const [photos, setPhotos]         = useState([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
+  const [page, setPage]             = useState(0);
+  const [hasNext, setHasNext]       = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState('');
   const [selected, setSelected]     = useState(null);
   const [sortIdx, setSortIdx]       = useState(0);
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -125,24 +132,46 @@ export default function GalleryPage() {
   }, [viewMode]);
 
   /* ── 데이터 패치 ── */
+  const sortParams = useMemo(
+    () => (currentSort.clientSort ? {} : { sortBy: currentSort.value, order: currentSort.order }),
+    [currentSort],
+  );
+
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const params = currentSort.clientSort
-        ? {}
-        : { sortBy: currentSort.value, order: currentSort.order };
-      const res = await photoApi.search(params);
-      const list = res?.data ?? (Array.isArray(res) ? res : []);
-      setPhotos(list);
+      const res = await photoApi.search({ ...sortParams, page: 0, size: PAGE_SIZE });
+      setPhotos(res?.data ?? []);
+      setPage(0);
+      setHasNext(Boolean(res?.hasNext));
     } catch {
       setError('사진을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [currentSort]);
+  }, [sortParams]);
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    setLoadMoreError('');
+    try {
+      const next = page + 1;
+      const res = await photoApi.search({ ...sortParams, page: next, size: PAGE_SIZE });
+      setPhotos(prev => {
+        const seen = new Set(prev.map(p => p.id));
+        return [...prev, ...(res?.data ?? []).filter(p => !seen.has(p.id))];
+      });
+      setPage(next);
+      setHasNext(Boolean(res?.hasNext));
+    } catch {
+      setLoadMoreError('사진을 더 불러오지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, sortParams]);
 
   // 해당 갤러리에 있는 장르 코드만 동적으로 추출
   const genresInGallery = useMemo(
@@ -387,6 +416,15 @@ export default function GalleryPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && hasNext && viewMode !== 'magazine' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 16px 40px' }}>
+          {loadMoreError && <div role="alert" style={{ color: COLORS.danger, fontSize: 13 }}>{loadMoreError}</div>}
+          <Button variant="secondary" loading={loadingMore} onClick={loadMore}>
+            {loadingMore ? '불러오는 중' : '사진 더 보기'}
+          </Button>
         </div>
       )}
 

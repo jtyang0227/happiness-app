@@ -8,8 +8,9 @@ export const photoApi = {
   update: (id, data) => apiClient.put(`/photos/${id}`, data).then(r => r.data),
   remove: (id)       => apiClient.delete(`/photos/${id}`).then(r => r.data),
 
-  /** 키워드·무드·멤버·비율·장르 필터 + 정렬. 파라미터 모두 선택적 */
-  search: ({ keyword, colorMood, memberId, imageRatio, genre, sortBy = 'createdAt', order = 'desc' } = {}) =>
+  /** 키워드·무드·멤버·비율·장르 필터 + 정렬. 파라미터 모두 선택적.
+   *  page를 넘기면 응답에 { page, size, hasNext }가 붙고 data는 해당 페이지만 담긴다. */
+  search: ({ keyword, colorMood, memberId, imageRatio, genre, sortBy = 'createdAt', order = 'desc', page, size } = {}) =>
     apiClient.get('/photos', {
       params: {
         ...(keyword    ? { keyword }    : {}),
@@ -17,6 +18,7 @@ export const photoApi = {
         ...(memberId   ? { memberId }   : {}),
         ...(imageRatio ? { imageRatio } : {}),
         ...(genre      ? { genre }      : {}),
+        ...(page != null ? { page, size } : {}),
         sortBy,
         order,
       },
