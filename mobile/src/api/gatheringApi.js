@@ -30,6 +30,16 @@ export const gatheringApi = {
   getFeed: (id, page = 0, size = 20) =>
     apiClient.get(`${BASE}/${id}/posts`, { params: { page, size } }).then(r => r.data),
 
+  /** 게시물 좋아요 / 취소 (PARTICIPATING + ONGOING|ENDED) */
+  likePost: (postId) =>
+    apiClient.post(`${BASE}/posts/${postId}/like`).then(r => r.data),
+  unlikePost: (postId) =>
+    apiClient.delete(`${BASE}/posts/${postId}/like`).then(r => r.data),
+
+  /** 게시물 댓글 작성 (PARTICIPATING + ONGOING|ENDED) — 생성된 댓글 반환 */
+  addComment: (postId, content) =>
+    apiClient.post(`${BASE}/posts/${postId}/comments`, { content }).then(r => r.data),
+
   /** 모임 종료 앨범 (ENDED 상태에서만 동작) */
   getAlbum: (id) =>
     apiClient.get(`${BASE}/${id}/album`).then(r => r.data),

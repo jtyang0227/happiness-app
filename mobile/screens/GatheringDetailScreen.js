@@ -152,9 +152,56 @@ function ParticipationBar({ gatheringId, myStatus, onStatusChange }) {
 }
 
 // ── 피드 게시물 카드 ──────────────────────────────────────────────────
-function PostCard({ post, gatheringId, myStatus, navigation }) {
+// 좋아요/댓글은 서버가 PARTICIPATING 참여자만 허용한다. 내 참여 상태를 조회하는 엔드포인트가 없어
+// 로그인 회원에게 컨트롤을 보여주고, 서버 거절(403) 시 안내 Alert로 대응한다.
+function interactionErrorMessage(e) {
+  if (e?.response?.status === 403) return '모임 참여자만 좋아요와 댓글을 남길 수 있어요.';
+  return e?.response?.data?.message || '잠시 후 다시 시도해주세요.';
+}
+
+function PostCard({ post, gatheringId, myStatus, navigation, canInteract }) {
   const hasPhotos = post.photos && post.photos.length > 0;
   const canShare = hasPhotos && (myStatus === 'PARTICIPATING' || myStatus === 'WAITING');
+
+  const [liked, setLiked] = useState(!!post.likedByMe);
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [liking, setLiking] = useState(false);
+  const [comments, setComments] = useState(post.comments || []);
+  const [commentText, setCommentText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const toggleLike = async () => {
+    if (liking) return;
+    const next = !liked;
+    setLiked(next);
+    setLikeCount(c => c + (next ? 1 : -1));
+    setLiking(true);
+    try {
+      if (next) await gatheringApi.likePost(post.id);
+      else await gatheringApi.unlikePost(post.id);
+    } catch (e) {
+      setLiked(!next);
+      setLikeCount(c => c + (next ? -1 : 1));
+      Alert.alert('좋아요 실패', interactionErrorMessage(e));
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const submitComment = async () => {
+    const content = commentText.trim();
+    if (!content || sending) return;
+    setSending(true);
+    try {
+      const created = await gatheringApi.addComment(post.id, content);
+      setComments(prev => [...prev, created]);
+      setCommentText('');
+    } catch (e) {
+      Alert.alert('댓글 작성 실패', interactionErrorMessage(e));
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <View style={styles.postCard}>
@@ -203,11 +250,66 @@ function PostCard({ post, gatheringId, myStatus, navigation }) {
         </ScrollView>
       )}
 
-      {/* 좋아요 / 댓글 수 (읽기 전용) */}
+      {/* 좋아요 / 댓글 수 */}
       <View style={styles.postMetaRow}>
-        <Text style={styles.postMetaText}>❤️ {post.likeCount || 0}</Text>
-        <Text style={styles.postMetaText}>💬 {post.commentCount || 0}</Text>
+        {canInteract ? (
+          <TouchableOpacity
+            onPress={toggleLike}
+            disabled={liking}
+            accessibilityRole="button"
+            accessibilityLabel={liked ? '좋아요 취소' : '좋아요'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.postMetaText, liked && styles.postMetaLiked]}>
+              {liked ? '❤️' : '🤍'} {likeCount}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.postMetaText}>❤️ {likeCount}</Text>
+        )}
+        <Text style={styles.postMetaText}>💬 {comments.length}</Text>
       </View>
+
+      {/* 댓글 목록 */}
+      {comments.length > 0 && (
+        <View style={styles.commentList}>
+          {comments.map(c => (
+            <Text key={c.id} style={styles.commentText}>
+              <Text style={styles.commentAuthor}>{c.memberName} </Text>
+              {c.content}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* 댓글 입력 */}
+      {canInteract && (
+        <View style={styles.commentInputRow}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="댓글 달기..."
+            placeholderTextColor={COLORS.textMuted}
+            value={commentText}
+            onChangeText={setCommentText}
+            maxLength={500}
+            onSubmitEditing={submitComment}
+            returnKeyType="send"
+            editable={!sending}
+          />
+          <TouchableOpacity
+            onPress={submitComment}
+            disabled={!commentText.trim() || sending}
+            accessibilityRole="button"
+            accessibilityLabel="댓글 등록"
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Text style={[styles.commentSend, !commentText.trim() && { color: COLORS.textMuted }]}>등록</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -320,6 +422,7 @@ export default function GatheringDetailScreen({ route, navigation }) {
       gatheringId={gatheringId}
       myStatus={myStatus}
       navigation={navigation}
+      canInteract={!!user}
     />
   );
 
@@ -673,5 +776,46 @@ const styles = StyleSheet.create({
   postMetaText: {
     fontSize: 13,
     color: COLORS.textMuted,
+  },
+  postMetaLiked: {
+    color: COLORS.danger,
+    fontWeight: '600',
+  },
+  commentList: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    gap: 4,
+  },
+  commentText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
+  },
+  commentAuthor: {
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 6,
+  },
+  commentSend: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
 });

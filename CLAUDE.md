@@ -1274,7 +1274,7 @@ mobile/
 │   ├── MeetDetailScreen.js  # 약속 상세 — 커스텀 헤더 + 3탭(💬채팅 기본/📅일정/📍장소), PENDING 수신자 수락·거절 바, CONFIRMED 완료 처리 바, 채팅 30초 polling
 │   ├── PortfolioSlideshowScreen.js  # (신규) 웹 PortfolioSlideshowPage와 동일 기능의 네이티브 슬라이드쇼 — `photoApi.getPortfolio(profileName)` 재사용(신규 백엔드 없음), FlatList 페이징 스와이프 + 자동재생 3s + 도트 인디케이터. 상단/하단 컨트롤바는 `expo-blur`의 `BlurView`(intensity=40, tint="dark") + 반투명 테두리 + 상단 하이라이트 라인으로 애플 Liquid Glass 머티리얼 구현(DESIGN_PROMPTS/design/DESIGN_PROMPT_apple-glass-slideshow.md, 웹과 동일 컨셉이나 이 화면에만 한정). `ProfileScreen.js` 메뉴 섹션의 "🌐 내 포트폴리오 보기"(외부 브라우저) 옆에 "🎞 슬라이드쇼로 보기"(네이티브 이동) 항목 추가. `AppNavigator.js` MainStack에 `PortfolioSlideshow` 등록(headerShown:false).
 │   ├── GatheringsScreen.js  # (신규, Feature 37) 모집중 모임 + 내 모임(FlatList, RefreshControl), 웹 GatheringsPage 대응 — 단 웹과 달리 생성/수정/관리/달력 화면은 모바일 미구현(의도적 범위 축소, Instagram 공유 도달에 필요한 최소 화면만).
-│   ├── GatheringDetailScreen.js  # (신규) 모임 정보 + RECRUITING 참여/미참여(Alert 확인) + ONGOING/ENDED 피드(읽기 전용 — 좋아요/댓글 작성은 미구현, 카운트만 표시). 참여자 게시물마다 "📷 공유" 버튼 → GatheringInstagramShare로 이동.
+│   ├── GatheringDetailScreen.js  # (신규) 모임 정보 + RECRUITING 참여/미참여(Alert 확인) + ONGOING/ENDED 피드 — (P1-4, 2026-10-07) 로그인 회원에게 좋아요 토글(낙관적 업데이트 + 실패 시 롤백)·댓글 목록·댓글 입력 추가. 내 참여 상태 조회 엔드포인트가 없어 컨트롤은 로그인 여부로만 노출하고, 비참여자는 서버 403을 받아 "모임 참여자만…" Alert로 안내(웹 GatheringDetailPage의 낙관적 UI와 같은 전제). 참여자 게시물마다 "📷 공유" 버튼 → GatheringInstagramShare로 이동.
 │   ├── GatheringInstagramShareScreen.js  # (신규) Instagram Story 공유 화면 — 템플릿 3종(사진중심/사진+참여자/사진+글) 선택, `GET /instagram-candidates`로 받은 참여자 중 기본 전체 체크된 태그 후보 목록(실제 멘션 아님을 명시), `react-native-view-shot`으로 미리보기 View를 이미지로 캡처 후 `react-native-share`의 `shareSingle({social: Social.INSTAGRAM_STORIES, backgroundImage})`로 OS 딥링크 호출. Instagram 미설치·공유 실패 시 Alert로 대체 안내. 공유 시도는 `shareToInstagram()`로 fire-and-forget 로깅(실패해도 공유 자체는 진행).
 │   ├── BookingScreen.js  # (Feature 38-B4 신규 → Feature 39-d 갱신) 예약 조회 — 상태별(대기중/확정됨/완료/취소·거절) SectionList,
 │   │                       REQUESTED 건에 확인/거절 Alert 액션. 우측 상단 "⚙ 설정"은 Feature 38 당시 웹 `/bookings` Linking
@@ -1298,7 +1298,7 @@ mobile/
 │   │   ├── commentApi.js    # getComments/addComment/deleteComment (NEW)
 │   │   ├── seriesApi.js     # getByMember/getOne/CRUD (NEW)
 │   │   ├── meetApi.js       # create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage/searchMembers (웹 meetApi.js와 동일 엔드포인트)
-│   │   ├── gatheringApi.js  # (신규, Feature 37) list/getMy/getDetail/respond/cancelParticipation/getFeed/getAlbum/getInstagramCandidates/shareToInstagram — 웹 gatheringApi.js의 부분집합(생성/수정/참여자관리/앨범페이지 없음, 모바일 범위 축소). getUnreadCount(신규, Feature 38-B4) 추가.
+│   │   ├── gatheringApi.js  # (신규, Feature 37) list/getMy/getDetail/respond/cancelParticipation/getFeed/getAlbum/getInstagramCandidates/shareToInstagram/likePost/unlikePost/addComment(P1-4) — 웹 gatheringApi.js의 부분집합(생성/수정/참여자관리/앨범페이지 없음, 모바일 범위 축소). getUnreadCount(신규, Feature 38-B4) 추가.
 │   │   ├── bookingApi.js    # (Feature 38-B4: getMyBookings/confirmBooking/rejectBooking → Feature 39-d 확장) cancelBooking/
 │   │   │                      getAvailabilitySettings/saveAvailabilitySettings/getBlockedDates/addBlockedDate/deleteBlockedDate
 │   │   │                      6개 추가(총 8 메서드) — 웹 bookingApi.js와 동일 엔드포인트 계약 사용
