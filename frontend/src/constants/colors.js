@@ -26,6 +26,7 @@ export const COLORS = {
   textHint:      '#B0B8C1',
 
   danger:        '#F04452',
+  dangerDark:    '#D03040',   // danger 버튼 hover/pressed
   dangerTonal:   '#FFEEEF',
   success:       '#00C471',
   successTonal:  '#E5F9F0',

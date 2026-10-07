@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { COLORS } from '../../constants/colors';
 
 const SIZE = {
   sm: { height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, borderRadius: 8, letterSpacing: 0 },
@@ -7,10 +8,10 @@ const SIZE = {
 };
 
 const VARIANT = {
-  primary:   { bg: '#3182F6',     color: '#ffffff', border: 'none',                hoverBg: '#1B64DA', hoverBorder: 'none' },
-  secondary: { bg: '#ffffff',     color: '#3182F6', border: '1px solid #3182F6',   hoverBg: '#E8F3FF', hoverBorder: '1px solid #1B64DA' },
-  ghost:     { bg: 'transparent', color: '#4E5968', border: 'none',                hoverBg: '#F2F4F6', hoverBorder: 'none' },
-  danger:    { bg: '#F04452',     color: '#ffffff', border: 'none',                hoverBg: '#D03040', hoverBorder: 'none' },
+  primary:   { bg: COLORS.primary,  color: COLORS.surface,       border: 'none',                         hoverBg: COLORS.primaryDark,  hoverBorder: 'none' },
+  secondary: { bg: COLORS.surface,  color: COLORS.primary,       border: `1px solid ${COLORS.primary}`,   hoverBg: COLORS.primaryLight, hoverBorder: `1px solid ${COLORS.primaryDark}` },
+  ghost:     { bg: 'transparent',   color: COLORS.textSecondary, border: 'none',                         hoverBg: COLORS.bg,           hoverBorder: 'none' },
+  danger:    { bg: COLORS.danger,   color: COLORS.surface,       border: 'none',                         hoverBg: COLORS.dangerDark,   hoverBorder: 'none' },
 };
 
 const DOT_KEYFRAMES = `@keyframes button-dot-pulse { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }`;

@@ -47,7 +47,7 @@
 | 보조 텍스트 | `textSecondary` | `--color-text-secondary` | `#4E5968` |
 | 약한 텍스트 | `textMuted` | `--color-text-muted` | `#8B95A1` |
 | 힌트/비활성 | `textHint` | `--color-text-hint` | `#B0B8C1` |
-| 위험 | `danger` / `dangerTonal` | `--color-danger(-tonal)` | `#F04452` / `#FFEEEF` |
+| 위험 | `danger` / `dangerDark` / `dangerTonal` | `--color-danger(-tonal)` | `#F04452` / `#D03040`(hover) / `#FFEEEF` |
 | 성공 | `success` / `successTonal` | `--color-success(-tonal)` | `#00C471` / `#E5F9F0` |
 | 경고 | `warning` | `--color-warning` | `#FFB800` |
 | 다크 배경 | `darkBg` / `galleryBg` | `--color-dark-bg` | `#111417` |
@@ -154,7 +154,7 @@
 
 | 항목 | 현황 | 조치 |
 |---|---|---|
-| `Button.jsx`/`Input.jsx`가 hex를 직접 하드코딩 | 값은 토큰과 같음 | `COLORS` 참조로 교체(MASTER_PLAN P1-5) |
+| ~~`Button.jsx`/`Input.jsx`가 hex를 직접 하드코딩~~ | **해결(2026-10-07)** — `COLORS` 토큰 참조로 교체, danger hover용 `dangerDark`(`#D03040`) 토큰 신설 | — |
 | `Button` 사용 2곳, `Input` 사용 0곳 | 채택률 낮음 | 화면 수정 시 점진 적용 |
 | ~~예외 목록에 없는 `backdropFilter` 9개 파일~~ | **해결(2026-10-07)** — blur 제거 + 배경 불투명도 상향, `Toast`는 흰 서페이스·의미색 바·중립 그림자로 재작성. 남은 blur는 6절 허용 예외 3개 파일뿐 | — |
 | 모달 그림자 불투명도 0.14~0.25 (`0 16px 60px rgba(0,0,0,0.2)` 등 10곳 이상) | 규칙 상한 0.12 초과 | 화면 수정 시 4절 값으로 교체, 또는 "모달은 0.2까지" 규칙 완화 결정 |
