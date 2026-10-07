@@ -301,7 +301,15 @@ Loop 수행 순서:
 - **mobile/** — React Native 0.72 + Expo 49
 
 기능 분석 및 로드맵 전체 내용: **`DESIGN_PROMPTS/planning/MASTER_PLAN_happiness-app.md`** 참조
-(과거 `PORTFOLIO_FEATURES.md`를 참조했으나 저장소에 해당 파일이 없어 위 마스터 플랜 문서로 대체)
+(과거 `PORTFOLIO_FEATURES.md`를 참조했으나 저장소에 해당 파일이 없어 위 마스터 플랜 문서로 대체).
+**v2(2026-10-07)로 전면 재작성** — 제품을 "보여주기 → 일 받기 → 일 처리하기" 3단계로 정의하고,
+v1 로드맵 정산(모더레이션 백엔드·템플릿 "준비 중" 표시 완료, 배포 시크릿·모바일 고아 파일 미완료),
+다음 사이클 방향(기능 동결 + 배포 개통 + 자동화 테스트 + 모바일 업무 기능 격차 해소)과 기술 부채 목록을
+담았다. 디자인 기준 문서 `DESIGN_PROMPTS/design/DESIGN_PROMPT_toss-design-system.md`도 같은 날 실제
+구현(토큰·CSS 변수·Button/Input 계약·breakpoints·허용 blur 예외)과 대조해 재작성했고, 코드와 다른
+부분은 그 문서 8절 "알려진 불일치"에 모았다. `.claude/agents/designer.md`·`.claude/skills/design/SKILL.md`·
+`.claude/agents/admin.md`에 남아 있던 폐기 팔레트(Cosmos `#090909`/`#5b6ef5`, AKIRA `#E8121A`/`#22D3EE`)·
+glass.js 예외·"모더레이션 mock" 서술도 Toss 기준·현재 상태로 정정했다.
 
 ---
 

@@ -66,46 +66,51 @@ cd frontend && npm run build
 
 ### 컬러 — `frontend/src/constants/colors.js` 토큰만 사용
 
+기준 문서: `DESIGN_PROMPTS/design/DESIGN_PROMPT_toss-design-system.md` (Toss 디자인 시스템).
+과거 AKIRA(레드 `#E8121A`+시안 `#22D3EE`)·Cosmos 팔레트·glass.js는 전부 폐기됐다.
+
 ```javascript
-// Cosmos 화이트 (기본 — 대부분의 페이지)
-primary:       '#E8121A'   // CTA·활성 상태 전용, 배경 칠하기 금지
-primaryDark:   '#A80D14'   // hover/pressed
-primaryLight:  '#ffe9e7'
-accent:        '#22D3EE'   // 보조 강조색(네온 시안), 배경 칠하기 금지
+// Toss 라이트 (기본 — 대부분의 페이지)
+primary:       '#3182F6'   // CTA·활성 탭·선택 상태 전용, 넓은 면 칠하기 금지
+primaryDark:   '#1B64DA'   // hover/pressed
+primaryLight:  '#E8F3FF'   // 배지·선택 배경
+accent:        '#4E9FFF'   // 보조 블루, 단독 배경 금지
 
-bg:            '#f5f5fa'
+bg:            '#F2F4F6'
 surface:       '#ffffff'
-surfaceDim:    '#ededf4'
-border:        '#e2e2ee'
-borderLight:   '#ededf5'
+surfaceDim:    '#F5F6F8'
+border:        '#E5E8EB'
+borderLight:   '#EEF1F4'
 
-text:          '#1a1a2e'
-textSecondary: '#5c5c7a'
-textMuted:     '#9090b0'
-textHint:      '#b8b8d0'
+text:          '#191F28'
+textSecondary: '#4E5968'
+textMuted:     '#8B95A1'
+textHint:      '#B0B8C1'
 
-danger: '#e53e3e' / success: '#2ea44f' / warning: '#f59e0b'
+danger: '#F04452' / success: '#00C471' / warning: '#FFB800'   // 상태 전달 전용
 
 // 다크 예외 영역 전용 — 아래 "레이아웃 결정 트리" 참고 없이 임의로 쓰지 말 것
-darkBg: '#0a0a18' / darkSurface: '#12122a' / darkElevated: '#1a1a3a'
-darkBorder: '#2a2a50' / darkText: '#eeeeff' / darkTextSub: '#8888cc' / darkTextHint: '#5555aa'
-galleryBg: '#0e0e0e'   // 이미지 뷰어/에디터 전용, 항상 다크
+darkBg: '#111417' / darkSurface: '#1A1E22' / darkElevated: '#22262B'
+darkBorder: '#2E3338' / darkText: '#F2F4F6' / darkTextSub: '#8B95A1' / darkTextHint: '#5B6472'
+galleryBg: '#111417'   // 이미지 뷰어 전용
 ```
-`colors.js`에 없는 색이 필요하면 CTA red/accent cyan 비율(레드는 소량 포인트로만)을 지키는 선에서
-inline hex/rgba로 정의하되, 남발하지 않는다.
+hex를 직접 쓰지 않는다. 토큰에 없는 색이 필요하면 도메인 상수(`GENRE_META`, `MOOD_COLORS`)로
+해결되는지 먼저 보고, 그래도 없으면 디자인 시스템 문서 8절(알려진 불일치)에 기록한다.
+그림자는 중립 회색만(카드 `0 2px 8px rgba(0,0,0,0.04)`, 모달 상한 0.12), `backdropFilter`는
+디자인 시스템 문서 6절의 허용 예외(슬라이드쇼·PhotoViewer 컨트롤) 외 금지.
 
 ### 레이아웃 결정 트리 — 다크냐 라이트냐
 
 ```
 새 화면이 속하는 영역은?
-├─ 로그인/회원가입(LoginPage, SignUpPage)          → 다크 유지 (darkBg 계열)
-├─ 이미지 뷰어/에디터(PhotoDetail 이미지 패널, /editor) → 다크 유지 (galleryBg #0e0e0e, 에디터는 #080810)
-├─ 포트폴리오(/portfolio/:profileName)             → 템플릿에 따라 다름
-│    ├─ EDITORIAL / DARK_ROOM / SCRL               → 다크 유지 (감상용 페이지)
-│    └─ MINIMAL                                    → 화이트 (템플릿 고유 톤)
-├─ 어드민(/admin/**)                                → glass.js light 계열 유지 (운영 편의성)
-└─ 그 외 대부분(Gallery/Explore/Header/Feed/PhotoDetail 정보패널/Profile/Series 등)
-                                                    → Cosmos 화이트 (bg/surface/text 라이트 토큰)
+├─ 로그인/회원가입(LoginPage, SignUpPage)          → 분할: 좌 다크 브랜드 패널(darkBg) + 우 흰 폼(surface)
+├─ 이미지 뷰어/에디터(PhotoDetail 이미지 패널, /editor) → 다크 (darkBg/darkSurface/darkElevated)
+│    ※ EditorShell에 남은 `#080810`/`#0c0c18`(남색 undertone)은 정리 대상 — 새 코드에 복사 금지
+├─ 포트폴리오(/portfolio/:profileName)             → 템플릿 고유 톤을 따른다
+│    (DARK_ROOM은 다크, MINIMAL은 화이트 — 해당 템플릿 파일의 기존 배경을 먼저 확인)
+├─ 어드민(/admin/**)                                → Toss 라이트 (glass.js 예외는 폐지됨)
+└─ 그 외 대부분(Gallery/Explore/Header/Feed/PhotoDetail 정보패널/Profile/Series/예약/약속/모임 등)
+                                                    → Toss 라이트 (bg/surface/text 토큰)
 ```
 확신이 안 서면 배치될 페이지의 기존 배경색을 먼저 확인하고 맞춘다 — 페이지 안에서 테마가
 섞이는 것(화이트 페이지에 다크 카드 하나 등)이 가장 흔한 실수다.
@@ -180,12 +185,13 @@ import { BP, mq } from '../constants/breakpoints';
 | 장르 선택 UI (폼) | `GenreSelector` |
 | 이미지 업로드 | `ImageUploader` |
 | 토스트 알림 | `Toast` / `ToastStack` (`useToast` 훅과 함께) |
-| 로고 | `AkiraLogo` (variant="white"|"black") |
+| 로고 | `Logo` (variant="white"|"black") |
 | 12컬럼 그리드 너비 선택 | `GridSpanPicker` |
+| 버튼 | `Button` (default export, variant primary/secondary/ghost/danger × size sm/md/lg, `loading`, `fullWidth`) |
+| 입력 | `Input` / `Textarea` / `FormField` (named export, `error`·`helperText`·`label`) |
 
-**아직 없는 것**(로드맵 상 계획만 있고 미구현 — 필요하면 이 스킬이 새로 만들어도 됨, 단 만들면
-`components/common/`에 배치하고 이 표에 추가할 것): 공통 `Button`(variant/size/loading),
-공통 `Input`/`Textarea`/`FormField`.
+버튼·입력은 인라인으로 새로 만들지 않고 위 `Button`/`Input`을 쓴다(현재 채택률이 낮아 화면을
+수정할 때마다 교체해 나가는 중 — MASTER_PLAN P1-5).
 
 ---
 
@@ -203,8 +209,8 @@ import { BP, mq } from '../constants/breakpoints';
 
 ## 접근성 (WCAG 2.1 AA)
 
-- 텍스트 대비: 라이트 페이지는 `COLORS.text`(#1a1a2e)/`textSecondary`, 다크 예외 영역은
-  `darkText`(#eeeeff) — 배경과 반드시 짝지어 확인한다(PREVIEW 단계에서 스크린샷으로 실제 확인).
+- 텍스트 대비: 라이트 페이지는 `COLORS.text`(#191F28)/`textSecondary`, 다크 예외 영역은
+  `darkText`(#F2F4F6) — 배경과 반드시 짝지어 확인한다(PREVIEW 단계에서 스크린샷으로 실제 확인).
 - 포커스 링: `outline: 2px solid ${COLORS.primary}` (브라우저 기본 제거 시 반드시 대체 제공).
 - 아이콘 버튼·이미지·모달에 `aria-label` 필수.
 - 모달은 Escape로 닫기, 폼은 Enter 제출.
@@ -217,7 +223,7 @@ import { BP, mq } from '../constants/breakpoints';
 
 **진행**:
 1. UNDERSTAND — GalleryPage 또는 ExplorePage 상단에 들어갈 순위 카드로 파악, `PhotoCard`/`ExplorePhotoCard`의 기존 카드 톤(화이트, `COLORS.border` 플레이스홀더) 확인.
-2. PLAN — "가로 스크롤 5장 카드, 순위 배지(1~5) + 작가 아바타 + 작품수, Cosmos 화이트 톤"
+2. PLAN — "가로 스크롤 5장 카드, 순위 배지(1~5) + 작가 아바타 + 작품수, Toss 라이트 톤"
 3. GENERATE — `frontend/src/components/photo/TopArtistsCard.jsx` 작성 + `DESIGN_PROMPT_top-artists-card.md` 작성.
 4. BUILD — `npm run build` 통과 확인.
 5. PREVIEW — dev 서버 기동 → GalleryPage에 임시로 마운트해 실제 스크린샷 → 5번째 카드가 화면 밖으로 잘리는 것 발견 → `overflow-x:auto` + `scroll-snap` 추가 → 재스크린샷으로 확인.

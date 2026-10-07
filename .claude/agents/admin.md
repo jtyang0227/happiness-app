@@ -49,17 +49,10 @@ frontend/src/components/layout/AdminLayout.jsx — 사이드바 + 상단바 셸
 권한 체크를 추가할 때 `@PreAuthorize("hasAnyRole('WM', 'SA')")`를 그대로 따라야지, `hasRole('ADMIN')`을
 새로 쓰면 안 된다 — Spring Security 쪽 역할명과 프론트 표시명이 다르다는 걸 항상 의식할 것.
 
-**알려진 미완성 구간 — `AdminModerationPage.jsx`**: 현재 이 페이지는 **프론트엔드 mock 데이터로만
-동작**한다. 파일 상단 TODO 주석에 필요한 백엔드 엔드포인트가 명시돼 있다:
-```
-GET  /api/admin/reports?status=&page=&size=
-PUT  /api/admin/reports/:id        { status: 'DISMISSED' | 'RESOLVED' }
-DELETE /api/admin/reports/:id/photo
-```
-신고/모더레이션 관련 요청이 들어오면 이 갭부터 확인한다 — `report`/`Reason` 엔티티나
-`ReportController`가 backend에 아직 없으므로, 신규 패키지(`com.happiness.app.report` 등)를
-feature-based 구조로 새로 만들어야 한다(다른 feature 패키지들의 컨트롤러/서비스/레포지토리
-3계층 패턴을 그대로 따를 것 — `backend` 에이전트 패턴 참고).
+**신고/모더레이션 — 백엔드 연동 완료**: `AdminModerationPage.jsx`는 `report/` 패키지의 실제
+API를 호출한다(`reportApi.list` → `GET /api/admin/reports?status=&page=&size=`,
+`reportApi.update` → `PUT /api/admin/reports/{id}` with `RESOLVED`/`DISMISSED` + `resolutionNote`).
+사진 강제 삭제는 기존 사진 삭제 API를 재사용한다. 신고 관련 확장 요청이 오면 이 패키지를 확장한다.
 
 ---
 
@@ -70,9 +63,10 @@ feature-based 구조로 새로 만들어야 한다(다른 feature 패키지들�
   잘못 눌렸을 때 무슨 일이 일어나는가"를 AC에 반드시 포함시킨다.
 
 ### 디자인 관점
-- 어드민 UI는 `glass.js` light 계열(CLAUDE.md: "어드민 예외 — glass.js light 계열 유지")을
-  따른다 — 앱 전체가 Cosmos 화이트/다크로 전환돼도 어드민 패널은 별도 유지보수 편의를 위해
-  다르게 취급된 영역이다. 다른 화면을 흉내내 임의로 다크 테마로 바꾸지 않는다.
+- 어드민 UI도 앱 전체와 동일한 Toss 디자인 시스템(라이트 플랫 서페이스, `COLORS` 토큰)을 따른다
+  — 과거의 "glass.js light 계열 예외"는 폐지됐다(`DESIGN_PROMPTS/design/DESIGN_PROMPT_toss-design-system.md`).
+  `backdropFilter`/blur는 쓰지 않는다(현재 `AdminTagsPage`/`AdminModerationPage`에 남은 blur는
+  정리 대상).
 - **위험 액션은 항상 빨간색 + 이중 확인**. 패턴: 1차 버튼 클릭 → 확인 모달/문구 표시 →
   2차 확인 클릭까지 있어야 실제 액션 실행. `AdminMembersPage`/`AdminPhotosPage`의 기존 삭제
   버튼 스타일을 참고해 새 위험 액션도 동일한 시각적 언어(빨간 배경, ⚠️ 아이콘, "정말 삭제하시겠습니까?")를 쓴다.
@@ -135,8 +129,8 @@ CLAUDE.md의 "Admin Panel" 섹션과 관련 라우트 표에 신규/변경된 �
 
 - 프론트엔드 라우트 가드만 믿고 백엔드 `@PreAuthorize` 없이 어드민 API를 여는 것.
 - 위험 액션(삭제·권한변경·순서변경)에 확인 다이얼로그 없이 즉시 실행 버튼만 다는 것.
-- `AdminModerationPage`의 mock 데이터를 "이미 완성된 기능"으로 착각하고 보고하는 것 — 실제
-  백엔드 연동 여부를 항상 먼저 확인한다.
+- 화면이 실제 API를 호출하는지 확인하지 않고 "완성된 기능"으로 보고하는 것 — 응답 래퍼 형식
+  (`ApiResponse.data` vs `{status, data}`)까지 실제 호출로 확인한다.
 - 운영 DB `ddl-auto`를 `create`/`create-drop`으로 바꾸는 것 — 절대 금지.
 - 회원 탈퇴/사진 강제삭제 등에서 cascade 삭제 순서(연관 레코드 → 파일 → 엔티티)를 지키지 않는 것.
 
