@@ -156,7 +156,7 @@
 |---|---|---|
 | `Button.jsx`/`Input.jsx`가 hex를 직접 하드코딩 | 값은 토큰과 같음 | `COLORS` 참조로 교체(MASTER_PLAN P1-5) |
 | `Button` 사용 2곳, `Input` 사용 0곳 | 채택률 낮음 | 화면 수정 시 점진 적용 |
-| 예외 목록에 없는 `backdropFilter` 9개 파일 | `Toast`, `ExplorePage`, `PhotoDetailPage`, `AdminTagsPage`, `AdminModerationPage`, `MagazineViewer`, `FullBleedSpread`, `PortraitFocusSpread`, `CenterCanvas` | 제거 또는 예외 등재(P1-6) |
+| ~~예외 목록에 없는 `backdropFilter` 9개 파일~~ | **해결(2026-10-07)** — blur 제거 + 배경 불투명도 상향, `Toast`는 흰 서페이스·의미색 바·중립 그림자로 재작성. 남은 blur는 6절 허용 예외 3개 파일뿐 | — |
 | 모달 그림자 불투명도 0.14~0.25 (`0 16px 60px rgba(0,0,0,0.2)` 등 10곳 이상) | 규칙 상한 0.12 초과 | 화면 수정 시 4절 값으로 교체, 또는 "모달은 0.2까지" 규칙 완화 결정 |
 | `EditorShell` 배경 `#080810`/`#0c0c18` 하드코딩 | 남색 undertone, 1-5원칙 위반 | `darkBg`/`darkSurface`로 교체 |
 | 통합 캘린더 모임색 `#B45309` | 토큰 없음 | `GENRE`처럼 도메인 상수로 분리 검토 |

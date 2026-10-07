@@ -28,8 +28,7 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCanc
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(10,10,24,0.55)', backdropFilter: 'blur(4px)',
-      WebkitBackdropFilter: 'blur(4px)',
+      background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div style={{
@@ -83,8 +82,7 @@ function MergeModal({ tags, onMerge, onClose }) {
     <>
       <div style={{
         position: 'fixed', inset: 0, zIndex: 900,
-        background: 'rgba(10,10,24,0.55)', backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
+        background: 'rgba(0,0,0,0.45)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
       }}>
         <div style={{

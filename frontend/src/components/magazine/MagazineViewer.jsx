@@ -109,7 +109,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
       <div style={{
         height: 56, display: 'flex', alignItems: 'center',
         padding: '0 16px', gap: 16, flexShrink: 0,
-        background: 'rgba(10,10,24,0.9)', backdropFilter: 'blur(12px)',
+        background: 'rgba(17,20,23,0.96)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         zIndex: 10,
       }}>
@@ -155,7 +155,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
           <button onClick={goPrev} aria-label="이전 면" style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
             width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
+            background: 'rgba(17,20,23,0.6)',
             border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>◁</button>
@@ -164,7 +164,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
           <button onClick={goNext} aria-label="다음 면" style={{
             position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
             width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
+            background: 'rgba(17,20,23,0.6)',
             border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>▷</button>
@@ -174,7 +174,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
         {tocOpen && (
           <div style={{
             position: 'absolute', top: 0, left: 0, bottom: 0, width: 240,
-            background: 'rgba(12,12,30,0.97)', backdropFilter: 'blur(16px)',
+            background: 'rgba(26,30,34,0.98)',
             borderRight: '1px solid rgba(255,255,255,0.08)',
             display: 'flex', flexDirection: 'column',
             zIndex: 20, overflowY: 'auto',
@@ -240,7 +240,7 @@ export default function MagazineViewer({ photos = [], initialIndex = 0, title, o
       <div style={{
         height: 68, display: 'flex', alignItems: 'center', gap: 12,
         padding: '0 16px', flexShrink: 0,
-        background: 'rgba(10,10,24,0.9)', backdropFilter: 'blur(12px)',
+        background: 'rgba(17,20,23,0.96)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
         {/* 썸네일 스트립 */}

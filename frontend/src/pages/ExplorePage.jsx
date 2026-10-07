@@ -77,9 +77,7 @@ function ExplorePhotoCard({ photo, keyword }) {
         <div style={{
           position: 'absolute', top: 8, right: 8,
           display: 'flex', alignItems: 'center', gap: 4,
-          background: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.62)',
           padding: '3px 9px', borderRadius: 10,
           fontSize: 11, fontWeight: 600, color: '#fff',
         }}>

@@ -49,8 +49,8 @@ export default function PortraitFocusSpread({ photo }) {
       {/* 판 뱃지 */}
       <div style={{
         position: 'absolute', top: 16, right: 16,
-        background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)',
-        color: '#9090b0', fontSize: 11, padding: '4px 10px', borderRadius: 8,
+        background: 'rgba(255,255,255,0.92)',
+        color: '#4E5968', fontSize: 11, padding: '4px 10px', borderRadius: 8,
       }}>
         인물판
       </div>

@@ -42,7 +42,7 @@ export default function FullBleedSpread({ photo }) {
       {/* 판 뱃지 */}
       <div style={{
         position: 'absolute', top: 16, right: 16,
-        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)',
+        background: 'rgba(0,0,0,0.45)',
         color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 500,
         padding: '4px 10px', borderRadius: 8, letterSpacing: '0.5px',
       }}>

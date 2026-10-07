@@ -427,7 +427,7 @@ export default function PhotoDetailPage() {
         className="no-print"
         style={{
           position: 'fixed', top: isMobile ? 12 : 18, left: 16, zIndex: 100,
-          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.55)',
           border: 'none', borderRadius: 20, padding: '7px 14px',
           color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 5,
