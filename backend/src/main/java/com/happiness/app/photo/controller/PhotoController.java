@@ -1,5 +1,6 @@
 package com.happiness.app.photo.controller;
 
+import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.common.util.ImageProcessingUtil;
 import com.happiness.app.common.util.ImageVariantUtil;
 import com.happiness.app.member.entity.Member;
@@ -168,6 +169,9 @@ public class PhotoController {
             @RequestParam(required = false) String genre,
             @RequestParam(required = false) String subGenres,
             @RequestParam MultipartFile file) {
+        if (!isSelfOrAdmin(memberId)) {
+            return errorResponse(HttpStatus.FORBIDDEN, "본인 명의로만 사진을 등록할 수 있습니다.");
+        }
         try {
             // 1024/512/256/128 4단계 변형 생성 후 Supabase Storage에 업로드
             // (DB에는 1024=imageUrl, 256=thumbnailUrl만 저장 — 36_MULTI_RESOLUTION_IMAGES.md 참조)
@@ -218,6 +222,9 @@ public class PhotoController {
     public ResponseEntity<?> createPhoto(@RequestBody PhotoRequest request) {
         if (request.getMemberId() == null) {
             return errorResponse(HttpStatus.BAD_REQUEST, "memberId는 필수입니다.");
+        }
+        if (!isSelfOrAdmin(request.getMemberId())) {
+            return errorResponse(HttpStatus.FORBIDDEN, "본인 명의로만 사진을 등록할 수 있습니다.");
         }
         if (request.getTitle() == null || request.getTitle().isBlank()) {
             return errorResponse(HttpStatus.BAD_REQUEST, "사진 제목은 필수입니다.");
@@ -271,6 +278,9 @@ public class PhotoController {
     public ResponseEntity<?> updatePhoto(@PathVariable Long id, @RequestBody PhotoRequest request) {
         return photoRepository.findById(id)
                 .map(photo -> {
+                    if (!isSelfOrAdmin(photo.getMemberId())) {
+                        return errorResponse(HttpStatus.FORBIDDEN, "본인 사진만 수정할 수 있습니다.");
+                    }
                     if (request.getTitle() != null && !request.getTitle().isBlank()) {
                         photo.setTitle(request.getTitle());
                     }
@@ -325,6 +335,9 @@ public class PhotoController {
     public ResponseEntity<?> deletePhoto(@PathVariable Long id) {
         return photoRepository.findById(id)
                 .map(photo -> {
+                    if (!isSelfOrAdmin(photo.getMemberId())) {
+                        return errorResponse(HttpStatus.FORBIDDEN, "본인 사진만 삭제할 수 있습니다.");
+                    }
                     // 연관 레코드 먼저 삭제 (cascade)
                     photoLikeRepository.deleteByPhotoId(id);
                     photoSaveRepository.deleteByPhotoId(id);
@@ -610,6 +623,10 @@ public class PhotoController {
     }
 
     // ── 유틸리티 ──────────────────────────────────────────────────────
+
+    private boolean isSelfOrAdmin(Long ownerId) {
+        return SecurityUtil.getCurrentMemberId().equals(ownerId) || SecurityUtil.isAdmin();
+    }
 
     private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message) {
         Map<String, Object> error = new HashMap<>();

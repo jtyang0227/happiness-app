@@ -1,6 +1,9 @@
 package com.happiness.app.member.controller;
 
+import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.exception.ApiResponse;
+import com.happiness.app.exception.ErrorCode;
+import com.happiness.app.exception.SecurityException;
 import com.happiness.app.member.dto.*;
 import com.happiness.app.member.service.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -84,6 +87,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<MemberResponse>> updateProfile(
             @PathVariable Long id,
             @RequestBody ProfileUpdateRequest request) {
+        verifySelfOrAdmin(id);
         MemberResponse response = memberService.updateProfile(id, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -103,12 +107,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @PathVariable Long id,
             @RequestBody PasswordChangeRequest request) {
+        verifySelfOrAdmin(id);
         memberService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @DeleteMapping("/member/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@PathVariable Long id) {
+        verifySelfOrAdmin(id);
         memberService.deleteAccount(id);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -186,6 +192,12 @@ public class AuthController {
         } catch (Exception e) {
             String errorUrl = appleOAuthService.getFrontendRedirectUri() + "?error=apple_login_failed";
             httpResponse.sendRedirect(errorUrl);
+        }
+    }
+
+    private void verifySelfOrAdmin(Long memberId) {
+        if (!SecurityUtil.getCurrentMemberId().equals(memberId) && !SecurityUtil.isAdmin()) {
+            throw new SecurityException(ErrorCode.FORBIDDEN);
         }
     }
 }

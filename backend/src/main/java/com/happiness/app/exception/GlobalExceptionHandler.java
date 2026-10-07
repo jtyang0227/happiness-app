@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -58,6 +59,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.FILE_SIZE_EXCEEDED.getHttpStatus())
                 .body(ApiResponse.fail(ErrorCode.FILE_SIZE_EXCEEDED));
+    }
+
+    // 서비스 계층이 던지는 403/404/409 등이 아래 Exception 핸들러에 잡혀 500으로 바뀌지 않도록 상태를 보존한다.
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatus(ResponseStatusException e) {
+        int status = e.getStatusCode().value();
+        if (status >= 500) {
+            log.error("[ERROR] {} {}", status, e.getReason(), e);
+        } else {
+            log.debug("[{}] {}", status, e.getReason());
+        }
+        return ResponseEntity
+                .status(e.getStatusCode())
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .code(String.valueOf(status))
+                        .message(e.getReason() != null ? e.getReason() : e.getStatusCode().toString())
+                        .build());
     }
 
     @ExceptionHandler(Exception.class)
