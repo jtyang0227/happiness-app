@@ -28,6 +28,7 @@ import GatheringInstagramShareScreen from '../../screens/GatheringInstagramShare
 import BookingScreen     from '../../screens/BookingScreen';
 import DeliveryScreen    from '../../screens/DeliveryScreen';
 import AvailabilitySettingsScreen from '../../screens/AvailabilitySettingsScreen';
+import ScheduleScreen from '../../screens/ScheduleScreen';
 import GatheringNotifBadge from '../../components/GatheringNotifBadge';
 
 const Stack = createNativeStackNavigator();
@@ -152,6 +153,7 @@ function MainStack() {
       <Stack.Screen name="MeetDetail"  component={MeetDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Booking"     component={BookingScreen}    options={{ headerShown: false }} />
       <Stack.Screen name="AvailabilitySettings" component={AvailabilitySettingsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Schedule"    component={ScheduleScreen}   options={{ headerShown: false }} />
       <Stack.Screen name="Delivery"    component={DeliveryScreen}   options={{ headerShown: false }} />
       <Stack.Screen name="PortfolioSlideshow" component={PortfolioSlideshowScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Gatherings"  component={GatheringsScreen}

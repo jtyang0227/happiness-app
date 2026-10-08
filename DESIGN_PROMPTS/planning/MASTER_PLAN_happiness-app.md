@@ -169,25 +169,25 @@ v1 이후 계획에 없던 큰 작업이 추가로 끝났다: Feature 37(모임 
 - [ ] AC-D2: 운영 URL에서 `GET /actuator/health`가 200, 프론트 메인 페이지가 열린다.
 
 **신뢰성**
-- [ ] AC-T1: 백엔드에 최소 통합 테스트 세트가 존재한다 — 회원가입/로그인, 사진 등록·조회,
+- [x] AC-T1: 백엔드에 최소 통합 테스트 세트가 존재한다 — 회원가입/로그인, 사진 등록·조회,
   예약 생성→확정→가용시간 저장(Feature 39 회귀 재현 케이스 포함), IDOR 차단(타인 리소스 403).
   `./gradlew test`가 NO-SOURCE가 아닌 실제 테스트 실행 결과를 낸다.
-- [ ] AC-T2: `GET /api/photos`가 페이지 단위(기본 size 30)로 응답하고, 웹 Gallery/Explore와
+- [x] AC-T2: `GET /api/photos`가 페이지 단위(기본 size 30)로 응답하고, 웹 Gallery/Explore와
   모바일 Explore가 무한 스크롤/더 보기로 동작한다.
 
 **모바일 격차**
-- [ ] AC-M1: 모바일에 "오늘·이번 주 일정" 화면이 있고 Booking/Meet/Gathering 확정 일정을
+- [x] AC-M1: 모바일에 "오늘·이번 주 일정" 화면이 있고 Booking/Meet/Gathering 확정 일정을
   웹 `/calendar`와 같은 규칙(CONFIRMED / CONFIRMED / SCHEDULED·ONGOING)으로 보여준다.
-- [ ] AC-M2: 모바일 예약 상세에서 체크리스트 체크와 계약금/잔금 토글이 가능하고 웹과 같은
+- [x] AC-M2: 모바일 예약 상세에서 체크리스트 체크와 계약금/잔금 토글이 가능하고 웹과 같은
   API(`PUT /booking/{id}/checklist`, `/payment`)를 쓴다.
-- [ ] AC-M3: 모바일 모임 피드에서 좋아요·댓글 작성이 가능하다.
+- [x] AC-M3: 모바일 모임 피드에서 좋아요·댓글 작성이 가능하다.
 - [ ] AC-M4: 고아 파일 3개(`ListScreen`/`PostDetailScreen`/구 `navigation/AppNavigator.js`)가
   삭제되거나 연결된다(사용자 결정 후).
 
 **디자인 시스템**
 - [ ] AC-S1: 새로 수정하는 화면의 버튼/입력은 `Button`/`Input`을 쓴다. `Button.jsx`/`Input.jsx`
   내부 hex가 `COLORS` 토큰 참조로 바뀐다.
-- [ ] AC-S2: `backdropFilter` 사용처가 `DESIGN_PROMPT_toss-design-system.md`의 "허용 예외 목록"과
+- [x] AC-S2: `backdropFilter` 사용처가 `DESIGN_PROMPT_toss-design-system.md`의 "허용 예외 목록"과
   1:1로 일치한다(목록에 없는 9개는 제거하거나 예외로 등재).
 
 ---
@@ -236,7 +236,7 @@ v1 이후 계획에 없던 큰 작업이 추가로 끝났다: Feature 37(모임 
 | # | 항목 | 담당 | 플랫폼 | 공수 |
 |---|---|---|---|---|
 | P1-1 | `GET /api/photos` 페이지네이션 + 웹/모바일 소비 코드(AC-T2) — ✅ 2026-10-07 완료(opt-in `page`/`size`, Slice) | 에이전트 | 백엔드·웹·모바일 | 1일 |
-| P1-2 | 모바일 일정 화면(AC-M1) | 에이전트 | 모바일 | 1일 |
+| P1-2 | 모바일 일정 화면(AC-M1) — ✅ 2026-10-07 완료(ScheduleScreen) | 에이전트 | 모바일 | 1일 |
 | P1-3 | 모바일 체크리스트·수금(AC-M2) — ✅ 2026-10-07 완료(미수금 탭은 제외) | 에이전트 | 모바일 | 1일 |
 | P1-4 | 모바일 모임 피드 좋아요·댓글(AC-M3) — ✅ 2026-10-07 완료 | 에이전트 | 모바일 | 0.5일 |
 | P1-5 | Button/Input 토큰화 + 적용 확대(AC-S1) — ✅ 토큰화 완료(2026-10-07), 적용 확대는 화면 수정 시 점진 | 에이전트 | 웹 | 0.5일 + 화면 수정 시 점진 |
