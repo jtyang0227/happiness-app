@@ -1,9 +1,14 @@
 package com.happiness.app.series.controller;
 
+import com.happiness.app.booking.entity.BookingAvailability;
+import com.happiness.app.booking.repository.BookingAvailabilityRepository;
 import com.happiness.app.common.SecurityUtil;
+import com.happiness.app.member.entity.Member;
+import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.entity.Photo;
 import com.happiness.app.photo.repository.PhotoRepository;
+import com.happiness.app.series.dto.DiscoverWorkResponse;
 import com.happiness.app.series.dto.SeriesRequest;
 import com.happiness.app.series.dto.SeriesResponse;
 import com.happiness.app.series.entity.Series;
@@ -11,6 +16,8 @@ import com.happiness.app.series.entity.SeriesPhoto;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
 import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -29,6 +36,8 @@ public class SeriesController {
     private final SeriesRepository seriesRepository;
     private final SeriesPhotoRepository seriesPhotoRepository;
     private final PhotoRepository photoRepository;
+    private final MemberRepository memberRepository;
+    private final BookingAvailabilityRepository bookingAvailabilityRepository;
 
     /** 작업 노트 촬영 유형 — InquiryFormPage SHOOT_TYPES의 value와 동일해야 문의 폼 프리필이 동작한다 */
     private static final Set<String> SHOOT_TYPES =
@@ -100,6 +109,82 @@ public class SeriesController {
             return SeriesResponse.summary(s, sps.size(), coverUrl, previewPhotos);
         }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 작업 탐색 (공개) — 작가를 가로질러 작업 노트를 둘러본다.
+     * 잘못된 shootType은 400이 아니라 "전체"로 처리한다(공유 링크가 깨지지 않도록).
+     * 작업 1페이지를 가져온 뒤 작가·가용 설정·작업-사진·사진을 각각 한 번씩 배치 조회한다(N+1 없음).
+     */
+    @GetMapping("/discover")
+    public ResponseEntity<Map<String, Object>> discover(
+            @RequestParam(required = false) String shootType,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "24") int size) {
+        String type = shootType != null && SHOOT_TYPES.contains(shootType.trim()) ? shootType.trim() : null;
+        String loc = location == null ? null : location.trim();
+        if (loc != null && loc.isEmpty()) loc = null;
+        if (loc != null && loc.length() > 50) loc = loc.substring(0, 50);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 60);
+
+        Slice<Series> slice = seriesRepository.discover(type, loc, PageRequest.of(safePage, safeSize));
+        List<Series> works = slice.getContent();
+
+        Set<Long> memberIds = works.stream().map(Series::getMemberId).collect(Collectors.toSet());
+        Map<Long, Member> members = memberRepository.findAllById(memberIds).stream()
+                .collect(Collectors.toMap(Member::getId, m -> m));
+        Set<Long> accepting = bookingAvailabilityRepository.findByMemberIdIn(memberIds).stream()
+                .filter(BookingAvailability::isActive)
+                .map(BookingAvailability::getMemberId)
+                .collect(Collectors.toSet());
+
+        List<Long> seriesIds = works.stream().map(Series::getId).collect(Collectors.toList());
+        Map<Long, List<Long>> photoIdsBySeries = new HashMap<>();
+        if (!seriesIds.isEmpty()) {
+            for (SeriesPhoto sp : seriesPhotoRepository.findBySeriesIdInOrderBySeriesIdAscDisplayOrderAsc(seriesIds)) {
+                photoIdsBySeries.computeIfAbsent(sp.getSeriesId(), k -> new ArrayList<>()).add(sp.getPhotoId());
+            }
+        }
+        Set<Long> previewIds = photoIdsBySeries.values().stream()
+                .flatMap(ids -> ids.stream().limit(3))
+                .collect(Collectors.toSet());
+        Map<Long, String> thumbById = photoRepository.findAllById(previewIds).stream()
+                .collect(Collectors.toMap(Photo::getId,
+                        p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl()));
+
+        List<DiscoverWorkResponse> data = works.stream().map(s -> {
+            List<Long> photoIds = photoIdsBySeries.getOrDefault(s.getId(), List.of());
+            List<String> previews = photoIds.stream().limit(3)
+                    .map(thumbById::get).filter(Objects::nonNull).collect(Collectors.toList());
+            Member m = members.get(s.getMemberId());
+            return DiscoverWorkResponse.builder()
+                    .id(s.getId())
+                    .title(s.getTitle())
+                    .coverImageUrl(s.getCoverImageUrl() != null ? s.getCoverImageUrl()
+                            : (previews.isEmpty() ? null : previews.get(0)))
+                    .shootType(s.getShootType())
+                    .clientLabel(s.getClientLabel())
+                    .shotOn(s.getShotOn())
+                    .photoCount(photoIds.size())
+                    .previewPhotos(previews)
+                    .updatedAt(s.getUpdatedAt())
+                    .memberId(s.getMemberId())
+                    .memberName(m != null ? m.getName() : null)
+                    .memberProfileName(m != null ? m.getProfileName() : null)
+                    .memberAvatarUrl(m != null ? m.getAvatarUrl() : null)
+                    .memberLocation(m != null ? m.getLocation() : null)
+                    .acceptingBookings(accepting.contains(s.getMemberId()))
+                    .build();
+        }).collect(Collectors.toList());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("data", data);
+        body.put("page", safePage);
+        body.put("size", safeSize);
+        body.put("hasNext", slice.hasNext());
+        return ResponseEntity.ok(body);
     }
 
     /** 시리즈 상세 (공개) */

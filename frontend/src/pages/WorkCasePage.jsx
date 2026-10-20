@@ -10,6 +10,7 @@ import { applyPageMeta } from '../utils/pageMeta';
 import { trackView } from '../utils/trackView';
 import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
+import AcceptingBadge from '../components/common/AcceptingBadge';
 
 /**
  * 작업 노트 페이지 — 시리즈 1건을 "작업 사례"로 보여준다.
@@ -85,6 +86,7 @@ export default function WorkCasePage() {
   const [copied, setCopied] = useState(false);
   const [reviews, setReviews] = useState([]);        // 이 작업에 연결된 고객 후기
   const [bookable, setBookable] = useState(false);   // 이번 달·다음 달에 예약 가능일이 있는지
+  const [acceptingBookings, setAcceptingBookings] = useState(false); // 작가가 예약 가용 설정을 켜뒀는지(배지)
   const { user } = useAuth();
 
   useEffect(() => {
@@ -106,6 +108,7 @@ export default function WorkCasePage() {
         }
         setMember(owner);
         setWork(detail);
+        setAcceptingBookings(Boolean(portfolioRes.data?.acceptingBookings));
         setOthers((portfolioRes.data?.series || []).filter(s => String(s.id) !== String(seriesId)));
         setStatus('ready');
       } catch (err) {
@@ -255,6 +258,12 @@ export default function WorkCasePage() {
         <p style={{ fontSize: 14, color: COLORS.textSecondary, margin: '12px 0 0', fontVariantNumeric: 'tabular-nums' }}>
           {meta.join(' · ')}
         </p>
+        {acceptingBookings && (
+          <AcceptingBadge
+            to={`/booking/${profileName}${BOOKING_CODE_BY_SHOOT_TYPE[work.shootType] ? `?shootType=${BOOKING_CODE_BY_SHOOT_TYPE[work.shootType]}` : ''}`}
+            style={{ marginTop: 12 }}
+          />
+        )}
         {work.description && (
           <p style={{ fontSize: 15, color: COLORS.textSecondary, lineHeight: 1.7, margin: '16px 0 0', wordBreak: 'keep-all' }}>
             {work.description}

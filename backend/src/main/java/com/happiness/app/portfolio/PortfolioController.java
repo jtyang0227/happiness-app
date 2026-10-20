@@ -1,5 +1,6 @@
 package com.happiness.app.portfolio;
 
+import com.happiness.app.booking.repository.BookingAvailabilityRepository;
 import com.happiness.app.follow.FollowRepository;
 import com.happiness.app.member.dto.MemberResponse;
 import com.happiness.app.member.entity.Authority;
@@ -34,6 +35,7 @@ public class PortfolioController {
     private final SeriesRepository seriesRepository;
     private final SeriesPhotoRepository seriesPhotoRepository;
     private final FollowRepository followRepository;
+    private final BookingAvailabilityRepository bookingAvailabilityRepository;
 
     @GetMapping("/{profileName}")
     public ResponseEntity<?> getPortfolio(@PathVariable String profileName) {
@@ -93,6 +95,7 @@ public class PortfolioController {
         response.put("followerCount",  followerCount);
         response.put("followingCount", followingCount);
         response.put("totalLikes",     totalLikes);
+        response.put("acceptingBookings", bookingAvailabilityRepository.isAcceptingBookings(member.getId()));
 
         return ResponseEntity.ok(response);
     }

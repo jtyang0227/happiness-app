@@ -13,6 +13,8 @@ export const COLORS = {
 
   /* ── Feedback ── */
   success:   '#00C471',
+  successTonal: '#E5F9F0',
+  successText:  '#007A45',   // successTonal 위 글자(대비 4.9:1) — 웹 COLORS.successText와 동일
   danger:    '#F04452',
   warning:   '#FFB800',
   cancel:    '#a9a9ac',

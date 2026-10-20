@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WorkNotesSection from '../WorkNotesSection';
+import AcceptingBadge from '../../common/AcceptingBadge';
 
-export default function TemplateScrl({ member, photos, series = [], profileName }) {
+export default function TemplateScrl({ member, photos, series = [], profileName, acceptingBookings }) {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [titleVisible, setTitleVisible] = useState(false);
@@ -197,6 +198,10 @@ export default function TemplateScrl({ member, photos, series = [], profileName 
         <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           {member?.name || profileNameDisplay}
         </div>
+        {acceptingBookings && (
+          <AcceptingBadge to={`/booking/${member?.profileName || profileName}`}
+            style={{ marginTop: 8, pointerEvents: 'auto' }} />
+        )}
       </div>
     </div>
   );

@@ -88,6 +88,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/series/discover").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/{id}").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/inquiry").permitAll()
                 // Delivery Portal — 공개 클라이언트 엔드포인트 (토큰 기반)

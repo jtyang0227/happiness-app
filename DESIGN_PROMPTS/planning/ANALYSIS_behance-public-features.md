@@ -117,6 +117,6 @@ Happiness의 북극성은 "사진가가 일을 받고 처리하는 것"이다(MA
 
 ## 5. 다음 단계
 
-이 문서는 분석까지다. P0 두 항목(작업 탐색, 문의 받는 중 배지)을 구현하려면 별도 기획서
-(`PLANNING_work-discovery.md`)와 디자인 프롬프트로 이어간다. 실제 Behance 화면으로 위 내용을 검증하려면 환경의 네트워크
+**P0 두 항목 구현 완료(2026-10-20)** — `PLANNING_work-discovery.md` / `DESIGN_PROMPT_work-discovery.md`. 배지 문구는 의미를
+정확히 하려고 "촬영 문의 받는 중" 대신 **"예약 받는 중"**으로 정했다(문의는 언제나 가능하고, 배지는 예약 가용 설정 기준). 다음은 P1(작업 감상·조회수 공개·무드보드·조회순). 실제 Behance 화면으로 위 내용을 검증하려면 환경의 네트워크
 허용 목록에 `behance.net`, `www.behance.net`, `mir-s3-cdn-cf.behance.net`을 추가한 뒤 REA로 다시 확인한다.

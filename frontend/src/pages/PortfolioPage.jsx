@@ -213,7 +213,7 @@ export default function PortfolioPage() {
 
   const {
     member, photos = [], photoCount = 0, series = [],
-    followingCount = 0, totalLikes = 0,
+    followingCount = 0, totalLikes = 0, acceptingBookings = false,
   } = data || {};
 
   const isOwnPage = user?.id === member?.id;
@@ -226,6 +226,7 @@ export default function PortfolioPage() {
     profileName: member?.profileName || profileName,
     isOwnPage,
     photoCount, followerCount, followingCount, totalLikes,
+    acceptingBookings,   // "예약 받는 중" 배지 — 예약 가용 설정을 켠 작가만 true
     following: !isOwnPage && user?.id ? following : undefined,
     followLoading,
     onFollow: !isOwnPage && user?.id ? handleFollow : null,

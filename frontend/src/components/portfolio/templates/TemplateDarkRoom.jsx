@@ -6,8 +6,9 @@ import TestimonialsSection from '../TestimonialsSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
 import WorkNotesSection, { FeaturedWorkCard } from '../WorkNotesSection';
+import AcceptingBadge from '../../common/AcceptingBadge';
 
-export default function TemplateDarkRoom({ member, photos, series = [], profileName }) {
+export default function TemplateDarkRoom({ member, photos, series = [], profileName, acceptingBookings }) {
   const navigate = useNavigate();
   const [mousePos, setMousePos] = useState({ x: '50%', y: '50%' });
   const [featuredPhoto, setFeaturedPhoto] = useState(null);
@@ -98,6 +99,9 @@ export default function TemplateDarkRoom({ member, photos, series = [], profileN
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 8, maxWidth: 400, lineHeight: 1.6 }}>
                 {member.bio}
               </p>
+            )}
+            {acceptingBookings && (
+              <AcceptingBadge to={`/booking/${profileNameDisplay}`} style={{ marginTop: 10 }} />
             )}
           </div>
 

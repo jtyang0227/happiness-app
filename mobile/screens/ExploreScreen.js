@@ -8,12 +8,20 @@ import { COLORS, MOOD_COLORS, GENRE_LIST } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 import { SkeletonPhotoCard } from '../components/SkeletonCard';
 import EmptyState from '../components/EmptyState';
+import WorkDiscoveryList from '../components/WorkDiscoveryList';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
 const GENRES = [{ code: null, label: '전체', emoji: '✦' }, ...GENRE_LIST];
 const PAGE_SIZE = 30;
 
+// 사진 | 작업 — 작업 탭은 작가를 가로질러 작업 노트를 둘러본다(PLANNING_work-discovery.md)
+const TABS = [
+  { key: 'photos', label: '사진' },
+  { key: 'works', label: '작업' },
+];
+
 export default function ExploreScreen({ navigation }) {
+  const [tab, setTab] = useState('photos');
   const [photos, setPhotos] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [moodFilter, setMoodFilter] = useState(null);
@@ -185,52 +193,83 @@ export default function ExploreScreen({ navigation }) {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.skeletonGrid}>
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <View key={i} style={styles.skeletonCol}>
-            <SkeletonPhotoCard />
-          </View>
-        ))}
-      </View>
-    );
-  }
-
-  const isSearching = !!(keyword.trim() || moodFilter || genre);
+  const segment = (
+    <View style={styles.segment} accessibilityRole="tablist">
+      {TABS.map(t => {
+        const active = tab === t.key;
+        return (
+          <TouchableOpacity key={t.key} style={[styles.segmentItem, active && styles.segmentItemActive]}
+            onPress={() => setTab(t.key)} accessibilityRole="tab" accessibilityState={{ selected: active }}>
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{t.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 
   return (
-    <FlatList
-      data={photos}
-      keyExtractor={item => String(item.id)}
-      numColumns={2}
-      contentContainerStyle={styles.listContent}
-      columnWrapperStyle={styles.row}
-      ListHeaderComponent={ListHeader}
-      renderItem={renderPhoto}
-      onRefresh={handleRefresh}
-      refreshing={refreshing}
-      onEndReached={handleLoadMore}
-      onEndReachedThreshold={0.4}
-      ListFooterComponent={
-        loadingMore ? <ActivityIndicator style={styles.footerLoader} color={COLORS.primary} /> : null
-      }
-      ListEmptyComponent={
-        isSearching ? (
-          <EmptyState
-            icon="🔍"
-            title="검색 결과가 없습니다"
-            description="다른 키워드나 필터로 다시 검색해보세요"
-          />
-        ) : (
-          <EmptyState icon="🖼" title="아직 등록된 사진이 없습니다" />
-        )
-      }
-    />
+    <View style={styles.screen}>
+      {segment}
+      {tab === 'works' ? <WorkDiscoveryList /> : renderPhotos()}
+    </View>
   );
+
+  // 사진 탭 — 기존 화면 그대로 (함수 선언이라 위 return보다 아래에 있어도 호이스팅된다)
+  function renderPhotos() {
+    if (loading) {
+      return (
+        <View style={styles.skeletonGrid}>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <View key={i} style={styles.skeletonCol}>
+              <SkeletonPhotoCard />
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    const isSearching = !!(keyword.trim() || moodFilter || genre);
+
+    return (
+      <FlatList
+        data={photos}
+        keyExtractor={item => String(item.id)}
+        numColumns={2}
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={styles.row}
+        ListHeaderComponent={ListHeader}
+        renderItem={renderPhoto}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          loadingMore ? <ActivityIndicator style={styles.footerLoader} color={COLORS.primary} /> : null
+        }
+        ListEmptyComponent={
+          isSearching ? (
+            <EmptyState
+              icon="🔍"
+              title="검색 결과가 없습니다"
+              description="다른 키워드나 필터로 다시 검색해보세요"
+            />
+          ) : (
+            <EmptyState icon="🖼" title="아직 등록된 사진이 없습니다" />
+          )
+        }
+      />
+    );
+  }
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: COLORS.bg },
+  segment: { flexDirection: 'row', alignSelf: 'flex-start', margin: SPACING.md, marginBottom: 0,
+    padding: 4, borderRadius: RADIUS.md, backgroundColor: COLORS.border },
+  segmentItem: { minWidth: 76, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 9, alignItems: 'center' },
+  segmentItemActive: { backgroundColor: COLORS.white },
+  segmentText: { fontSize: FONT.md, fontWeight: '500', color: COLORS.textMuted },
+  segmentTextActive: { fontWeight: '700', color: COLORS.textPrimary },
   listContent: { paddingBottom: 24 },
   skeletonGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', padding: 4, backgroundColor: COLORS.bg },
   skeletonCol: { width: '50%' },

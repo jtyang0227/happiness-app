@@ -543,4 +543,106 @@ class CoreFlowIntegrationTest {
                         .header("Authorization", bearer(owner)))
                 .andExpect(jsonPath("$.photoViews").value(2));
     }
+
+    // ── 작업 탐색 (PLANNING_work-discovery.md) ─────────────────────────
+
+    private void updateProfile(User u, Map<String, Object> fields) throws Exception {
+        mvc.perform(put("/api/auth/member/" + u.id() + "/profile").header("Authorization", bearer(u))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(fields)))
+                .andExpect(status().isOk());
+    }
+
+    /** 유형을 붙이고 사진을 photoCount장 넣은 작업 */
+    private long createWork(User owner, String title, String shootType, int photoCount) throws Exception {
+        long id = createSeries(owner, title);
+        mvc.perform(put("/api/series/" + id).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", title, "shootType", shootType))))
+                .andExpect(status().isOk());
+        for (int i = 0; i < photoCount; i++) {
+            long photoId = createPhoto(owner);
+            mvc.perform(post("/api/series/" + id + "/photos").header("Authorization", bearer(owner))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of("photoId", photoId))))
+                    .andExpect(status().is2xxSuccessful());
+        }
+        return id;
+    }
+
+    private List<Number> discoverIds(String... params) throws Exception {
+        var req = get("/api/series/discover");
+        for (int i = 0; i < params.length; i += 2) req = req.param(params[i], params[i + 1]);
+        String body = mvc.perform(req).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return JsonPath.read(body, "$.data[*].id");
+    }
+
+    @Test
+    void 작업_탐색은_공개_작가의_사진이_있는_작업만_필터대로_보여준다() throws Exception {
+        // 테스트끼리 DB를 공유하므로 지역 문자열에 고유 태그를 넣어 이 테스트의 작업만 걸러낸다
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User seoul = signupAndLogin();
+        User busan = signupAndLogin();
+        User hidden = signupAndLogin();
+        updateProfile(seoul, Map.of("location", "서울 " + tag));
+        updateProfile(busan, Map.of("location", "부산 " + tag));
+        updateProfile(hidden, Map.of("location", "서울 " + tag, "publicProfile", false));
+
+        long wedding = createWork(seoul, "한옥 스몰웨딩", "결혼식", 2);
+        long emptyWork = createWork(seoul, "사진 없는 작업", "가족", 0);
+        long busanWedding = createWork(busan, "해운대 웨딩", "결혼식", 1);
+        long privateWork = createWork(hidden, "비공개 작가 작업", "결혼식", 1);
+
+        assertThat(discoverIds("location", tag))
+                .extracting(Number::longValue)
+                .contains(wedding, busanWedding)
+                .doesNotContain(emptyWork, privateWork);
+        assertThat(discoverIds("location", "서울 " + tag.toUpperCase()))  // 대소문자 무시
+                .extracting(Number::longValue).containsExactly(wedding);
+        assertThat(discoverIds("location", tag, "shootType", "가족")).isEmpty();
+        // 모르는 유형은 400이 아니라 전체로 처리
+        assertThat(discoverIds("location", tag, "shootType", "없는유형"))
+                .extracting(Number::longValue).containsExactlyInAnyOrder(wedding, busanWedding);
+
+        String page0 = mvc.perform(get("/api/series/discover").param("location", tag).param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.hasNext").value(true))
+                .andReturn().getResponse().getContentAsString();
+        assertThat((Number) JsonPath.read(page0, "$.data[0].photoCount")).isNotNull();
+    }
+
+    @Test
+    void 예약_받는_중은_가용_설정을_켠_작가에게만_표시된다() throws Exception {
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User open = signupAndLogin();
+        User notSet = signupAndLogin();
+        updateProfile(open, Map.of("location", tag));
+        updateProfile(notSet, Map.of("location", tag));
+        long openWork = createWork(open, "예약 받는 작가", "인물/프로필", 1);
+        createWork(notSet, "설정 안 한 작가", "인물/프로필", 1);
+        openAllDays(open);
+
+        String body = mvc.perform(get("/api/series/discover").param("location", tag))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<Map<String, Object>> works = JsonPath.read(body, "$.data");
+        assertThat(works).hasSize(2);
+        for (Map<String, Object> w : works) {
+            boolean isOpen = ((Number) w.get("id")).longValue() == openWork;
+            assertThat(w.get("acceptingBookings")).as(body).isEqualTo(isOpen);
+            if (isOpen) assertThat(w.get("memberProfileName")).isEqualTo(open.profileName());
+        }
+        mvc.perform(get("/api/portfolio/" + open.profileName()))
+                .andExpect(jsonPath("$.acceptingBookings").value(true));
+        mvc.perform(get("/api/portfolio/" + notSet.profileName()))
+                .andExpect(jsonPath("$.acceptingBookings").value(false));
+
+        // 설정을 끄면 배지도 내려간다
+        mvc.perform(put("/api/booking/availability-settings").header("Authorization", bearer(open))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "weekdays", "1,2,3,4,5", "timeSlots", "10:00", "bufferHours", 0, "active", false))))
+                .andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/portfolio/" + open.profileName()))
+                .andExpect(jsonPath("$.acceptingBookings").value(false));
+    }
 }

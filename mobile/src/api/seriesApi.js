@@ -7,6 +7,10 @@ export const seriesApi = {
   getOne: (id) =>
     apiClient.get(`/series/${id}`).then(r => r.data),
 
+  /** 작업 탐색 (공개) — { data, page, size, hasNext } */
+  discover: (params) =>
+    apiClient.get('/series/discover', { params }).then(r => r.data),
+
   create: (data) =>
     apiClient.post('/series', data).then(r => r.data),
 

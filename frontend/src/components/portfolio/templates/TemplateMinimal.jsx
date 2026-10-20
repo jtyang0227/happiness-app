@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mq } from '../../../constants/breakpoints';
 import WorkNotesSection, { FeaturedWorkCard } from '../WorkNotesSection';
+import AcceptingBadge from '../../common/AcceptingBadge';
 
-export default function TemplateMinimal({ member, photos, series, profileName, onInquiry }) {
+export default function TemplateMinimal({ member, photos, series, profileName, onInquiry, acceptingBookings }) {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(null);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
@@ -56,6 +57,10 @@ export default function TemplateMinimal({ member, photos, series, profileName, o
             {member?.location && specialties.length > 0 && ' · '}
             {member?.location}
           </div>
+        )}
+
+        {acceptingBookings && (
+          <AcceptingBadge to={`/booking/${member?.profileName || profileName}`} style={{ marginBottom: 24 }} />
         )}
 
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>

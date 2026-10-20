@@ -9,6 +9,7 @@ import TestimonialsSection from '../TestimonialsSection';
 import { WorkTypeFilter, filterWorksByType, pinnedFirst, FeaturedWorkCard } from '../WorkNotesSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
+import AcceptingBadge from '../../common/AcceptingBadge';
 
 /* ── 스크롤 진입 시 페이드+슬라이드업 리빌 ──────────── */
 function Reveal({ children, style }) {
@@ -188,7 +189,7 @@ function SeriesScrollCard({ series, onPhotoClick, workPath }) {
 export default function TemplateEditorial({
   member, photos, series, photoCount, followerCount, followingCount, totalLikes,
   profileName, isOwnPage, following, followLoading, onFollow, onOpenFollowModal,
-  onInquiry, onSlideshow, onPhotoClick,
+  onInquiry, onSlideshow, onPhotoClick, acceptingBookings,
 }) {
   const navigate = useNavigate();
   const filterBarRef = useRef(null);
@@ -312,6 +313,7 @@ export default function TemplateEditorial({
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>@{pName}</span>
             {joinYear && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>· Since {joinYear}</span>}
             {member?.location && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>· {member.location}</span>}
+            {acceptingBookings && <AcceptingBadge to={`/booking/${pName}`} />}
             {specialties.map(sp => (
               <span key={sp} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.22)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)' }}>{sp}</span>
             ))}

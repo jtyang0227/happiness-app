@@ -30,6 +30,7 @@ export const COLORS = {
   dangerTonal:   '#FFEEEF',
   success:       '#00C471',
   successTonal:  '#E5F9F0',
+  successText:   '#007A45',   // successTonal 위 글자 — success(#00C471)는 연녹 배경에서 대비 3:1 미만이라 4.9:1로 어둡게
   warning:       '#FFB800',
 
   // Dark 예외 영역 전용 (이미지 뷰어/에디터 — 사진 감상 목적, 브랜드 테마와 무관)
