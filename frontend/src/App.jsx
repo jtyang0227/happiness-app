@@ -51,6 +51,7 @@ import GatheringCalendarPage from './pages/GatheringCalendarPage';
 import IntegratedCalendarPage from './pages/IntegratedCalendarPage';
 import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
 import MoodboardPage from './pages/MoodboardPage';
+import SharedBoardPage from './pages/SharedBoardPage';
 import WorkspacePage from './pages/WorkspacePage';
 
 const DARK_PATHS = ['/login', '/signup'];
@@ -69,6 +70,7 @@ function AppShell() {
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
     || location.pathname.startsWith('/proof/')
+    || location.pathname.startsWith('/b/')
     || location.pathname.startsWith('/booking/')
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
@@ -127,6 +129,7 @@ function AppShell() {
 
           {/* Delivery & Booking (standalone) */}
           <Route path="/proof/:token" element={<ClientDeliveryPage />} />
+          <Route path="/b/:token" element={<SharedBoardPage />} />
           <Route path="/booking/:profileName" element={<BookingPage />} />
 
           {/* Delivery & Booking (protected) */}

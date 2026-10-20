@@ -49,6 +49,10 @@ export const photoApi = {
   getSuggestions: (q) =>
     apiClient.get('/photos/suggestions', { params: { q } }).then(r => r.data),
 
+  /** 비슷한 사진 (공개) — 장르·색 분위기·대표색 메타데이터 점수, 같은 작가 최대 4장 */
+  getSimilar: (id, size = 12) =>
+    apiClient.get(`/photos/${id}/similar`, { params: { size } }).then(r => r.data),
+
   /** tags: 콤마 구분 태그 이름 문자열 */
   searchByTags: (tags, { sortBy = 'createdAt', order = 'desc' } = {}) =>
     apiClient.get('/photos', { params: { tags, sortBy, order } }).then(r => r.data),

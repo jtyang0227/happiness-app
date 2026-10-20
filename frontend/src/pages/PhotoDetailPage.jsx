@@ -11,6 +11,7 @@ import PhotoViewer from '../components/photo/PhotoViewer';
 import PhotoNavigation from '../components/photo/PhotoNavigation';
 import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
+import SimilarPhotos from '../components/photo/SimilarPhotos';
 import ReportModal from '../components/photo/ReportModal';
 import useColorExtraction from '../hooks/useColorExtraction';
 import { trackView } from '../utils/trackView';
@@ -417,6 +418,10 @@ export default function PhotoDetailPage() {
           <RelatedPhotos photos={relatedPhotos} onPhotoClick={handleNavigate} />
         </div>
       )}
+
+      <div style={{ marginBottom: 20 }}>
+        <SimilarPhotos photoId={photo.id} theme="light" columns={6} onSelect={p => navigate(`/photo/${p.id}`)} />
+      </div>
 
       {/* 댓글 */}
       <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 20 }}>

@@ -6,9 +6,74 @@ import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
 
 /**
- * 무드보드 상세 (/boards/:id, 본인 전용) — 담긴 사진 그리드, 이름 바꾸기, 사진 빼기, 보드 삭제(이중 확인).
- * WORK_QUEUE 5 / Behance Moodboard 재해석.
+ * 무드보드 상세 (/boards/:id, 본인 전용) — 담긴 사진 그리드, 이름 바꾸기, 사진 빼기, 보드 삭제(이중 확인),
+ * 보기 전용 공유 링크(/b/:token) 켜기·복사·끄기(이중 확인). WORK_QUEUE 5 / Behance Moodboard·Cosmos 공개 클러스터 재해석.
  */
+
+function SharePanel({ boardId, token, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const [confirmOff, setConfirmOff] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+  const url = token ? `${window.location.origin}/b/${token}` : '';
+
+  const toggle = async (enabled) => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await moodboardApi.setShare(boardId, enabled);
+      onChange(res.shareToken ?? null);
+      setConfirmOff(false);
+    } catch (err) {
+      setError(err?.response?.data?.message || (enabled ? '링크를 만들지 못했어요.' : '링크를 끄지 못했어요.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError('복사하지 못했어요. 링크를 직접 선택해 복사해 주세요.');
+    }
+  };
+
+  if (!token) {
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <Button size="sm" variant="secondary" loading={busy} onClick={() => toggle(true)}>
+          {busy ? '만드는 중' : '🔗 공유 링크 만들기'}
+        </Button>
+        <span style={{ marginLeft: 10, fontSize: 12, color: COLORS.textMuted }}>링크가 있는 사람은 로그인 없이 볼 수만 있어요.</span>
+        {error && <div role="alert" style={{ color: COLORS.danger, fontSize: 13, marginTop: 8 }}>{error}</div>}
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginBottom: 20, padding: 12, borderRadius: 12, background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>🔗 보기 전용 공유 링크</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input readOnly value={url} aria-label="공유 링크" onFocus={e => e.target.select()}
+          style={{ flex: '1 1 240px', minWidth: 0, fontSize: 13, padding: '8px 10px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+            background: COLORS.bg, color: COLORS.textSecondary, outline: 'none' }} />
+        <Button size="sm" onClick={copy}>{copied ? '복사했어요' : '복사'}</Button>
+        {confirmOff ? (
+          <>
+            <Button size="sm" variant="danger" loading={busy} onClick={() => toggle(false)}>{busy ? '끄는 중' : '정말 끄기'}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirmOff(false)}>취소</Button>
+          </>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => setConfirmOff(true)} style={{ color: COLORS.danger }}>링크 끄기</Button>
+        )}
+      </div>
+      {confirmOff && <p role="alert" style={{ margin: '8px 0 0', fontSize: 12, color: COLORS.danger }}>이전 링크로는 더 이상 볼 수 없어요.</p>}
+      {error && <div role="alert" style={{ color: COLORS.danger, fontSize: 13, marginTop: 8 }}>{error}</div>}
+    </div>
+  );
+}
 export default function MoodboardPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -135,6 +200,8 @@ export default function MoodboardPage() {
         </p>
       )}
       {error && <div role="alert" style={{ color: COLORS.danger, fontSize: 13, marginBottom: 12 }}>{error}</div>}
+
+      <SharePanel boardId={board.id} token={board.shareToken} onChange={t => setBoard(b => ({ ...b, shareToken: t }))} />
 
       {board.photos.length === 0 ? (
         <DotEmptyState icon="📌" theme="light" title="아직 담은 사진이 없어요"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../../services/api';
-import { COLORS } from '../../constants/colors';
+import { COLORS, MOOD_COLORS } from '../../constants/colors';
 import { mq } from '../../constants/breakpoints';
 import PhotoCard from '../photo/PhotoCard';
 import PhotoModal from '../photo/PhotoModal';
@@ -129,10 +129,45 @@ function JustifiedPhotoCell({ photo, onClick }) {
   );
 }
 
+/* ── 색 분위기 필터 (Cosmos 색 검색 재해석, PLANNING_inside-menus-upgrade.md P0-B) ── */
+function MoodChips({ value, onChange }) {
+  const items = [{ key: '', label: '전체 색감' }, ...Object.entries(MOOD_COLORS).map(([key, m]) => ({ key, label: m.label, dot: m.dot }))];
+  return (
+    <div role="group" aria-label="색 분위기" className="mood-chips"
+      style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 0 2px', scrollbarWidth: 'none' }}>
+      <style>{`
+        .mood-chip { transition: border-color 0.15s ease, background 0.15s ease; }
+        .mood-chip:hover { border-color: ${COLORS.textMuted} !important; }
+        .mood-chip:active { transform: scale(0.97); }
+        .mood-chip:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
+        .mood-chips::-webkit-scrollbar { display: none; }
+      `}</style>
+      {items.map(it => {
+        const active = value === it.key;
+        return (
+          <button key={it.key || 'all'} type="button" className="mood-chip" aria-pressed={active}
+            onClick={() => onChange(active && it.key ? '' : it.key)}
+            style={{
+              flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+              fontSize: 12, fontWeight: active ? 700 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
+              border: `1px solid ${active ? COLORS.text : COLORS.border}`,
+              background: active ? COLORS.text : COLORS.surface,
+              color: active ? COLORS.surface : COLORS.textSecondary,
+            }}>
+            {it.dot && <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '50%', background: it.dot, flexShrink: 0 }} />}
+            {it.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PhotoBrowser() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const genre = searchParams.get('genre') || '';
+  const mood = MOOD_COLORS[searchParams.get('mood')] ? searchParams.get('mood') : '';   // 색 분위기 필터 (?mood=)
   const [keyword, setKeyword]       = useState('');   // 적용된 검색어
   const [search, setSearch]         = useState('');   // 입력 중인 검색어
   const [suggestions, setSuggestions] = useState([]);
@@ -168,8 +203,9 @@ export default function PhotoBrowser() {
       ...(currentSort.clientSort ? {} : { sortBy: currentSort.value, order: currentSort.order }),
       ...(keyword ? { keyword } : {}),
       ...(genre ? { genre } : {}),
+      ...(mood ? { colorMood: mood } : {}),
     }),
-    [currentSort, keyword, genre],
+    [currentSort, keyword, genre, mood],
   );
 
   const fetchPhotos = useCallback(async () => {
@@ -251,9 +287,23 @@ export default function PhotoBrowser() {
     setSearchParams(next, { replace: true });
   };
 
+  const handleMoodChange = (m) => {
+    const next = new URLSearchParams(searchParams);
+    if (m) next.set('mood', m); else next.delete('mood');
+    setSearchParams(next, { replace: true });
+  };
+
+  const clearFilters = () => {
+    commitSearch('');
+    const next = new URLSearchParams(searchParams);
+    next.delete('genre');
+    next.delete('mood');
+    setSearchParams(next, { replace: true });
+  };
+
   const dropItems = search.trim() ? suggestions : history;
   const dropType = search.trim() ? 'suggestion' : 'history';
-  const filtered = Boolean(keyword || genre);
+  const filtered = Boolean(keyword || genre || mood);
 
   /* ── Justified Layout 훅 ── */
   const { containerRef, layout } = useGalleryLayout(displayed, {
@@ -392,6 +442,7 @@ export default function PhotoBrowser() {
       {/* ── 장르 탭바 — 서버 필터 (?genre=) ── */}
       <div style={{ padding: '8px 16px', background: COLORS.bg, borderBottom: `1px solid ${COLORS.border}` }}>
         <GenreTabBar selected={genre} onChange={handleGenreChange} theme="light" />
+        <MoodChips value={mood} onChange={handleMoodChange} />
       </div>
 
       {/* ── 콘텐츠 ── */}
@@ -412,9 +463,9 @@ export default function PhotoBrowser() {
           <DotEmptyState
             icon="🔍"
             title="검색 결과가 없어요"
-            description={keyword ? `"${keyword}"에 해당하는 사진이 없어요.` : '이 장르의 사진이 아직 없어요.'}
+            description={keyword ? `"${keyword}"에 해당하는 사진이 없어요.` : '이 조건의 사진이 아직 없어요.'}
             actionLabel="조건 지우기"
-            onAction={() => { commitSearch(''); handleGenreChange(''); }}
+            onAction={clearFilters}
             theme="light"
             style={{ minHeight: '50vh' }}
           />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { photoApi } from '../../services/api';
 import { MOOD_COLORS } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,6 +6,7 @@ import CommentsSection from './CommentsSection';
 import ReportModal from './ReportModal';
 import { trackView } from '../../utils/trackView';
 import BoardPickerModal from '../moodboard/BoardPickerModal';
+import SimilarPhotos from './SimilarPhotos';
 
 export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const panelRef = useRef(null);
 
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
 
@@ -28,10 +30,17 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
     };
   }, [onClose]);
 
-  // 모달로 연 것도 사진 조회로 센다 (작가 본인 제외)
+  // 모달로 연 것도 사진 조회로 센다 (작가 본인 제외). "비슷한 사진"으로 넘어간 사진도 각각 센다.
   useEffect(() => {
-    trackView({ ownerId: initial?.memberId, viewerId: user?.id, eventType: 'PHOTO_VIEW', targetType: 'PHOTO', targetId: initial?.id });
-  }, [initial?.id, initial?.memberId, user?.id]);
+    trackView({ ownerId: photo?.memberId, viewerId: user?.id, eventType: 'PHOTO_VIEW', targetType: 'PHOTO', targetId: photo?.id });
+  }, [photo?.id, photo?.memberId, user?.id]);
+
+  // 비슷한 사진을 고르면 모달을 닫지 않고 그 사진으로 바꾼다 (Cosmos처럼 이어서 둘러보기)
+  const handleSimilar = (next) => {
+    setPhoto(next);
+    setReportSubmitted(false);
+    panelRef.current?.scrollTo({ top: 0 });
+  };
 
   // 예전 구현은 존재하지 않는 photoApi.like/save를 호출해 항상 예외 → catch에서 화면 숫자만 올려
   // 실제로는 아무것도 저장되지 않았다. 실제 API(likePhoto/savePhoto)로 호출하고 실패는 사용자에게 알린다.
@@ -156,8 +165,11 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
             />
           </div>
 
-          {/* 댓글 섹션 */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 18px' }}>
+          {/* 비슷한 사진 + 댓글 */}
+          <div ref={panelRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 18px' }}>
+            <div style={{ marginBottom: 18 }}>
+              <SimilarPhotos photoId={photo.id} theme="dark" columns={3} onSelect={handleSimilar} />
+            </div>
             <CommentsSection photoId={photo.id} currentUser={user} theme="dark" />
 
             {reportSubmitted ? (
