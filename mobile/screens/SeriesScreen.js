@@ -1,12 +1,111 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, StyleSheet,
-  Text, TouchableOpacity, View,
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { seriesApi, photoApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { SHOOT_TYPES, shootTypeLabel } from '../constants/shootTypes';
+
+const SHOT_ON_RE = /^\d{4}\.(0[1-9]|1[0-2])$/;
+
+/**
+ * 작업 노트 편집 — 웹 SeriesPage 모달의 "작업 노트" fieldset과 같은 4개 필드.
+ * 빈 문자열은 서버에서 "비우기"로 처리된다 (PUT /series/:id).
+ */
+function WorkNoteModal({ series, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    shootType: series.shootType || '',
+    clientLabel: series.clientLabel || '',
+    shotOn: series.shotOn || '',
+    story: series.story || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const shotOnInvalid = form.shotOn.trim() !== '' && !SHOT_ON_RE.test(form.shotOn.trim());
+
+  const save = async () => {
+    if (shotOnInvalid || saving) return;
+    setSaving(true);
+    try {
+      const updated = await seriesApi.update(series.id, form);
+      onSaved(updated);
+    } catch (e) {
+      Alert.alert('저장 실패', e?.response?.data?.message || '잠시 후 다시 시도해주세요.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalBackdrop}>
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle} numberOfLines={1}>작업 노트 · {series.title}</Text>
+            <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="닫기" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: SPACING.lg }}>
+            <Text style={styles.modalHint}>
+              적어두면 포트폴리오에서 이 시리즈가 작업 사례로 소개되고, 방문자가 같은 유형으로 바로 문의할 수 있어요. 모두 선택 입력이에요.
+            </Text>
+
+            <Text style={styles.fieldLabel}>촬영 유형</Text>
+            <View style={styles.chipRow}>
+              {SHOOT_TYPES.map(t => {
+                const active = form.shootType === t.value;
+                return (
+                  <TouchableOpacity
+                    key={t.value}
+                    onPress={() => setForm(f => ({ ...f, shootType: active ? '' : t.value }))}
+                    style={[styles.chip, active && styles.chipActive]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: active }}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{t.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={styles.fieldLabel}>클라이언트</Text>
+            <TextInput
+              style={styles.input} value={form.clientLabel} maxLength={100}
+              onChangeText={v => setForm(f => ({ ...f, clientLabel: v }))}
+              placeholder="예: OO 브랜드, 개인 의뢰" placeholderTextColor={COLORS.textHint}
+            />
+
+            <Text style={styles.fieldLabel}>작업 시기</Text>
+            <TextInput
+              style={[styles.input, shotOnInvalid && styles.inputError]} value={form.shotOn} maxLength={7}
+              onChangeText={v => setForm(f => ({ ...f, shotOn: v }))}
+              placeholder="2026.05" placeholderTextColor={COLORS.textHint}
+              keyboardType="numbers-and-punctuation"
+            />
+            {shotOnInvalid && <Text style={styles.errorText}>YYYY.MM 형식으로 입력해주세요</Text>}
+
+            <Text style={styles.fieldLabel}>작업 이야기 <Text style={styles.counter}>{form.story.length}/3000</Text></Text>
+            <TextInput
+              style={[styles.input, styles.storyInput]} value={form.story} maxLength={3000} multiline
+              onChangeText={v => setForm(f => ({ ...f, story: v }))}
+              placeholder="누구와, 무엇을, 왜 이렇게 찍었는지 짧게 남겨보세요." placeholderTextColor={COLORS.textHint}
+              textAlignVertical="top"
+            />
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.saveBtn, (shotOnInvalid || saving) && styles.saveBtnDisabled]}
+            onPress={save} disabled={shotOnInvalid || saving} accessibilityRole="button"
+          >
+            {saving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveBtnText}>저장</Text>}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
 
 function SeriesCollage({ previewPhotos, coverUrl, height = 140 }) {
   const photos = (previewPhotos?.length ? previewPhotos : [coverUrl]).filter(Boolean);
@@ -51,6 +150,7 @@ export default function SeriesScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
   const [seriesPhotos, setSeriesPhotos] = useState({});
+  const [editing, setEditing] = useState(null); // 작업 노트 편집 중인 시리즈
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -94,10 +194,18 @@ export default function SeriesScreen({ navigation }) {
               {item.description ? (
                 <Text style={styles.seriesDesc} numberOfLines={1}>{item.description}</Text>
               ) : null}
-              <Text style={styles.seriesMeta}>{item.photoCount ?? 0}장</Text>
+              <Text style={styles.seriesMeta}>
+                {[shootTypeLabel(item.shootType), item.clientLabel, item.shotOn, `${item.photoCount ?? 0}장`].filter(Boolean).join(' · ')}
+              </Text>
             </View>
             <Text style={[styles.chevron, open && styles.chevronOpen]}>{open ? '▲' : '▼'}</Text>
           </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.noteBtn} onPress={() => setEditing(item)} accessibilityRole="button">
+          <Text style={styles.noteBtnText}>
+            ✎ 작업 노트 {item.shootType || item.story || item.clientLabel || item.shotOn ? '수정' : '쓰기'}
+          </Text>
         </TouchableOpacity>
 
         {open && (
@@ -136,6 +244,20 @@ export default function SeriesScreen({ navigation }) {
   }
 
   return (
+    <>
+    {editing && (
+      <WorkNoteModal
+        series={editing}
+        onClose={() => setEditing(null)}
+        onSaved={(updated) => {
+          // 목록 응답의 previewPhotos/photoCount는 유지하고 작업 노트 필드만 갱신
+          setSeries(list => list.map(s => (s.id === updated.id
+            ? { ...s, shootType: updated.shootType, clientLabel: updated.clientLabel, shotOn: updated.shotOn, story: updated.story }
+            : s)));
+          setEditing(null);
+        }}
+      />
+    )}
     <FlatList
       data={series}
       keyExtractor={item => String(item.id)}
@@ -151,6 +273,7 @@ export default function SeriesScreen({ navigation }) {
         </View>
       }
     />
+    </>
   );
 }
 
@@ -190,4 +313,32 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
   emptyHint: { color: COLORS.textHint, fontSize: FONT.sm },
+
+  noteBtn: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, paddingVertical: 10,
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  noteBtnText: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textSecondary },
+
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  modalSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    padding: SPACING.lg, maxHeight: '88%' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm },
+  modalTitle: { flex: 1, fontSize: FONT.lg, fontWeight: '800', color: COLORS.textPrimary, marginRight: SPACING.sm },
+  modalClose: { fontSize: 18, color: COLORS.textMuted },
+  modalHint: { fontSize: FONT.sm, color: COLORS.textMuted, lineHeight: 19, marginBottom: SPACING.sm },
+  fieldLabel: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textSecondary, marginTop: SPACING.md, marginBottom: 6 },
+  counter: { fontWeight: '400', color: COLORS.textHint },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1.5, borderColor: COLORS.border },
+  chipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.tagBg },
+  chipText: { fontSize: FONT.sm, color: COLORS.textSecondary },
+  chipTextActive: { color: COLORS.primary, fontWeight: '700' },
+  input: { fontSize: FONT.md, color: COLORS.textPrimary, backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: 'transparent' },
+  inputError: { borderColor: COLORS.danger },
+  errorText: { fontSize: FONT.sm - 1, color: COLORS.danger, marginTop: 4 },
+  storyInput: { minHeight: 110 },
+  saveBtn: { marginTop: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.md,
+    paddingVertical: 14, alignItems: 'center' },
+  saveBtnDisabled: { opacity: 0.5 },
+  saveBtnText: { color: COLORS.white, fontSize: FONT.md, fontWeight: '700' },
 });

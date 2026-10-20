@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import WorkNotesSection from '../WorkNotesSection';
 
-export default function TemplateScrl({ member, photos, profileName }) {
+export default function TemplateScrl({ member, photos, series = [], profileName }) {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [titleVisible, setTitleVisible] = useState(false);
@@ -149,6 +150,13 @@ export default function TemplateScrl({ member, photos, profileName }) {
           </div>
         </div>
       ))}
+
+      {/* 마지막 스냅 섹션 — 작업 노트 (시리즈가 있을 때만) */}
+      {series.length > 0 && (
+        <div style={{ minHeight: '100vh', scrollSnapAlign: 'start', background: '#111417', display: 'flex', alignItems: 'center' }}>
+          <WorkNotesSection series={series} profileName={profileNameDisplay} theme="dark" style={{ width: '100%', padding: '80px 24px' }} />
+        </div>
+      )}
 
       {/* 우측 도트 인디케이터 (최대 7개) */}
       <div style={{

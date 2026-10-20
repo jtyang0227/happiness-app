@@ -338,4 +338,69 @@ class CoreFlowIntegrationTest {
                         .content(om.writeValueAsString(Map.of("memberId", owner.id(), "title", "사칭"))))
                 .andExpect(status().isForbidden());
     }
+    // ── 문의 (출처 작업 + 수신함 소유권) ─────────────────────────────
+
+    private long createSeries(User owner, String title) throws Exception {
+        MvcResult r = mvc.perform(post("/api/series").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("memberId", owner.id(), "title", title))))
+                .andExpect(status().isCreated()).andReturn();
+        return ((Number) JsonPath.read(r.getResponse().getContentAsString(), "$.id")).longValue();
+    }
+
+    private void sendInquiry(User receiver, Long sourceSeriesId) throws Exception {
+        Map<String, Object> body = new java.util.HashMap<>(Map.of(
+                "receiverMemberId", receiver.id(), "senderName", "고객", "senderEmail", "c@test.com",
+                "shootType", "결혼식", "message", "문의드립니다"));
+        if (sourceSeriesId != null) body.put("sourceSeriesId", sourceSeriesId);
+        mvc.perform(post("/api/inquiry").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(body)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void 작업페이지에서_온_문의는_출처_작업이_수신함에_표시된다() throws Exception {
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        long mine = createSeries(owner, "봄 스몰웨딩");
+        long others = createSeries(other, "남의 작업");
+
+        sendInquiry(owner, mine);
+        sendInquiry(owner, others);   // 수신 작가의 작업이 아니면 출처는 버려진다
+
+        mvc.perform(get("/api/inquiry/inbox").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.sourceSeriesId == " + mine + ")].sourceSeriesTitle").value("봄 스몰웨딩"))
+                .andExpect(jsonPath("$[?(@.sourceSeriesId == " + others + ")]").isEmpty());
+    }
+
+    @Test
+    void 다른_회원의_문의함은_조회_수정_삭제할_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User attacker = signupAndLogin();
+        sendInquiry(owner, null);
+        MvcResult inbox = mvc.perform(get("/api/inquiry/inbox").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andReturn();
+        Number inquiryId = JsonPath.read(inbox.getResponse().getContentAsString(), "$[0].id");
+
+        mvc.perform(get("/api/inquiry/inbox").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(attacker)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/inquiry/inbox/unread-count").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(attacker)))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/inquiry/" + inquiryId + "/read").header("Authorization", bearer(attacker)))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/inquiry/" + inquiryId).header("Authorization", bearer(attacker)))
+                .andExpect(status().isForbidden());
+
+        // 본인은 그대로 가능
+        mvc.perform(put("/api/inquiry/" + inquiryId + "/read").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/inquiry/" + inquiryId).header("Authorization", bearer(owner)))
+                .andExpect(status().isNoContent());
+    }
 }

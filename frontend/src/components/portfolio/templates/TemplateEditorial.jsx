@@ -6,6 +6,7 @@ import MagazineGrid from '../MagazineGrid';
 import { seriesApi } from '../../../services/api';
 import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioApi';
 import TestimonialsSection from '../TestimonialsSection';
+import { WorkTypeFilter, filterWorksByType } from '../WorkNotesSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
 
@@ -192,6 +193,7 @@ export default function TemplateEditorial({
   const navigate = useNavigate();
   const filterBarRef = useRef(null);
   const [moodFilter, setMoodFilter] = useState('');
+  const [workType, setWorkType] = useState('');
   const [heroEntered, setHeroEntered] = useState(false);
 
   const [testimonials, setTestimonials] = useState([]);
@@ -469,9 +471,11 @@ export default function TemplateEditorial({
               <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: '0.15em', textTransform: 'uppercase' }}>컬렉션 · {series.length}</span>
               <div style={{ flex: 1, height: 1, background: COLORS.border }} />
             </Reveal>
+            {/* 촬영 유형 필터 — 작업 노트에 유형이 2개 이상일 때만 보인다 */}
+            <WorkTypeFilter series={series} value={workType} onChange={setWorkType} style={{ justifyContent: 'center', marginTop: 16 }} />
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
-            {series.map(s => (
+            {filterWorksByType(series, workType).map(s => (
               <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick}
                 workPath={member?.profileName ? `/portfolio/${member.profileName}/work/${s.id}` : null} />
             ))}

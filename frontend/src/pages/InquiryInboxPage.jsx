@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { inquiryApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
@@ -9,7 +10,7 @@ const SHOOT_TYPE_LABELS = {
   '풍경': '🌄 풍경', '행사/이벤트': '🎉 행사', '가족': '👨‍👩‍👧 가족', '기타': '📷 기타',
 };
 
-function InquiryCard({ inquiry, onRead, onDelete }) {
+function InquiryCard({ inquiry, onRead, onDelete, profileName }) {
   const [expanded, setExpanded] = useState(false);
 
   const handleExpand = () => {
@@ -39,7 +40,7 @@ function InquiryCard({ inquiry, onRead, onDelete }) {
           }} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 14, fontWeight: inquiry.isRead ? 600 : 800, color: COLORS.text }}>
               {inquiry.senderName}
             </span>
@@ -51,6 +52,14 @@ function InquiryCard({ inquiry, onRead, onDelete }) {
                 background: COLORS.primaryLight, color: COLORS.primary,
               }}>
                 {SHOOT_TYPE_LABELS[inquiry.shootType] || inquiry.shootType}
+              </span>
+            )}
+            {inquiry.sourceSeriesId && (
+              <span title="작업 노트 페이지에서 온 문의" style={{
+                fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8,
+                background: COLORS.bg, color: COLORS.textSecondary,
+              }}>
+                📁 작업 보고 문의
               </span>
             )}
           </div>
@@ -72,6 +81,18 @@ function InquiryCard({ inquiry, onRead, onDelete }) {
         <div style={{
           padding: '0 20px 20px', borderTop: `1px solid ${COLORS.border}`, paddingTop: 16,
         }}>
+          {/* 출처 작업 — 작업 노트 페이지의 "이런 촬영 문의하기"로 들어온 문의 */}
+          {inquiry.sourceSeriesId && (
+            <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
+              📁 {inquiry.sourceSeriesTitle
+                ? <>
+                    {profileName
+                      ? <Link to={`/portfolio/${profileName}/work/${inquiry.sourceSeriesId}`} style={{ color: COLORS.primary, fontWeight: 700, textDecoration: 'none' }}>'{inquiry.sourceSeriesTitle}'</Link>
+                      : <strong>'{inquiry.sourceSeriesTitle}'</strong>} 작업을 보고 보낸 문의예요
+                  </>
+                : '작업 노트에서 보낸 문의예요 (해당 작업은 삭제됨)'}
+            </div>
+          )}
           {(inquiry.shootDate || inquiry.budget) && (
             <div style={{ display: 'flex', gap: 24, marginBottom: 12 }}>
               {inquiry.shootDate && (
@@ -220,6 +241,7 @@ export default function InquiryInboxPage() {
             inquiry={inquiry}
             onRead={handleRead}
             onDelete={handleDelete}
+            profileName={user?.profileName}
           />
         ))
       )}

@@ -24,6 +24,7 @@ export default function InquiryFormPage() {
 
   // memberId는 쿼리 파라미터로 전달
   const memberId = new URLSearchParams(window.location.search).get('memberId');
+  const sourceSeriesId = new URLSearchParams(window.location.search).get('seriesId');
 
   const validate = () => {
     const e = {};
@@ -46,7 +47,12 @@ export default function InquiryFormPage() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      await inquiryApi.send({ ...form, receiverMemberId: memberId ? Number(memberId) : null });
+      await inquiryApi.send({
+        ...form,
+        receiverMemberId: memberId ? Number(memberId) : null,
+        // 작업 노트 페이지에서 온 경우 출처 작업 — 서버가 수신 작가의 작업인지 다시 확인한다
+        ...(/^\d+$/.test(sourceSeriesId || '') ? { sourceSeriesId: Number(sourceSeriesId) } : {}),
+      });
       setDone(true);
     } catch (err) {
       setErrors({ _api: err?.response?.data?.message || '전송에 실패했습니다. 다시 시도해주세요.' });

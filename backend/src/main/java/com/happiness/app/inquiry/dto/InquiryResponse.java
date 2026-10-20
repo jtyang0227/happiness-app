@@ -17,6 +17,9 @@ public class InquiryResponse {
     private String shootDate;
     private String budget;
     private String message;
+    private Long sourceSeriesId;
+    /** 출처 작업 제목 — 수신함 조회 시 배치로 채운다(작업이 삭제됐으면 null) */
+    private String sourceSeriesTitle;
     private Boolean isRead;
     private LocalDateTime createdAt;
 
@@ -30,6 +33,7 @@ public class InquiryResponse {
                 .shootDate(inquiry.getShootDate())
                 .budget(inquiry.getBudget())
                 .message(inquiry.getMessage())
+                .sourceSeriesId(inquiry.getSourceSeriesId())
                 .isRead(inquiry.getIsRead())
                 .createdAt(inquiry.getCreatedAt())
                 .build();

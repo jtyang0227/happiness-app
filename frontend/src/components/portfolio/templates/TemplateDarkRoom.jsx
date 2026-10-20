@@ -5,8 +5,9 @@ import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioA
 import TestimonialsSection from '../TestimonialsSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
+import WorkNotesSection from '../WorkNotesSection';
 
-export default function TemplateDarkRoom({ member, photos, profileName }) {
+export default function TemplateDarkRoom({ member, photos, series = [], profileName }) {
   const navigate = useNavigate();
   const [mousePos, setMousePos] = useState({ x: '50%', y: '50%' });
   const [featuredPhoto, setFeaturedPhoto] = useState(null);
@@ -283,6 +284,11 @@ export default function TemplateDarkRoom({ member, photos, profileName }) {
             )}
           </>
         )}
+      </div>
+
+      {/* 작업 노트 — 시리즈를 작업 사례로 (데이터 없으면 null) */}
+      <div style={{ position: 'relative', zIndex: 2, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <WorkNotesSection series={series} profileName={profileNameDisplay} theme="dark" />
       </div>
 
       {/* 신뢰 신호 — 추천사 · 언론/수상 · 협업 클라이언트 (데이터가 없으면 각 컴포넌트가 null 반환) */}

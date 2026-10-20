@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
+import { applyPageMeta } from '../utils/pageMeta';
 import { followApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
@@ -138,32 +139,7 @@ export default function PortfolioPage() {
       ? member.bio.slice(0, 120)
       : `${name}의 사진 포트폴리오${specialtyText}`;
     const ogImage = member.coverUrl || (data.photos?.[0]?.thumbnailUrl) || '';
-    const ogUrl = window.location.href;
-
-    const prev = {
-      title: document.title,
-      desc:  document.querySelector('meta[name="description"]')?.getAttribute('content') || '',
-    };
-
-    document.title = title;
-    const setMeta = (sel, attr, val) => {
-      let el = document.querySelector(sel);
-      if (!el) { el = document.createElement('meta'); document.head.appendChild(el); }
-      el.setAttribute(attr, val);
-    };
-
-    setMeta('meta[name="description"]',         'content', description);
-    setMeta('meta[property="og:title"]',         'content', title);
-    setMeta('meta[property="og:description"]',   'content', description);
-    setMeta('meta[property="og:url"]',           'content', ogUrl);
-    if (ogImage) setMeta('meta[property="og:image"]', 'content', ogImage);
-    setMeta('meta[property="og:type"]',          'content', 'profile');
-
-    return () => {
-      document.title = prev.title || 'Happiness';
-      const descEl = document.querySelector('meta[name="description"]');
-      if (descEl) descEl.setAttribute('content', prev.desc);
-    };
+    return applyPageMeta({ title, description, image: ogImage, url: window.location.href, type: 'profile' });
   }, [data, profileName]);
 
   /* ── 팔로우 여부 ── */

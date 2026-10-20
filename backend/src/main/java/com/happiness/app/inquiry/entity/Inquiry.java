@@ -38,6 +38,9 @@ public class Inquiry {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    /** 문의 출처 작업(시리즈) — 작업 노트 페이지의 "이런 촬영 문의하기"로 들어온 경우만 채워진다 */
+    private Long sourceSeriesId;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRead = false;

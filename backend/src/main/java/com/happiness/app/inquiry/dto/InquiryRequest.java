@@ -15,4 +15,5 @@ public class InquiryRequest {
     private String shootDate;
     private String budget;
     private String message;
+    private Long sourceSeriesId;
 }

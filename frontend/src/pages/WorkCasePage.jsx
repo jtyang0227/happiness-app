@@ -4,6 +4,7 @@ import apiClient from '../api/apiClient';
 import { seriesApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { shootTypeLabel } from '../constants/shootTypes';
+import { applyPageMeta } from '../utils/pageMeta';
 import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
 
@@ -112,9 +113,15 @@ export default function WorkCasePage() {
 
   useEffect(() => {
     if (status !== 'ready' || !work) return;
-    const prev = document.title;
-    document.title = `${work.title} — ${member?.name || profileName} | Happiness`;
-    return () => { document.title = prev; };
+    const artist = member?.name || profileName;
+    const summary = (work.story || work.description || '').replace(/\s+/g, ' ').trim();
+    return applyPageMeta({
+      title: `${work.title} — ${artist} | Happiness`,
+      description: summary ? summary.slice(0, 120) : `${artist} 작가의 작업 노트`,
+      image: work.coverImageUrl || work.photos?.[0]?.imageUrl,
+      url: window.location.href,
+      type: 'article',
+    });
   }, [status, work, member, profileName]);
 
   const portfolioPath = `/portfolio/${profileName}`;
@@ -132,6 +139,7 @@ export default function WorkCasePage() {
   const handleInquiry = () => {
     const params = new URLSearchParams({ memberId: String(member.id) });
     if (work.shootType) params.set('shootType', work.shootType);
+    params.set('seriesId', String(work.id)); // 수신함에 "어떤 작업을 보고 왔는지" 표시
     navigate(`/inquiry/${profileName}?${params.toString()}`);
   };
 
