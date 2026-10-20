@@ -28,6 +28,7 @@ import InquiryInboxPage from './pages/InquiryInboxPage';
 import FeedPage from './pages/FeedPage';
 import ImageEditorPage from './pages/ImageEditorPage';
 import PortfolioSlideshowPage from './pages/PortfolioSlideshowPage';
+import WorkCasePage from './pages/WorkCasePage';
 import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
 import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
 import AdminMembersPage      from './pages/admin/AdminMembersPage';
@@ -70,6 +71,7 @@ function AppShell() {
     || location.pathname.startsWith('/booking/')
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
+    || /^\/portfolio\/[^/]+\/work\/[^/]+$/.test(location.pathname)
     || /^\/photo\/\d+\/edit$/.test(location.pathname);
 
   // Toss 플랫 디자인 — 로그인/회원가입 포함 전 화면 동일한 화이트 배경
@@ -102,6 +104,7 @@ function AppShell() {
           {/* Public */}
           <Route path="/portfolio/:profileName" element={<PortfolioPage />} />
           <Route path="/portfolio/:profileName/slideshow" element={<PortfolioSlideshowPage />} />
+          <Route path="/portfolio/:profileName/work/:seriesId" element={<WorkCasePage />} />
           <Route path="/inquiry/:profileName" element={<InquiryFormPage />} />
 
           {/* Protected */}

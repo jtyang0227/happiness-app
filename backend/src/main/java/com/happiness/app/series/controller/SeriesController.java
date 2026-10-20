@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,6 +28,51 @@ public class SeriesController {
     private final SeriesRepository seriesRepository;
     private final SeriesPhotoRepository seriesPhotoRepository;
     private final PhotoRepository photoRepository;
+
+    /** 작업 노트 촬영 유형 — InquiryFormPage SHOOT_TYPES의 value와 동일해야 문의 폼 프리필이 동작한다 */
+    private static final Set<String> SHOOT_TYPES =
+            Set.of("결혼식", "제품촬영", "인물/프로필", "풍경", "행사/이벤트", "가족", "기타");
+    private static final int STORY_MAX = 3000;
+    private static final int CLIENT_LABEL_MAX = 100;
+
+    /**
+     * 작업 노트 필드 반영. null = 변경 없음, 빈 문자열 = 비우기.
+     * 잘못된 값은 400(ResponseStatusException → GlobalExceptionHandler)으로 거절한다.
+     */
+    private void applyWorkNote(Series series, SeriesRequest req) {
+        if (req.getShootType() != null) {
+            String v = req.getShootType().trim();
+            if (!v.isEmpty() && !SHOOT_TYPES.contains(v)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 촬영 유형입니다.");
+            }
+            series.setShootType(v.isEmpty() ? null : v);
+        }
+        if (req.getClientLabel() != null) {
+            String v = stripTags(req.getClientLabel());
+            if (v.length() > CLIENT_LABEL_MAX) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "클라이언트는 100자 이내로 입력해주세요.");
+            }
+            series.setClientLabel(v.isEmpty() ? null : v);
+        }
+        if (req.getShotOn() != null) {
+            String v = req.getShotOn().trim();
+            if (!v.isEmpty() && !v.matches("^\\d{4}\\.(0[1-9]|1[0-2])$")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "작업 시기는 YYYY.MM 형식으로 입력해주세요.");
+            }
+            series.setShotOn(v.isEmpty() ? null : v);
+        }
+        if (req.getStory() != null) {
+            String v = stripTags(req.getStory());
+            if (v.length() > STORY_MAX) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "작업 이야기는 3000자 이내로 입력해주세요.");
+            }
+            series.setStory(v.isEmpty() ? null : v);
+        }
+    }
+
+    private static String stripTags(String input) {
+        return input.replaceAll("<[^>]*>", "").trim();
+    }
 
     /** 멤버별 시리즈 목록 (공개) */
     @GetMapping
@@ -77,6 +123,13 @@ public class SeriesController {
         if (req.getTitle() == null || req.getTitle().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
+        // 요청의 memberId를 그대로 믿지 않는다 — 본인(또는 관리자)만 해당 회원 명의로 생성 가능
+        Long requesterId = SecurityUtil.getCurrentMemberId();
+        if (req.getMemberId() == null) {
+            req.setMemberId(requesterId);
+        } else if (!req.getMemberId().equals(requesterId) && !SecurityUtil.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         int nextOrder = seriesRepository
                 .findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(req.getMemberId())
                 .size();
@@ -87,6 +140,7 @@ public class SeriesController {
                 .coverImageUrl(req.getCoverImageUrl())
                 .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : nextOrder)
                 .build();
+        applyWorkNote(series, req);
         Series saved = seriesRepository.save(series);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SeriesResponse.fromEntity(saved, Collections.emptyList()));
@@ -104,6 +158,7 @@ public class SeriesController {
         if (req.getDescription() != null) series.setDescription(req.getDescription());
         if (req.getCoverImageUrl() != null) series.setCoverImageUrl(req.getCoverImageUrl());
         if (req.getDisplayOrder() != null) series.setDisplayOrder(req.getDisplayOrder());
+        applyWorkNote(series, req);
         Series saved = seriesRepository.save(series);
         List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(id);
         List<PhotoResponse> photos = sps.stream()

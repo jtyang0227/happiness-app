@@ -18,6 +18,10 @@ public class SeriesResponse {
     private String description;
     private String coverImageUrl;
     private Integer displayOrder;
+    private String shootType;
+    private String clientLabel;
+    private String shotOn;
+    private String story;
     private Integer photoCount;
     private List<PhotoResponse> photos;
     /** 보드 카드 콜라주용 — 최대 3개 썸네일 URL (목록 조회 시에만 채워짐) */
@@ -39,6 +43,10 @@ public class SeriesResponse {
                 .description(series.getDescription())
                 .coverImageUrl(cover)
                 .displayOrder(series.getDisplayOrder())
+                .shootType(series.getShootType())
+                .clientLabel(series.getClientLabel())
+                .shotOn(series.getShotOn())
+                .story(series.getStory())
                 .photoCount(photos != null ? photos.size() : 0)
                 .photos(photos)
                 .createdAt(series.getCreatedAt())
@@ -56,6 +64,10 @@ public class SeriesResponse {
                 .description(series.getDescription())
                 .coverImageUrl(cover)
                 .displayOrder(series.getDisplayOrder())
+                .shootType(series.getShootType())
+                .clientLabel(series.getClientLabel())
+                .shotOn(series.getShotOn())
+                .story(series.getStory())
                 .photoCount(photoCount)
                 .previewPhotos(previewPhotos)
                 .createdAt(series.getCreatedAt())

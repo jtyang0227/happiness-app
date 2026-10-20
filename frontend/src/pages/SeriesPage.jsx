@@ -6,9 +6,12 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 import PhotoModal from '../components/photo/PhotoModal';
 import DotEmptyState from '../components/common/DotEmptyState';
+import { SHOOT_TYPES } from '../constants/shootTypes';
+
+const SHOT_ON_RE = /^\d{4}\.(0[1-9]|1[0-2])$/;
 
 /* ─── 시리즈 카드 ───────────────────────────────── */
-function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }) {
+function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, workPath }) {
   return (
     <div style={{
       background: COLORS.surface,
@@ -100,6 +103,19 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView }
           >
             ⊟ 매거진
           </button>
+          {workPath && (
+            <button
+              onClick={() => window.open(workPath, '_blank', 'noopener')}
+              title="포트폴리오에 공개되는 작업 노트 페이지를 새 탭에서 열기"
+              style={{
+                padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${COLORS.border}`, background: COLORS.surfaceDim,
+                color: COLORS.textSecondary, cursor: 'pointer',
+              }}
+            >
+              ↗ 작업 페이지
+            </button>
+          )}
           <button
             onClick={() => onEdit(series)}
             style={{
@@ -131,12 +147,18 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
   const [form, setForm] = useState({
     title: series?.title || '',
     description: series?.description || '',
+    // 작업 노트 — 빈 문자열은 서버에서 "비우기"로 처리된다
+    shootType: series?.shootType || '',
+    clientLabel: series?.clientLabel || '',
+    shotOn: series?.shotOn || '',
+    story: series?.story || '',
   });
   const [loading, setLoading] = useState(false);
+  const shotOnInvalid = form.shotOn.trim() !== '' && !SHOT_ON_RE.test(form.shotOn.trim());
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || shotOnInvalid) return;
     setLoading(true);
     try {
       if (series) {
@@ -145,8 +167,8 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
         await seriesApi.create({ ...form, memberId });
       }
       onSave();
-    } catch {
-      alert('저장에 실패했습니다.');
+    } catch (err) {
+      alert(err?.response?.data?.message || '저장에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -160,7 +182,8 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
     }} onClick={onClose}>
       <div style={{
         background: COLORS.surface, borderRadius: 20, padding: 28,
-        width: '100%', maxWidth: 440, boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+        width: '100%', maxWidth: 480, boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+        maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
       }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: COLORS.text, marginBottom: 20 }}>
           {series ? '시리즈 수정' : '새 시리즈 만들기'}
@@ -183,7 +206,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
             />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
               설명 (선택)
             </label>
@@ -201,6 +224,92 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
             />
           </div>
 
+          {/* ── 작업 노트 — 포트폴리오 작업 페이지(/portfolio/:profileName/work/:id)에 보인다 ── */}
+          <fieldset style={{ border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '14px 16px 4px', margin: '0 0 24px' }}>
+            <legend style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, padding: '0 6px' }}>
+              작업 노트 <span style={{ fontWeight: 500, color: COLORS.textMuted }}>· 모두 선택</span>
+            </legend>
+            <p style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.6, margin: '0 0 12px' }}>
+              어떤 일이었는지 적어두면 포트폴리오에서 이 시리즈가 하나의 작업 사례로 소개되고,
+              방문자가 같은 유형으로 바로 문의할 수 있어요.
+            </p>
+
+            <div style={{ marginBottom: 14 }}>
+              <span id="series-shoot-type" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
+                촬영 유형
+              </span>
+              <div role="radiogroup" aria-labelledby="series-shoot-type" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {SHOOT_TYPES.map(t => {
+                  const active = form.shootType === t.value;
+                  return (
+                    <button
+                      key={t.value} type="button" role="radio" aria-checked={active}
+                      onClick={() => setForm(p => ({ ...p, shootType: active ? '' : t.value }))}
+                      style={{
+                        padding: '6px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
+                        border: `1.5px solid ${active ? COLORS.primary : COLORS.border}`,
+                        background: active ? COLORS.primaryLight : COLORS.surface,
+                        color: active ? COLORS.primary : COLORS.textSecondary,
+                        fontWeight: active ? 700 : 500,
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              <div style={{ flex: '2 1 180px' }}>
+                <label htmlFor="series-client" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
+                  클라이언트
+                </label>
+                <input
+                  id="series-client" type="text" value={form.clientLabel} maxLength={100}
+                  onChange={e => setForm(p => ({ ...p, clientLabel: e.target.value }))}
+                  placeholder="예: OO 브랜드, 개인 의뢰"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.border}`, fontSize: 14, color: COLORS.text, outline: 'none' }}
+                />
+              </div>
+              <div style={{ flex: '1 1 110px' }}>
+                <label htmlFor="series-shot-on" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
+                  작업 시기
+                </label>
+                <input
+                  id="series-shot-on" type="text" inputMode="numeric" value={form.shotOn} maxLength={7}
+                  onChange={e => setForm(p => ({ ...p, shotOn: e.target.value }))}
+                  placeholder="2026.05"
+                  aria-invalid={shotOnInvalid}
+                  aria-describedby={shotOnInvalid ? 'series-shot-on-error' : undefined}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${shotOnInvalid ? COLORS.danger : COLORS.border}`, fontSize: 14, color: COLORS.text, outline: 'none' }}
+                />
+                {shotOnInvalid && (
+                  <span id="series-shot-on-error" role="alert" style={{ display: 'block', fontSize: 11, color: COLORS.danger, marginTop: 4 }}>
+                    YYYY.MM 형식으로 입력해주세요
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label htmlFor="series-story" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 6 }}>
+                작업 이야기 <span style={{ fontWeight: 500, color: COLORS.textMuted }}>{form.story.length}/3000</span>
+              </label>
+              <textarea
+                id="series-story" value={form.story} maxLength={3000}
+                onChange={e => setForm(p => ({ ...p, story: e.target.value }))}
+                placeholder="누구와, 무엇을, 왜 이렇게 찍었는지 짧게 남겨보세요."
+                rows={4}
+                style={{
+                  width: '100%', padding: '11px 14px', borderRadius: 10,
+                  border: `1.5px solid ${COLORS.border}`, fontSize: 14, lineHeight: 1.6,
+                  color: COLORS.text, outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+                }}
+              />
+            </div>
+          </fieldset>
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button" onClick={onClose}
@@ -213,7 +322,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
               취소
             </button>
             <button
-              type="submit" disabled={loading || !form.title.trim()}
+              type="submit" disabled={loading || !form.title.trim() || shotOnInvalid}
               style={{
                 flex: 2, padding: '12px', borderRadius: 10, border: 'none',
                 background: loading ? '#a0a8e8' : COLORS.primary,
@@ -536,6 +645,7 @@ export default function SeriesPage() {
               onDelete={handleDelete}
               onManagePhotos={(s) => setPhotoPicker(s)}
               onMagazineView={handleMagazineView}
+              workPath={user?.profileName ? `/portfolio/${user.profileName}/work/${series.id}` : null}
             />
           ))}
         </div>

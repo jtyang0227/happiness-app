@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MOOD_COLORS, COLORS } from '../../../constants/colors';
 import { mq } from '../../../constants/breakpoints';
 import MagazineGrid from '../MagazineGrid';
@@ -84,7 +84,7 @@ function MasonryPhoto({ photo, onClick }) {
 }
 
 /* ── Series Card ─────────────────────────────────── */
-function SeriesScrollCard({ series, onPhotoClick }) {
+function SeriesScrollCard({ series, onPhotoClick, workPath }) {
   const [detail, setDetail] = useState(null);
   const [open, setOpen] = useState(false);
 
@@ -153,6 +153,16 @@ function SeriesScrollCard({ series, onPhotoClick }) {
           )}
         </div>
       </div>
+
+      {/* 작업 노트 페이지 진입점 (PLANNING_portfolio-work-notes-concept.md AC-8) — 기존 펼침 동작은 유지 */}
+      {workPath && (
+        <Link
+          to={workPath}
+          style={{ display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 700, color: COLORS.primary, textDecoration: 'none', padding: '4px 2px' }}
+        >
+          작업 노트 보기 →
+        </Link>
+      )}
 
       {open && detail && (
         <div style={{ marginTop: 8, background: COLORS.surfaceDim, borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
@@ -462,7 +472,8 @@ export default function TemplateEditorial({
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
             {series.map(s => (
-              <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick} />
+              <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick}
+                workPath={member?.profileName ? `/portfolio/${member.profileName}/work/${s.id}` : null} />
             ))}
           </div>
         </div>

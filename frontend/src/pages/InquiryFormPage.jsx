@@ -2,16 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { inquiryApi } from '../services/api';
 import { COLORS } from '../constants/colors';
+import { SHOOT_TYPES } from '../constants/shootTypes';
 
-const SHOOT_TYPES = [
-  { value: '결혼식', label: '결혼식' },
-  { value: '제품촬영', label: '제품 촬영' },
-  { value: '인물/프로필', label: '인물 / 프로필' },
-  { value: '풍경', label: '풍경 / 여행' },
-  { value: '행사/이벤트', label: '행사 / 이벤트' },
-  { value: '가족', label: '가족' },
-  { value: '기타', label: '기타' },
-];
 
 const INITIAL = {
   senderName: '', senderEmail: '', shootType: '',
@@ -21,7 +13,11 @@ const INITIAL = {
 export default function InquiryFormPage() {
   const { profileName } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState(INITIAL);
+  // 작업 노트 페이지의 "이런 촬영 문의하기"에서 넘어오면 촬영 유형을 미리 선택한다
+  const [form, setForm] = useState(() => {
+    const preset = new URLSearchParams(window.location.search).get('shootType');
+    return SHOOT_TYPES.some(t => t.value === preset) ? { ...INITIAL, shootType: preset } : INITIAL;
+  });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);

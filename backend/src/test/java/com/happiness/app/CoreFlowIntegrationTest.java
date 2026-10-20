@@ -283,4 +283,59 @@ class CoreFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(bookingId.longValue()));
     }
+    // ── 작업 노트 (PLANNING_portfolio-work-notes-concept.md) ────────────
+
+    @Test
+    void 시리즈_작업노트_필드를_저장하고_공개_조회한다() throws Exception {
+        User owner = signupAndLogin();
+        MvcResult created = mvc.perform(post("/api/series").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "memberId", owner.id(), "title", "봄 스몰웨딩",
+                                "shootType", "결혼식", "clientLabel", "개인 의뢰",
+                                "shotOn", "2026.05", "story", "<b>자연광</b>만 사용했다."))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number seriesId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+
+        mvc.perform(get("/api/series/" + seriesId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.shootType").value("결혼식"))
+                .andExpect(jsonPath("$.clientLabel").value("개인 의뢰"))
+                .andExpect(jsonPath("$.shotOn").value("2026.05"))
+                .andExpect(jsonPath("$.story").value("자연광만 사용했다."));
+
+        // 빈 문자열은 비우기, 생략(null)은 유지
+        mvc.perform(put("/api/series/" + seriesId).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("clientLabel", ""))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientLabel").doesNotExist())
+                .andExpect(jsonPath("$.shootType").value("결혼식"));
+    }
+
+    @Test
+    void 시리즈_작업노트_잘못된_값은_400() throws Exception {
+        User owner = signupAndLogin();
+        mvc.perform(post("/api/series").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "memberId", owner.id(), "title", "x", "shootType", "WEDDING"))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/series").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "memberId", owner.id(), "title", "x", "shotOn", "2026-05"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 다른_회원_명의로_시리즈를_만들_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User attacker = signupAndLogin();
+        mvc.perform(post("/api/series").header("Authorization", bearer(attacker))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("memberId", owner.id(), "title", "사칭"))))
+                .andExpect(status().isForbidden());
+    }
 }

@@ -13,4 +13,8 @@ public class SeriesRequest {
     private String description;
     private String coverImageUrl;
     private Integer displayOrder;
+    private String shootType;
+    private String clientLabel;
+    private String shotOn;
+    private String story;
 }

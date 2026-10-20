@@ -27,6 +27,23 @@ public class Series {
 
     private String coverImageUrl;
 
+    // ── 작업 노트 (PLANNING_portfolio-work-notes-concept.md) — 모두 선택 입력 ──
+    /** 촬영 유형 — 문의 폼(InquiryFormPage)과 같은 어휘: 결혼식/제품촬영/인물/프로필/풍경/행사/이벤트/가족/기타 */
+    @Column(length = 30)
+    private String shootType;
+
+    /** 클라이언트 표기 — 예: "OO 브랜드", "개인 의뢰" */
+    @Column(length = 100)
+    private String clientLabel;
+
+    /** 작업 시기 — "YYYY.MM" */
+    @Column(length = 7)
+    private String shotOn;
+
+    /** 작업 이야기 — 평문(HTML 태그 제거), 최대 3000자 */
+    @Column(columnDefinition = "TEXT")
+    private String story;
+
     @Column(nullable = false)
     private Integer displayOrder;
 
