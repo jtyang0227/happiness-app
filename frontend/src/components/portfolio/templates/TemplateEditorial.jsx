@@ -266,7 +266,8 @@ export default function TemplateEditorial({
           {(member?.name ?? pName ?? '?').charAt(0)}
         </div>
 
-        <div style={{ position: 'relative', width: '100%', padding: '0 32px 0', zIndex: 1 }}>
+        {/* 아래 통계 바(position absolute, 약 76px)에 버튼 줄이 깔리지 않도록 그 높이 + 여백만큼 띄운다 */}
+        <div style={{ position: 'relative', width: '100%', padding: '0 32px 104px', zIndex: 1 }}>
           <div style={{
             display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 20,
             opacity: heroEntered ? 1 : 0, transform: heroEntered ? 'translateY(0)' : 'translateY(18px)',

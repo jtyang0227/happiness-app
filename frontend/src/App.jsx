@@ -106,10 +106,11 @@ function AppShell() {
           <Route path="/portfolio/:profileName/slideshow" element={<PortfolioSlideshowPage />} />
           <Route path="/portfolio/:profileName/work/:seriesId" element={<WorkCasePage />} />
           <Route path="/inquiry/:profileName" element={<InquiryFormPage />} />
+          {/* 탐색 — 의뢰인이 로그인 없이 작가·작업을 찾을 수 있게 공개 (PLANNING_work-discovery.md) */}
+          <Route path="/explore" element={<ExplorePage />} />
 
           {/* Protected */}
           <Route path="/" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
-          <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/photo/new" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
           <Route path="/photo/:id" element={<ProtectedRoute><PhotoDetailPage /></ProtectedRoute>} />
