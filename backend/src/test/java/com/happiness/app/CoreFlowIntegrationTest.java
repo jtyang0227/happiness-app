@@ -747,4 +747,56 @@ class CoreFlowIntegrationTest {
             assertThat(ids).as(paged ? "paged" : "unpaged").extracting(Number::longValue).containsExactly(p2, p0, p1);
         }
     }
+
+    // ── 무드보드 (WORK_QUEUE 5) ──────────────────────────────────────
+
+    @Test
+    void 무드보드는_본인만_보고_사진을_담고_뺄_수_있다() throws Exception {
+        User me = signupAndLogin();
+        User other = signupAndLogin();
+        User artist = signupAndLogin();
+        long photo = createPhoto(artist);
+
+        mvc.perform(get("/api/moodboards")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/moodboards").header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"  \"}"))
+                .andExpect(status().isBadRequest());
+        String created = mvc.perform(post("/api/moodboards").header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("name", "봄 웨딩 레퍼런스"))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long board = ((Number) JsonPath.read(created, "$.id")).longValue();
+
+        for (int i = 0; i < 2; i++) {   // 두 번 담아도 1장
+            mvc.perform(post("/api/moodboards/" + board + "/photos").header("Authorization", bearer(me))
+                            .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("photoId", photo))))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(get("/api/moodboards").param("photoId", String.valueOf(photo)).header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$[0].itemCount").value(1))
+                .andExpect(jsonPath("$[0].containsPhoto").value(true));
+        mvc.perform(get("/api/moodboards/" + board).header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.photos.length()").value(1));
+
+        // 남의 보드는 보이지도, 고칠 수도 없다
+        mvc.perform(get("/api/moodboards/" + board).header("Authorization", bearer(other))).andExpect(status().isNotFound());
+        mvc.perform(post("/api/moodboards/" + board + "/photos").header("Authorization", bearer(other))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("photoId", photo))))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/moodboards/" + board).header("Authorization", bearer(other))).andExpect(status().isNotFound());
+        mvc.perform(get("/api/moodboards").header("Authorization", bearer(other))).andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(put("/api/moodboards/" + board).header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("name", "가을 웨딩"))))
+                .andExpect(jsonPath("$.name").value("가을 웨딩"));
+
+        // 작가가 사진을 지우면 보드에서도 빠진다
+        mvc.perform(delete("/api/photos/" + photo).header("Authorization", bearer(artist))).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/moodboards/" + board).header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.photos.length()").value(0));
+        mvc.perform(get("/api/moodboards").header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$[0].itemCount").value(0));
+
+        mvc.perform(delete("/api/moodboards/" + board).header("Authorization", bearer(me))).andExpect(status().isNoContent());
+        mvc.perform(get("/api/moodboards/" + board).header("Authorization", bearer(me))).andExpect(status().isNotFound());
+    }
 }

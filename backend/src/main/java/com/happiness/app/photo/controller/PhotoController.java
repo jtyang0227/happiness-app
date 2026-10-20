@@ -1,6 +1,7 @@
 package com.happiness.app.photo.controller;
 
 import com.happiness.app.analytics.repository.AnalyticsEventRepository;
+import com.happiness.app.moodboard.MoodboardItemRepository;
 import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.common.util.ImageProcessingUtil;
 import com.happiness.app.common.util.ImageVariantUtil;
@@ -44,6 +45,7 @@ public class PhotoController {
 
     private final PhotoRepository photoRepository;
     private final AnalyticsEventRepository analyticsEventRepository;
+    private final MoodboardItemRepository moodboardItemRepository;
     private final PhotoTagRepository photoTagRepository;
     private final PhotoLikeRepository photoLikeRepository;
     private final PhotoShareRepository photoShareRepository;
@@ -388,6 +390,7 @@ public class PhotoController {
                     // 연관 레코드 먼저 삭제 (cascade)
                     photoLikeRepository.deleteByPhotoId(id);
                     photoSaveRepository.deleteByPhotoId(id);
+                    moodboardItemRepository.deleteByPhotoId(id);
                     photoShareRepository.deleteByPhotoId(id);
                     photoTagRepository.deleteByPhotoId(id);
 

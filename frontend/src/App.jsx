@@ -51,6 +51,7 @@ import GatheringAlbumPage    from './pages/GatheringAlbumPage';
 import GatheringCalendarPage from './pages/GatheringCalendarPage';
 import IntegratedCalendarPage from './pages/IntegratedCalendarPage';
 import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
+import MoodboardPage from './pages/MoodboardPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -119,6 +120,7 @@ function AppShell() {
           <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><InquiryInboxPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+          <Route path="/boards/:id" element={<ProtectedRoute><MoodboardPage /></ProtectedRoute>} />
           <Route path="/editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
 
           {/* Delivery & Booking (standalone) */}

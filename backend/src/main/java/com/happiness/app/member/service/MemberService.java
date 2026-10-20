@@ -7,6 +7,8 @@ import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.repository.*;
+import com.happiness.app.moodboard.MoodboardItemRepository;
+import com.happiness.app.moodboard.MoodboardRepository;
 import com.happiness.app.series.repository.SeriesAppreciationRepository;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
 import com.happiness.app.series.repository.SeriesRepository;
@@ -34,6 +36,8 @@ public class MemberService {
     private final PhotoTagRepository photoTagRepository;
     private final SeriesPhotoRepository seriesPhotoRepository;
     private final SeriesAppreciationRepository seriesAppreciationRepository;
+    private final MoodboardRepository moodboardRepository;
+    private final MoodboardItemRepository moodboardItemRepository;
     private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
 
@@ -152,6 +156,7 @@ public class MemberService {
         for (Long photoId : photoIds) {
             photoLikeRepository.deleteByPhotoId(photoId);
             photoSaveRepository.deleteByPhotoId(photoId);
+            moodboardItemRepository.deleteByPhotoId(photoId);   // 남의 보드에 담긴 내 사진
             photoShareRepository.deleteByPhotoId(photoId);
             photoTagRepository.deleteByPhotoId(photoId);
             seriesPhotoRepository.deleteByPhotoId(photoId);
@@ -168,6 +173,8 @@ public class MemberService {
                     seriesAppreciationRepository.deleteBySeriesId(s.getId());
                 });
         seriesAppreciationRepository.deleteByMemberId(memberId);   // 남의 작업에 남긴 감상
+        moodboardItemRepository.deleteByOwner(memberId);           // 내 보드
+        moodboardRepository.deleteByMemberId(memberId);
         seriesRepository.deleteByMemberId(memberId);
 
         // 5. 사진, 수신 문의, 멤버 삭제

@@ -6,6 +6,7 @@ import { uploadImage } from '../services/uploadApi';
 import { COLORS } from '../constants/colors';
 import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import BoardList from '../components/moodboard/BoardList';
 import apiClient from '../api/apiClient';
 
 /* ── 포트폴리오 템플릿 목록 ────────────────── */
@@ -580,6 +581,8 @@ export default function ProfilePage() {
             {/* ── 저장함 ── */}
             {activeTab === 'saved' && (
               <div>
+                <BoardList />
+                <h3 style={{ margin: '4px 0 12px', fontSize: 15, fontWeight: 800, color: COLORS.text }}>저장한 사진</h3>
                 <PhotoGrid photos={visibleSaved} onPhotoClick={id => navigate(`/photo/${id}`)} />
                 {savedPhotos.length > photosPage && (
                   <div style={{ textAlign: 'center', padding: '16px 0' }}>

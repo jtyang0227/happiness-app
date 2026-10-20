@@ -5,12 +5,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import CommentsSection from './CommentsSection';
 import ReportModal from './ReportModal';
 import { trackView } from '../../utils/trackView';
+import BoardPickerModal from '../moodboard/BoardPickerModal';
 
 export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const { user } = useAuth();
   const [photo, setPhoto] = useState(initial);
   const [liking, setLiking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
@@ -147,6 +149,11 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
               color="#f59e0b"
               label={`⭐ 저장 ${photo.savesCount || 0}`}
             />
+            <ActionBtn
+              onClick={() => (user?.id ? setBoardPickerOpen(true) : window.alert('로그인 후 보드에 담을 수 있어요.'))}
+              color="#3182F6"
+              label="📌 보드에"
+            />
           </div>
 
           {/* 댓글 섹션 */}
@@ -170,6 +177,7 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
         </div>
       </div>
 
+      {boardPickerOpen && <BoardPickerModal photoId={photo.id} onClose={() => setBoardPickerOpen(false)} />}
       {reportOpen && (
         <ReportModal
           photoId={photo.id}

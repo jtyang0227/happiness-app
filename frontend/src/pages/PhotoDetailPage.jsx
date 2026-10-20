@@ -15,6 +15,7 @@ import ReportModal from '../components/photo/ReportModal';
 import useColorExtraction from '../hooks/useColorExtraction';
 import { trackView } from '../utils/trackView';
 import MagazineViewer from '../components/magazine/MagazineViewer';
+import BoardPickerModal from '../components/moodboard/BoardPickerModal';
 
 function buildAdjSummary(adj, effects) {
   const items = [];
@@ -45,6 +46,7 @@ export default function PhotoDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [saved, setSaved] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < BP.md);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= BP.md && window.innerWidth < BP.lg);
@@ -307,7 +309,14 @@ export default function PhotoDetailPage() {
           color: saved ? COLORS.primary : COLORS.textSecondary,
           cursor: 'pointer', fontWeight: 700, fontSize: 13, transition: 'all 0.15s',
         }}>
-          {saved ? '★' : '☆'} 저장 {photo.saveCount > 0 && photo.saveCount}
+          {saved ? '★' : '☆'} 저장 {photo.savesCount > 0 && photo.savesCount}
+        </button>
+        <button onClick={() => (user?.id ? setBoardPickerOpen(true) : navigate('/login'))} style={{
+          flex: 1, minWidth: 80, padding: '10px', borderRadius: 10, border: `1.5px solid ${COLORS.border}`,
+          background: COLORS.surface, color: COLORS.textSecondary, cursor: 'pointer', fontWeight: 700, fontSize: 13,
+          whiteSpace: 'nowrap',
+        }} className="no-print">
+          📌 보드에 담기
         </button>
         <ShareButton url={window.location.href} title={photo.title} theme="light" />
         <button
@@ -351,6 +360,7 @@ export default function PhotoDetailPage() {
         </div>
       )}
 
+      {boardPickerOpen && <BoardPickerModal photoId={photo.id} onClose={() => setBoardPickerOpen(false)} />}
       {reportOpen && (
         <ReportModal
           photoId={photo.id}
