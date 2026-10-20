@@ -296,7 +296,7 @@ export default function ProfilePage() {
         .catch(() => {}).finally(() => setLoadingTab(false));
     } else if (activeTab === 'series') {
       setLoadingTab(true);
-      seriesApi.getByMember(user.id)
+      seriesApi.getMine()
         .then(res => setSeriesList(res?.data ?? (Array.isArray(res) ? res : [])))
         .catch(() => {}).finally(() => setLoadingTab(false));
     }

@@ -89,6 +89,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/discover").permitAll()
+                // 내 작업(초안 포함)은 인증 필수 — 아래 {id} 공개 패턴보다 먼저 와야 401 → 토큰 재발급을 탄다
+                .requestMatchers(HttpMethod.GET, "/api/series/mine").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/series/{id}").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/inquiry").permitAll()
                 // Delivery Portal — 공개 클라이언트 엔드포인트 (토큰 기반)

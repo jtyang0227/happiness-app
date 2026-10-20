@@ -54,6 +54,9 @@ public class Series {
     @Column(columnDefinition = "TEXT")
     private String creditsJson;
 
+    /** 초안(WORK_QUEUE 7) — true면 작가 본인만 본다(탐색·포트폴리오·공개 상세에서 제외). 기존 행 호환을 위해 nullable(null = 공개) */
+    private Boolean draft;
+
     @Column(nullable = false)
     private Integer displayOrder;
 

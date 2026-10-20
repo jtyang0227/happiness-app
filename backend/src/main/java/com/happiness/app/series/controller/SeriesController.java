@@ -72,6 +72,9 @@ public class SeriesController {
      * 잘못된 값은 400(ResponseStatusException → GlobalExceptionHandler)으로 거절한다.
      */
     private void applyWorkNote(Series series, SeriesRequest req) {
+        if (req.getDraft() != null) {
+            series.setDraft(req.getDraft() ? Boolean.TRUE : null);   // 공개는 null로 둔다(기존 행과 같은 표현)
+        }
         if (req.getShootType() != null) {
             String v = req.getShootType().trim();
             if (!v.isEmpty() && !SHOOT_TYPES.contains(v)) {
@@ -147,14 +150,35 @@ public class SeriesController {
         return input.replaceAll("<[^>]*>", "").trim();
     }
 
-    /** 멤버별 시리즈 목록 (공개) */
+    /** 멤버별 시리즈 목록 (공개) — 초안은 빠진다. 작가 본인은 GET /mine으로 초안까지 받는다 */
     @GetMapping
     public ResponseEntity<List<SeriesResponse>> getSeries(
             @RequestParam(required = false) Long memberId) {
         if (memberId == null) {
             return ResponseEntity.ok(Collections.emptyList());
         }
-        List<Series> list = seriesRepository.findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(memberId);
+        return ResponseEntity.ok(summaries(seriesRepository.findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(memberId)
+                .stream().filter(s -> !Boolean.TRUE.equals(s.getDraft())).collect(Collectors.toList())));
+    }
+
+    /**
+     * 내 작업 목록 (인증, 초안 포함). 공개 목록에 "본인이면 초안 포함" 분기를 두지 않은 이유: 웹은 새로고침 직후
+     * 공개 GET에 토큰을 싣지 않아(메모리 보관) 본인도 익명으로 보인다 — 인증 경로여야 401 → 재발급을 탄다.
+     */
+    @GetMapping("/mine")
+    public ResponseEntity<List<SeriesResponse>> mySeries() {
+        return ResponseEntity.ok(summaries(
+                seriesRepository.findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(SecurityUtil.getCurrentMemberId())));
+    }
+
+    /** 초안은 작가 본인·관리자만 볼 수 있다 — 그 외에는 없는 작업처럼 404 */
+    private boolean visibleToRequester(Series s) {
+        if (!Boolean.TRUE.equals(s.getDraft())) return true;
+        return SecurityUtil.isAuthenticated()
+                && (s.getMemberId().equals(SecurityUtil.getCurrentMemberId()) || SecurityUtil.isAdmin());
+    }
+
+    private List<SeriesResponse> summaries(List<Series> list) {
         List<SeriesResponse> result = list.stream().map(s -> {
             List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(s.getId());
             String coverUrl = null;
@@ -171,7 +195,7 @@ public class SeriesController {
                     .collect(Collectors.toList());
             return SeriesResponse.summary(s, sps.size(), coverUrl, previewPhotos);
         }).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
+        return result;
     }
 
     /**
@@ -265,6 +289,7 @@ public class SeriesController {
     @GetMapping("/{id}")
     public ResponseEntity<SeriesResponse> getSeriesById(@PathVariable Long id) {
         return seriesRepository.findById(id)
+                .filter(this::visibleToRequester)
                 .map(series -> {
                     List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(id);
                     List<PhotoResponse> photos = sps.stream()
@@ -290,7 +315,7 @@ public class SeriesController {
     @PostMapping("/{id}/appreciation")
     public ResponseEntity<Map<String, Object>> appreciate(@PathVariable Long id) {
         Long me = SecurityUtil.getCurrentMemberId();
-        Series series = seriesRepository.findById(id)
+        Series series = seriesRepository.findById(id).filter(this::visibleToRequester)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다."));
         if (series.getMemberId().equals(me)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "본인 작업에는 감상할 수 없어요.");

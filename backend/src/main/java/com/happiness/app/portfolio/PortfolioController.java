@@ -69,7 +69,9 @@ public class PortfolioController {
 
         // 시리즈 목록 (커버 이미지 포함)
         List<Series> seriesList = seriesRepository
-                .findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(member.getId());
+                .findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(member.getId())
+                .stream().filter(s -> !Boolean.TRUE.equals(s.getDraft()))   // 초안은 공개 포트폴리오에서 제외
+                .collect(Collectors.toList());
         List<SeriesResponse> series = seriesList.stream().map(s -> {
             List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(s.getId());
             String coverUrl = null;

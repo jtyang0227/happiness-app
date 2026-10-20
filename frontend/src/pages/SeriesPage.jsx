@@ -72,9 +72,15 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, 
       <div style={{ padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, margin: 0 }}>
+            {series.draft && (
+              <span style={{ display: 'inline-block', marginRight: 6, padding: '1px 7px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                background: COLORS.surfaceDim, color: COLORS.textSecondary, border: `1px solid ${COLORS.border}`, verticalAlign: '2px' }}>
+                초안
+              </span>
+            )}
             {series.title}
           </h3>
-          <button
+          {!series.draft && <button
             onClick={() => onTogglePin(series)}
             aria-pressed={!!series.pinned}
             title={series.pinned ? '대표 작업 해제' : '포트폴리오 상단에 대표 작업으로 고정 (작가당 1개)'}
@@ -86,7 +92,7 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, 
             }}
           >
             📌 {series.pinned ? '대표 작업' : '대표로'}
-          </button>
+          </button>}
         </div>
         {series.description && (
           <p style={{
@@ -118,7 +124,7 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, 
           >
             ⊟ 매거진
           </button>
-          {workPath && (
+          {workPath && !series.draft && (
             <button
               onClick={() => window.open(workPath, '_blank', 'noopener')}
               title="포트폴리오에 공개되는 작업 노트 페이지를 새 탭에서 열기"
@@ -176,6 +182,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
     story: series?.story || '',
     // 함께한 사람 — 저장할 때 목록 전체를 보낸다(서버가 통째로 교체, 빈 줄은 무시)
     credits: (series?.credits || []).map(c => ({ role: c.role || '', name: c.name || '', profileName: c.profileName || '' })),
+    draft: Boolean(series?.draft),
   });
   const [loading, setLoading] = useState(false);
   const shotOnInvalid = form.shotOn.trim() !== '' && !SHOT_ON_RE.test(form.shotOn.trim());
@@ -337,6 +344,16 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
               />
             </div>
           </fieldset>
+
+          {/* ── 초안 — 켜면 탐색·포트폴리오·공개 작업 페이지에서 빠지고 나만 본다 ── */}
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 0 20px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.draft} onChange={e => setForm(p => ({ ...p, draft: e.target.checked }))}
+              style={{ width: 18, height: 18, marginTop: 2, accentColor: COLORS.primary }} />
+            <span>
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: COLORS.text }}>초안으로 두기</span>
+              <span style={{ fontSize: 12, color: COLORS.textMuted }}>켜두면 나만 볼 수 있어요. 다듬은 뒤 끄면 포트폴리오와 탐색에 공개돼요.</span>
+            </span>
+          </label>
 
           {/* ── 함께한 사람 — 작업 페이지 "함께한 사람"에 보인다. @프로필명이 공개 회원이면 그 포트폴리오로 연결 ── */}
           <fieldset style={{ border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '14px 16px 12px', margin: '0 0 24px' }}>
@@ -599,7 +616,7 @@ export default function SeriesPage() {
     setLoading(true);
     try {
       const [sRes, pRes] = await Promise.all([
-        seriesApi.getByMember(user.id),
+        seriesApi.getMine(),
         photoApi.getByMember(user.id),
       ]);
       setSeriesList(Array.isArray(sRes) ? sRes : sRes?.data ?? []);

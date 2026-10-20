@@ -105,6 +105,10 @@ export const seriesApi = {
   getOne: (id) =>
     apiClient.get(`/series/${id}`).then(r => r.data),
 
+  /** 내 작업(초안 포함, 인증) — 작가 본인 관리 화면은 공개 목록(getByMember, 초안 제외) 대신 이걸 쓴다 */
+  getMine: () =>
+    apiClient.get('/series/mine').then(r => r.data),
+
   /** 작업 탐색 (공개) — { data, page, size, hasNext } */
   discover: (params) =>
     apiClient.get('/series/discover', { params }).then(r => r.data),

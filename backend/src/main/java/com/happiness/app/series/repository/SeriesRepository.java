@@ -22,12 +22,13 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
     int unpinOthers(@Param("memberId") Long memberId, @Param("keepId") Long keepId);
 
     /**
-     * 작업 탐색 — 공개 포트폴리오 작가의, 사진이 1장 이상 있는 작업. 최근 수정순.
+     * 작업 탐색 — 공개 포트폴리오 작가의, 초안이 아니고 사진이 1장 이상 있는 작업. 최근 수정순.
      * shootType/location이 null이면 해당 조건을 건너뛴다(location은 작가 위치 부분 일치, 대소문자 무시).
      */
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
            "AND (:shootType IS NULL OR s.shootType = :shootType) " +
            "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY s.updatedAt DESC, s.id DESC")
     Slice<Series> discover(@Param("shootType") String shootType,
@@ -38,6 +39,7 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
            "AND (:shootType IS NULL OR s.shootType = :shootType) " +
            "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY (SELECT COUNT(a) FROM SeriesAppreciation a WHERE a.seriesId = s.id) DESC, s.updatedAt DESC, s.id DESC")
     Slice<Series> discoverByAppreciation(@Param("shootType") String shootType,
@@ -48,6 +50,7 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
            "AND (:shootType IS NULL OR s.shootType = :shootType) " +
            "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY (SELECT COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'WORK_VIEW' " +
            "AND e.targetType = 'SERIES' AND e.targetId = s.id) DESC, s.updatedAt DESC, s.id DESC")

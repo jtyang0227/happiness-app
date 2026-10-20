@@ -155,7 +155,7 @@ export default function SeriesScreen({ navigation }) {
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const res = await seriesApi.getByMember(user.id);
+      const res = await seriesApi.getMine();
       setSeries(res.data || res || []);
     } catch {
       setSeries([]);
@@ -201,7 +201,9 @@ export default function SeriesScreen({ navigation }) {
           <SeriesCollage previewPhotos={item.previewPhotos} coverUrl={item.coverUrl} />
           <View style={styles.cardMeta}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.seriesTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.seriesTitle} numberOfLines={1}>
+                {item.draft ? <Text style={styles.draftTag}>초안 · </Text> : null}{item.title}
+              </Text>
               {item.description ? (
                 <Text style={styles.seriesDesc} numberOfLines={1}>{item.description}</Text>
               ) : null}
@@ -219,7 +221,8 @@ export default function SeriesScreen({ navigation }) {
               ✎ 작업 노트 {item.shootType || item.story || item.clientLabel || item.shotOn ? '수정' : '쓰기'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* 초안은 공개 포트폴리오에 안 보이므로 대표 작업 토글을 숨긴다(웹 SeriesPage와 동일) */}
+          {!item.draft && <TouchableOpacity
             style={[styles.noteBtn, item.pinned && styles.pinBtnActive]}
             onPress={() => handleTogglePin(item)}
             accessibilityRole="button"
@@ -229,7 +232,7 @@ export default function SeriesScreen({ navigation }) {
             <Text style={[styles.noteBtnText, item.pinned && styles.pinBtnTextActive]}>
               📌 {item.pinned ? '대표 작업' : '대표로'}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity>}
         </View>
 
         {open && (
@@ -342,6 +345,7 @@ const styles = StyleSheet.create({
   noteBtn: { paddingVertical: 10, paddingHorizontal: 12,
     borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
   pinBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.tagBg },
+  draftTag: { color: COLORS.textMuted, fontWeight: '600' },
   pinBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
   noteBtnText: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textSecondary },
 

@@ -836,4 +836,45 @@ class CoreFlowIntegrationTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/api/series/" + work)).andExpect(jsonPath("$.credits.length()").value(0));
     }
+
+    // ── 작업 초안 (WORK_QUEUE 7) ─────────────────────────────────────
+
+    private void setDraft(User owner, long work, boolean draft) throws Exception {
+        mvc.perform(put("/api/series/" + work).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "초안 테스트", "draft", draft))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.draft").value(draft));
+    }
+
+    @Test
+    void 초안_작업은_작가_본인만_본다() throws Exception {
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        updateProfile(owner, Map.of("location", tag));
+        long work = createWork(owner, "초안 테스트", "가족", 1);
+        setDraft(owner, work, true);
+
+        assertThat(discoverIds("location", tag)).isEmpty();
+        mvc.perform(get("/api/series").param("memberId", String.valueOf(owner.id())))
+                .andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/portfolio/" + owner.profileName()))
+                .andExpect(jsonPath("$.series.length()").value(0));
+        mvc.perform(get("/api/series/" + work)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/series/" + work).header("Authorization", bearer(other))).andExpect(status().isNotFound());
+        mvc.perform(post("/api/series/" + work + "/appreciation").header("Authorization", bearer(other)))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/series/" + work).header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.draft").value(true));
+
+        mvc.perform(get("/api/series/mine")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/series/mine").header("Authorization", bearer(owner)))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].draft").value(true));
+
+        setDraft(owner, work, false);
+        assertThat(discoverIds("location", tag)).extracting(Number::longValue).containsExactly(work);
+        mvc.perform(get("/api/series/" + work)).andExpect(status().isOk());
+    }
 }

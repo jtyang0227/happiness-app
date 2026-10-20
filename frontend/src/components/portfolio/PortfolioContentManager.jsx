@@ -45,7 +45,7 @@ function TestimonialsManager() {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    Promise.allSettled([testimonialApi.list(user.id), seriesApi.getByMember(user.id)]).then(([t, w]) => {
+    Promise.allSettled([testimonialApi.list(user.id), seriesApi.getMine()]).then(([t, w]) => {
       if (cancelled) return;
       if (t.status === 'fulfilled' && Array.isArray(t.value)) setItems(t.value);
       if (w.status === 'fulfilled') setWorks(Array.isArray(w.value) ? w.value : w.value?.data ?? []);

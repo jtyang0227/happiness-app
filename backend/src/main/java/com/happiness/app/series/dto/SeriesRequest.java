@@ -20,6 +20,7 @@ public class SeriesRequest {
     private String shotOn;
     private String story;
     private Boolean pinned;
+    private Boolean draft;
     /** null = 변경 없음, [] = 비우기 */
     private List<CreditDto> credits;
 }

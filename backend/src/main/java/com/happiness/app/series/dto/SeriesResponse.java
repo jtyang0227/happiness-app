@@ -23,6 +23,7 @@ public class SeriesResponse {
     private String shotOn;
     private String story;
     private boolean pinned;
+    private boolean draft;
     private Integer photoCount;
     private List<PhotoResponse> photos;
     /** 보드 카드 콜라주용 — 최대 3개 썸네일 URL (목록 조회 시에만 채워짐) */
@@ -55,6 +56,7 @@ public class SeriesResponse {
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
                 .pinned(Boolean.TRUE.equals(series.getPinned()))
+                .draft(Boolean.TRUE.equals(series.getDraft()))
                 .credits(CreditsJson.read(series.getCreditsJson()))
                 .photoCount(photos != null ? photos.size() : 0)
                 .photos(photos)
@@ -78,6 +80,7 @@ public class SeriesResponse {
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
                 .pinned(Boolean.TRUE.equals(series.getPinned()))
+                .draft(Boolean.TRUE.equals(series.getDraft()))
                 .credits(CreditsJson.read(series.getCreditsJson()))
                 .photoCount(photoCount)
                 .previewPhotos(previewPhotos)
