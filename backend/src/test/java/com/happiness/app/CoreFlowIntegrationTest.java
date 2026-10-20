@@ -403,4 +403,82 @@ class CoreFlowIntegrationTest {
         mvc.perform(delete("/api/inquiry/" + inquiryId).header("Authorization", bearer(owner)))
                 .andExpect(status().isNoContent());
     }
+    // ── 작업 노트 P2 ────────────────────────────────────────────────────
+
+    @Test
+    void 추천사는_본인_작업에만_연결할_수_있다() throws Exception {
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        long mine = createSeries(owner, "내 작업");
+        long others = createSeries(other, "남의 작업");
+
+        mvc.perform(post("/api/testimonials").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("clientName", "고객", "content", "좋았어요", "seriesId", mine))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.seriesId").value(mine));
+        mvc.perform(post("/api/testimonials").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("clientName", "고객", "content", "x", "seriesId", others))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/testimonials/member/" + owner.id()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].seriesId").value(mine));
+    }
+
+    @Test
+    void 대표_작업은_작가당_하나만_고정된다() throws Exception {
+        User owner = signupAndLogin();
+        long a = createSeries(owner, "A");
+        long b = createSeries(owner, "B");
+        for (long id : new long[]{a, b}) {
+            mvc.perform(put("/api/series/" + id).header("Authorization", bearer(owner))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of("pinned", true))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.pinned").value(true));
+        }
+        mvc.perform(get("/api/series/" + a)).andExpect(jsonPath("$.pinned").value(false));
+        mvc.perform(get("/api/series/" + b)).andExpect(jsonPath("$.pinned").value(true));
+    }
+
+    private void track(long memberId, long seriesId) throws Exception {
+        mvc.perform(post("/api/analytics/track").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "eventType", "WORK_VIEW", "targetType", "SERIES",
+                                "targetId", seriesId, "memberId", memberId,
+                                "visitorToken", UUID.randomUUID().toString().replace("-", "")))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void 많이_본_작업은_조회수와_작업별_문의수를_보여준다() throws Exception {
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        long work = createSeries(owner, "봄 스몰웨딩");
+        long othersWork = createSeries(other, "남의 작업");
+
+        track(owner.id(), work);
+        track(owner.id(), work);
+        track(owner.id(), othersWork);       // 소유자가 다른 작업 → 기록되지 않아야 한다
+        sendInquiry(owner, work);
+
+        mvc.perform(get("/api/analytics/top-works").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].seriesId").value(work))
+                .andExpect(jsonPath("$[0].views").value(2))
+                .andExpect(jsonPath("$[0].inquiries").value(1));
+
+        // 문의는 서버가 INQUIRY_SENT로 직접 기록 → KPI에 반영
+        mvc.perform(get("/api/analytics/summary").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inquiryCount").value(1));
+
+        mvc.perform(get("/api/analytics/top-works").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(other)))
+                .andExpect(status().isForbidden());
+    }
 }

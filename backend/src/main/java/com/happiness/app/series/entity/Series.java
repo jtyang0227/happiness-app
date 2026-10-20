@@ -44,6 +44,9 @@ public class Series {
     @Column(columnDefinition = "TEXT")
     private String story;
 
+    /** 대표 작업 — 작가당 최대 1건. 기존 행 호환을 위해 nullable(null = false) */
+    private Boolean pinned;
+
     @Column(nullable = false)
     private Integer displayOrder;
 

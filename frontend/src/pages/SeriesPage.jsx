@@ -11,7 +11,7 @@ import { SHOOT_TYPES } from '../constants/shootTypes';
 const SHOT_ON_RE = /^\d{4}\.(0[1-9]|1[0-2])$/;
 
 /* ─── 시리즈 카드 ───────────────────────────────── */
-function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, workPath }) {
+function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, workPath, onTogglePin }) {
   return (
     <div style={{
       background: COLORS.surface,
@@ -70,9 +70,24 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, 
 
       {/* 정보 */}
       <div style={{ padding: '14px 16px' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>
-          {series.title}
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, margin: 0 }}>
+            {series.title}
+          </h3>
+          <button
+            onClick={() => onTogglePin(series)}
+            aria-pressed={!!series.pinned}
+            title={series.pinned ? '대표 작업 해제' : '포트폴리오 상단에 대표 작업으로 고정 (작가당 1개)'}
+            style={{
+              flexShrink: 0, padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              border: `1px solid ${series.pinned ? COLORS.primary : COLORS.border}`,
+              background: series.pinned ? COLORS.primaryLight : COLORS.surface,
+              color: series.pinned ? COLORS.primary : COLORS.textMuted,
+            }}
+          >
+            📌 {series.pinned ? '대표 작업' : '대표로'}
+          </button>
+        </div>
         {series.description && (
           <p style={{
             fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.5, marginBottom: 8,
@@ -553,6 +568,17 @@ export default function SeriesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // 대표 작업은 작가당 1개 — 서버가 다른 작업의 고정을 풀어주므로 화면도 같은 규칙으로 갱신
+  const handleTogglePin = async (series) => {
+    const next = !series.pinned;
+    try {
+      await seriesApi.update(series.id, { pinned: next });
+      setSeriesList(prev => prev.map(s => ({ ...s, pinned: s.id === series.id ? next : (next ? false : s.pinned) })));
+    } catch (e) {
+      alert(e?.response?.data?.message || '대표 작업 설정에 실패했습니다.');
+    }
+  };
+
   const handleDelete = async (series) => {
     if (!window.confirm(`"${series.title}" 시리즈를 삭제하시겠습니까?\n사진은 삭제되지 않습니다.`)) return;
     try {
@@ -646,6 +672,7 @@ export default function SeriesPage() {
               onManagePhotos={(s) => setPhotoPicker(s)}
               onMagazineView={handleMagazineView}
               workPath={user?.profileName ? `/portfolio/${user.profileName}/work/${series.id}` : null}
+              onTogglePin={handleTogglePin}
             />
           ))}
         </div>

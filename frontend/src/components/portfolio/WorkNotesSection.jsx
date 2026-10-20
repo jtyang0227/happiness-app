@@ -33,6 +33,63 @@ export function filterWorksByType(series = [], type) {
   return type ? series.filter(s => s.shootType === type) : series;
 }
 
+/** 대표 작업(작가당 최대 1건)을 맨 앞으로 — 나머지 순서는 작가가 정한 displayOrder 그대로 */
+export function pinnedFirst(series = []) {
+  return [...series].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
+}
+
+/**
+ * 대표 작업 카드 — 포트폴리오 상단에 1건 (작업 노트 P2).
+ * 대표 작업이 없으면 아무것도 그리지 않는다.
+ */
+export function FeaturedWorkCard({ series = [], profileName, theme = 'light', style }) {
+  const work = series.find(s => s.pinned);
+  if (!work || !profileName) return null;
+  const t = THEMES[theme] || THEMES.light;
+  const cover = work.coverImageUrl || work.previewPhotos?.[0];
+  const meta = [shootTypeLabel(work.shootType), work.clientLabel, work.shotOn].filter(Boolean).join(' · ');
+  return (
+    <section aria-label="대표 작업" style={{ maxWidth: 1040, margin: '0 auto', padding: '32px 24px 8px', ...style }}>
+      <style>{`
+        .featured-work { display: grid; grid-template-columns: 3fr 2fr; }
+        @media (max-width: 767px) { .featured-work { grid-template-columns: 1fr; } }
+        .featured-work:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 3px; }
+        .featured-work-cta { transition: transform 0.15s ease; display: inline-block; }
+        .featured-work:hover .featured-work-cta { transform: translateX(3px); }
+        @media (prefers-reduced-motion: reduce) { .featured-work:hover .featured-work-cta { transform: none; } }
+      `}</style>
+      <Link
+        to={`/portfolio/${profileName}/work/${work.id}`}
+        className="featured-work"
+        style={{
+          textDecoration: 'none', color: t.text, background: t.cardBg,
+          border: `1px solid ${t.cardBorder}`, borderRadius: 16, overflow: 'hidden',
+        }}
+      >
+        <div style={{ aspectRatio: '16 / 10', background: t.thumbBg }}>
+          {cover && <img src={cover} alt={work.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+        </div>
+        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', color: COLORS.primary }}>대표 작업</div>
+          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.3, wordBreak: 'keep-all', textWrap: 'balance' }}>{work.title}</div>
+          {meta && <div style={{ fontSize: 13, color: t.sub }}>{meta}</div>}
+          {(work.story || work.description) && (
+            <p style={{
+              fontSize: 14, lineHeight: 1.7, color: t.sub, margin: '4px 0 0', wordBreak: 'keep-all',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            }}>
+              {work.story || work.description}
+            </p>
+          )}
+          <span className="featured-work-cta" style={{ fontSize: 13, fontWeight: 700, color: COLORS.primary, marginTop: 6 }}>
+            작업 노트 보기 →
+          </span>
+        </div>
+      </Link>
+    </section>
+  );
+}
+
 /** 유형이 2개 이상일 때만 의미가 있으므로 그 외에는 아무것도 그리지 않는다 */
 export function WorkTypeFilter({ series, value, onChange, theme = 'light', style }) {
   const types = presentWorkTypes(series);
@@ -82,7 +139,10 @@ function WorkCard({ work, to, t }) {
         {cover && <img src={cover} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
       </div>
       <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35, wordBreak: 'keep-all' }}>{work.title}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35, wordBreak: 'keep-all' }}>
+          {work.pinned && <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.primary, marginRight: 6 }}>📌 대표</span>}
+          {work.title}
+        </div>
         <div style={{ fontSize: 12, color: t.sub, marginTop: 4 }}>
           {meta || `${work.photoCount ?? 0}장`}
         </div>
@@ -93,7 +153,7 @@ function WorkCard({ work, to, t }) {
 
 export default function WorkNotesSection({ series = [], profileName, theme = 'light', heading = '작업 노트', style }) {
   const [type, setType] = useState('');
-  const visible = useMemo(() => filterWorksByType(series, type), [series, type]);
+  const visible = useMemo(() => pinnedFirst(filterWorksByType(series, type)), [series, type]);
   if (!series.length || !profileName) return null;
   const t = THEMES[theme] || THEMES.light;
 

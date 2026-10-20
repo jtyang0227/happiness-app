@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -148,6 +149,7 @@ public class SeriesController {
 
     /** 시리즈 수정 */
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<SeriesResponse> updateSeries(
             @PathVariable Long id, @RequestBody SeriesRequest req, Authentication auth) {
         Long requesterId = SecurityUtil.getCurrentMemberId();
@@ -159,7 +161,11 @@ public class SeriesController {
         if (req.getCoverImageUrl() != null) series.setCoverImageUrl(req.getCoverImageUrl());
         if (req.getDisplayOrder() != null) series.setDisplayOrder(req.getDisplayOrder());
         applyWorkNote(series, req);
+        if (req.getPinned() != null) series.setPinned(req.getPinned());
         Series saved = seriesRepository.save(series);
+        if (Boolean.TRUE.equals(req.getPinned())) {
+            seriesRepository.unpinOthers(saved.getMemberId(), saved.getId());
+        }
         List<SeriesPhoto> sps = seriesPhotoRepository.findBySeriesIdOrderByDisplayOrderAsc(id);
         List<PhotoResponse> photos = sps.stream()
                 .map(sp -> photoRepository.findById(sp.getPhotoId()))

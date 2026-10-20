@@ -5,6 +5,8 @@ import KpiCard from './KpiCard';
 import LineChart from './LineChart';
 import DonutChart from './DonutChart';
 import TopPhotos from './TopPhotos';
+import TopWorks from './TopWorks';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PERIODS = [
   { label: '7일',  value: 7 },
@@ -26,6 +28,8 @@ export default function AnalyticsDashboard({ memberId }) {
   const [topPhotos, setTopPhotos] = useState([]);
   const [genreData, setGenreData] = useState([]);
   const [topMetric, setTopMetric] = useState('likes');
+  const [topWorks, setTopWorks] = useState([]);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -53,6 +57,16 @@ export default function AnalyticsDashboard({ memberId }) {
       })
       .catch(() => setError('분석 데이터를 불러오는데 실패했습니다.'))
       .finally(() => setLoading(false));
+  }, [memberId, period]);
+
+  // 많이 본 작업 — 본 대시보드 로딩과 분리(실패해도 다른 카드는 그대로)
+  useEffect(() => {
+    if (!memberId) return;
+    let cancelled = false;
+    analyticsApi.getTopWorks(memberId, period, 5)
+      .then(w => { if (!cancelled) setTopWorks(Array.isArray(w) ? w : []); })
+      .catch(() => { if (!cancelled) setTopWorks([]); });
+    return () => { cancelled = true; };
   }, [memberId, period]);
 
   // Reload top photos on metric change
@@ -162,6 +176,9 @@ export default function AnalyticsDashboard({ memberId }) {
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 240px', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16 }}>
           <TopPhotos photos={topPhotos} metric={topMetric} onChangeMetric={setTopMetric} />
+        </div>
+        <div style={{ flex: '1 1 320px', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16 }}>
+          <TopWorks works={topWorks} profileName={user?.id === memberId ? user?.profileName : null} />
         </div>
         {genreData.length > 0 && (
           <div style={{ flex: '1 1 200px', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16 }}>

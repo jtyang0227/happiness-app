@@ -17,4 +17,5 @@ public class SeriesRequest {
     private String clientLabel;
     private String shotOn;
     private String story;
+    private Boolean pinned;
 }

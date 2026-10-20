@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mq } from '../../../constants/breakpoints';
-import WorkNotesSection from '../WorkNotesSection';
+import WorkNotesSection, { FeaturedWorkCard } from '../WorkNotesSection';
 
 export default function TemplateMinimal({ member, photos, series, profileName, onInquiry }) {
   const navigate = useNavigate();
@@ -80,8 +80,8 @@ export default function TemplateMinimal({ member, photos, series, profileName, o
         </div>
       </div>
 
-      {/* 작업 노트 — 시리즈를 작업 사례로 (데이터 없으면 null) */}
-      <WorkNotesSection series={series} profileName={profileNameDisplay} style={{ maxWidth: 960, padding: '56px 32px' }} />
+      {/* 대표 작업 — 작가가 고정한 1건 (없으면 null) */}
+      <FeaturedWorkCard series={series} profileName={profileNameDisplay} style={{ maxWidth: 960, padding: '8px 32px 32px' }} />
 
       {/* Divider */}
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 32px' }}>
@@ -156,6 +156,9 @@ export default function TemplateMinimal({ member, photos, series, profileName, o
           </div>
         )}
       </div>
+
+      {/* 작업 노트 — 시리즈를 작업 사례로 (데이터 없으면 null) */}
+      <WorkNotesSection series={series} profileName={profileNameDisplay} style={{ maxWidth: 960, padding: '56px 32px' }} />
 
       {/* Divider */}
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 32px' }}>

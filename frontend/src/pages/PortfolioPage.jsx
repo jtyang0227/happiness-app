@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { applyPageMeta } from '../utils/pageMeta';
+import { trackView } from '../utils/trackView';
 import { followApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
@@ -124,6 +125,12 @@ export default function PortfolioPage() {
     })();
     return () => { cancelled = true; };
   }, [profileName]);
+
+  /* ── 방문 기록 (분석 대시보드 PORTFOLIO_VIEW) — 프로필이 바뀔 때 1회 ── */
+  useEffect(() => {
+    if (!data?.member?.id) return;
+    trackView({ ownerId: data.member.id, viewerId: user?.id, eventType: 'PORTFOLIO_VIEW', targetType: 'PORTFOLIO' });
+  }, [data?.member?.id, user?.id]); // user는 authStore가 세션에서 동기 복원하므로 첫 렌더부터 확정돼 있다
 
   /* ── SEO 메타태그 동적 주입 ── */
   useEffect(() => {

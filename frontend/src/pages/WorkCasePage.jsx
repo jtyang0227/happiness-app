@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import { seriesApi } from '../services/api';
+import { seriesApi, bookingApi } from '../services/api';
+import { testimonialApi } from '../services/portfolioApi';
+import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
-import { shootTypeLabel } from '../constants/shootTypes';
+import { shootTypeLabel, BOOKING_CODE_BY_SHOOT_TYPE } from '../constants/shootTypes';
 import { applyPageMeta } from '../utils/pageMeta';
+import { trackView } from '../utils/trackView';
 import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
 
@@ -80,6 +83,9 @@ export default function WorkCasePage() {
   const [others, setOthers] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | ready | notfound | error
   const [copied, setCopied] = useState(false);
+  const [reviews, setReviews] = useState([]);        // 이 작업에 연결된 고객 후기
+  const [bookable, setBookable] = useState(false);   // 이번 달·다음 달에 예약 가능일이 있는지
+  const { user } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +117,28 @@ export default function WorkCasePage() {
     return () => { cancelled = true; };
   }, [profileName, seriesId]);
 
+  // 부가 정보 — 실패해도 본문은 그대로 보인다
+  useEffect(() => {
+    if (status !== 'ready' || !member || !work) return;
+    let cancelled = false;
+    trackView({ ownerId: member.id, viewerId: user?.id, eventType: 'WORK_VIEW', targetType: 'SERIES', targetId: work.id });
+
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    Promise.allSettled([
+      testimonialApi.list(member.id),
+      bookingApi.getAvailability(profileName, now.getFullYear(), now.getMonth() + 1),
+      bookingApi.getAvailability(profileName, next.getFullYear(), next.getMonth() + 1),
+    ]).then(([t, a1, a2]) => {
+      if (cancelled) return;
+      const list = t.status === 'fulfilled' && Array.isArray(t.value) ? t.value : [];
+      setReviews(list.filter(r => r.seriesId === work.id));
+      const hasDates = r => r.status === 'fulfilled' && (r.value?.availableDates?.length ?? 0) > 0;
+      setBookable(hasDates(a1) || hasDates(a2));
+    });
+    return () => { cancelled = true; };
+  }, [status, member, work, profileName, user?.id]);
+
   useEffect(() => {
     if (status !== 'ready' || !work) return;
     const artist = member?.name || profileName;
@@ -134,6 +162,11 @@ export default function WorkCasePage() {
     } catch {
       window.prompt('아래 주소를 복사하세요', window.location.href);
     }
+  };
+
+  const handleBooking = () => {
+    const code = BOOKING_CODE_BY_SHOOT_TYPE[work.shootType];
+    navigate(`/booking/${profileName}${code ? `?shootType=${code}` : ''}`);
   };
 
   const handleInquiry = () => {
@@ -240,6 +273,26 @@ export default function WorkCasePage() {
         </section>
       )}
 
+      {reviews.length > 0 && (
+        <section aria-labelledby="work-reviews-heading" style={{ ...TEXT_COLUMN, paddingTop: 36 }}>
+          <h2 id="work-reviews-heading" style={{ fontSize: 13, fontWeight: 700, color: COLORS.textMuted, margin: '0 0 12px' }}>
+            이 작업의 고객 후기
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {reviews.map(r => (
+              <figure key={r.id} style={{ margin: 0, paddingLeft: 16, borderLeft: `3px solid ${COLORS.border}` }}>
+                <blockquote style={{ margin: 0, fontSize: 17, lineHeight: 1.8, whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
+                  {r.content}
+                </blockquote>
+                <figcaption style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 8 }}>
+                  — {[r.clientName, r.clientRole].filter(Boolean).join(' · ')}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section aria-label="작업 사진" style={{ ...COLUMN, paddingTop: 48 }}>
         {photos.length === 0 ? (
           <p style={{ textAlign: 'center', fontSize: 14, color: COLORS.textMuted, padding: '48px 0', background: COLORS.bg, borderRadius: 12, margin: 0 }}>
@@ -277,6 +330,9 @@ export default function WorkCasePage() {
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Button size="lg" onClick={handleInquiry}>이런 촬영 문의하기</Button>
+            {bookable && (
+              <Button size="lg" variant="secondary" onClick={handleBooking}>바로 예약하기</Button>
+            )}
             <Button size="lg" variant="ghost" onClick={() => navigate(portfolioPath)}>포트폴리오 전체 보기</Button>
           </div>
         </div>

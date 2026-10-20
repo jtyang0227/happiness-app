@@ -6,7 +6,7 @@ import MagazineGrid from '../MagazineGrid';
 import { seriesApi } from '../../../services/api';
 import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioApi';
 import TestimonialsSection from '../TestimonialsSection';
-import { WorkTypeFilter, filterWorksByType } from '../WorkNotesSection';
+import { WorkTypeFilter, filterWorksByType, pinnedFirst, FeaturedWorkCard } from '../WorkNotesSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
 
@@ -377,6 +377,9 @@ export default function TemplateEditorial({
         </div>
       </div>
 
+      {/* 대표 작업 — 작가가 고정한 1건 (없으면 null) */}
+      <FeaturedWorkCard series={series} profileName={member?.profileName} />
+
       {/* BIO */}
       {member?.bio && (
         <Reveal style={{ maxWidth: 640, margin: '0 auto', padding: '52px 32px 32px', textAlign: 'center' }}>
@@ -475,7 +478,7 @@ export default function TemplateEditorial({
             <WorkTypeFilter series={series} value={workType} onChange={setWorkType} style={{ justifyContent: 'center', marginTop: 16 }} />
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
-            {filterWorksByType(series, workType).map(s => (
+            {pinnedFirst(filterWorksByType(series, workType)).map(s => (
               <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick}
                 workPath={member?.profileName ? `/portfolio/${member.profileName}/work/${s.id}` : null} />
             ))}

@@ -27,6 +27,9 @@ public class Testimonial {
     @Column(length = 20)
     private String shootDate;
 
+    /** 연결된 작업(시리즈) — 작업 노트 페이지에 이 후기를 함께 보여준다 (PLANNING_portfolio-work-notes-concept.md P2) */
+    private Long seriesId;
+
     @Column(nullable = false)
     private boolean featured = false;
 

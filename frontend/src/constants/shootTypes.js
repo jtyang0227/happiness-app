@@ -13,5 +13,16 @@ export const SHOOT_TYPES = [
   { value: '기타', label: '기타' },
 ];
 
+/**
+ * 작업 노트 유형 → 예약 위저드(BookingPage, components/booking/ShootTypeSelector) 코드.
+ * 뜻이 명확히 같은 3개만 매핑한다. 나머지(풍경·행사·가족·기타)는 예약 코드와 1:1로 맞지 않아
+ * 프리셋 없이 예약 위저드 첫 단계에서 고르게 한다.
+ */
+export const BOOKING_CODE_BY_SHOOT_TYPE = {
+  '결혼식': 'WEDDING',
+  '인물/프로필': 'PROFILE',
+  '제품촬영': 'COMMERCIAL',
+};
+
 export const shootTypeLabel = (value) =>
   SHOOT_TYPES.find(t => t.value === value)?.label || null;

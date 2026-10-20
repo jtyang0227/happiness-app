@@ -59,4 +59,24 @@ public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, 
             @Param("token") String token,
             @Param("since") LocalDateTime since
     );
+
+    /** 기간 내 대상(targetType)별 이벤트 수 상위 — 작업 노트 P2 "많이 본 작업" */
+    @Query("""
+        SELECT e.targetId, COUNT(e) as cnt
+        FROM AnalyticsEvent e
+        WHERE e.memberId = :memberId
+          AND e.eventType = :eventType
+          AND e.targetType = :targetType
+          AND e.targetId IS NOT NULL
+          AND e.createdAt >= :since
+        GROUP BY e.targetId
+        ORDER BY cnt DESC
+        """)
+    List<Object[]> topTargetsSince(
+            @Param("memberId") Long memberId,
+            @Param("eventType") String eventType,
+            @Param("targetType") String targetType,
+            @Param("since") LocalDateTime since,
+            Pageable pageable
+    );
 }

@@ -5,7 +5,7 @@ import { testimonialApi, pressApi, brandApi } from '../../../services/portfolioA
 import TestimonialsSection from '../TestimonialsSection';
 import PressAwardsSection from '../PressAwardsSection';
 import ClientLogoWall from '../ClientLogoWall';
-import WorkNotesSection from '../WorkNotesSection';
+import WorkNotesSection, { FeaturedWorkCard } from '../WorkNotesSection';
 
 export default function TemplateDarkRoom({ member, photos, series = [], profileName }) {
   const navigate = useNavigate();
@@ -115,6 +115,11 @@ export default function TemplateDarkRoom({ member, photos, series = [], profileN
             문의하기
           </button>
         </div>
+      </div>
+
+      {/* 대표 작업 — 작가가 고정한 1건 (없으면 null) */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <FeaturedWorkCard series={series} profileName={profileNameDisplay} theme="dark" />
       </div>
 
       {/* 무드 필터 */}

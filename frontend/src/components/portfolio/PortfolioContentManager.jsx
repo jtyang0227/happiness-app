@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { testimonialApi, pressApi, pricingApi, brandApi } from '../../services/portfolioApi';
+import { seriesApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
 
 const SECTION_TABS = [
@@ -29,29 +31,51 @@ const smallBtn = (danger) => ({
 });
 
 /* ─── 추천사 관리 ─── */
+const EMPTY_TESTIMONIAL = { clientName: '', clientRole: '', content: '', shootDate: '', seriesId: '' };
+
 function TestimonialsManager() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
-  const [form, setForm]   = useState({ clientName: '', clientRole: '', content: '', shootDate: '' });
+  const [works, setWorks] = useState([]);   // 연결할 작업(시리즈) 후보 — 작업 노트 P2
+  const [form, setForm]   = useState(EMPTY_TESTIMONIAL);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding]   = useState(false);
 
+  // 기존 추천사와 내 작업 목록 — 이전에는 memberId를 몰라 기존 추천사를 아예 불러오지 못했다
   useEffect(() => {
-    (async () => {
-      try {
-        // 내 추천사는 memberId 없이 profileName으로 조회해야 하나
-        // 서버에서는 /member/:id로만 공개 — 일단 authApi로 memberId 가져오는 방식 없으니
-        // 비워두고 추가/삭제만 가능하게 처리
-      } catch {}
-    })();
-  }, []);
+    if (!user?.id) return;
+    let cancelled = false;
+    Promise.allSettled([testimonialApi.list(user.id), seriesApi.getByMember(user.id)]).then(([t, w]) => {
+      if (cancelled) return;
+      if (t.status === 'fulfilled' && Array.isArray(t.value)) setItems(t.value);
+      if (w.status === 'fulfilled') setWorks(Array.isArray(w.value) ? w.value : w.value?.data ?? []);
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const handleLink = async (id, seriesId) => {
+    try {
+      const updated = await testimonialApi.update(id, { seriesId: seriesId || null });
+      setItems(p => p.map(x => (x.id === id ? updated : x)));
+    } catch (e) {
+      alert(e?.response?.data?.message || '작업 연결에 실패했습니다.');
+    }
+  };
+
+  const workSelect = (value, onChange, ariaLabel) => (
+    <select value={value ?? ''} onChange={e => onChange(e.target.value)} aria-label={ariaLabel} style={{ ...inputStyle, cursor: 'pointer' }}>
+      <option value="">연결할 작업 없음</option>
+      {works.map(w => <option key={w.id} value={w.id}>{w.title}</option>)}
+    </select>
+  );
 
   const handleAdd = async () => {
     if (!form.clientName.trim() || !form.content.trim()) return;
     setLoading(true);
     try {
-      const created = await testimonialApi.create(form);
+      const created = await testimonialApi.create({ ...form, seriesId: form.seriesId || null });
       setItems(p => [created, ...p]);
-      setForm({ clientName: '', clientRole: '', content: '', shootDate: '' });
+      setForm(EMPTY_TESTIMONIAL);
       setAdding(false);
     } catch {} finally { setLoading(false); }
   };
@@ -74,6 +98,11 @@ function TestimonialsManager() {
             <div style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 6, lineHeight: 1.6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               "{t.content}"
             </div>
+            {works.length > 0 && (
+              <div style={{ marginTop: 8, maxWidth: 260 }}>
+                {workSelect(t.seriesId, v => handleLink(t.id, v), `${t.clientName} 추천사를 연결할 작업`)}
+              </div>
+            )}
           </div>
           <button onClick={() => handleDelete(t.id)} style={smallBtn(true)}>삭제</button>
         </div>
@@ -88,6 +117,12 @@ function TestimonialsManager() {
           <input placeholder="직함 / 역할 (선택)" value={form.clientRole} onChange={e => setForm(p => ({ ...p, clientRole: e.target.value }))} style={inputStyle} />
           <textarea placeholder="추천사 내용 *" value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
           <input placeholder="촬영 날짜 (예: 2025.03)" value={form.shootDate} onChange={e => setForm(p => ({ ...p, shootDate: e.target.value }))} style={inputStyle} />
+          {works.length > 0 && workSelect(form.seriesId, v => setForm(p => ({ ...p, seriesId: v })), '추천사를 연결할 작업')}
+          {works.length > 0 && (
+            <p style={{ fontSize: 11, color: COLORS.textMuted, margin: '0 0 8px' }}>
+              작업을 연결하면 그 작업 노트 페이지에 "이 작업의 고객 후기"로 함께 보여요.
+            </p>
+          )}
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button onClick={() => setAdding(false)} style={{ ...smallBtn(false), flex: 1, background: COLORS.bg, color: COLORS.textSecondary }}>취소</button>
             <button onClick={handleAdd} disabled={loading} style={{ ...smallBtn(false), flex: 1, opacity: loading ? 0.7 : 1 }}>

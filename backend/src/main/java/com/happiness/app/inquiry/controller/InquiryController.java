@@ -5,6 +5,8 @@ import com.happiness.app.inquiry.dto.InquiryResponse;
 import com.happiness.app.inquiry.entity.Inquiry;
 import com.happiness.app.inquiry.repository.InquiryRepository;
 import com.happiness.app.inquiry.service.InquiryEmailService;
+import com.happiness.app.analytics.entity.AnalyticsEvent;
+import com.happiness.app.analytics.repository.AnalyticsEventRepository;
 import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.series.entity.Series;
@@ -30,6 +32,7 @@ public class InquiryController {
     private final MemberRepository memberRepository;
     private final InquiryEmailService emailService;
     private final SeriesRepository seriesRepository;
+    private final AnalyticsEventRepository analyticsEventRepository;
 
     /** 수신자 본인 또는 관리자만 — 요청 파라미터의 memberId를 그대로 믿지 않는다 */
     private static boolean isSelfOrAdmin(Long memberId) {
@@ -64,6 +67,20 @@ public class InquiryController {
                 .message(req.getMessage().trim())
                 .sourceSeriesId(sourceSeriesId)
                 .build());
+
+        // 분석 KPI "문의" — 클라이언트 track 호출에 의존하지 않고 저장 시점에 서버가 직접 기록한다.
+        // 기록 실패가 문의 접수를 막지 않도록 격리
+        try {
+            analyticsEventRepository.save(AnalyticsEvent.builder()
+                    .eventType("INQUIRY_SENT")
+                    .targetType(sourceSeriesId != null ? "SERIES" : "PORTFOLIO")
+                    .targetId(sourceSeriesId)
+                    .memberId(req.getReceiverMemberId())
+                    .build());
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(InquiryController.class)
+                    .warn("[Analytics] INQUIRY_SENT 기록 실패 (문의는 저장됨): {}", e.getMessage());
+        }
 
         // 비동기 이메일 발송 (실패해도 문의는 저장됨)
         memberRepository.findById(req.getReceiverMemberId()).ifPresent(m ->

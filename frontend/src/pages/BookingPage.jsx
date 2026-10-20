@@ -13,7 +13,11 @@ const STEPS = ['촬영 종류', '날짜 · 시간', '정보 입력'];
 export default function BookingPage() {
   const { profileName } = useParams();
   const [step, setStep] = useState(0);
-  const [shootType, setShootType] = useState('');
+  // 작업 노트 페이지의 "바로 예약하기"에서 넘어오면 촬영 종류를 미리 선택한다(유효한 코드만)
+  const [shootType, setShootType] = useState(() => {
+    const preset = new URLSearchParams(window.location.search).get('shootType');
+    return SHOOT_TYPES.some(t => t.key === preset) ? preset : '';
+  });
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [selectedDate, setSelectedDate] = useState('');

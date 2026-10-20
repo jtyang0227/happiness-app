@@ -1,5 +1,9 @@
 package com.happiness.app.analytics.service;
 
+import com.happiness.app.analytics.dto.TopWorkDto;
+import com.happiness.app.inquiry.repository.InquiryRepository;
+import com.happiness.app.series.entity.Series;
+import com.happiness.app.series.repository.SeriesRepository;
 import com.happiness.app.analytics.dto.*;
 import com.happiness.app.analytics.entity.AnalyticsEvent;
 import com.happiness.app.analytics.repository.AnalyticsEventRepository;
@@ -25,6 +29,8 @@ public class AnalyticsService {
 
     private final AnalyticsEventRepository analyticsEventRepository;
     private final PhotoRepository photoRepository;
+    private final SeriesRepository seriesRepository;
+    private final InquiryRepository inquiryRepository;
 
     // in-memory rate limiting: visitorToken -> [count, windowStartEpochSecond]
     private final ConcurrentHashMap<String, long[]> trackRateMap = new ConcurrentHashMap<>();
@@ -37,6 +43,13 @@ public class AnalyticsService {
         try {
             if (req.getMemberId() == null || req.getEventType() == null || req.getEventType().isBlank()) {
                 return;
+            }
+
+            // 작업 조회는 그 작업의 실제 작가에게만 기록한다 — 남의 작업 조회수를 부풀리는 요청은 버린다
+            if ("SERIES".equals(req.getTargetType())) {
+                boolean owned = req.getTargetId() != null && seriesRepository.findById(req.getTargetId())
+                        .map(s -> s.getMemberId().equals(req.getMemberId())).orElse(false);
+                if (!owned) return;
             }
 
             // Rate limit by visitorToken
@@ -147,6 +160,37 @@ public class AnalyticsService {
                     .metric(metric)
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    // ── TOP WORKS (작업 노트 P2) ────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<TopWorkDto> getTopWorks(Long memberId, int period, int limit) {
+        LocalDateTime since = LocalDateTime.now().minusDays(period);
+        List<Object[]> rows = analyticsEventRepository.topTargetsSince(
+                memberId, "WORK_VIEW", "SERIES", since, PageRequest.of(0, limit));
+        List<Long> seriesIds = rows.stream().map(r -> ((Number) r[0]).longValue()).collect(Collectors.toList());
+        if (seriesIds.isEmpty()) return List.of();
+
+        Map<Long, Series> seriesMap = new HashMap<>();
+        seriesRepository.findAllById(seriesIds).forEach(s -> seriesMap.put(s.getId(), s));
+        Map<Long, Long> inquiryMap = new HashMap<>();
+        inquiryRepository.countBySourceSeriesSince(memberId, seriesIds, since)
+                .forEach(r -> inquiryMap.put(((Number) r[0]).longValue(), ((Number) r[1]).longValue()));
+
+        return rows.stream()
+                .map(r -> ((Number) r[0]).longValue())
+                .filter(seriesMap::containsKey)          // 삭제된 작업은 제외
+                .map(id -> {
+                    Series s = seriesMap.get(id);
+                    long views = rows.stream().filter(r -> ((Number) r[0]).longValue() == id)
+                            .findFirst().map(r -> ((Number) r[1]).longValue()).orElse(0L);
+                    return TopWorkDto.builder()
+                            .seriesId(id).title(s.getTitle()).coverImageUrl(s.getCoverImageUrl())
+                            .views(views).inquiries(inquiryMap.getOrDefault(id, 0L))
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     // ── GENRE DISTRIBUTION ─────────────────────────────────────────────────────

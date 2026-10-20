@@ -21,6 +21,10 @@ export const analyticsApi = {
   getTopPhotos: (memberId, metric = 'likes', limit = 5) =>
     apiClient.get('/analytics/top-photos', { params: { memberId, metric, limit } }).then(r => r.data),
 
+  /** 많이 본 작업 + 작업별 문의 수 (작업 노트 P2) */
+  getTopWorks: (memberId, period = 30, limit = 5) =>
+    apiClient.get('/analytics/top-works', { params: { memberId, period, limit } }).then(r => r.data),
+
   getGenreDistribution: (memberId) =>
     apiClient.get('/analytics/genre-distribution', { params: { memberId } }).then(r => r.data),
 };

@@ -22,6 +22,7 @@ public class SeriesResponse {
     private String clientLabel;
     private String shotOn;
     private String story;
+    private boolean pinned;
     private Integer photoCount;
     private List<PhotoResponse> photos;
     /** 보드 카드 콜라주용 — 최대 3개 썸네일 URL (목록 조회 시에만 채워짐) */
@@ -47,6 +48,7 @@ public class SeriesResponse {
                 .clientLabel(series.getClientLabel())
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
+                .pinned(Boolean.TRUE.equals(series.getPinned()))
                 .photoCount(photos != null ? photos.size() : 0)
                 .photos(photos)
                 .createdAt(series.getCreatedAt())
@@ -68,6 +70,7 @@ public class SeriesResponse {
                 .clientLabel(series.getClientLabel())
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
+                .pinned(Boolean.TRUE.equals(series.getPinned()))
                 .photoCount(photoCount)
                 .previewPhotos(previewPhotos)
                 .createdAt(series.getCreatedAt())

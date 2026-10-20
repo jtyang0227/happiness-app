@@ -63,6 +63,20 @@ public class AnalyticsController {
     }
 
     /**
+     * GET /api/analytics/top-works — 많이 본 작업 + 작업별 문의 수 (인증 필요, 본인만, 작업 노트 P2)
+     */
+    @GetMapping("/top-works")
+    public ResponseEntity<List<com.happiness.app.analytics.dto.TopWorkDto>> topWorks(
+            @RequestParam Long memberId,
+            @RequestParam(defaultValue = "30") int period,
+            @RequestParam(defaultValue = "5") int limit) {
+        verifyMemberAccess(memberId);
+        int safePeriod = Math.max(1, Math.min(365, period));
+        int safeLimit = Math.max(1, Math.min(20, limit));
+        return ResponseEntity.ok(analyticsService.getTopWorks(memberId, safePeriod, safeLimit));
+    }
+
+    /**
      * GET /api/analytics/genre-distribution — 장르 분포 (인증 필요, 본인만)
      */
     @GetMapping("/genre-distribution")
