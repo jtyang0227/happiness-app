@@ -26,7 +26,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * dev 프로필(H2 in-memory)로 실제 Spring 컨텍스트 + JWT 필터를 그대로 태운다.
  * 테스트끼리 같은 DB를 공유하므로 회원 이메일·프로필명은 매번 랜덤으로 만든다.
  */
-@SpringBootTest
+// 전역 IP rate limit(기본 100req/60s)은 이 테스트의 검증 대상이 아니다. 모든 요청이 같은 127.0.0.1에서 나가므로
+// 테스트가 늘면 무작위 테스트가 429로 깨진다 — 이 클래스에서만 한도를 크게 올린다(운영 설정은 그대로).
+@SpringBootTest(properties = {
+        "security.rate-limit.capacity=100000",
+        "security.rate-limit.refill-tokens=100000"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
 class CoreFlowIntegrationTest {
@@ -480,5 +485,62 @@ class CoreFlowIntegrationTest {
         mvc.perform(get("/api/analytics/top-works").param("memberId", String.valueOf(owner.id()))
                         .header("Authorization", bearer(other)))
                 .andExpect(status().isForbidden());
+    }
+    // ── 사진 좋아요 IDOR + 인기 사진/사진 조회 분석 ───────────────────────
+
+    @Test
+    void 남의_이름으로_좋아요_저장할_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User fan = signupAndLogin();
+        long photoId = createPhoto(owner);
+
+        mvc.perform(post("/api/photos/" + photoId + "/likes").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(fan)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/photos/" + photoId + "/saves").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(fan)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/photos/" + photoId + "/likes").param("memberId", String.valueOf(fan.id()))
+                        .header("Authorization", bearer(fan)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void 인기_사진은_카운터와_조회_이벤트로_집계된다() throws Exception {
+        User owner = signupAndLogin();
+        User fan = signupAndLogin();
+        long liked = createPhoto(owner);
+        long viewed = createPhoto(owner);
+        long othersPhoto = createPhoto(fan);
+
+        mvc.perform(post("/api/photos/" + liked + "/likes").param("memberId", String.valueOf(fan.id()))
+                        .header("Authorization", bearer(fan)))
+                .andExpect(status().isCreated());
+
+        for (long target : new long[]{viewed, viewed, othersPhoto}) {   // 남의 사진은 기록되지 않아야 한다
+            mvc.perform(post("/api/analytics/track").contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of(
+                                    "eventType", "PHOTO_VIEW", "targetType", "PHOTO", "targetId", target,
+                                    "memberId", owner.id(), "visitorToken", UUID.randomUUID().toString().replace("-", "")))))
+                    .andExpect(status().isOk());
+        }
+
+        mvc.perform(get("/api/analytics/top-photos").param("memberId", String.valueOf(owner.id()))
+                        .param("metric", "likes").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].photoId").value(liked))
+                .andExpect(jsonPath("$[0].count").value(1));
+
+        mvc.perform(get("/api/analytics/top-photos").param("memberId", String.valueOf(owner.id()))
+                        .param("metric", "views").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].photoId").value(viewed))
+                .andExpect(jsonPath("$[0].count").value(2));
+
+        mvc.perform(get("/api/analytics/summary").param("memberId", String.valueOf(owner.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(jsonPath("$.photoViews").value(2));
     }
 }

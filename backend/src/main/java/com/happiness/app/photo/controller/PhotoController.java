@@ -454,6 +454,8 @@ public class PhotoController {
 
     @PostMapping("/{photoId}/likes")
     public ResponseEntity<?> likePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
+        // 요청 파라미터의 memberId를 그대로 믿지 않는다 — 남의 이름으로 좋아요/저장 방지
+        if (!isSelfOrAdmin(memberId)) return errorResponse(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
         Photo photo = photoRepository.findById(photoId).orElse(null);
         if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (photoLikeRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
@@ -472,6 +474,8 @@ public class PhotoController {
 
     @DeleteMapping("/{photoId}/likes")
     public ResponseEntity<?> unlikePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
+        // 요청 파라미터의 memberId를 그대로 믿지 않는다 — 남의 이름으로 좋아요/저장 방지
+        if (!isSelfOrAdmin(memberId)) return errorResponse(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
         Photo photo = photoRepository.findById(photoId).orElse(null);
         if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (!photoLikeRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
@@ -533,6 +537,8 @@ public class PhotoController {
 
     @PostMapping("/{photoId}/saves")
     public ResponseEntity<?> savePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
+        // 요청 파라미터의 memberId를 그대로 믿지 않는다 — 남의 이름으로 좋아요/저장 방지
+        if (!isSelfOrAdmin(memberId)) return errorResponse(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
         Photo photo = photoRepository.findById(photoId).orElse(null);
         if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (photoSaveRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
@@ -551,6 +557,8 @@ public class PhotoController {
 
     @DeleteMapping("/{photoId}/saves")
     public ResponseEntity<?> unsavePhoto(@PathVariable Long photoId, @RequestParam Long memberId) {
+        // 요청 파라미터의 memberId를 그대로 믿지 않는다 — 남의 이름으로 좋아요/저장 방지
+        if (!isSelfOrAdmin(memberId)) return errorResponse(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
         Photo photo = photoRepository.findById(photoId).orElse(null);
         if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         if (!photoSaveRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {

@@ -45,10 +45,15 @@ public class AnalyticsService {
                 return;
             }
 
-            // 작업 조회는 그 작업의 실제 작가에게만 기록한다 — 남의 작업 조회수를 부풀리는 요청은 버린다
+            // 작업·사진 조회는 그 콘텐츠의 실제 작가에게만 기록한다 — 남의 조회수를 부풀리는 요청은 버린다
             if ("SERIES".equals(req.getTargetType())) {
                 boolean owned = req.getTargetId() != null && seriesRepository.findById(req.getTargetId())
                         .map(s -> s.getMemberId().equals(req.getMemberId())).orElse(false);
+                if (!owned) return;
+            }
+            if ("PHOTO".equals(req.getTargetType())) {
+                boolean owned = req.getTargetId() != null && photoRepository.findById(req.getTargetId())
+                        .map(p -> req.getMemberId().equals(p.getMemberId())).orElse(false);
                 if (!owned) return;
             }
 
@@ -84,6 +89,10 @@ public class AnalyticsService {
         long portfolioViewsPrev = analyticsEventRepository.countByMemberAndTypeSince(memberId, "PORTFOLIO_VIEW", prevStart)
                 - portfolioViews;
 
+        long photoViews = analyticsEventRepository.countByMemberAndTypeSince(memberId, "PHOTO_VIEW", currentStart);
+        long photoViewsPrev = analyticsEventRepository.countByMemberAndTypeSince(memberId, "PHOTO_VIEW", prevStart)
+                - photoViews;
+
         long totalLikes = photoRepository.sumLikesCountByMemberId(memberId);
         long totalSaves = photoRepository.sumSavesCountByMemberId(memberId);
 
@@ -95,6 +104,9 @@ public class AnalyticsService {
                 .portfolioViews(portfolioViews)
                 .portfolioViewsPrev(portfolioViewsPrev)
                 .portfolioViewsChange(calcChange(portfolioViews, portfolioViewsPrev))
+                .photoViews(photoViews)
+                .photoViewsPrev(photoViewsPrev)
+                .photoViewsChange(calcChange(photoViews, photoViewsPrev))
                 .totalLikes(totalLikes)
                 .totalLikesPrev(0)
                 .totalLikesChange(0)
@@ -129,37 +141,56 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public List<TopPhotoDto> getTopPhotos(Long memberId, String metric, int limit) {
-        // Map metric to event type
-        String eventType = switch (metric.toLowerCase()) {
-            case "likes"  -> "PHOTO_LIKE";
-            case "saves"  -> "PHOTO_SAVE";
-            default       -> "PHOTO_VIEW";
-        };
+        String m = metric == null ? "views" : metric.toLowerCase();
 
+        // 좋아요/저장/공유는 사진 엔티티의 카운터가 원천이다. 예전에는 PHOTO_LIKE/PHOTO_SAVE 이벤트를 집계했지만
+        // 그 이벤트를 기록하는 곳이 없어 카드가 항상 비어 있었고, "shares"는 조회 이벤트로 잘못 매핑돼 있었다.
+        if (!"views".equals(m)) {
+            String field = switch (m) {
+                case "saves"  -> "savesCount";
+                case "shares" -> "sharesCount";
+                default       -> "likesCount";
+            };
+            return photoRepository.findByMemberId(memberId,
+                            PageRequest.of(0, limit, org.springframework.data.domain.Sort.by(
+                                    org.springframework.data.domain.Sort.Direction.DESC, field, "createdAt")))
+                    .stream()
+                    .map(p -> toTopPhoto(p, m, switch (field) {
+                        case "savesCount"  -> nz(p.getSavesCount());
+                        case "sharesCount" -> nz(p.getSharesCount());
+                        default            -> nz(p.getLikesCount());
+                    }))
+                    .filter(dto -> dto.getCount() > 0)
+                    .collect(Collectors.toList());
+        }
+
+        // 조회수는 PHOTO_VIEW 이벤트(사진 상세·모달 진입 시 기록)
         List<Object[]> rows = analyticsEventRepository.topPhotosByEvent(
-                memberId, eventType, PageRequest.of(0, limit));
-
-        List<Long> photoIds = rows.stream()
-                .map(r -> ((Number) r[0]).longValue())
-                .collect(Collectors.toList());
-
+                memberId, "PHOTO_VIEW", PageRequest.of(0, limit));
+        List<Long> photoIds = rows.stream().map(r -> ((Number) r[0]).longValue()).collect(Collectors.toList());
         Map<Long, Photo> photoMap = new HashMap<>();
         if (!photoIds.isEmpty()) {
             photoRepository.findAllById(photoIds).forEach(p -> photoMap.put(p.getId(), p));
         }
+        return rows.stream()
+                .filter(r -> photoMap.containsKey(((Number) r[0]).longValue()))   // 삭제된 사진 제외
+                .map(r -> toTopPhoto(photoMap.get(((Number) r[0]).longValue()), "views", ((Number) r[1]).longValue()))
+                .collect(Collectors.toList());
+    }
 
-        return rows.stream().map(row -> {
-            Long photoId = ((Number) row[0]).longValue();
-            long cnt = ((Number) row[1]).longValue();
-            Photo photo = photoMap.get(photoId);
-            return TopPhotoDto.builder()
-                    .photoId(photoId)
-                    .title(photo != null ? photo.getTitle() : null)
-                    .thumbnailUrl(photo != null ? photo.getThumbnailUrl() : null)
-                    .count(cnt)
-                    .metric(metric)
-                    .build();
-        }).collect(Collectors.toList());
+    private static long nz(Integer v) { return v == null ? 0 : v; }
+
+    private static TopPhotoDto toTopPhoto(Photo p, String metric, long count) {
+        return TopPhotoDto.builder()
+                .photoId(p.getId())
+                .title(p.getTitle())
+                .thumbnailUrl(p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl())
+                .count(count)
+                .metric(metric)
+                .likesCount(p.getLikesCount())
+                .savesCount(p.getSavesCount())
+                .sharesCount(p.getSharesCount())
+                .build();
     }
 
     // ── TOP WORKS (작업 노트 P2) ────────────────────────────────────────────────

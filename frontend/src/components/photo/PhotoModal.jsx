@@ -4,6 +4,7 @@ import { MOOD_COLORS } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import CommentsSection from './CommentsSection';
 import ReportModal from './ReportModal';
+import { trackView } from '../../utils/trackView';
 
 export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
   const { user } = useAuth();
@@ -25,35 +26,30 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
     };
   }, [onClose]);
 
-  const handleLike = async () => {
-    if (liking) return;
-    setLiking(true);
-    try {
-      const res = await photoApi.like(photo.id);
-      const updated = res?.data ?? { ...photo, likeCount: (photo.likeCount || 0) + 1 };
-      setPhoto(updated);
-      onUpdated?.(updated);
-    } catch {
-      setPhoto(p => ({ ...p, likeCount: (p.likeCount || 0) + 1 }));
-    } finally {
-      setLiking(false);
-    }
-  };
+  // 모달로 연 것도 사진 조회로 센다 (작가 본인 제외)
+  useEffect(() => {
+    trackView({ ownerId: initial?.memberId, viewerId: user?.id, eventType: 'PHOTO_VIEW', targetType: 'PHOTO', targetId: initial?.id });
+  }, [initial?.id, initial?.memberId, user?.id]);
 
-  const handleSave = async () => {
-    if (saving) return;
-    setSaving(true);
+  // 예전 구현은 존재하지 않는 photoApi.like/save를 호출해 항상 예외 → catch에서 화면 숫자만 올려
+  // 실제로는 아무것도 저장되지 않았다. 실제 API(likePhoto/savePhoto)로 호출하고 실패는 사용자에게 알린다.
+  const runAction = async (key, call, countField, busy, setBusy) => {
+    if (busy) return;
+    if (!user?.id) { alert('로그인 후 이용할 수 있어요.'); return; }
+    setBusy(true);
     try {
-      const res = await photoApi.save(photo.id);
-      const updated = res?.data ?? { ...photo, saveCount: (photo.saveCount || 0) + 1 };
+      await call(photo.id, user.id);
+      const updated = { ...photo, [countField]: (photo[countField] || 0) + 1 };
       setPhoto(updated);
       onUpdated?.(updated);
-    } catch {
-      setPhoto(p => ({ ...p, saveCount: (p.saveCount || 0) + 1 }));
+    } catch (e) {
+      alert(e?.response?.data?.message || `${key}에 실패했어요. 잠시 후 다시 시도해주세요.`);
     } finally {
-      setSaving(false);
+      setBusy(false);
     }
   };
+  const handleLike = () => runAction('좋아요', photoApi.likePhoto, 'likesCount', liking, setLiking);
+  const handleSave = () => runAction('저장', photoApi.savePhoto, 'savesCount', saving, setSaving);
 
   return (
     <div
@@ -143,13 +139,13 @@ export default function PhotoModal({ photo: initial, onClose, onUpdated }) {
               onClick={handleLike}
               disabled={liking}
               color="#e86d8a"
-              label={`💗 좋아요 ${photo.likeCount || 0}`}
+              label={`💗 좋아요 ${photo.likesCount || 0}`}
             />
             <ActionBtn
               onClick={handleSave}
               disabled={saving}
               color="#f59e0b"
-              label={`⭐ 저장 ${photo.saveCount || 0}`}
+              label={`⭐ 저장 ${photo.savesCount || 0}`}
             />
           </div>
 

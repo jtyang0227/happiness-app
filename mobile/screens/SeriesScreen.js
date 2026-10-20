@@ -180,6 +180,17 @@ export default function SeriesScreen({ navigation }) {
     }
   };
 
+  // 대표 작업은 작가당 1개 — 서버(PUT /series/:id {pinned})가 나머지를 해제하므로 화면도 같은 규칙으로 갱신
+  const handleTogglePin = async (item) => {
+    const next = !item.pinned;
+    try {
+      await seriesApi.update(item.id, { pinned: next });
+      setSeries(list => list.map(s => ({ ...s, pinned: s.id === item.id ? next : (next ? false : s.pinned) })));
+    } catch (e) {
+      Alert.alert('설정 실패', e?.response?.data?.message || '잠시 후 다시 시도해주세요.');
+    }
+  };
+
   const renderItem = ({ item }) => {
     const open = expanded[item.id];
     const photos = seriesPhotos[item.id] || [];
@@ -202,11 +213,24 @@ export default function SeriesScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.noteBtn} onPress={() => setEditing(item)} accessibilityRole="button">
-          <Text style={styles.noteBtnText}>
-            ✎ 작업 노트 {item.shootType || item.story || item.clientLabel || item.shotOn ? '수정' : '쓰기'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={[styles.noteBtn, { flex: 1 }]} onPress={() => setEditing(item)} accessibilityRole="button">
+            <Text style={styles.noteBtnText}>
+              ✎ 작업 노트 {item.shootType || item.story || item.clientLabel || item.shotOn ? '수정' : '쓰기'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.noteBtn, item.pinned && styles.pinBtnActive]}
+            onPress={() => handleTogglePin(item)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !!item.pinned }}
+            accessibilityLabel={item.pinned ? '대표 작업 해제' : '대표 작업으로 고정'}
+          >
+            <Text style={[styles.noteBtnText, item.pinned && styles.pinBtnTextActive]}>
+              📌 {item.pinned ? '대표 작업' : '대표로'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {open && (
           <View style={styles.photosGrid}>
@@ -314,8 +338,11 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
   emptyHint: { color: COLORS.textHint, fontSize: FONT.sm },
 
-  noteBtn: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, paddingVertical: 10,
+  actionRow: { flexDirection: 'row', gap: SPACING.sm, marginHorizontal: SPACING.md, marginBottom: SPACING.md },
+  noteBtn: { paddingVertical: 10, paddingHorizontal: 12,
     borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  pinBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.tagBg },
+  pinBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
   noteBtnText: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textSecondary },
 
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },

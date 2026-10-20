@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { COLORS } from '../../constants/colors';
 
 const METRICS = [
+  { key: 'views',  label: '조회' },
   { key: 'likes',  label: '좋아요' },
   { key: 'saves',  label: '저장' },
   { key: 'shares', label: '공유' },
@@ -45,8 +46,8 @@ export default function TopPhotos({ photos = [], metric = 'likes', onChangeMetri
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {photos.slice(0, 5).map((photo, i) => (
             <div
-              key={photo.id}
-              onClick={() => navigate(`/photo/${photo.id}`)}
+              key={photo.photoId}
+              onClick={() => navigate(`/photo/${photo.photoId}`)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -85,7 +86,8 @@ export default function TopPhotos({ photos = [], metric = 'likes', onChangeMetri
                 <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {photo.title || '제목 없음'}
                 </div>
-                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2, display: 'flex', gap: 8 }}>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2, display: 'flex', gap: 8, fontVariantNumeric: 'tabular-nums' }}>
+                  {metric === 'views' && <span>👁 {photo.count ?? 0}</span>}
                   <span>❤️ {photo.likesCount ?? 0}</span>
                   <span>🔖 {photo.savesCount ?? 0}</span>
                   <span>↗ {photo.sharesCount ?? 0}</span>

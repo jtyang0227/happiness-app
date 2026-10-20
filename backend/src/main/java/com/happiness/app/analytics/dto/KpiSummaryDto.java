@@ -9,6 +9,9 @@ public class KpiSummaryDto {
     private long portfolioViews;
     private long portfolioViewsPrev;
     private double portfolioViewsChange;   // % change vs previous period
+    private long photoViews;
+    private long photoViewsPrev;
+    private double photoViewsChange;
 
     private long totalLikes;
     private long totalLikesPrev;

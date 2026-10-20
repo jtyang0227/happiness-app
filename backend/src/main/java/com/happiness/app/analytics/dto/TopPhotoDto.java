@@ -10,5 +10,8 @@ public class TopPhotoDto {
     private String title;
     private String thumbnailUrl;
     private long count;
-    private String metric; // likes / views / saves
+    private String metric; // views / likes / saves / shares
+    private Integer likesCount;
+    private Integer savesCount;
+    private Integer sharesCount;
 }

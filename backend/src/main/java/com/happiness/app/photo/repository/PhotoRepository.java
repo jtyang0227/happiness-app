@@ -16,6 +16,9 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
     List<Photo> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
+    /** 작가별 사진 일부 — 분석 "인기 사진"이 좋아요/저장/공유 카운터 순으로 상위 N장을 뽑을 때 사용 */
+    List<Photo> findByMemberId(Long memberId, Pageable pageable);
+
     /** displayOrder 우선, 동률은 createdAt 역순 */
     List<Photo> findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(Long memberId);
 

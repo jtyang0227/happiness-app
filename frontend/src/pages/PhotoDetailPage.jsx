@@ -13,6 +13,7 @@ import ShareButton from '../components/photo/ShareButton';
 import RelatedPhotos from '../components/photo/RelatedPhotos';
 import ReportModal from '../components/photo/ReportModal';
 import useColorExtraction from '../hooks/useColorExtraction';
+import { trackView } from '../utils/trackView';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 
 function buildAdjSummary(adj, effects) {
@@ -81,7 +82,9 @@ export default function PhotoDetailPage() {
           const found = res?.data ?? res;
           if (found) {
             setPhoto(found);
-            setLikeCount(found.likeCount ?? 0);
+            // 서버 필드는 likesCount — 예전 코드는 likeCount를 읽어 항상 0부터 시작했다
+            setLikeCount(found.likesCount ?? 0);
+            trackView({ ownerId: found.memberId, viewerId: user?.id, eventType: 'PHOTO_VIEW', targetType: 'PHOTO', targetId: found.id });
           } else {
             setError('사진을 찾을 수 없습니다.');
           }

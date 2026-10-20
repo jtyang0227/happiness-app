@@ -27,7 +27,7 @@ export default function AnalyticsDashboard({ memberId }) {
   const [daily, setDaily] = useState([]);
   const [topPhotos, setTopPhotos] = useState([]);
   const [genreData, setGenreData] = useState([]);
-  const [topMetric, setTopMetric] = useState('likes');
+  const [topMetric, setTopMetric] = useState('views');
   const [topWorks, setTopWorks] = useState([]);
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
