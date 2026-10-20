@@ -26,7 +26,7 @@ export const mq = {
  * │ 화면 유형          │ 대표 화면                 │ 모바일(<768)    │ 태블릿(768~1023)          │ 데스크탑(≥1024)             │
  * ├──────────────────┼────────────────────────┼───────────────┼────────────────────────┼──────────────────────────┤
  * │ 콘텐츠 목록         │ FeedPage, GatheringsPage │ 단일 컬럼        │ 2컬럼 그리드 (gap 16px)     │ 2~3컬럼 또는 maxWidth 중앙정렬  │
- * │ 사진 갤러리         │ GalleryPage, ExplorePage │ 2컬럼 그리드      │ 3컬럼 그리드 (적용 완료)      │ 4컬럼 또는 masonry          │
+ * │ 사진 갤러리         │ PhotoBrowser(탐색)       │ 2컬럼 그리드      │ 3컬럼 그리드 (적용 완료)      │ 4컬럼 또는 masonry          │
  * │ 상세 뷰            │ PhotoDetailPage 등        │ 단일 세로 스크롤   │ 이미지 좌50% + 정보 우50%    │ 이미지 좌58% + 정보 우42%     │
  * │ 폼 입력            │ PhotoFormPage 등          │ 단일 컬럼        │ 미리보기 좌50% + 입력 우50%   │ 미리보기 좌50% + 입력 우50%    │
  * │ 대시보드/목록+상세   │ BookingDashboard, MeetsPage │ 단일 컬럼 탭+목록 │ 단일 컬럼 (목록 넓게)        │ 목록 좌(320~360px)+상세 패널 우 │
@@ -36,7 +36,7 @@ export const mq = {
  * 구현 규칙:
  * 1. mq.tablet/mq.tabletUp/mq.desktop 토큰 필수 사용 — window.innerWidth 직접 비교
  *    (BP.md/BP.lg 숫자 비교)는 레거시 방식(PhotoDetailPage)이며 신규 화면에서 금지.
- * 2. `<style>` 태그 주입 + className 패턴 사용 (GalleryPage.jsx `.gallery-grid` 참조,
+ * 2. `<style>` 태그 주입 + className 패턴 사용 (components/explore/PhotoBrowser.jsx `.gallery-masonry` 참조,
  *    또는 ProfilePage.jsx `.profile-layout`/`.profile-sidebar` 참조 — 인라인 스타일과
  *    섞을 때는 media query에 !important로 오버라이드).
  * 3. 모바일 회귀 방지 — 태블릿/데스크탑 레이아웃 추가 시 <768px 기존 동작 불변.

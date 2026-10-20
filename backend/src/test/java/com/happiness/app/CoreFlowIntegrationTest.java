@@ -937,4 +937,16 @@ class CoreFlowIntegrationTest {
         List<Number> afterIds = JsonPath.read(after, "$.data[*].id");
         assertThat(afterIds).extracting(Number::longValue).doesNotContain(w1);
     }
+
+    // ── 공개 탐색 사진 모달 (메뉴 통합) ───────────────────────────────
+
+    @Test
+    void 사진_댓글은_비로그인도_읽고_작성은_로그인이_필요하다() throws Exception {
+        User owner = signupAndLogin();
+        long photo = createPhoto(owner);
+        mvc.perform(get("/api/photos/" + photo + "/comments")).andExpect(status().isOk());
+        mvc.perform(post("/api/photos/" + photo + "/comments").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"안녕하세요\"}"))
+                .andExpect(status().isUnauthorized());
+    }
 }

@@ -86,6 +86,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/auth/check-profile-name").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}").permitAll()
+                // 공개 탐색의 사진 모달이 댓글을 읽는다 — 읽기만 공개, 작성·삭제는 그대로 인증 필요
+                .requestMatchers(HttpMethod.GET, "/api/photos/{id}/comments").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/discover").permitAll()

@@ -46,8 +46,7 @@ export default function WorkspaceTabs() {
     }}>
       <style>{`
         .ws-tab { transition: background 0.15s ease, color 0.15s ease; }
-        .ws-tab:hover { color: ${COLORS.text}; }
-        .ws-tab.active { background: ${COLORS.text}; color: ${COLORS.surface}; font-weight: 700; }
+        .ws-tab:not(.active):hover { color: ${COLORS.text} !important; background: ${COLORS.surfaceDim}; }
         .ws-tab:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
       `}</style>
       <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto', padding: '0 16px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -55,10 +54,14 @@ export default function WorkspaceTabs() {
           const n = t.badge ? counts[t.badge] : 0;
           return (
             <NavLink key={t.to} to={t.to} end className={({ isActive }) => `ws-tab${isActive ? ' active' : ''}`}
-              style={{
+              // 활성 색은 style 함수로 — 인라인 color가 .active 클래스보다 우선해 어두운 칩에 어두운 글자가 되던 문제 방지
+              style={({ isActive }) => ({
                 flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 999,
-                fontSize: 13, fontWeight: 500, color: COLORS.textSecondary, textDecoration: 'none', whiteSpace: 'nowrap',
-              }}>
+                fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap',
+                fontWeight: isActive ? 700 : 500,
+                background: isActive ? COLORS.text : 'transparent',
+                color: isActive ? COLORS.surface : COLORS.textSecondary,
+              })}>
               {t.label}
               {n > 0 && (
                 <span aria-label={`${n}건`} style={{

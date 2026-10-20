@@ -3,6 +3,7 @@ import { bookingApi } from '../services/bookingApi';
 import meetApi from '../services/meetApi';
 import gatheringApi from '../services/gatheringApi';
 import { dateKeyOf } from '../components/calendar/UnifiedCalendar';
+import { SHOOT_TYPES as BOOKING_SHOOT_TYPES } from '../components/booking/ShootTypeSelector';
 
 /**
  * 통합 일정 — 확정 예약 · 확정 약속 · 예정/진행 중 모임을 한 목록으로 (통합 달력 /calendar 와 업무 "한눈에" /workspace 공유).
@@ -39,7 +40,8 @@ export async function loadScheduleEvents(currentUserId) {
         dateKey: key,
         title: b.clientName ? `${b.clientName} 촬영` : '촬영 예약',
         time: formatTime(b.shootTime),
-        subtitle: b.shootType || null,
+        // 예약 유형은 영문 코드(WEDDING 등)로 저장돼 있어 화면에는 한글 라벨로
+        subtitle: BOOKING_SHOOT_TYPES.find(t => t.key === b.shootType)?.label || b.shootType || null,
         path: '/bookings',
       });
     }
