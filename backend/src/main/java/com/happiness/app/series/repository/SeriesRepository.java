@@ -34,5 +34,26 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
                            @Param("location") String location,
                            Pageable pageable);
 
+    /** discover()와 같은 조건, 감상 많은 순 */
+    @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
+           "AND (:shootType IS NULL OR s.shootType = :shootType) " +
+           "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
+           "ORDER BY (SELECT COUNT(a) FROM SeriesAppreciation a WHERE a.seriesId = s.id) DESC, s.updatedAt DESC, s.id DESC")
+    Slice<Series> discoverByAppreciation(@Param("shootType") String shootType,
+                                         @Param("location") String location,
+                                         Pageable pageable);
+
+    /** discover()와 같은 조건, 작업 노트 조회(WORK_VIEW) 많은 순 */
+    @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
+           "AND (:shootType IS NULL OR s.shootType = :shootType) " +
+           "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
+           "ORDER BY (SELECT COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'WORK_VIEW' " +
+           "AND e.targetType = 'SERIES' AND e.targetId = s.id) DESC, s.updatedAt DESC, s.id DESC")
+    Slice<Series> discoverByViews(@Param("shootType") String shootType,
+                                  @Param("location") String location,
+                                  Pageable pageable);
+
     void deleteByMemberId(Long memberId);
 }

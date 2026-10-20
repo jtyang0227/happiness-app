@@ -17,9 +17,15 @@ import EmptyState from './EmptyState';
  */
 const PAGE_SIZE = 20;
 const CHIPS = [{ value: '', label: '전체' }, ...SHOOT_TYPES];
+const SORTS = [
+  { value: 'recent', label: '최근' },
+  { value: 'appreciated', label: '감상순' },
+  { value: 'viewed', label: '조회순' },
+];
 
 export default function WorkDiscoveryList() {
   const [shootType, setShootType] = useState('');
+  const [sort, setSort] = useState('recent');
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
   const [works, setWorks] = useState([]);
@@ -31,8 +37,8 @@ export default function WorkDiscoveryList() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const params = useCallback((p) => ({
-    shootType: shootType || undefined, location: location || undefined, page: p, size: PAGE_SIZE,
-  }), [shootType, location]);
+    shootType: shootType || undefined, location: location || undefined, sort, page: p, size: PAGE_SIZE,
+  }), [shootType, location, sort]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -148,9 +154,19 @@ export default function WorkDiscoveryList() {
           </TouchableOpacity>
         )}
       </View>
-      {!loading && !error && (
-        <Text style={styles.resultCount}>작업 {works.length}{hasNext ? '+' : ''}건</Text>
-      )}
+      <View style={styles.sortRow}>
+        <Text style={styles.resultCount}>
+          {!loading && !error ? `작업 ${works.length}${hasNext ? '+' : ''}건` : ' '}
+        </Text>
+        <View style={styles.sorts}>
+          {SORTS.map(s => (
+            <TouchableOpacity key={s.value} onPress={() => setSort(s.value)}
+              accessibilityRole="radio" accessibilityState={{ selected: sort === s.value }}>
+              <Text style={[styles.sortText, sort === s.value && styles.sortTextActive]}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </View>
   );
 
@@ -208,7 +224,12 @@ const styles = StyleSheet.create({
   pin: { fontSize: FONT.sm },
   locationInput: { flex: 1, paddingVertical: 10, fontSize: FONT.md, color: COLORS.textPrimary },
   clear: { color: COLORS.textMuted, fontSize: FONT.sm, padding: 4 },
-  resultCount: { color: COLORS.textMuted, fontSize: FONT.sm - 1, marginHorizontal: SPACING.md, marginBottom: SPACING.sm },
+  sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginHorizontal: SPACING.md, marginBottom: SPACING.sm },
+  resultCount: { color: COLORS.textMuted, fontSize: FONT.sm - 1 },
+  sorts: { flexDirection: 'row', gap: 12 },
+  sortText: { fontSize: FONT.sm - 1, color: COLORS.textMuted, paddingVertical: 4 },
+  sortTextActive: { color: COLORS.textPrimary, fontWeight: '700' },
 
   card: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, backgroundColor: COLORS.white,
     borderRadius: RADIUS.card, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },

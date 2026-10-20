@@ -50,6 +50,7 @@ const SORT_OPTIONS = [
   { label: '오래된 순', sortBy: 'createdAt',  order: 'asc'  },
   { label: '좋아요 순', sortBy: 'likesCount', order: 'desc' },
   { label: '저장 순',   sortBy: 'savesCount', order: 'desc' },
+  { label: '조회 순',   sortBy: 'views',      order: 'desc' },   // PHOTO_VIEW 이벤트 집계 (서버 정렬)
 ];
 
 function loadHistory() {

@@ -693,4 +693,58 @@ class CoreFlowIntegrationTest {
         mvc.perform(delete("/api/series/" + work).header("Authorization", bearer(owner)))
                 .andExpect(status().isNoContent());
     }
+
+    // ── 탐색 정렬 (WORK_QUEUE 4) ──────────────────────────────────────
+
+    private void trackPhotoView(long ownerId, long photoId) throws Exception {
+        mvc.perform(post("/api/analytics/track").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "eventType", "PHOTO_VIEW", "targetType", "PHOTO", "targetId", photoId,
+                                "memberId", ownerId, "visitorToken", UUID.randomUUID().toString().replace("-", "")))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void 작업_탐색은_감상순_조회순으로_정렬된다() throws Exception {
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User owner = signupAndLogin();
+        User fan1 = signupAndLogin();
+        User fan2 = signupAndLogin();
+        updateProfile(owner, Map.of("location", tag));
+        long w1 = createWork(owner, "정렬 1", "가족", 1);
+        long w2 = createWork(owner, "정렬 2", "가족", 1);
+        long w3 = createWork(owner, "정렬 3", "가족", 1);
+        for (User f : List.of(fan1, fan2)) {
+            mvc.perform(post("/api/series/" + w2 + "/appreciation").header("Authorization", bearer(f))).andExpect(status().isOk());
+        }
+        mvc.perform(post("/api/series/" + w3 + "/appreciation").header("Authorization", bearer(fan1))).andExpect(status().isOk());
+        for (int i = 0; i < 3; i++) track(owner.id(), w3);
+        track(owner.id(), w1);
+
+        assertThat(discoverIds("location", tag, "sort", "appreciated"))
+                .extracting(Number::longValue).containsExactly(w2, w3, w1);
+        assertThat(discoverIds("location", tag, "sort", "viewed"))
+                .extracting(Number::longValue).containsExactly(w3, w1, w2);
+        assertThat(discoverIds("location", tag, "sort", "모르는값"))   // 최근 수정순으로 처리
+                .extracting(Number::longValue).hasSize(3);
+    }
+
+    @Test
+    void 사진은_조회순으로_정렬된다() throws Exception {
+        User owner = signupAndLogin();
+        long p0 = createPhoto(owner);
+        long p1 = createPhoto(owner);
+        long p2 = createPhoto(owner);
+        trackPhotoView(owner.id(), p2);
+        trackPhotoView(owner.id(), p2);
+        trackPhotoView(owner.id(), p0);
+
+        for (boolean paged : List.of(true, false)) {   // DB 서브쿼리 경로 / 메모리 정렬 경로
+            var req = get("/api/photos").param("memberId", String.valueOf(owner.id())).param("sortBy", "views");
+            if (paged) req = req.param("page", "0");
+            String body = mvc.perform(req).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            List<Number> ids = JsonPath.read(body, "$.data[*].id");
+            assertThat(ids).as(paged ? "paged" : "unpaged").extracting(Number::longValue).containsExactly(p2, p0, p1);
+        }
+    }
 }

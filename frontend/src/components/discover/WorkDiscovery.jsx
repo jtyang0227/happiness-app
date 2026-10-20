@@ -12,6 +12,11 @@ import AcceptingBadge from '../common/AcceptingBadge';
  * 촬영 유형 칩 + 지역 입력(디바운스) 필터, 카드 클릭 → 작업 노트 페이지.
  */
 const PAGE_SIZE = 24;
+const SORTS = [
+  { value: 'recent',      label: '최근 수정순' },
+  { value: 'appreciated', label: '감상 많은 순' },
+  { value: 'viewed',      label: '조회 많은 순' },
+];
 const LOCATION_MAX = 50;
 
 function WorkCard({ work }) {
@@ -94,6 +99,7 @@ function SkeletonCard() {
 
 export default function WorkDiscovery() {
   const [shootType, setShootType] = useState('');
+  const [sort, setSort] = useState('recent');
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
   const [works, setWorks] = useState([]);
@@ -113,8 +119,8 @@ export default function WorkDiscovery() {
   }, [locationInput]);
 
   const params = useCallback((p) => ({
-    shootType: shootType || undefined, location: location || undefined, page: p, size: PAGE_SIZE,
-  }), [shootType, location]);
+    shootType: shootType || undefined, location: location || undefined, sort, page: p, size: PAGE_SIZE,
+  }), [shootType, location, sort]);
 
   useEffect(() => {
     let alive = true;
@@ -214,11 +220,18 @@ export default function WorkDiscovery() {
         </form>
       </div>
 
-      {!loading && !error && (
-        <div style={{ marginBottom: 16, fontSize: 13, color: COLORS.textMuted }}>
-          작업 {works.length}{hasNext ? '+' : ''}건
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, minHeight: 32 }}>
+        <span style={{ fontSize: 13, color: COLORS.textMuted }}>
+          {!loading && !error && `작업 ${works.length}${hasNext ? '+' : ''}건`}
+        </span>
+        <select value={sort} onChange={e => setSort(e.target.value)} aria-label="작업 정렬"
+          style={{
+            border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: '6px 10px', fontSize: 13,
+            color: COLORS.textSecondary, background: COLORS.surface, cursor: 'pointer',
+          }}>
+          {SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
 
       {loading ? (
         <div className="discover-work-grid">

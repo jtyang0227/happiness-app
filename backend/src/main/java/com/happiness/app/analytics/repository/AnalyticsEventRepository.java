@@ -85,4 +85,9 @@ public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, 
     @Query("SELECT e.targetId, COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'WORK_VIEW' " +
            "AND e.targetType = 'SERIES' AND e.targetId IN :ids GROUP BY e.targetId")
     List<Object[]> countWorkViews(@Param("ids") Collection<Long> ids);
+
+    /** [targetId, count] — 사진 조회수(PHOTO_VIEW) 배치 집계 (탐색 "조회 순" 정렬의 메모리 경로용) */
+    @Query("SELECT e.targetId, COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'PHOTO_VIEW' " +
+           "AND e.targetType = 'PHOTO' AND e.targetId IN :ids GROUP BY e.targetId")
+    List<Object[]> countPhotoViews(@Param("ids") Collection<Long> ids);
 }

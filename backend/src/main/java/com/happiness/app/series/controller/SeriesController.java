@@ -140,6 +140,7 @@ public class SeriesController {
     public ResponseEntity<Map<String, Object>> discover(
             @RequestParam(required = false) String shootType,
             @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "recent") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size) {
         String type = shootType != null && SHOOT_TYPES.contains(shootType.trim()) ? shootType.trim() : null;
@@ -149,7 +150,13 @@ public class SeriesController {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 60);
 
-        Slice<Series> slice = seriesRepository.discover(type, loc, PageRequest.of(safePage, safeSize));
+        PageRequest pr = PageRequest.of(safePage, safeSize);
+        // sort: recent(기본, 최근 수정순) | appreciated(감상 많은 순) | viewed(조회 많은 순). 모르는 값은 recent
+        Slice<Series> slice = switch (sort) {
+            case "appreciated" -> seriesRepository.discoverByAppreciation(type, loc, pr);
+            case "viewed" -> seriesRepository.discoverByViews(type, loc, pr);
+            default -> seriesRepository.discover(type, loc, pr);
+        };
         List<Series> works = slice.getContent();
 
         Set<Long> memberIds = works.stream().map(Series::getMemberId).collect(Collectors.toSet());

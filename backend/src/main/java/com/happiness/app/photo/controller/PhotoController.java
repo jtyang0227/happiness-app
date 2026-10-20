@@ -1,5 +1,6 @@
 package com.happiness.app.photo.controller;
 
+import com.happiness.app.analytics.repository.AnalyticsEventRepository;
 import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.common.util.ImageProcessingUtil;
 import com.happiness.app.common.util.ImageVariantUtil;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public class PhotoController {
 
     private final PhotoRepository photoRepository;
+    private final AnalyticsEventRepository analyticsEventRepository;
     private final PhotoTagRepository photoTagRepository;
     private final PhotoLikeRepository photoLikeRepository;
     private final PhotoShareRepository photoShareRepository;
@@ -75,6 +77,8 @@ public class PhotoController {
             @RequestParam(required = false) Integer page,
             @RequestParam(defaultValue = "30") int size
     ) {
+        // "views"(조회 순)는 컬럼이 아니라 PHOTO_VIEW 이벤트 집계 — 페이지 경로는 서브쿼리 정렬, 그 외는 메모리 정렬
+        boolean byViews = "views".equals(sortBy);
         String field = SORT_WHITELIST.contains(sortBy) ? sortBy : "createdAt";
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(Sort.Order.by(field).with(direction).nullsLast());
@@ -100,8 +104,10 @@ public class PhotoController {
         Boolean hasNext = null;
 
         if (paged && !hasKeyword && taggedPhotoIds == null) {
-            Slice<Photo> slice = photoRepository.searchPage(
-                    null, colorMood, memberId, imageRatio, genre, PageRequest.of(pageNo, pageSize, sort));
+            Slice<Photo> slice = byViews
+                    ? photoRepository.searchPageByViews(colorMood, memberId, imageRatio, genre, PageRequest.of(pageNo, pageSize))
+                    : photoRepository.searchPage(
+                            null, colorMood, memberId, imageRatio, genre, PageRequest.of(pageNo, pageSize, sort));
             photos = slice.getContent().stream().map(PhotoResponse::fromEntity).collect(Collectors.toList());
             hasNext = slice.hasNext();
         } else {
@@ -125,6 +131,18 @@ public class PhotoController {
             if (taggedPhotoIds != null) {
                 final Set<Long> ids = taggedPhotoIds;
                 photos = photos.stream().filter(p -> ids.contains(p.getId())).collect(Collectors.toList());
+            }
+
+            if (byViews && !photos.isEmpty()) {
+                Map<Long, Long> views = new HashMap<>();
+                for (Object[] r : analyticsEventRepository.countPhotoViews(
+                        photos.stream().map(PhotoResponse::getId).collect(Collectors.toList()))) {
+                    views.put(((Number) r[0]).longValue(), ((Number) r[1]).longValue());
+                }
+                // 안정 정렬 — 조회수가 같으면 기존(최신순) 순서 유지
+                photos = photos.stream()
+                        .sorted(Comparator.comparingLong((PhotoResponse p) -> views.getOrDefault(p.getId(), 0L)).reversed())
+                        .collect(Collectors.toList());
             }
 
             // 키워드·태그 검색은 결과가 이미 필터링된 목록이라 메모리에서 페이지를 자른다

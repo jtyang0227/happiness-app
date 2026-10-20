@@ -64,6 +64,25 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             Pageable pageable
     );
 
+    /** searchPage()와 같은 조건, 조회수(PHOTO_VIEW 이벤트 수) 많은 순 — 조회수는 컬럼이 아니라 이벤트 집계라 서브쿼리 정렬 */
+    @Query("""
+        SELECT p FROM Photo p
+        WHERE (:colorMood IS NULL OR :colorMood = '' OR p.colorMood = :colorMood)
+          AND (:memberId IS NULL OR p.memberId = :memberId)
+          AND (:imageRatio IS NULL OR :imageRatio = '' OR p.imageRatio = :imageRatio)
+          AND (:genre IS NULL OR :genre = '' OR p.genre = :genre)
+        ORDER BY (SELECT COUNT(e) FROM AnalyticsEvent e
+                  WHERE e.eventType = 'PHOTO_VIEW' AND e.targetType = 'PHOTO' AND e.targetId = p.id) DESC,
+                 p.createdAt DESC, p.id DESC
+        """)
+    Slice<Photo> searchPageByViews(
+            @Param("colorMood")  String colorMood,
+            @Param("memberId")   Long memberId,
+            @Param("imageRatio") String imageRatio,
+            @Param("genre")      String genre,
+            Pageable pageable
+    );
+
     /**
      * pg_trgm 유사도 검색 — 한글·영문 모두 지원 (PostgreSQL + pg_trgm 확장 필요).
      * - LOWER() 적용으로 영문 대소문자 무시
