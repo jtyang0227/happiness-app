@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { computeJustifiedLayout } from '../utils/layoutAlgorithms';
 
 /**
@@ -17,27 +17,26 @@ import { computeJustifiedLayout } from '../utils/layoutAlgorithms';
 export function useGalleryLayout(photos, options = {}) {
   const { mode = 'justified', targetRowHeight = 300, gap = 4 } = options;
 
-  const containerRef = useRef(null);
+  // 콜백 ref — 컨테이너는 로딩이 끝난 뒤에야 그려지므로, 마운트 시점 한 번만 보는 useRef + [] effect로는
+  // ResizeObserver가 영영 붙지 않아 초기값(창 너비)이 그대로 쓰였다(패딩만큼 행이 넘쳐 가로 스크롤).
+  const [node, setNode] = useState(null);
+  const containerRef = useCallback(el => setNode(el), []);
   const [containerWidth, setContainerWidth] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth : 1200),
   );
   const [layout, setLayout] = useState([]);
 
-  // ResizeObserver — 컨테이너 너비 감지
+  // ResizeObserver — 컨테이너 콘텐츠 너비(패딩 제외) 감지. 처음 관찰할 때도 한 번 호출된다.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    setContainerWidth(el.offsetWidth);
-
+    if (!node) return undefined;
     const observer = new ResizeObserver(entries => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width);
       }
     });
-    observer.observe(el);
+    observer.observe(node);
     return () => observer.disconnect();
-  }, []); // eslint-disable-line
+  }, [node]);
 
   // 레이아웃 재계산
   useEffect(() => {
