@@ -208,6 +208,7 @@ public class SeriesController {
             @RequestParam(required = false) String shootType,
             @RequestParam(required = false) String location,
             @RequestParam(defaultValue = "recent") String sort,
+            @RequestParam(defaultValue = "false") boolean featured,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size) {
         String type = shootType != null && SHOOT_TYPES.contains(shootType.trim()) ? shootType.trim() : null;
@@ -219,7 +220,8 @@ public class SeriesController {
 
         PageRequest pr = PageRequest.of(safePage, safeSize);
         // sort: recent(기본, 최근 수정순) | appreciated(감상 많은 순) | viewed(조회 많은 순). 모르는 값은 recent
-        Slice<Series> slice = switch (sort) {
+        // featured=true면 "에디터 추천"만(추천한 시각 최근순) — 탐색 상단 띠용이라 유형·지역·정렬은 적용하지 않는다
+        Slice<Series> slice = featured ? seriesRepository.discoverFeatured(pr) : switch (sort) {
             case "appreciated" -> seriesRepository.discoverByAppreciation(type, loc, pr);
             case "viewed" -> seriesRepository.discoverByViews(type, loc, pr);
             default -> seriesRepository.discover(type, loc, pr);
@@ -274,6 +276,7 @@ public class SeriesController {
                     .acceptingBookings(accepting.contains(s.getMemberId()))
                     .appreciationCount(appreciations.getOrDefault(s.getId(), 0L))
                     .viewCount(views.getOrDefault(s.getId(), 0L))
+                    .featured(s.getFeaturedAt() != null)
                     .build();
         }).collect(Collectors.toList());
 

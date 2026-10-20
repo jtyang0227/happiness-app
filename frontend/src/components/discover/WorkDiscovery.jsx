@@ -32,6 +32,12 @@ function WorkCard({ work }) {
       }}
     >
       <div style={{ position: 'relative', aspectRatio: '4 / 3', background: COLORS.surfaceDim }}>
+        {work.featured && (
+          <span style={{
+            position: 'absolute', top: 10, left: 10, zIndex: 1, padding: '3px 8px', borderRadius: 8,
+            background: COLORS.surface, color: COLORS.text, fontSize: 11, fontWeight: 800,
+          }}>✦ 에디터 추천</span>
+        )}
         {work.coverImageUrl && (
           <img src={work.coverImageUrl} alt="" loading="lazy"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
@@ -110,6 +116,15 @@ export default function WorkDiscovery() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState('');
   const debounceRef = useRef(null);
+  const [featuredWorks, setFeaturedWorks] = useState([]);   // 에디터 추천 띠 — 실패하면 그냥 안 보인다
+
+  useEffect(() => {
+    let alive = true;
+    seriesApi.discover({ featured: true, size: 8 })
+      .then(res => { if (alive) setFeaturedWorks(res?.data ?? []); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // 지역 입력은 타이핑이 멈춘 뒤 0.4초 후 반영 (엔터는 즉시)
   useEffect(() => {
@@ -219,6 +234,22 @@ export default function WorkDiscovery() {
           )}
         </form>
       </div>
+
+      {/* 에디터 추천 — 필터를 걸지 않았을 때만, 가로 스크롤 */}
+      {!shootType && !location && featuredWorks.length > 0 && (
+        <section aria-labelledby="featured-works-heading" style={{ marginBottom: 28 }}>
+          <h2 id="featured-works-heading" style={{ fontSize: 16, fontWeight: 800, color: COLORS.text, margin: '0 0 12px' }}>
+            ✦ 에디터 추천 <span style={{ fontSize: 13, fontWeight: 500, color: COLORS.textMuted }}>운영팀이 고른 작업</span>
+          </h2>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x proximity' }}>
+            {featuredWorks.map(w => (
+              <div key={w.id} style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                <WorkCard work={w} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, minHeight: 32 }}>
         <span style={{ fontSize: 13, color: COLORS.textMuted }}>

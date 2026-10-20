@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 import java.util.List;
 
@@ -57,6 +60,20 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
     Slice<Series> discoverByViews(@Param("shootType") String shootType,
                                   @Param("location") String location,
                                   Pageable pageable);
+
+    /** 추천 표시만 바꾼다 — 엔티티 save면 @PreUpdate가 updatedAt을 갱신해 "최근 수정순"이 흔들리므로 bulk UPDATE */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Series s SET s.featuredAt = :at WHERE s.id = :id")
+    int updateFeaturedAt(@Param("id") Long id, @Param("at") LocalDateTime at);
+
+    /** 에디터 추천 — 공개·초안 아님·사진 있음 조건은 같고, 추천한 시각 최근순 */
+    @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
+           "AND s.featuredAt IS NOT NULL " +
+           "AND (s.draft IS NULL OR s.draft = false) " +
+           "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
+           "ORDER BY s.featuredAt DESC, s.id DESC")
+    Slice<Series> discoverFeatured(Pageable pageable);
 
     void deleteByMemberId(Long memberId);
 }

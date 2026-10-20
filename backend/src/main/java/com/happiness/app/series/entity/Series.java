@@ -57,6 +57,9 @@ public class Series {
     /** 초안(WORK_QUEUE 7) — true면 작가 본인만 본다(탐색·포트폴리오·공개 상세에서 제외). 기존 행 호환을 위해 nullable(null = 공개) */
     private Boolean draft;
 
+    /** 운영자 큐레이션(WORK_QUEUE 8) — 어드민이 "에디터 추천"으로 고른 시각. null = 추천 아님. 탐색 작업 탭 상단에 최근 고른 순으로 노출 */
+    private LocalDateTime featuredAt;
+
     @Column(nullable = false)
     private Integer displayOrder;
 

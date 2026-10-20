@@ -29,4 +29,5 @@ public class DiscoverWorkResponse {
     private boolean acceptingBookings;
     private long appreciationCount;
     private long viewCount;
+    private boolean featured;
 }

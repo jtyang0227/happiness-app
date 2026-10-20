@@ -1,6 +1,8 @@
 package com.happiness.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.happiness.app.member.entity.Authority;
+import com.happiness.app.member.repository.MemberRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,7 @@ class CoreFlowIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper om;
+    @Autowired MemberRepository memberRepository;
 
     private record User(long id, String email, String profileName, String token) {}
 
@@ -876,5 +879,62 @@ class CoreFlowIntegrationTest {
         setDraft(owner, work, false);
         assertThat(discoverIds("location", tag)).extracting(Number::longValue).containsExactly(work);
         mvc.perform(get("/api/series/" + work)).andExpect(status().isOk());
+    }
+
+    // ── 운영자 큐레이션 (WORK_QUEUE 8) ─────────────────────────────────
+
+    /** 회원을 관리자(WM)로 올리고 새 토큰으로 다시 로그인 */
+    private User promoteToAdmin(User u) throws Exception {
+        var m = memberRepository.findById(u.id()).orElseThrow();
+        m.setAuthority(Authority.WM);
+        memberRepository.save(m);
+        MvcResult login = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", u.email(), "password", "Passw0rd!!"))))
+                .andExpect(status().isOk()).andReturn();
+        return new User(u.id(), u.email(), u.profileName(), JsonPath.read(login.getResponse().getContentAsString(), "$.data.accessToken"));
+    }
+
+    @Test
+    void 관리자만_작업을_에디터_추천으로_올린다() throws Exception {
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User owner = signupAndLogin();
+        User admin = promoteToAdmin(signupAndLogin());
+        updateProfile(owner, Map.of("location", tag));
+        long w1 = createWork(owner, "추천 1", "가족", 1);
+        long w2 = createWork(owner, "추천 2", "가족", 1);
+        List<Number> recentBefore = discoverIds("location", tag);
+
+        String on = "{\"featured\":true}";
+        mvc.perform(put("/api/admin/series/" + w1 + "/featured").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content(on))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/admin/series/" + w1 + "/featured").header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(on))
+                .andExpect(status().isOk());
+
+        String featured = mvc.perform(get("/api/series/discover").param("featured", "true").param("size", "60"))
+                .andReturn().getResponse().getContentAsString();
+        List<Number> featuredIds = JsonPath.read(featured, "$.data[*].id");
+        assertThat(featuredIds).extracting(Number::longValue).contains(w1).doesNotContain(w2);
+        mvc.perform(get("/api/series/discover").param("location", tag))
+                .andExpect(jsonPath("$.data[?(@.id == " + w1 + ")].featured").value(true));
+        // 추천해도 "최근 수정순"은 그대로 (updatedAt을 건드리지 않음)
+        assertThat(discoverIds("location", tag)).isEqualTo(recentBefore);
+
+        // 초안은 추천 불가
+        mvc.perform(put("/api/series/" + w2).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("title", "추천 2", "draft", true))))
+                .andExpect(status().isOk());
+        mvc.perform(put("/api/admin/series/" + w2 + "/featured").header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(on))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(put("/api/admin/series/" + w1 + "/featured").header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"featured\":false}"))
+                .andExpect(status().isOk());
+        String after = mvc.perform(get("/api/series/discover").param("featured", "true").param("size", "60"))
+                .andReturn().getResponse().getContentAsString();
+        List<Number> afterIds = JsonPath.read(after, "$.data[*].id");
+        assertThat(afterIds).extracting(Number::longValue).doesNotContain(w1);
     }
 }

@@ -36,6 +36,7 @@ import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
 import AdminCategoryPage     from './pages/admin/AdminCategoryPage';
 import AdminTagsPage         from './pages/admin/AdminTagsPage';
 import AdminModerationPage   from './pages/admin/AdminModerationPage';
+import AdminCurationPage     from './pages/admin/AdminCurationPage';
 import ClientDeliveryPage    from './pages/ClientDeliveryPage';
 import DeliveriesPage        from './pages/DeliveriesPage';
 import BookingPage           from './pages/BookingPage';
@@ -159,6 +160,7 @@ function AppShell() {
           <Route path="/admin/categories" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCategoryPage /></ProtectedRoute>} />
           <Route path="/admin/tags" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminTagsPage /></ProtectedRoute>} />
           <Route path="/admin/moderation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminModerationPage /></ProtectedRoute>} />
+          <Route path="/admin/curation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCurationPage /></ProtectedRoute>} />
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/admin/categories',    label: '🏷️ 카테고리' },
   { to: '/admin/tags',          label: '🔖 태그 관리' },
   { to: '/admin/moderation',    label: '🚨 신고 관리' },
+  { to: '/admin/curation',      label: '✦ 작업 큐레이션' },
 ];
 
 const SIDEBAR_W = 220;
