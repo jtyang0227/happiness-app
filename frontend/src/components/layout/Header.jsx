@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
 import { COLORS } from '../../constants/colors';
@@ -10,27 +10,31 @@ import meetApi from '../../services/meetApi';
 import { gatheringApi } from '../../services/gatheringApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
 import Logo from '../common/Logo';
+import { WORKSPACE_PATHS } from '../workspace/WorkspaceTabs';
 
+// 메뉴 통합 (PLANNING_nav-consolidation.md) — 예전 10개(탐색·갤러리·시리즈·목록·등록/편집·문의함·일정·약속·모임·프로필)를
+// 목적별 4개로: 탐색(갤러리·목록 흡수) · 내 작업(시리즈) · 업무(문의·예약·일정·약속·납품 허브) · 모임.
+// 올리기는 메뉴가 아니라 행동이라 오른쪽 버튼으로, 프로필은 아바타 메뉴로 옮겼다.
 const NAV_ITEMS = [
-  { to: '/explore',   label: '탐색'     },
-  { to: '/',          label: '갤러리', end: true },
-  { to: '/series',    label: '시리즈'   },
-  { to: '/list',      label: '목록'     },
-  { to: '/photo/new', label: '등록/편집' },
-  { to: '/inbox',     label: '문의함', badge: 'inquiry' },
-  { to: '/calendar',  label: '📅 일정' },
-  { to: '/meets',       label: '약속',   badge: 'meets'   },
+  { to: '/explore',    label: '탐색' },
+  { to: '/series',     label: '내 작업', auth: true },
+  { to: '/workspace',  label: '업무', badge: 'workspace', match: WORKSPACE_PATHS, auth: true },
   { to: '/gatherings', label: '모임', badge: 'gatherings' },
-  { to: '/profile',    label: '프로필'   },
 ];
 
 const BOTTOM_NAV_ITEMS = [
-  { to: '/explore',   label: '탐색',  icon: '⊙',  end: false },
-  { to: '/',          label: '갤러리', icon: '✦',  end: true  },
-  { to: '/photo/new', label: '등록',  icon: '+',  end: false, isCenter: true },
-  { to: '/list',      label: '목록',  icon: '☰',  end: false },
-  { to: '/profile',   label: '프로필', icon: '◎',  end: false },
+  { to: '/explore',   label: '탐색',   icon: '⊙' },
+  { to: '/series',    label: '내 작업', icon: '✦' },
+  { to: '/photo/new', label: '올리기', icon: '+', isCenter: true },
+  { to: '/workspace', label: '업무',   icon: '▤', match: WORKSPACE_PATHS, badge: 'workspace' },
+  { to: '/profile',   label: '프로필', icon: '◎' },
 ];
+
+/** 업무처럼 여러 화면을 한 메뉴로 묶은 경우, 하위 경로 어디에 있어도 활성으로 */
+function isMenuActive(item, pathname, isActive) {
+  if (!item.match) return isActive;
+  return item.match.some(p => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 function LangSwitcher() {
   const { lang, changeLang } = useLang();
@@ -112,6 +116,7 @@ function LangSwitcher() {
 export default function Header() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingMeets, setPendingMeets] = useState(0);
   const [gatheringNotifCount, setGatheringNotifCount] = useState(0);
@@ -161,6 +166,11 @@ export default function Header() {
           font-weight: 700;
         }
         .avatar-btn { transition: transform 0.2s ${SPRING}; }
+        .upload-btn { transition: background 0.15s ease, transform 0.12s ease; }
+        .upload-btn:hover { background: ${COLORS.primaryDark} !important; }
+        .upload-btn:active, .login-btn:active { transform: scale(0.97); }
+        .upload-btn:focus-visible, .login-btn:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
+        .login-btn:hover { background: ${COLORS.surfaceDim}; }
         .avatar-btn:hover { transform: scale(1.08); }
       `}</style>
 
@@ -179,7 +189,7 @@ export default function Header() {
           gap: 12,
         }}>
           {/* Logo */}
-          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
+          <NavLink to="/explore" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textDecoration: 'none' }}>
             <Logo variant="black" size={22} />
             <span style={{ fontSize: 15, fontWeight: 800, color: COLORS.text, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Happiness
@@ -188,12 +198,14 @@ export default function Header() {
 
           {/* Nav */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
-            {NAV_ITEMS.map(({ to, label, end, badge }) => {
-              const badgeCount = badge === 'inquiry' ? unreadCount : badge === 'meets' ? pendingMeets : badge === 'gatherings' ? gatheringNotifCount : 0;
+            {NAV_ITEMS.filter(item => !item.auth || user?.id).map((item) => {
+              const { to, label, badge } = item;
+              // 업무 배지 = 새 문의 + 응답 대기 약속 (기존 폴링 값 합산)
+              const badgeCount = badge === 'workspace' ? unreadCount + pendingMeets : badge === 'gatherings' ? gatheringNotifCount : 0;
               return (
                 <NavLink
-                  key={to} to={to} end={end}
-                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  key={to} to={to}
+                  className={({ isActive }) => `nav-link${isMenuActive(item, pathname, isActive) ? ' active' : ''}`}
                 >
                   {label}
                   {badge && badgeCount > 0 && (
@@ -210,10 +222,24 @@ export default function Header() {
             })}
           </nav>
 
+          {/* 올리기 — 메뉴가 아니라 행동이라 버튼으로 */}
+          {user?.id && (
+            <NavLink to="/photo/new" className="upload-btn" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4, height: 34, padding: '0 14px', borderRadius: 10,
+              background: COLORS.primary, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', flexShrink: 0,
+            }}>＋ 올리기</NavLink>
+          )}
+
           {/* Language Switcher */}
           <LangSwitcher />
 
-          {/* Avatar dropdown */}
+          {!user?.id ? (
+            <NavLink to="/login" className="login-btn" style={{
+              display: 'inline-flex', alignItems: 'center', height: 34, padding: '0 14px', borderRadius: 10, flexShrink: 0,
+              border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontWeight: 700, textDecoration: 'none',
+            }}>로그인</NavLink>
+          ) : (
+          /* Avatar dropdown */
           <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
             <button
               className="avatar-btn"
@@ -273,6 +299,21 @@ export default function Header() {
                 >
                   <span>◎</span> 프로필 보기
                 </button>
+                {user?.profileName && (
+                  <button
+                    onClick={() => { navigate(`/portfolio/${user.profileName}`); setDropdownOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 9,
+                      width: '100%', padding: '11px 16px',
+                      fontSize: 14, color: COLORS.textSecondary, textAlign: 'left',
+                      transition: 'background 0.12s, color 0.12s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = COLORS.surfaceDim; e.currentTarget.style.color = COLORS.text; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = COLORS.textSecondary; }}
+                  >
+                    <span>🌐</span> 내 포트폴리오 보기
+                  </button>
+                )}
                 <div style={{ height: 1, background: COLORS.border, margin: '4px 0' }} />
                 <button
                   onClick={handleLogout}
@@ -290,16 +331,17 @@ export default function Header() {
               </div>
             )}
           </div>
+          )}
         </div>
       </header>
 
       {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
-      <BottomNav unreadCount={unreadCount} />
+      <BottomNav workspaceCount={unreadCount + pendingMeets} pathname={pathname} />
     </>
   );
 }
 
-function BottomNav({ unreadCount }) {
+function BottomNav({ workspaceCount, pathname }) {
   return (
     <nav className="h-mobile" style={{
       position: 'fixed', left: 12, right: 12, zIndex: 200,
@@ -311,10 +353,14 @@ function BottomNav({ unreadCount }) {
       boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
     }}>
-      {BOTTOM_NAV_ITEMS.map(({ to, label, icon, end, isCenter }) => (
+      {BOTTOM_NAV_ITEMS.map((item) => {
+        const { to, label, icon, isCenter, badge } = item;
+        return (
         <NavLink
-          key={to} to={to} end={end}
-          style={({ isActive }) => ({
+          key={to} to={to}
+          style={({ isActive: raw }) => {
+            const isActive = isMenuActive(item, pathname, raw);
+            return ({
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: isCenter ? 0 : 3,
             textDecoration: 'none', flex: 1, padding: '6px 0',
@@ -322,9 +368,12 @@ function BottomNav({ unreadCount }) {
             transition: `color 0.2s, transform 0.25s ${SPRING}`,
             transform: 'scale(1)',
             position: 'relative',
-          })}
+          });
+          }}
         >
-          {({ isActive }) => (
+          {({ isActive: raw }) => {
+            const isActive = isMenuActive(item, pathname, raw);
+            return (
             <>
               {isActive && !isCenter && (
                 <span style={{
@@ -343,14 +392,25 @@ function BottomNav({ unreadCount }) {
                 }}>+</div>
               ) : (
                 <>
-                  <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span>
+                  <span style={{ fontSize: 19, lineHeight: 1, position: 'relative' }}>
+                    {icon}
+                    {badge === 'workspace' && workspaceCount > 0 && (
+                      <span aria-label={`처리할 일 ${workspaceCount}건`} style={{
+                        position: 'absolute', top: -4, right: -10, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 99,
+                        background: COLORS.danger, color: '#fff', fontSize: 9, fontWeight: 800,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      }}>{workspaceCount > 99 ? '99+' : workspaceCount}</span>
+                    )}
+                  </span>
                   <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em' }}>{label}</span>
                 </>
               )}
             </>
-          )}
+            );
+          }}
         </NavLink>
-      ))}
+        );
+      })}
     </nav>
   );
 }

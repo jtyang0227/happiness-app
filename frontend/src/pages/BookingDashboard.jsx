@@ -6,6 +6,7 @@ import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
 import ChecklistAccordion, { isDeliveryDeadlineNear } from '../components/booking/ChecklistAccordion';
 import PaymentToggle from '../components/booking/PaymentToggle';
+import WorkspaceTabs, { WORKSPACE_TABS_HEIGHT } from '../components/workspace/WorkspaceTabs';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -332,8 +333,9 @@ export default function BookingDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.bg }}>
+      <WorkspaceTabs />
       {isDesktop ? (
-        <div style={{ display: 'flex', flexDirection: 'row', height: 'calc(100vh - 60px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', height: `calc(100vh - ${60 + WORKSPACE_TABS_HEIGHT}px)` }}>
           {/* left panel */}
           <div style={{ width: 360, flexShrink: 0, borderRight: `1px solid ${COLORS.border}`, overflowY: 'auto', background: COLORS.surface, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '20px 16px 0' }}>

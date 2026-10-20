@@ -1,16 +1,22 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { photoApi } from '../services/api';
-import { COLORS } from '../constants/colors';
-import { mq } from '../constants/breakpoints';
-import PhotoCard from '../components/photo/PhotoCard';
-import PhotoModal from '../components/photo/PhotoModal';
-import DotEmptyState from '../components/common/DotEmptyState';
-import DotSkeletonCard from '../components/common/DotSkeletonCard';
-import { useGalleryLayout } from '../hooks/useGalleryLayout';
-import GenreTabBar from '../components/common/GenreTabBar';
-import MagazineViewer from '../components/magazine/MagazineViewer';
-import Button from '../components/common/Button';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { photoApi } from '../../services/api';
+import { COLORS } from '../../constants/colors';
+import { mq } from '../../constants/breakpoints';
+import PhotoCard from '../photo/PhotoCard';
+import PhotoModal from '../photo/PhotoModal';
+import DotEmptyState from '../common/DotEmptyState';
+import DotSkeletonCard from '../common/DotSkeletonCard';
+import { useGalleryLayout } from '../../hooks/useGalleryLayout';
+import GenreTabBar from '../common/GenreTabBar';
+import MagazineViewer from '../magazine/MagazineViewer';
+import Button from '../common/Button';
+
+/**
+ * 탐색 → 사진 탭 (PLANNING_nav-consolidation.md 2.1).
+ * 예전 갤러리(`/`, 보기 방식 4종·색상순·사진 모달)와 목록(`/list`), 탐색 사진 탭(검색·자동완성·최근 검색어·조회순)을
+ * 하나로 합친 화면. 장르는 서버 필터(`?genre=`, 장르 배지 링크와 호환), 색상순만 불러온 사진 안에서 정렬한다.
+ */
 
 const PAGE_SIZE = 30;
 
@@ -29,15 +35,32 @@ function sortByColor(photos) {
   });
 }
 
-/* ── 정렬 옵션 ── */
+/* ── 정렬 옵션 ── (예전 갤러리의 "수동 순"은 작가별 순서라 전체 탐색에선 의미가 없어 뺐다 — 포트폴리오에는 그대로 적용) */
 const SORT_OPTIONS = [
   { label: '최신순',    value: 'createdAt',    order: 'desc', clientSort: null },
   { label: '오래된 순', value: 'createdAt',    order: 'asc',  clientSort: null, key: 'oldest' },
   { label: '좋아요 순', value: 'likesCount',   order: 'desc', clientSort: null },
   { label: '저장 순',   value: 'savesCount',   order: 'desc', clientSort: null },
+  { label: '조회 순',   value: 'views',        order: 'desc', clientSort: null },   // PHOTO_VIEW 집계 (서버 정렬)
   { label: '색상 순',   value: 'color',        order: 'asc',  clientSort: true  },
-  { label: '수동 순',   value: 'displayOrder', order: 'asc',  clientSort: null  },
 ];
+
+/* ── 최근 검색어 (브라우저 저장, 실패해도 무시) ── */
+const HISTORY_KEY = 'searchHistory';
+const MAX_HISTORY = 5;
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
+}
+function saveHistory(term) {
+  if (!term.trim()) return;
+  try {
+    const prev = loadHistory().filter(h => h !== term);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([term, ...prev].slice(0, MAX_HISTORY)));
+  } catch { /* 저장소 차단 시 기록만 생략 */ }
+}
+function removeHistory(term) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(loadHistory().filter(h => h !== term))); } catch { /* 무시 */ }
+}
 
 /* ── 뷰 모드 ── */
 const VIEW_MODES = [
@@ -106,9 +129,18 @@ function JustifiedPhotoCell({ photo, onClick }) {
   );
 }
 
-/* ── GalleryPage ── */
-export default function GalleryPage() {
+export default function PhotoBrowser() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const genre = searchParams.get('genre') || '';
+  const [keyword, setKeyword]       = useState('');   // 적용된 검색어
+  const [search, setSearch]         = useState('');   // 입력 중인 검색어
+  const [suggestions, setSuggestions] = useState([]);
+  const [history, setHistory]       = useState(loadHistory);
+  const [showDrop, setShowDrop]     = useState(false);
+  const debounceRef = useRef(null);
+  const inputRef = useRef(null);
+  const dropRef = useRef(null);
 
   const [photos, setPhotos]         = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -119,7 +151,6 @@ export default function GalleryPage() {
   const [loadMoreError, setLoadMoreError] = useState('');
   const [selected, setSelected]     = useState(null);
   const [sortIdx, setSortIdx]       = useState(0);
-  const [selectedGenre, setSelectedGenre] = useState('');
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem('gallery_view') ?? 'justified',
   );
@@ -133,8 +164,12 @@ export default function GalleryPage() {
 
   /* ── 데이터 패치 ── */
   const sortParams = useMemo(
-    () => (currentSort.clientSort ? {} : { sortBy: currentSort.value, order: currentSort.order }),
-    [currentSort],
+    () => ({
+      ...(currentSort.clientSort ? {} : { sortBy: currentSort.value, order: currentSort.order }),
+      ...(keyword ? { keyword } : {}),
+      ...(genre ? { genre } : {}),
+    }),
+    [currentSort, keyword, genre],
   );
 
   const fetchPhotos = useCallback(async () => {
@@ -173,17 +208,52 @@ export default function GalleryPage() {
     }
   }, [page, sortParams]);
 
-  // 해당 갤러리에 있는 장르 코드만 동적으로 추출
-  const genresInGallery = useMemo(
-    () => [...new Set(photos.map(p => p.genre).filter(Boolean))],
-    [photos],
+  const displayed = useMemo(
+    () => (currentSort.clientSort ? sortByColor(photos) : photos),
+    [photos, currentSort],
   );
 
-  const displayed = useMemo(() => {
-    const sorted = currentSort.clientSort ? sortByColor(photos) : photos;
-    if (!selectedGenre) return sorted;
-    return sorted.filter(p => p.genre === selectedGenre || (p.subGenres && p.subGenres.includes(selectedGenre)));
-  }, [photos, currentSort, selectedGenre]);
+  /* ── 검색 자동완성 (0.3초 디바운스) ── */
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (!search.trim()) { setSuggestions([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await photoApi.getSuggestions(search.trim());
+        setSuggestions(res?.data ?? []);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target) &&
+          inputRef.current && !inputRef.current.contains(e.target)) setShowDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const commitSearch = (term) => {
+    const t = term.trim();
+    setSearch(t);
+    setShowDrop(false);
+    if (t) { saveHistory(t); setHistory(loadHistory()); }
+    setKeyword(t);
+  };
+
+  const handleGenreChange = (g) => {
+    const next = new URLSearchParams(searchParams);
+    if (g) next.set('genre', g); else next.delete('genre');
+    setSearchParams(next, { replace: true });
+  };
+
+  const dropItems = search.trim() ? suggestions : history;
+  const dropType = search.trim() ? 'suggestion' : 'history';
+  const filtered = Boolean(keyword || genre);
 
   /* ── Justified Layout 훅 ── */
   const { containerRef, layout } = useGalleryLayout(displayed, {
@@ -209,6 +279,51 @@ export default function GalleryPage() {
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+      <style>{`.photo-search-item:hover { background: ${COLORS.surfaceDim}; }`}</style>
+
+      {/* ── 검색바 (자동완성 · 최근 검색어) ── */}
+      <form onSubmit={e => { e.preventDefault(); commitSearch(search); }}
+        style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '4px 16px 12px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', background: COLORS.surfaceDim, borderRadius: 9999, padding: '0 16px',
+          border: `1px solid ${showDrop && dropItems.length ? COLORS.primary : COLORS.border}`, transition: 'border-color 0.2s',
+        }}>
+          <span aria-hidden="true" style={{ color: COLORS.textMuted, fontSize: 15, marginRight: 10 }}>🔍</span>
+          <input
+            ref={inputRef} type="text" value={search} aria-label="사진 검색"
+            onChange={e => { setSearch(e.target.value); setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
+            onKeyDown={e => { if (e.key === 'Escape') setShowDrop(false); }}
+            placeholder="사진 제목, 설명 검색..."
+            style={{ flex: 1, padding: '12px 0', fontSize: 14, color: COLORS.text, outline: 'none', background: 'transparent', border: 'none' }}
+          />
+          {keyword && (
+            <button type="button" aria-label="검색어 지우기" onClick={() => commitSearch('')}
+              style={{ border: 'none', background: 'transparent', color: COLORS.textMuted, cursor: 'pointer', fontSize: 13, padding: 4 }}>✕</button>
+          )}
+        </div>
+        {showDrop && dropItems.length > 0 && (
+          <div ref={dropRef} style={{
+            position: 'absolute', top: 'calc(100% - 6px)', left: 16, right: 16, zIndex: 100, background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+          }}>
+            {dropType === 'history' && (
+              <div style={{ padding: '8px 16px 4px', fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>최근 검색어</div>
+            )}
+            {dropItems.map(item => (
+              <div key={item} onMouseDown={e => { e.preventDefault(); commitSearch(item); }}
+                className="photo-search-item"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', cursor: 'pointer', fontSize: 14, color: COLORS.text }}>
+                <span>{dropType === 'history' ? '🕐 ' : '🔍 '}{item}</span>
+                {dropType === 'history' && (
+                  <span onMouseDown={e => { e.preventDefault(); e.stopPropagation(); removeHistory(item); setHistory(loadHistory()); }}
+                    style={{ fontSize: 12, color: COLORS.textMuted, padding: '2px 6px' }}>✕</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </form>
 
       {/* ── 툴바 ── */}
       <div style={{
@@ -268,30 +383,16 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          <span style={{ fontSize: 12, color: COLORS.textMuted }}>
-            {displayed.length}장
+          <span style={{ fontSize: 12, color: COLORS.textMuted, fontVariantNumeric: 'tabular-nums' }}>
+            {keyword ? `"${keyword}" ` : ''}{displayed.length}{hasNext ? '+' : ''}장
           </span>
-
-          <button onClick={() => navigate('/photo/new')} style={primaryBtn}>+ 등록</button>
         </div>
       </div>
 
-      {/* ── 장르 탭바 (해당 갤러리 장르만 표시) ── */}
-      {!loading && genresInGallery.length > 0 && (
-        <div style={{
-          padding: '8px 16px',
-          background: COLORS.bg,
-          borderBottom: `1px solid ${COLORS.border}`,
-        }}>
-          <GenreTabBar
-            selected={selectedGenre}
-            onChange={setSelectedGenre}
-            genres={genresInGallery}
-            showAll
-            theme="light"
-          />
-        </div>
-      )}
+      {/* ── 장르 탭바 — 서버 필터 (?genre=) ── */}
+      <div style={{ padding: '8px 16px', background: COLORS.bg, borderBottom: `1px solid ${COLORS.border}` }}>
+        <GenreTabBar selected={genre} onChange={handleGenreChange} theme="light" />
+      </div>
 
       {/* ── 콘텐츠 ── */}
       {loading ? (
@@ -307,15 +408,27 @@ export default function GalleryPage() {
           </div>
         </>
       ) : displayed.length === 0 ? (
-        <DotEmptyState
-          icon="📷"
-          title="아직 사진이 없어요"
-          description="첫 번째 사진을 등록하고 갤러리를 채워보세요."
-          actionLabel="첫 사진 등록하기"
-          onAction={() => navigate('/photo/new')}
-          theme="light"
-          style={{ minHeight: '60vh' }}
-        />
+        filtered ? (
+          <DotEmptyState
+            icon="🔍"
+            title="검색 결과가 없어요"
+            description={keyword ? `"${keyword}"에 해당하는 사진이 없어요.` : '이 장르의 사진이 아직 없어요.'}
+            actionLabel="조건 지우기"
+            onAction={() => { commitSearch(''); handleGenreChange(''); }}
+            theme="light"
+            style={{ minHeight: '50vh' }}
+          />
+        ) : (
+          <DotEmptyState
+            icon="📷"
+            title="아직 사진이 없어요"
+            description="첫 번째 사진을 등록하고 갤러리를 채워보세요."
+            actionLabel="첫 사진 등록하기"
+            onAction={() => navigate('/photo/new')}
+            theme="light"
+            style={{ minHeight: '60vh' }}
+          />
+        )
       ) : viewMode === 'justified' ? (
 
         /* ── Justified Layout ── */

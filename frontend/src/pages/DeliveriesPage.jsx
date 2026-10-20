@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { COLORS } from '../constants/colors';
 import { deliveryApi } from '../services/deliveryApi';
 import DeliveryCreateModal from '../components/delivery/DeliveryCreateModal';
+import WorkspaceTabs from '../components/workspace/WorkspaceTabs';
 
 const STATUS_META = {
   PENDING:  { label: '대기 중', color: COLORS.textMuted,     bg: COLORS.surfaceDim },
@@ -173,6 +174,8 @@ export default function DeliveriesPage() {
   };
 
   return (
+    <>
+    <WorkspaceTabs />
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
 
@@ -225,5 +228,6 @@ export default function DeliveriesPage() {
         />
       )}
     </div>
+    </>
   );
 }

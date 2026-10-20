@@ -5,7 +5,20 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
-## 현재 묶음 — Behance 분석 후속 (요청: "다 진행해줘", 2026-10-20)
+## 현재 묶음 — 메뉴 통합·고도화 (요청: "카테고리가 너무 많아, 합칠 수 있는 건 합쳐서 고도화", 2026-10-20)
+
+기획: `PLANNING_nav-consolidation.md`. 헤더 10개(탐색·갤러리·시리즈·목록·등록/편집·문의함·일정·약속·모임·프로필) →
+**탐색 · 내 작업 · 업무 · 모임** + "＋ 올리기" 버튼 + 아바타 메뉴.
+
+| # | 상태 | 항목 | 메모 (마지막으로 한 일 / 다음 할 일) |
+|---|---|---|---|
+| 1 | ✅ | 기획서 + 디자인 프롬프트 | `PLANNING_nav-consolidation.md`, `DESIGN_PROMPT_nav-consolidation.md` |
+| 2 | 🔄 | 탐색 통합 — 갤러리·목록·탐색(사진) → 탐색 사진 탭 하나 | 코드 완료(`components/explore/PhotoBrowser.jsx`, GalleryPage git mv). 다음: 브라우저 확인 |
+| 3 | 🔄 | 업무 허브 `/workspace` "한눈에" + 공통 탭(문의·예약·일정·약속·납품) | 코드 완료(`WorkspacePage`, `WorkspaceTabs`, `utils/scheduleEvents.js`). 다음: 브라우저 확인 |
+| 4 | 🔄 | 헤더·하단 내비 재구성 | 코드 완료(비로그인은 탐색·모임 + 로그인 버튼). 다음: 브라우저 확인 |
+| 5 | ⏳ | 검증·문서·커밋 | |
+
+## 이전 묶음 — Behance 분석 후속 (완료)
 
 출처: `ANALYSIS_behance-public-features.md` 4절 우선순위 + `PLANNING_work-discovery.md` 6절 남은 것.
 

@@ -4,6 +4,7 @@ import { inquiryApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 import DotEmptyState from '../components/common/DotEmptyState';
+import WorkspaceTabs from '../components/workspace/WorkspaceTabs';
 
 const SHOOT_TYPE_LABELS = {
   '결혼식': '💒 결혼식', '제품촬영': '📦 제품', '인물/프로필': '👤 인물',
@@ -186,6 +187,8 @@ export default function InquiryInboxPage() {
   const unreadCount = inquiries.filter(i => !i.isRead).length;
 
   return (
+    <>
+    <WorkspaceTabs />
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 20px 60px' }}>
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -246,5 +249,6 @@ export default function InquiryInboxPage() {
         ))
       )}
     </div>
+    </>
   );
 }

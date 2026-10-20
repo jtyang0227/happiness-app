@@ -176,7 +176,7 @@ export default function PhotoDetailPage() {
     return (
       <div style={{ ...centerStyle, flexDirection: 'column', gap: 12 }}>
         <div style={{ color: COLORS.danger, fontSize: 16 }}>{error || '사진을 찾을 수 없습니다.'}</div>
-        <button onClick={() => navigate('/')} style={primaryBtn}>갤러리로 돌아가기</button>
+        <button onClick={() => navigate('/')} style={primaryBtn}>탐색으로 돌아가기</button>
       </div>
     );
   }

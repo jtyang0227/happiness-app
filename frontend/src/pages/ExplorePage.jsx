@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { photoApi } from '../services/api';
-import { MOOD_COLORS, COLORS } from '../constants/colors';
-import { mq } from '../constants/breakpoints';
-import GenreTabBar from '../components/common/GenreTabBar';
-import DotEmptyState from '../components/common/DotEmptyState';
-import DotSkeletonCard from '../components/common/DotSkeletonCard';
-import Button from '../components/common/Button';
+import React, { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { COLORS } from '../constants/colors';
 import WorkDiscovery from '../components/discover/WorkDiscovery';
+import PhotoBrowser from '../components/explore/PhotoBrowser';
 
-const PAGE_SIZE = 30;
-
-const HISTORY_KEY = 'searchHistory';
-const MAX_HISTORY  = 5;
-
-// 사진 | 작업 — 작업 탭은 작가를 가로질러 작업 노트를 둘러본다(PLANNING_work-discovery.md). ?tab=works로 공유 가능.
+/**
+ * 탐색 (/explore, 공개) — 사진 | 작업.
+ * 사진 탭은 예전 갤러리(/)·목록(/list)·탐색 사진을 합친 PhotoBrowser(PLANNING_nav-consolidation.md 2.1),
+ * 작업 탭은 작가를 가로질러 작업 노트를 둘러본다(PLANNING_work-discovery.md). ?tab=works로 공유 가능.
+ */
 const TABS = [
   { key: 'photos', label: '사진' },
   { key: 'works',  label: '작업' },
@@ -23,7 +17,7 @@ const TABS = [
 function TabSegment({ value, onChange }) {
   return (
     <div role="tablist" aria-label="탐색 대상" style={{
-      display: 'inline-flex', padding: 4, borderRadius: 12, background: COLORS.bg, marginBottom: 20,
+      display: 'inline-flex', padding: 4, borderRadius: 12, background: COLORS.bg,
     }}>
       {TABS.map(t => {
         const active = value === t.key;
@@ -45,153 +39,9 @@ function TabSegment({ value, onChange }) {
   );
 }
 
-const SORT_OPTIONS = [
-  { label: '최신순',    sortBy: 'createdAt',  order: 'desc' },
-  { label: '오래된 순', sortBy: 'createdAt',  order: 'asc'  },
-  { label: '좋아요 순', sortBy: 'likesCount', order: 'desc' },
-  { label: '저장 순',   sortBy: 'savesCount', order: 'desc' },
-  { label: '조회 순',   sortBy: 'views',      order: 'desc' },   // PHOTO_VIEW 이벤트 집계 (서버 정렬)
-];
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); }
-  catch { return []; }
-}
-
-function saveHistory(term) {
-  if (!term.trim()) return;
-  const prev = loadHistory().filter(h => h !== term);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify([term, ...prev].slice(0, MAX_HISTORY)));
-}
-
-function removeHistory(term) {
-  const updated = loadHistory().filter(h => h !== term);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-}
-
-function Highlight({ text, keyword }) {
-  if (!keyword || !text) return <>{text}</>;
-  const idx = text.toLowerCase().indexOf(keyword.toLowerCase());
-  if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark style={{ background: '#3182F6', color: '#fff', borderRadius: 2, padding: '0 1px' }}>
-        {text.slice(idx, idx + keyword.length)}
-      </mark>
-      {text.slice(idx + keyword.length)}
-    </>
-  );
-}
-
-function ExplorePhotoCard({ photo, keyword }) {
-  const navigate = useNavigate();
-  const [hovered, setHovered] = useState(false);
-  const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
-
-  return (
-    <div
-      onClick={() => navigate(`/photo/${photo.id}`)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        borderRadius: 8, overflow: 'hidden',
-        cursor: 'pointer', position: 'relative',
-        background: COLORS.border,
-        transform: hovered ? 'scale(1.01)' : 'scale(1)',
-        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-      }}
-    >
-      <img
-        src={photo.thumbnailUrl || photo.imageUrl}
-        alt={photo.title || '사진'}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-        onError={e => { e.target.style.display = 'none'; }}
-      />
-
-      {mood && (
-        <div style={{
-          position: 'absolute', top: 8, right: 8,
-          display: 'flex', alignItems: 'center', gap: 4,
-          background: 'rgba(0,0,0,0.62)',
-          padding: '3px 9px', borderRadius: 10,
-          fontSize: 11, fontWeight: 600, color: '#fff',
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
-          {mood.label}
-        </div>
-      )}
-
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 100%)',
-        padding: '32px 12px 12px',
-        opacity: hovered ? 1 : 0,
-        transition: 'opacity 0.25s ease',
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.3, marginBottom: 4 }}>
-          <Highlight text={photo.title || '제목 없음'} keyword={keyword} />
-        </div>
-        {photo.description && (
-          <div style={{
-            fontSize: 11, color: 'rgba(255,255,255,0.65)', lineHeight: 1.4,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            <Highlight text={photo.description} keyword={keyword} />
-          </div>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{photo.imageRatio}</span>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>♡ {photo.likesCount ?? 0}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'works' ? 'works' : 'photos';
-  const [photos, setPhotos]             = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [page, setPage]                 = useState(0);
-  const [hasNext, setHasNext]           = useState(false);
-  const [loadingMore, setLoadingMore]   = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState('');
-  const [search, setSearch]             = useState('');
-  const [sortIdx, setSortIdx]           = useState(0);
-  const [selectedGenre, setSelectedGenre] = useState(() => searchParams.get('genre') || '');
-  const [query, setQuery]               = useState({
-    keyword: '', colorMood: '', imageRatio: '', tags: '',
-    genre: searchParams.get('genre') || '',
-    sortBy: 'createdAt', order: 'desc',
-  });
-
-  // autocomplete + history
-  const [suggestions, setSuggestions] = useState([]);
-  const [history, setHistory]         = useState(loadHistory);
-  const [showDrop, setShowDrop]       = useState(false);
-  const debounceRef                   = useRef(null);
-  const inputRef                      = useRef(null);
-  const dropRef                       = useRef(null);
-
-  const fetchPhotos = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await photoApi.search({ ...query, page: 0, size: PAGE_SIZE });
-      setPhotos(res?.data ?? []);
-      setPage(0);
-      setHasNext(Boolean(res?.hasNext));
-    } catch {
-      setError('사진을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }, [query]);
-
-  useEffect(() => { if (tab === 'photos') fetchPhotos(); }, [fetchPhotos, tab]);
 
   const handleTabChange = useCallback((next) => {
     const newParams = new URLSearchParams(searchParams);
@@ -199,255 +49,22 @@ export default function ExplorePage() {
     setSearchParams(newParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const loadMore = useCallback(async () => {
-    setLoadingMore(true);
-    setLoadMoreError('');
-    try {
-      const next = page + 1;
-      const res = await photoApi.search({ ...query, page: next, size: PAGE_SIZE });
-      setPhotos(prev => {
-        const seen = new Set(prev.map(p => p.id));
-        return [...prev, ...(res?.data ?? []).filter(p => !seen.has(p.id))];
-      });
-      setPage(next);
-      setHasNext(Boolean(res?.hasNext));
-    } catch {
-      setLoadMoreError('사진을 더 불러오지 못했습니다. 다시 시도해 주세요.');
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [page, query]);
-
-  useEffect(() => {
-    clearTimeout(debounceRef.current);
-    if (!search.trim()) { setSuggestions([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await photoApi.getSuggestions(search.trim());
-        setSuggestions(res?.data ?? []);
-      } catch {
-        setSuggestions([]);
-      }
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [search]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target) &&
-          inputRef.current && !inputRef.current.contains(e.target)) {
-        setShowDrop(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const commitSearch = useCallback((term) => {
-    const t = term.trim();
-    setSearch(t);
-    setShowDrop(false);
-    if (t) { saveHistory(t); setHistory(loadHistory()); }
-    const s = SORT_OPTIONS[sortIdx];
-    setQuery(q => ({ ...q, keyword: t, sortBy: s.sortBy, order: s.order }));
-  }, [sortIdx]);
-
-  const handleGenreChange = useCallback((g) => {
-    setSelectedGenre(g);
-    const newParams = new URLSearchParams(searchParams);
-    if (g) { newParams.set('genre', g); } else { newParams.delete('genre'); }
-    setSearchParams(newParams, { replace: true });
-    setQuery(q => ({ ...q, genre: g }));
-  }, [searchParams, setSearchParams]);
-
-  const handleSortChange = (idx) => {
-    const s = SORT_OPTIONS[idx];
-    setSortIdx(idx);
-    setQuery(q => ({ ...q, sortBy: s.sortBy, order: s.order }));
-  };
-
-  const handleSearch = (e) => { e.preventDefault(); commitSearch(search); };
-
-  const dropItems = search.trim() ? suggestions : history;
-  const dropType  = search.trim() ? 'suggestion' : 'history';
-
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff' }}>
       <style>{`
-        .explore-masonry { columns: 4 200px; }
-        ${mq.tablet} { .explore-masonry { columns: 3; } }
-        @media(max-width:640px)  { .explore-masonry { columns: 2; } }
-        .explore-search-btn:hover { background: rgba(0,0,0,0.06) !important; }
         .explore-tab { transition: background 0.15s ease, color 0.15s ease; }
         .explore-tab:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
       `}</style>
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 12px' }}>
         <TabSegment value={tab} onChange={handleTabChange} />
-
-        {tab === 'works' ? <WorkDiscovery /> : (<>
-
-        {/* 검색바 */}
-        <form onSubmit={handleSearch} style={{ marginBottom: 20, position: 'relative' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center',
-            background: '#f5f5fa',
-            border: `1px solid ${showDrop && dropItems.length ? '#3182F6' : '#e2e2ee'}`,
-            borderRadius: 9999,
-            padding: '0 16px',
-            transition: 'border-color 0.2s',
-          }}>
-            <span style={{ color: '#9090b0', fontSize: 15, marginRight: 10, flexShrink: 0 }}>🔍</span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setShowDrop(true); }}
-              onFocus={() => setShowDrop(true)}
-              onKeyDown={e => { if (e.key === 'Escape') setShowDrop(false); }}
-              placeholder="사진 제목, 설명 검색..."
-              style={{
-                flex: 1,
-                padding: '13px 0',
-                fontSize: 14, color: '#1a1a2e', outline: 'none',
-                background: 'transparent', border: 'none',
-              }}
-            />
-            <select
-              value={sortIdx}
-              onChange={e => handleSortChange(Number(e.target.value))}
-              style={{
-                background: 'transparent', border: 'none',
-                color: '#5c5c7a', fontSize: 13,
-                cursor: 'pointer', outline: 'none',
-                padding: '13px 0 13px 8px', flexShrink: 0,
-              }}
-            >
-              {SORT_OPTIONS.map((opt, i) => (
-                <option key={opt.label} value={i} style={{ background: '#ffffff' }}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 검색어 자동완성 + 최근 검색 드롭다운 */}
-          {showDrop && dropItems.length > 0 && (
-            <div
-              ref={dropRef}
-              style={{
-                position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 100,
-                background: '#ffffff',
-                border: '1px solid #e2e2ee',
-                borderRadius: 20, overflow: 'hidden',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
-              }}
-            >
-              {dropType === 'history' && (
-                <div style={{ padding: '8px 16px 4px', fontSize: 11, color: '#9090b0', fontWeight: 600 }}>
-                  최근 검색어
-                </div>
-              )}
-              {dropItems.map((item, i) => (
-                <div
-                  key={i}
-                  onMouseDown={e => { e.preventDefault(); commitSearch(item); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 16px', cursor: 'pointer', fontSize: 14,
-                    color: '#1a1a2e', transition: 'background 0.1s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5fa'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>
-                    {dropType === 'history' ? '🕐 ' : '🔍 '}
-                    <Highlight text={item} keyword={search} />
-                  </span>
-                  {dropType === 'history' && (
-                    <span
-                      onMouseDown={e => {
-                        e.stopPropagation();
-                        removeHistory(item);
-                        setHistory(loadHistory());
-                      }}
-                      style={{ fontSize: 12, color: '#9090b0', padding: '2px 6px' }}
-                    >
-                      ✕
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </form>
-
-        {/* 장르 탭바 — Cosmos 언더라인 스타일 */}
-        <div style={{ marginBottom: 24 }}>
-          <GenreTabBar
-            selected={selectedGenre}
-            onChange={handleGenreChange}
-            theme="light"
-          />
-        </div>
-
-        {/* 결과 수 */}
-        {!loading && !error && (
-          <div style={{ marginBottom: 16, fontSize: 13, color: '#9090b0' }}>
-            {query.keyword
-              ? `"${query.keyword}" 검색 결과 ${photos.length}${hasNext ? '+' : ''}장`
-              : `${photos.length}${hasNext ? '+' : ''}장`}
-            {query.genre && (
-              <span style={{ marginLeft: 8, color: '#b8b8d0' }}>
-                · {selectedGenre}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* 포토 그리드 */}
-        {loading ? (
-          /* 도트 스켈레톤 — masonry로 표시 */
-          <div className="explore-masonry" style={{ columnGap: 8 }}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ breakInside: 'avoid', marginBottom: 8 }}>
-                <DotSkeletonCard />
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div style={{ textAlign: 'center', color: COLORS.danger, padding: '80px 0' }}>{error}</div>
-        ) : photos.length === 0 ? (
-          <DotEmptyState
-            icon={query.keyword || query.genre ? '🔍' : '📷'}
-            title={query.keyword || query.genre ? '검색 결과가 없어요' : '등록된 사진이 없어요'}
-            description={
-              query.keyword
-                ? `"${query.keyword}" 에 해당하는 사진이 없습니다.`
-                : query.genre
-                ? `${query.genre} 장르의 사진이 없습니다.`
-                : undefined
-            }
-            theme="light"
-          />
-        ) : (
-          <div className="explore-masonry" style={{ columnGap: 8 }}>
-            {photos.map(photo => (
-              <div key={photo.id} style={{ breakInside: 'avoid', marginBottom: 8 }}>
-                <ExplorePhotoCard photo={photo} keyword={query.keyword} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && hasNext && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 0 40px' }}>
-            {loadMoreError && <div role="alert" style={{ color: COLORS.danger, fontSize: 13 }}>{loadMoreError}</div>}
-            <Button variant="secondary" loading={loadingMore} onClick={loadMore}>
-              {loadingMore ? '불러오는 중' : '사진 더 보기'}
-            </Button>
-          </div>
-        )}
-        </>)}
       </div>
+      {tab === 'works' ? (
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '8px 20px 28px' }}>
+          <WorkDiscovery />
+        </div>
+      ) : (
+        <PhotoBrowser />
+      )}
     </div>
   );
 }

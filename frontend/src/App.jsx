@@ -10,9 +10,7 @@ import { GLOBAL_KEYFRAMES } from './constants/animations';
 
 import LoginPage    from './pages/LoginPage';
 import SignUpPage   from './pages/SignUpPage';
-import GalleryPage  from './pages/GalleryPage';
 import ExplorePage  from './pages/ExplorePage';
-import ListPage     from './pages/ListPage';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import PhotoFormPage   from './pages/PhotoFormPage';
 import ProfilePage  from './pages/ProfilePage';
@@ -53,6 +51,7 @@ import GatheringCalendarPage from './pages/GatheringCalendarPage';
 import IntegratedCalendarPage from './pages/IntegratedCalendarPage';
 import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
 import MoodboardPage from './pages/MoodboardPage';
+import WorkspacePage from './pages/WorkspacePage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -112,8 +111,9 @@ function AppShell() {
           <Route path="/explore" element={<ExplorePage />} />
 
           {/* Protected */}
-          <Route path="/" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
-          <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
+          {/* 예전 갤러리(/)·목록(/list)은 탐색 사진 탭으로 합쳤다 — 북마크·외부 링크 보존용 리다이렉트 */}
+          <Route path="/" element={<Navigate to="/explore" replace />} />
+          <Route path="/list" element={<Navigate to="/explore" replace />} />
           <Route path="/photo/new" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
           <Route path="/photo/:id" element={<ProtectedRoute><PhotoDetailPage /></ProtectedRoute>} />
           <Route path="/photo/:id/edit" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
@@ -122,6 +122,7 @@ function AppShell() {
           <Route path="/inbox" element={<ProtectedRoute><InquiryInboxPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/boards/:id" element={<ProtectedRoute><MoodboardPage /></ProtectedRoute>} />
+          <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
           <Route path="/editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
 
           {/* Delivery & Booking (standalone) */}
@@ -163,7 +164,7 @@ function AppShell() {
           <Route path="/admin/curation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCurationPage /></ProtectedRoute>} />
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/explore" replace />} />
         </Routes>
       </main>
     </div>

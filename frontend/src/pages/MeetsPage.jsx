@@ -6,6 +6,7 @@ import meetApi from '../services/meetApi';
 import MeetRequestModal from '../components/meet/MeetRequestModal';
 import Button from '../components/common/Button';
 import DotEmptyState from '../components/common/DotEmptyState';
+import WorkspaceTabs, { WORKSPACE_TABS_HEIGHT } from '../components/workspace/WorkspaceTabs';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -276,8 +277,9 @@ export default function MeetsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.bg, paddingBottom: isDesktop ? 0 : 80 }}>
+      <WorkspaceTabs />
       {isDesktop ? (
-        <div style={{ display: 'flex', flexDirection: 'row', height: 'calc(100vh - 60px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', height: `calc(100vh - ${60 + WORKSPACE_TABS_HEIGHT}px)` }}>
           {/* left panel */}
           <div style={{ width: 320, flexShrink: 0, borderRight: `1px solid ${COLORS.border}`, overflowY: 'auto', background: COLORS.surface, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '20px 16px 0' }}>
