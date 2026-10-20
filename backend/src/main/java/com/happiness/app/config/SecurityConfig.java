@@ -88,6 +88,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}").permitAll()
                 // 공개 탐색의 사진 모달이 댓글을 읽는다 — 읽기만 공개, 작성·삭제는 그대로 인증 필요
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}/comments").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/photos/{id}/similar").permitAll()
+                // 무드보드 보기 전용 공유 링크 (토큰 기반, 나머지 /api/moodboards/** 는 인증)
+                .requestMatchers(HttpMethod.GET, "/api/moodboards/shared/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/discover").permitAll()

@@ -205,6 +205,72 @@ public class PhotoController {
                 .orElseGet(() -> errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
     }
 
+    /**
+     * 비슷한 사진 (PLANNING_inside-menus-upgrade.md P0-A, Cosmos "비슷한 요소" 재해석, 공개).
+     * 이미지 임베딩이 아니라 메타데이터 점수다: 장르 3 + 색 분위기 2 + 서브장르 겹침 1씩 + 대표색 거리(최대 2) + 같은 비율 0.5.
+     * 후보는 같은 장르 또는 같은 색 분위기 최근 300장. 같은 작가는 최대 4장(다양성), 점수 0은 제외, 동점은 최신순.
+     */
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<?> getSimilarPhotos(@PathVariable Long id, @RequestParam(defaultValue = "12") int size) {
+        Photo base = photoRepository.findById(id).orElse(null);
+        if (base == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
+        int limit = Math.min(Math.max(size, 1), 24);
+        PageRequest pool = PageRequest.of(0, SIMILAR_POOL);
+        List<Photo> candidates = (base.getGenre() == null && base.getColorMood() == null)
+                ? photoRepository.findRecentExcept(id, pool)
+                : photoRepository.findSimilarCandidates(id, base.getGenre(), base.getColorMood(), pool);
+
+        Set<String> baseSubs = splitGenres(base.getSubGenres());
+        int[] baseRgb = parseHex(base.getDominantColor());
+        record Scored(Photo photo, double score) {}
+        List<Scored> ranked = candidates.stream()
+                .map(p -> {
+                    double s = 0;
+                    if (base.getGenre() != null && base.getGenre().equals(p.getGenre())) s += 3;
+                    if (base.getColorMood() != null && base.getColorMood().equals(p.getColorMood())) s += 2;
+                    for (String sub : splitGenres(p.getSubGenres())) if (baseSubs.contains(sub)) s += 1;
+                    int[] rgb = parseHex(p.getDominantColor());
+                    if (baseRgb != null && rgb != null) {
+                        double dist = Math.sqrt(Math.pow(baseRgb[0] - rgb[0], 2) + Math.pow(baseRgb[1] - rgb[1], 2)
+                                + Math.pow(baseRgb[2] - rgb[2], 2));
+                        s += 2 * Math.max(0, 1 - dist / 220.0);   // 220 ≈ 확연히 다른 색으로 느껴지는 거리
+                    }
+                    if (s > 0 && base.getImageRatio() != null && base.getImageRatio().equals(p.getImageRatio())) s += 0.5;
+                    return new Scored(p, s);
+                })
+                .filter(sc -> sc.score() > 0)
+                .sorted(Comparator.comparingDouble(Scored::score).reversed())   // 안정 정렬 — 동점은 후보 순서(최신순) 유지
+                .collect(Collectors.toList());
+
+        Map<Long, Integer> perAuthor = new HashMap<>();
+        List<PhotoResponse> result = new ArrayList<>();
+        for (Scored sc : ranked) {
+            if (result.size() >= limit) break;
+            int n = perAuthor.merge(sc.photo().getMemberId(), 1, Integer::sum);
+            if (n > SIMILAR_PER_AUTHOR) continue;
+            result.add(PhotoResponse.fromEntity(sc.photo()));
+        }
+        attachMemberInfo(result);
+        return ResponseEntity.ok(Map.of("status", "success", "data", result));
+    }
+
+    private static final int SIMILAR_POOL = 300;
+    private static final int SIMILAR_PER_AUTHOR = 4;
+
+    /** subGenres는 '["FASHION","LIFESTYLE"]' 같은 JSON 배열 문자열이다(콤마 구분도 허용) */
+    private static Set<String> splitGenres(String raw) {
+        if (raw == null || raw.isBlank()) return Set.of();
+        return Arrays.stream(raw.replaceAll("[\\[\\]\"\\s]", "").split(","))
+                .filter(s -> !s.isEmpty()).collect(Collectors.toSet());
+    }
+
+    private static int[] parseHex(String hex) {
+        if (hex == null || !hex.matches("#?[0-9a-fA-F]{6}")) return null;
+        String h = hex.startsWith("#") ? hex.substring(1) : hex;
+        return new int[]{Integer.parseInt(h.substring(0, 2), 16), Integer.parseInt(h.substring(2, 4), 16),
+                Integer.parseInt(h.substring(4, 6), 16)};
+    }
+
     // ── 사진 생성 ─────────────────────────────────────────────────────
 
     @PostMapping("/upload")

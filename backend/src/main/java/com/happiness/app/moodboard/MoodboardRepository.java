@@ -14,6 +14,8 @@ public interface MoodboardRepository extends JpaRepository<Moodboard, Long> {
 
     long countByMemberId(Long memberId);
 
+    Optional<Moodboard> findByShareToken(String shareToken);
+
     @Transactional
     void deleteByMemberId(Long memberId);
 }

@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -948,5 +949,76 @@ class CoreFlowIntegrationTest {
         mvc.perform(post("/api/photos/" + photo + "/comments").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"안녕하세요\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+    // ── 4개 메뉴 내부 고도화 (Cosmos·SCRL 대조) ─────────────────────
+
+    private long createPhotoWith(User owner, String genre, String mood) throws Exception {
+        Map<String, Object> body = new HashMap<>(Map.of("memberId", owner.id(), "title", "유사 테스트",
+                "imageUrl", "https://example.com/s.jpg"));
+        if (genre != null) body.put("genre", genre);
+        if (mood != null) body.put("colorMood", mood);
+        MvcResult r = mvc.perform(post("/api/photos").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(body)))
+                .andExpect(status().isCreated()).andReturn();
+        return ((Number) JsonPath.read(r.getResponse().getContentAsString(), "$.data.id")).longValue();
+    }
+
+    @Test
+    void 비슷한_사진은_장르가_같은_사진을_먼저_보여주고_같은_작가는_4장까지다() throws Exception {
+        // 테스트끼리 DB를 공유하므로 이 테스트만의 장르·색 분위기 값을 쓴다
+        String genre = "G" + UUID.randomUUID().toString().substring(0, 8);
+        String mood = "M" + UUID.randomUUID().toString().substring(0, 8);
+        User a = signupAndLogin();
+        User b = signupAndLogin();
+        User c = signupAndLogin();
+        long base = createPhotoWith(a, genre, mood);
+        for (int i = 0; i < 5; i++) createPhotoWith(a, genre, null);
+        long bPhoto = createPhotoWith(b, genre, mood);
+        long cMoodOnly = createPhotoWith(c, null, mood);
+        long unrelated = createPhotoWith(c, null, null);
+
+        String body = mvc.perform(get("/api/photos/" + base + "/similar"))   // 비로그인 공개
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<Number> ids = JsonPath.read(body, "$.data[*].id");
+        List<Number> authors = JsonPath.read(body, "$.data[*].memberId");
+        assertThat(ids).extracting(Number::longValue).doesNotContain(base, unrelated);
+        assertThat(ids.get(0).longValue()).isEqualTo(bPhoto);                      // 장르+색 분위기 둘 다 일치
+        assertThat(ids.get(ids.size() - 1).longValue()).isEqualTo(cMoodOnly);      // 색 분위기만 일치 → 맨 뒤
+        assertThat(authors.stream().filter(m -> m.longValue() == a.id()).count()).isEqualTo(4);
+        mvc.perform(get("/api/photos/999999999/similar")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 무드보드_공유_링크는_주인만_켜고_끄며_끄면_이전_링크가_막힌다() throws Exception {
+        User me = signupAndLogin();
+        User other = signupAndLogin();
+        long photo = createPhoto(other);
+        String created = mvc.perform(post("/api/moodboards").header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"레퍼런스\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long board = ((Number) JsonPath.read(created, "$.id")).longValue();
+        mvc.perform(post("/api/moodboards/" + board + "/photos").header("Authorization", bearer(me))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"photoId\":" + photo + "}")).andExpect(status().isOk());
+
+        String on = "{\"enabled\":true}";
+        mvc.perform(put("/api/moodboards/" + board + "/share").header("Authorization", bearer(other))
+                .contentType(MediaType.APPLICATION_JSON).content(on)).andExpect(status().isNotFound());
+        String shared = mvc.perform(put("/api/moodboards/" + board + "/share").header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content(on))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String token = JsonPath.read(shared, "$.shareToken");
+        assertThat(token).hasSize(32);
+
+        mvc.perform(get("/api/moodboards/shared/" + token))   // 비로그인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("레퍼런스"))
+                .andExpect(jsonPath("$.photos[0].id").value(photo))
+                .andExpect(jsonPath("$.memberId").doesNotExist());
+
+        mvc.perform(put("/api/moodboards/" + board + "/share").header("Authorization", bearer(me))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"enabled\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.shareToken").doesNotExist());
+        mvc.perform(get("/api/moodboards/shared/" + token)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/moodboards/" + board)).andExpect(status().isUnauthorized());
     }
 }

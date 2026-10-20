@@ -1,6 +1,7 @@
 package com.happiness.app.moodboard;
 
 import com.happiness.app.common.SecurityUtil;
+import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.entity.Photo;
 import com.happiness.app.photo.repository.PhotoRepository;
@@ -31,6 +32,7 @@ public class MoodboardController {
     private final MoodboardRepository boardRepository;
     private final MoodboardItemRepository itemRepository;
     private final PhotoRepository photoRepository;
+    private final MemberRepository memberRepository;
 
     private static String thumb(Photo p) {
         return p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl();
@@ -90,20 +92,63 @@ public class MoodboardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", saved.getId(), "name", saved.getName()));
     }
 
-    /** 보드 상세 — 담긴 사진(최신 담은 순). 삭제된 사진은 건너뛴다. */
-    @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
-        Moodboard board = myBoard(id);
-        List<MoodboardItem> items = itemRepository.findByMoodboardIdOrderByCreatedAtDesc(id);
+    /** 담긴 사진(최신 담은 순). 삭제된 사진은 건너뛴다. */
+    private List<PhotoResponse> boardPhotos(Long boardId) {
+        List<MoodboardItem> items = itemRepository.findByMoodboardIdOrderByCreatedAtDesc(boardId);
         Map<Long, Photo> photos = photoRepository.findAllById(
                         items.stream().map(MoodboardItem::getPhotoId).collect(Collectors.toList()))
                 .stream().collect(Collectors.toMap(Photo::getId, Function.identity()));
-        List<PhotoResponse> list = items.stream().map(i -> photos.get(i.getPhotoId())).filter(Objects::nonNull)
+        return items.stream().map(i -> photos.get(i.getPhotoId())).filter(Objects::nonNull)
                 .map(PhotoResponse::fromEntity).collect(Collectors.toList());
+    }
+
+    /** 보드 상세 — 본인 전용. 공유 중이면 shareToken도 준다. */
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
+        Moodboard board = myBoard(id);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("id", board.getId());
         body.put("name", board.getName());
-        body.put("photos", list);
+        body.put("shareToken", board.getShareToken());
+        body.put("photos", boardPhotos(id));
+        return ResponseEntity.ok(body);
+    }
+
+    /**
+     * 공유 링크 켜기/끄기 (PLANNING_inside-menus-upgrade.md P0-C). {"enabled": true} → 새 토큰(이미 있으면 그대로),
+     * false → 토큰 삭제(이전 링크 즉시 무효). 남의 보드는 myBoard()에서 404.
+     */
+    @PutMapping("/{id}/share")
+    public ResponseEntity<Map<String, Object>> share(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Moodboard board = myBoard(id);
+        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+        if (enabled && board.getShareToken() == null) {
+            board.setShareToken(UUID.randomUUID().toString().replace("-", ""));
+        } else if (!enabled) {
+            board.setShareToken(null);
+        }
+        boardRepository.save(board);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("id", board.getId());
+        res.put("shareToken", board.getShareToken());
+        return ResponseEntity.ok(res);
+    }
+
+    /** 공유된 보드 보기 (공개) — 보드 이름·주인 표시명·사진만. 보드 주인의 회원 id·이메일은 내보내지 않는다. */
+    @GetMapping("/shared/{token}")
+    public ResponseEntity<Map<String, Object>> shared(@PathVariable String token) {
+        Moodboard board = (token == null || token.length() != 32) ? null
+                : boardRepository.findByShareToken(token).orElse(null);
+        if (board == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "공유가 끝났거나 없는 보드예요.");
+        List<PhotoResponse> photos = boardPhotos(board.getId());
+        // 남의 사진을 공개 페이지에 보여 주므로 원작자 이름을 함께 싣는다 (배치 조회)
+        PhotoResponse.attachMembers(photos, memberRepository.findAllById(
+                        photos.stream().map(PhotoResponse::getMemberId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(m -> m.getId(), m -> m)));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("name", board.getName());
+        body.put("ownerName", memberRepository.findById(board.getMemberId()).map(m -> m.getName()).orElse(null));
+        body.put("photos", photos);
         return ResponseEntity.ok(body);
     }
 

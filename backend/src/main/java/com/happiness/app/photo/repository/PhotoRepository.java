@@ -24,6 +24,15 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
     List<Photo> findByColorMoodOrderByCreatedAtDesc(String colorMood);
 
+    /** 비슷한 사진 후보 — 같은 장르 또는 같은 색 분위기, 최신순 (점수 계산은 컨트롤러에서) */
+    @Query("SELECT p FROM Photo p WHERE p.id <> :id AND (p.genre = :genre OR p.colorMood = :mood) ORDER BY p.createdAt DESC")
+    List<Photo> findSimilarCandidates(@Param("id") Long id, @Param("genre") String genre,
+                                      @Param("mood") String mood, Pageable pageable);
+
+    /** 장르·색 분위기 정보가 없는 사진의 후보 — 최근 사진 */
+    @Query("SELECT p FROM Photo p WHERE p.id <> :id ORDER BY p.createdAt DESC")
+    List<Photo> findRecentExcept(@Param("id") Long id, Pageable pageable);
+
     /** 복합 필터 + 동적 정렬 (Sort 파라미터로 ORDER BY 위임) */
     @Query("""
         SELECT p FROM Photo p
