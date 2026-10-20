@@ -27,4 +27,6 @@ public class DiscoverWorkResponse {
     private String memberAvatarUrl;
     private String memberLocation;
     private boolean acceptingBookings;
+    private long appreciationCount;
+    private long viewCount;
 }

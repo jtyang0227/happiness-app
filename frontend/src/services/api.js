@@ -109,6 +109,14 @@ export const seriesApi = {
   discover: (params) =>
     apiClient.get('/series/discover', { params }).then(r => r.data),
 
+  /** 작업 감상 토글 — { appreciationCount, appreciatedByMe } */
+  getAppreciation: (id) =>
+    apiClient.get(`/series/${id}/appreciation`).then(r => r.data),
+  appreciate: (id) =>
+    apiClient.post(`/series/${id}/appreciation`).then(r => r.data),
+  unappreciate: (id) =>
+    apiClient.delete(`/series/${id}/appreciation`).then(r => r.data),
+
   create: (data) =>
     apiClient.post('/series', data).then(r => r.data),
 

@@ -22,6 +22,10 @@ import AcceptingBadge from '../components/common/AcceptingBadge';
  */
 
 const CSS = `
+  .work-appreciate { transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease; }
+  .work-appreciate:hover:not(:disabled) { border-color: ${COLORS.primary}; }
+  .work-appreciate:active:not(:disabled) { transform: scale(0.97); }
+  .work-appreciate:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
   .work-photos { display: flex; flex-direction: column; gap: 40px; }
   .work-cover  { height: min(64vh, 560px); }
   .work-title  { font-size: 36px; }
@@ -87,6 +91,9 @@ export default function WorkCasePage() {
   const [reviews, setReviews] = useState([]);        // 이 작업에 연결된 고객 후기
   const [bookable, setBookable] = useState(false);   // 이번 달·다음 달에 예약 가능일이 있는지
   const [acceptingBookings, setAcceptingBookings] = useState(false); // 작가가 예약 가용 설정을 켜뒀는지(배지)
+  // 감상 수는 work와 따로 둔다 — work를 바꾸면 아래 부가 정보 effect(조회 기록 포함)가 다시 돈다
+  const [appreciation, setAppreciation] = useState({ count: 0, mine: false });
+  const [appreciating, setAppreciating] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -109,6 +116,7 @@ export default function WorkCasePage() {
         setMember(owner);
         setWork(detail);
         setAcceptingBookings(Boolean(portfolioRes.data?.acceptingBookings));
+        setAppreciation({ count: detail.appreciationCount ?? 0, mine: Boolean(detail.appreciatedByMe) });
         setOthers((portfolioRes.data?.series || []).filter(s => String(s.id) !== String(seriesId)));
         setStatus('ready');
       } catch (err) {
@@ -164,6 +172,33 @@ export default function WorkCasePage() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       window.prompt('아래 주소를 복사하세요', window.location.href);
+    }
+  };
+
+  // 내 감상 여부는 인증 경로로 따로 받는다 — 새로고침 직후 공개 상세 조회에는 토큰이 실리지 않기 때문
+  useEffect(() => {
+    if (status !== 'ready' || !user?.id || !work?.id || user.id === member?.id) return;
+    let cancelled = false;
+    seriesApi.getAppreciation(work.id)
+      .then(res => { if (!cancelled) setAppreciation({ count: res.appreciationCount, mine: res.appreciatedByMe }); })
+      .catch(() => {});   // 실패해도 공개 수치는 이미 보이고 있다
+    return () => { cancelled = true; };
+  }, [status, user?.id, work?.id, member?.id]);
+
+  const toggleAppreciation = async () => {
+    if (!user?.id) { navigate('/login'); return; }
+    if (appreciating) return;
+    const prev = appreciation;
+    setAppreciating(true);
+    setAppreciation({ count: prev.count + (prev.mine ? -1 : 1), mine: !prev.mine });   // 낙관적 반영
+    try {
+      const res = prev.mine ? await seriesApi.unappreciate(work.id) : await seriesApi.appreciate(work.id);
+      setAppreciation({ count: res.appreciationCount, mine: res.appreciatedByMe });
+    } catch (err) {
+      setAppreciation(prev);
+      window.alert(err?.response?.data?.message || '감상을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setAppreciating(false);
     }
   };
 
@@ -258,6 +293,24 @@ export default function WorkCasePage() {
         <p style={{ fontSize: 14, color: COLORS.textSecondary, margin: '12px 0 0', fontVariantNumeric: 'tabular-nums' }}>
           {meta.join(' · ')}
         </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
+          <span style={{ fontSize: 13, color: COLORS.textMuted, fontVariantNumeric: 'tabular-nums' }}>
+            조회 {(work.viewCount ?? 0).toLocaleString()} · 감상 {appreciation.count.toLocaleString()}
+          </span>
+          {user?.id !== member.id && (
+            <button type="button" className="work-appreciate" onClick={toggleAppreciation}
+              aria-pressed={appreciation.mine} disabled={appreciating}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999,
+                fontSize: 13, fontWeight: 700, cursor: appreciating ? 'default' : 'pointer',
+                border: `1px solid ${appreciation.mine ? COLORS.primary : COLORS.border}`,
+                background: appreciation.mine ? COLORS.primaryLight : COLORS.surface,
+                color: appreciation.mine ? COLORS.primary : COLORS.textSecondary,
+              }}>
+              <span aria-hidden="true">👏</span>{appreciation.mine ? '감상했어요' : '감상하기'}
+            </button>
+          )}
+        </div>
         {acceptingBookings && (
           <AcceptingBadge
             to={`/booking/${profileName}${BOOKING_CODE_BY_SHOOT_TYPE[work.shootType] ? `?shootType=${BOOKING_CODE_BY_SHOOT_TYPE[work.shootType]}` : ''}`}

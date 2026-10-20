@@ -645,4 +645,52 @@ class CoreFlowIntegrationTest {
         mvc.perform(get("/api/portfolio/" + open.profileName()))
                 .andExpect(jsonPath("$.acceptingBookings").value(false));
     }
+
+    // ── 작업 감상 + 공개 조회수 (WORK_QUEUE 3) ─────────────────────────
+
+    @Test
+    void 작업_감상은_회원당_한번이고_본인_작업에는_할_수_없다() throws Exception {
+        String tag = "t" + UUID.randomUUID().toString().substring(0, 8);
+        User owner = signupAndLogin();
+        User fan = signupAndLogin();
+        updateProfile(owner, Map.of("location", tag));
+        long work = createWork(owner, "감상 테스트 작업", "결혼식", 1);
+
+        mvc.perform(post("/api/series/" + work + "/appreciation"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/series/" + work + "/appreciation").header("Authorization", bearer(owner)))
+                .andExpect(status().isBadRequest());
+        for (int i = 0; i < 2; i++) {   // 두 번 눌러도 1
+            mvc.perform(post("/api/series/" + work + "/appreciation").header("Authorization", bearer(fan)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.appreciationCount").value(1))
+                    .andExpect(jsonPath("$.appreciatedByMe").value(true));
+        }
+        mvc.perform(get("/api/series/" + work).header("Authorization", bearer(fan)))
+                .andExpect(jsonPath("$.appreciationCount").value(1))
+                .andExpect(jsonPath("$.appreciatedByMe").value(true));
+        mvc.perform(get("/api/series/" + work))
+                .andExpect(jsonPath("$.appreciatedByMe").value(false));
+        // 인증 경로 — 토큰 없으면 401(웹은 이걸로 토큰 재발급을 탄다), 있으면 정확한 값
+        mvc.perform(get("/api/series/" + work + "/appreciation")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/series/" + work + "/appreciation").header("Authorization", bearer(fan)))
+                .andExpect(jsonPath("$.appreciatedByMe").value(true));
+
+        track(owner.id(), work);
+        track(owner.id(), work);
+        mvc.perform(get("/api/series/discover").param("location", tag))
+                .andExpect(jsonPath("$.data[0].appreciationCount").value(1))
+                .andExpect(jsonPath("$.data[0].viewCount").value(2));
+        mvc.perform(get("/api/series/" + work)).andExpect(jsonPath("$.viewCount").value(2));
+
+        mvc.perform(delete("/api/series/" + work + "/appreciation").header("Authorization", bearer(fan)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.appreciationCount").value(0));
+
+        // 감상이 남은 작업도 삭제할 수 있다(연관 행 정리)
+        mvc.perform(post("/api/series/" + work + "/appreciation").header("Authorization", bearer(fan)))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/series/" + work).header("Authorization", bearer(owner)))
+                .andExpect(status().isNoContent());
+    }
 }

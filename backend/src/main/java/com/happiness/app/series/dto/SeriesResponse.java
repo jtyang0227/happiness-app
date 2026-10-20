@@ -29,6 +29,10 @@ public class SeriesResponse {
     private List<String> previewPhotos;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** 작업 감상·조회 수와 내가 감상했는지 — 상세 조회(GET /series/{id})에서만 채워짐 */
+    private Long appreciationCount;
+    private Long viewCount;
+    private Boolean appreciatedByMe;
 
     public static SeriesResponse fromEntity(Series series, List<PhotoResponse> photos) {
         String cover = series.getCoverImageUrl();

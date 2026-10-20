@@ -97,6 +97,7 @@ export default function WorkDiscoveryList() {
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
           {!!meta && <Text style={styles.meta}>{meta}</Text>}
+          <Text style={styles.meta}>👏 {item.appreciationCount ?? 0} · 👁 {item.viewCount ?? 0}</Text>
         </View>
         <View style={styles.authorRow}>
           {item.memberAvatarUrl

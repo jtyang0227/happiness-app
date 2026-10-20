@@ -65,3 +65,21 @@
 - 데이터: `GET /api/series/discover?shootType=&location=&page=&size=` (공개). `acceptingBookings`는 포트폴리오 응답에도 포함.
 - 지역 입력은 디바운스 400ms, 50자 제한. 유형 칩 어휘는 `constants/shootTypes.js` 재사용.
 - 배지 텍스트 색은 `COLORS.successText`(#007A45, 신규 토큰). `success`(#00C471)나 #00A35E는 연녹(#E5F9F0) 배경에서 대비가 약 3:1이라 WCAG AA 미달 — #007A45는 약 4.9:1.
+
+---
+
+## P1 추가 — 작업 감상 + 조회수 공개 (2026-10-20)
+
+```
+[요청 — 위 시스템 컨텍스트 동일]
+작업 노트 페이지 제목 메타 줄 아래에 반응 줄을 추가해줘.
+- 왼쪽: "조회 128 · 감상 12" 13px textMuted, tabular-nums
+- 오른쪽: 감상 토글 pill 버튼 "👏 감상하기" (흰 배경 + 1px border, textSecondary)
+  → 누르면 "👏 감상했어요" (primaryLight 배경 + primary 테두리·글자), 다시 누르면 취소
+- hover 시 테두리 primary, active scale(0.97), focus-visible 2px primary 아웃라인, aria-pressed
+- 작가 본인에게는 버튼 없이 수치만, 비로그인은 누르면 로그인 화면으로
+탐색 작업 카드 메타 아래에도 "👏 12 · 👁 128" 12px textMuted 한 줄.
+```
+
+구현 메모: 감상은 회원당 작업 1회(`series_appreciations` UNIQUE), 본인 작업 400. 조회수는 작업 노트 페이지 `WORK_VIEW` 이벤트 수
+(작가 본인 방문 제외). 내 감상 여부는 인증 경로 `GET /series/{id}/appreciation`으로 따로 받는다(아래 함정 참고).

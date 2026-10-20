@@ -7,6 +7,7 @@ import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.repository.*;
+import com.happiness.app.series.repository.SeriesAppreciationRepository;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
 import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class MemberService {
     private final PhotoShareRepository photoShareRepository;
     private final PhotoTagRepository photoTagRepository;
     private final SeriesPhotoRepository seriesPhotoRepository;
+    private final SeriesAppreciationRepository seriesAppreciationRepository;
     private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
 
@@ -161,7 +163,11 @@ public class MemberService {
 
         // 4. 멤버의 시리즈 삭제
         seriesRepository.findByMemberIdOrderByDisplayOrderAscCreatedAtDesc(memberId)
-                .forEach(s -> seriesPhotoRepository.deleteBySeriesId(s.getId()));
+                .forEach(s -> {
+                    seriesPhotoRepository.deleteBySeriesId(s.getId());
+                    seriesAppreciationRepository.deleteBySeriesId(s.getId());
+                });
+        seriesAppreciationRepository.deleteByMemberId(memberId);   // 남의 작업에 남긴 감상
         seriesRepository.deleteByMemberId(memberId);
 
         // 5. 사진, 수신 문의, 멤버 삭제

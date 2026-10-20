@@ -48,6 +48,10 @@ function WorkCard({ work }) {
           {work.title}
         </div>
         {meta && <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4 }}>{meta}</div>}
+        <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}
+          aria-label={`감상 ${work.appreciationCount ?? 0}, 조회 ${work.viewCount ?? 0}`}>
+          👏 {work.appreciationCount ?? 0} · 👁 {work.viewCount ?? 0}
+        </div>
       </div>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8, margin: '14px 16px 0', padding: '12px 0 14px',

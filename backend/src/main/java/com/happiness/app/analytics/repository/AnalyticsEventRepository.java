@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -79,4 +80,9 @@ public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, 
             @Param("since") LocalDateTime since,
             Pageable pageable
     );
+
+    /** [targetId, count] — 작업 노트 페이지 조회수(WORK_VIEW) 공개 표시용 배치 집계 */
+    @Query("SELECT e.targetId, COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'WORK_VIEW' " +
+           "AND e.targetType = 'SERIES' AND e.targetId IN :ids GROUP BY e.targetId")
+    List<Object[]> countWorkViews(@Param("ids") Collection<Long> ids);
 }

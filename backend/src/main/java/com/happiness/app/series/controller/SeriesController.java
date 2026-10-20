@@ -1,5 +1,6 @@
 package com.happiness.app.series.controller;
 
+import com.happiness.app.analytics.repository.AnalyticsEventRepository;
 import com.happiness.app.booking.entity.BookingAvailability;
 import com.happiness.app.booking.repository.BookingAvailabilityRepository;
 import com.happiness.app.common.SecurityUtil;
@@ -12,7 +13,9 @@ import com.happiness.app.series.dto.DiscoverWorkResponse;
 import com.happiness.app.series.dto.SeriesRequest;
 import com.happiness.app.series.dto.SeriesResponse;
 import com.happiness.app.series.entity.Series;
+import com.happiness.app.series.entity.SeriesAppreciation;
 import com.happiness.app.series.entity.SeriesPhoto;
+import com.happiness.app.series.repository.SeriesAppreciationRepository;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
 import com.happiness.app.series.repository.SeriesRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,23 @@ public class SeriesController {
     private final PhotoRepository photoRepository;
     private final MemberRepository memberRepository;
     private final BookingAvailabilityRepository bookingAvailabilityRepository;
+    private final SeriesAppreciationRepository seriesAppreciationRepository;
+    private final AnalyticsEventRepository analyticsEventRepository;
+
+    /** [id, count] 집계 결과를 Map으로 */
+    private static Map<Long, Long> toCountMap(List<Object[]> rows) {
+        Map<Long, Long> m = new HashMap<>();
+        for (Object[] r : rows) m.put(((Number) r[0]).longValue(), ((Number) r[1]).longValue());
+        return m;
+    }
+
+    private Map<Long, Long> appreciationCounts(Collection<Long> seriesIds) {
+        return seriesIds.isEmpty() ? Map.of() : toCountMap(seriesAppreciationRepository.countBySeriesIds(seriesIds));
+    }
+
+    private Map<Long, Long> viewCounts(Collection<Long> seriesIds) {
+        return seriesIds.isEmpty() ? Map.of() : toCountMap(analyticsEventRepository.countWorkViews(seriesIds));
+    }
 
     /** 작업 노트 촬영 유형 — InquiryFormPage SHOOT_TYPES의 value와 동일해야 문의 폼 프리필이 동작한다 */
     private static final Set<String> SHOOT_TYPES =
@@ -150,6 +170,8 @@ public class SeriesController {
         Set<Long> previewIds = photoIdsBySeries.values().stream()
                 .flatMap(ids -> ids.stream().limit(3))
                 .collect(Collectors.toSet());
+        Map<Long, Long> appreciations = appreciationCounts(seriesIds);
+        Map<Long, Long> views = viewCounts(seriesIds);
         Map<Long, String> thumbById = photoRepository.findAllById(previewIds).stream()
                 .collect(Collectors.toMap(Photo::getId,
                         p -> p.getThumbnailUrl() != null ? p.getThumbnailUrl() : p.getImageUrl()));
@@ -176,6 +198,8 @@ public class SeriesController {
                     .memberAvatarUrl(m != null ? m.getAvatarUrl() : null)
                     .memberLocation(m != null ? m.getLocation() : null)
                     .acceptingBookings(accepting.contains(s.getMemberId()))
+                    .appreciationCount(appreciations.getOrDefault(s.getId(), 0L))
+                    .viewCount(views.getOrDefault(s.getId(), 0L))
                     .build();
         }).collect(Collectors.toList());
 
@@ -198,9 +222,62 @@ public class SeriesController {
                             .filter(Optional::isPresent)
                             .map(opt -> PhotoResponse.fromEntity(opt.get()))
                             .collect(Collectors.toList());
-                    return ResponseEntity.ok(SeriesResponse.fromEntity(series, photos));
+                    SeriesResponse body = SeriesResponse.fromEntity(series, photos);
+                    body.setAppreciationCount(seriesAppreciationRepository.countBySeriesId(id));
+                    body.setViewCount(viewCounts(List.of(id)).getOrDefault(id, 0L));
+                    body.setAppreciatedByMe(SecurityUtil.isAuthenticated()
+                            && seriesAppreciationRepository.existsBySeriesIdAndMemberId(id, SecurityUtil.getCurrentMemberId()));
+                    return ResponseEntity.ok(body);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * 작업 감상 — 회원당 1회(중복 요청은 그대로 성공, 멱등). 본인 작업에는 감상할 수 없다.
+     * 응답: { appreciationCount, appreciatedByMe }
+     */
+    @PostMapping("/{id}/appreciation")
+    public ResponseEntity<Map<String, Object>> appreciate(@PathVariable Long id) {
+        Long me = SecurityUtil.getCurrentMemberId();
+        Series series = seriesRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다."));
+        if (series.getMemberId().equals(me)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "본인 작업에는 감상할 수 없어요.");
+        }
+        if (!seriesAppreciationRepository.existsBySeriesIdAndMemberId(id, me)) {
+            try {
+                seriesAppreciationRepository.save(SeriesAppreciation.builder().seriesId(id).memberId(me).build());
+            } catch (org.springframework.dao.DataIntegrityViolationException dup) {
+                // 동시 요청으로 유니크 제약에 걸린 경우 — 이미 감상한 상태라 결과는 같다
+            }
+        }
+        return ResponseEntity.ok(Map.of("appreciationCount", seriesAppreciationRepository.countBySeriesId(id),
+                "appreciatedByMe", true));
+    }
+
+    /**
+     * 내 감상 여부 (인증 필요). 웹은 access token을 메모리에만 두므로 새로고침 직후 공개 상세 조회에는 토큰이 없어
+     * appreciatedByMe가 항상 false로 온다. 이 경로는 인증이 필요해 401 → 토큰 재발급 → 재시도를 타므로 정확한 값을 준다.
+     */
+    @GetMapping("/{id}/appreciation")
+    public ResponseEntity<Map<String, Object>> myAppreciation(@PathVariable Long id) {
+        Long me = SecurityUtil.getCurrentMemberId();
+        if (!seriesRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다.");
+        }
+        return ResponseEntity.ok(Map.of("appreciationCount", seriesAppreciationRepository.countBySeriesId(id),
+                "appreciatedByMe", seriesAppreciationRepository.existsBySeriesIdAndMemberId(id, me)));
+    }
+
+    @DeleteMapping("/{id}/appreciation")
+    public ResponseEntity<Map<String, Object>> unappreciate(@PathVariable Long id) {
+        Long me = SecurityUtil.getCurrentMemberId();
+        if (!seriesRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다.");
+        }
+        seriesAppreciationRepository.deleteBySeriesIdAndMemberId(id, me);
+        return ResponseEntity.ok(Map.of("appreciationCount", seriesAppreciationRepository.countBySeriesId(id),
+                "appreciatedByMe", false));
     }
 
     /** 시리즈 생성 */
@@ -268,6 +345,7 @@ public class SeriesController {
         if (series == null) return ResponseEntity.notFound().build();
         if (!series.getMemberId().equals(requesterId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         seriesPhotoRepository.deleteBySeriesId(id);
+        seriesAppreciationRepository.deleteBySeriesId(id);
         seriesRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }

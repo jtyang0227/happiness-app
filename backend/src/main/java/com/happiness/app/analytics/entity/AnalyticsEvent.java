@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
         @Index(name = "idx_analytics_member_type", columnList = "member_id, event_type"),
         @Index(name = "idx_analytics_created_at", columnList = "created_at"),
         @Index(name = "idx_analytics_visitor_token", columnList = "visitor_token, created_at"),
-        @Index(name = "idx_analytics_member_type_created", columnList = "member_id, event_type, created_at")
+        @Index(name = "idx_analytics_member_type_created", columnList = "member_id, event_type, created_at"),
+        @Index(name = "idx_analytics_target", columnList = "target_type, target_id, event_type")
     }
 )
 @Data
