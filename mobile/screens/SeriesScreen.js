@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform,
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Switch,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { seriesApi, photoApi } from '../services/api';
@@ -21,6 +21,7 @@ function WorkNoteModal({ series, onClose, onSaved }) {
     clientLabel: series.clientLabel || '',
     shotOn: series.shotOn || '',
     story: series.story || '',
+    draft: !!series.draft,
   });
   const [saving, setSaving] = useState(false);
   const shotOnInvalid = form.shotOn.trim() !== '' && !SHOT_ON_RE.test(form.shotOn.trim());
@@ -94,6 +95,15 @@ function WorkNoteModal({ series, onClose, onSaved }) {
               placeholder="누구와, 무엇을, 왜 이렇게 찍었는지 짧게 남겨보세요." placeholderTextColor={COLORS.textHint}
               textAlignVertical="top"
             />
+
+            <View style={styles.draftRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>초안으로 두기</Text>
+                <Text style={styles.modalHint}>켜두면 나만 볼 수 있어요. 끄면 포트폴리오와 탐색에 공개돼요.</Text>
+              </View>
+              <Switch value={form.draft} onValueChange={v => setForm(f => ({ ...f, draft: v }))}
+                trackColor={{ true: COLORS.primary }} accessibilityLabel="초안으로 두기" />
+            </View>
           </ScrollView>
           <TouchableOpacity
             style={[styles.saveBtn, (shotOnInvalid || saving) && styles.saveBtnDisabled]}
@@ -279,7 +289,7 @@ export default function SeriesScreen({ navigation }) {
         onSaved={(updated) => {
           // 목록 응답의 previewPhotos/photoCount는 유지하고 작업 노트 필드만 갱신
           setSeries(list => list.map(s => (s.id === updated.id
-            ? { ...s, shootType: updated.shootType, clientLabel: updated.clientLabel, shotOn: updated.shotOn, story: updated.story }
+            ? { ...s, shootType: updated.shootType, clientLabel: updated.clientLabel, shotOn: updated.shotOn, story: updated.story, draft: updated.draft }
             : s)));
           setEditing(null);
         }}
@@ -346,6 +356,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
   pinBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.tagBg },
   draftTag: { color: COLORS.textMuted, fontWeight: '600' },
+  draftRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: SPACING.md },
   pinBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
   noteBtnText: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.textSecondary },
 

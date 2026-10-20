@@ -7,6 +7,7 @@ import { photoApi, commentApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
+import BoardPickerSheet from '../components/BoardPickerSheet';
 
 export default function PhotoDetailScreen({ navigation, route }) {
   const { photo: initialPhoto } = route.params;
@@ -14,6 +15,7 @@ export default function PhotoDetailScreen({ navigation, route }) {
   const [photo, setPhoto] = useState(initialPhoto);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState(null);
@@ -163,7 +165,13 @@ export default function PhotoDetailScreen({ navigation, route }) {
           <TouchableOpacity style={[styles.btn, saved ? styles.btnSaved : styles.btnSave]} onPress={handleSave}>
             <Text style={styles.btnText}>{saved ? '⭐' : '☆'} 저장</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.btn, styles.btnSave]}
+            onPress={() => (user ? setBoardPickerOpen(true) : Alert.alert('알림', '로그인이 필요합니다.'))}
+            accessibilityRole="button" accessibilityLabel="보드에 담기">
+            <Text style={styles.btnText}>📌 보드</Text>
+          </TouchableOpacity>
         </View>
+        {boardPickerOpen && <BoardPickerSheet photoId={photo.id} onClose={() => setBoardPickerOpen(false)} />}
 
         {isOwner && (
           <View style={styles.actionRow}>
