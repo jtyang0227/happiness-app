@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,8 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
     Optional<Member> findByProfileName(String profileName);
+
+    List<Member> findByProfileNameIn(Collection<String> profileNames);
     Optional<Member> findByProviderAndProviderId(String provider, String providerId);
     boolean existsByEmail(String email);
     boolean existsByProfileName(String profileName);

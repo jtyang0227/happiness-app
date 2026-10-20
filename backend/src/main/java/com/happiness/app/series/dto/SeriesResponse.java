@@ -33,6 +33,8 @@ public class SeriesResponse {
     private Long appreciationCount;
     private Long viewCount;
     private Boolean appreciatedByMe;
+    /** 함께한 사람 — 목록·상세 모두 채움. linked는 상세에서만 계산 */
+    private List<CreditDto> credits;
 
     public static SeriesResponse fromEntity(Series series, List<PhotoResponse> photos) {
         String cover = series.getCoverImageUrl();
@@ -53,6 +55,7 @@ public class SeriesResponse {
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
                 .pinned(Boolean.TRUE.equals(series.getPinned()))
+                .credits(CreditsJson.read(series.getCreditsJson()))
                 .photoCount(photos != null ? photos.size() : 0)
                 .photos(photos)
                 .createdAt(series.getCreatedAt())
@@ -75,6 +78,7 @@ public class SeriesResponse {
                 .shotOn(series.getShotOn())
                 .story(series.getStory())
                 .pinned(Boolean.TRUE.equals(series.getPinned()))
+                .credits(CreditsJson.read(series.getCreditsJson()))
                 .photoCount(photoCount)
                 .previewPhotos(previewPhotos)
                 .createdAt(series.getCreatedAt())

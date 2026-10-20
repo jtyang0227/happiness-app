@@ -799,4 +799,41 @@ class CoreFlowIntegrationTest {
         mvc.perform(delete("/api/moodboards/" + board).header("Authorization", bearer(me))).andExpect(status().isNoContent());
         mvc.perform(get("/api/moodboards/" + board).header("Authorization", bearer(me))).andExpect(status().isNotFound());
     }
+
+    // ── 공동 작업자 크레딧 (WORK_QUEUE 6) ───────────────────────────────
+
+    @Test
+    void 작업_크레딧은_저장되고_공개_회원만_링크된다() throws Exception {
+        User owner = signupAndLogin();
+        User makeup = signupAndLogin();
+        long work = createSeries(owner, "크레딧 테스트");
+
+        mvc.perform(put("/api/series/" + work).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "크레딧 테스트", "credits", List.of(
+                                Map.of("role", "메이크업", "name", "이수아", "profileName", "@" + makeup.profileName()),
+                                Map.of("role", "헤어", "name", "<b>박민</b>", "profileName", "nobody_here"),
+                                Map.of("role", "", "name", "", "profileName", ""))))))   // 빈 줄은 무시
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/series/" + work))
+                .andExpect(jsonPath("$.credits.length()").value(2))
+                .andExpect(jsonPath("$.credits[0].profileName").value(makeup.profileName()))
+                .andExpect(jsonPath("$.credits[0].linked").value(true))
+                .andExpect(jsonPath("$.credits[1].name").value("박민"))          // 태그 제거
+                .andExpect(jsonPath("$.credits[1].linked").value(false));
+        mvc.perform(get("/api/series").param("memberId", String.valueOf(owner.id())))
+                .andExpect(jsonPath("$[0].credits.length()").value(2));
+
+        mvc.perform(put("/api/series/" + work).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "크레딧 테스트",
+                                "credits", List.of(Map.of("role", "모델", "name", ""))))))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(put("/api/series/" + work).header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "크레딧 테스트", "credits", List.of()))))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/series/" + work)).andExpect(jsonPath("$.credits.length()").value(0));
+    }
 }

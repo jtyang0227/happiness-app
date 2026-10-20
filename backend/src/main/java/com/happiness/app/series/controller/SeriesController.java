@@ -9,6 +9,8 @@ import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.photo.dto.PhotoResponse;
 import com.happiness.app.photo.entity.Photo;
 import com.happiness.app.photo.repository.PhotoRepository;
+import com.happiness.app.series.dto.CreditDto;
+import com.happiness.app.series.dto.CreditsJson;
 import com.happiness.app.series.dto.DiscoverWorkResponse;
 import com.happiness.app.series.dto.SeriesRequest;
 import com.happiness.app.series.dto.SeriesResponse;
@@ -98,6 +100,47 @@ public class SeriesController {
             }
             series.setStory(v.isEmpty() ? null : v);
         }
+    }
+
+    private static final int CREDITS_MAX = 20;
+
+    /**
+     * 함께한 사람 반영. null = 변경 없음, [] = 비우기. 역할·이름은 필수(역할 20자, 이름 40자), @프로필명은 선택.
+     * 프로필명은 존재 여부를 여기서 강제하지 않는다 — 나중에 가입하는 협업자도 있어, 링크 여부는 조회 시점에 판단한다.
+     */
+    private void applyCredits(Series series, SeriesRequest req) {
+        if (req.getCredits() == null) return;
+        if (req.getCredits().size() > CREDITS_MAX) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "함께한 사람은 20명까지 적을 수 있어요.");
+        }
+        List<CreditDto> clean = new ArrayList<>();
+        for (CreditDto c : req.getCredits()) {
+            String role = c.getRole() == null ? "" : stripTags(c.getRole());
+            String name = c.getName() == null ? "" : stripTags(c.getName());
+            String profile = c.getProfileName() == null ? "" : c.getProfileName().trim().replaceFirst("^@", "");
+            if (role.isEmpty() && name.isEmpty() && profile.isEmpty()) continue;   // 빈 줄은 무시
+            if (role.isEmpty() || name.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "함께한 사람은 역할과 이름을 모두 적어 주세요.");
+            }
+            if (role.length() > 20 || name.length() > 40) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할은 20자, 이름은 40자 이내로 적어 주세요.");
+            }
+            if (!profile.isEmpty() && !profile.matches("^[A-Za-z0-9_.-]{1,30}$")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프로필명 형식이 올바르지 않아요.");
+            }
+            clean.add(CreditDto.builder().role(role).name(name).profileName(profile.isEmpty() ? null : profile).build());
+        }
+        series.setCreditsJson(CreditsJson.write(clean));
+    }
+
+    /** 상세 응답용 — 프로필명이 실제 공개 회원이면 linked=true (한 번에 조회) */
+    private List<CreditDto> withLinks(List<CreditDto> credits) {
+        Set<String> names = credits.stream().map(CreditDto::getProfileName).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<String> publicNames = names.isEmpty() ? Set.of() : memberRepository.findByProfileNameIn(names).stream()
+                .filter(Member::isPublicProfile).map(Member::getProfileName).collect(Collectors.toSet());
+        return credits.stream().map(c -> CreditDto.builder().role(c.getRole()).name(c.getName())
+                .profileName(c.getProfileName()).linked(publicNames.contains(c.getProfileName())).build())
+                .collect(Collectors.toList());
     }
 
     private static String stripTags(String input) {
@@ -231,6 +274,7 @@ public class SeriesController {
                             .collect(Collectors.toList());
                     SeriesResponse body = SeriesResponse.fromEntity(series, photos);
                     body.setAppreciationCount(seriesAppreciationRepository.countBySeriesId(id));
+                    body.setCredits(withLinks(body.getCredits()));
                     body.setViewCount(viewCounts(List.of(id)).getOrDefault(id, 0L));
                     body.setAppreciatedByMe(SecurityUtil.isAuthenticated()
                             && seriesAppreciationRepository.existsBySeriesIdAndMemberId(id, SecurityUtil.getCurrentMemberId()));
@@ -311,6 +355,7 @@ public class SeriesController {
                 .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : nextOrder)
                 .build();
         applyWorkNote(series, req);
+        applyCredits(series, req);
         Series saved = seriesRepository.save(series);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SeriesResponse.fromEntity(saved, Collections.emptyList()));
@@ -330,6 +375,7 @@ public class SeriesController {
         if (req.getCoverImageUrl() != null) series.setCoverImageUrl(req.getCoverImageUrl());
         if (req.getDisplayOrder() != null) series.setDisplayOrder(req.getDisplayOrder());
         applyWorkNote(series, req);
+        applyCredits(series, req);
         if (req.getPinned() != null) series.setPinned(req.getPinned());
         Series saved = seriesRepository.save(series);
         if (Boolean.TRUE.equals(req.getPinned())) {

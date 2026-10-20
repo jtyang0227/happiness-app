@@ -157,6 +157,13 @@ function SeriesCard({ series, onEdit, onDelete, onManagePhotos, onMagazineView, 
   );
 }
 
+/* 함께한 사람 역할 제안 — 자유 입력이 기본, 자주 쓰는 역할만 datalist로 */
+const CREDIT_ROLES = ['헤어', '메이크업', '스타일링', '모델', '어시스턴트', '플로리스트', '장소', '기획', '보정'];
+const CREDIT_INPUT = {
+  minWidth: 0, padding: '9px 10px', borderRadius: 10, border: `1.5px solid ${COLORS.border}`,
+  fontSize: 13, color: COLORS.text, outline: 'none',
+};
+
 /* ─── 시리즈 생성/수정 모달 ────────────────────── */
 function SeriesModal({ series, onClose, onSave, memberId }) {
   const [form, setForm] = useState({
@@ -167,13 +174,19 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
     clientLabel: series?.clientLabel || '',
     shotOn: series?.shotOn || '',
     story: series?.story || '',
+    // 함께한 사람 — 저장할 때 목록 전체를 보낸다(서버가 통째로 교체, 빈 줄은 무시)
+    credits: (series?.credits || []).map(c => ({ role: c.role || '', name: c.name || '', profileName: c.profileName || '' })),
   });
   const [loading, setLoading] = useState(false);
   const shotOnInvalid = form.shotOn.trim() !== '' && !SHOT_ON_RE.test(form.shotOn.trim());
+  // 한 칸만 채운 줄(역할만/이름만)은 서버가 400으로 거절하므로 미리 막는다
+  const creditIncomplete = form.credits.some(c => (c.role.trim() || c.name.trim() || c.profileName.trim()) && !(c.role.trim() && c.name.trim()));
+  const setCredit = (i, key, value) =>
+    setForm(p => ({ ...p, credits: p.credits.map((c, j) => (j === i ? { ...c, [key]: value } : c)) }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim() || shotOnInvalid) return;
+    if (!form.title.trim() || shotOnInvalid || creditIncomplete) return;
     setLoading(true);
     try {
       if (series) {
@@ -325,6 +338,39 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
             </div>
           </fieldset>
 
+          {/* ── 함께한 사람 — 작업 페이지 "함께한 사람"에 보인다. @프로필명이 공개 회원이면 그 포트폴리오로 연결 ── */}
+          <fieldset style={{ border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '14px 16px 12px', margin: '0 0 24px' }}>
+            <legend style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, padding: '0 6px' }}>
+              함께한 사람 <span style={{ fontWeight: 500, color: COLORS.textMuted }}>· 선택</span>
+            </legend>
+            <datalist id="credit-roles">
+              {CREDIT_ROLES.map(r => <option key={r} value={r} />)}
+            </datalist>
+            {form.credits.map((c, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '0.9fr 1fr 1fr auto', gap: 6, marginBottom: 8 }}>
+                <input list="credit-roles" value={c.role} maxLength={20} placeholder="역할" aria-label={`${i + 1}번째 역할`}
+                  onChange={e => setCredit(i, 'role', e.target.value)} style={CREDIT_INPUT} />
+                <input value={c.name} maxLength={40} placeholder="이름" aria-label={`${i + 1}번째 이름`}
+                  onChange={e => setCredit(i, 'name', e.target.value)} style={CREDIT_INPUT} />
+                <input value={c.profileName} maxLength={31} placeholder="@프로필명 (선택)" aria-label={`${i + 1}번째 프로필명`}
+                  onChange={e => setCredit(i, 'profileName', e.target.value)} style={CREDIT_INPUT} />
+                <button type="button" onClick={() => setForm(p => ({ ...p, credits: p.credits.filter((_, j) => j !== i) }))}
+                  aria-label={`${i + 1}번째 사람 삭제`}
+                  style={{ border: 'none', background: 'transparent', color: COLORS.textMuted, cursor: 'pointer', fontSize: 14, padding: '0 6px' }}>✕</button>
+              </div>
+            ))}
+            {creditIncomplete && (
+              <div role="alert" style={{ fontSize: 11, color: COLORS.danger, marginBottom: 8 }}>역할과 이름을 모두 적어 주세요</div>
+            )}
+            {form.credits.length < 20 && (
+              <button type="button" onClick={() => setForm(p => ({ ...p, credits: [...p.credits, { role: '', name: '', profileName: '' }] }))}
+                style={{ border: `1px dashed ${COLORS.border}`, background: COLORS.surface, color: COLORS.textSecondary,
+                  borderRadius: 10, padding: '8px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>
+                + 함께한 사람 추가
+              </button>
+            )}
+          </fieldset>
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button" onClick={onClose}
@@ -337,7 +383,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
               취소
             </button>
             <button
-              type="submit" disabled={loading || !form.title.trim() || shotOnInvalid}
+              type="submit" disabled={loading || !form.title.trim() || shotOnInvalid || creditIncomplete}
               style={{
                 flex: 2, padding: '12px', borderRadius: 10, border: 'none',
                 background: loading ? '#a0a8e8' : COLORS.primary,

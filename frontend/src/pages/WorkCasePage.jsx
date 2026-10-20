@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { seriesApi, bookingApi } from '../services/api';
 import { testimonialApi } from '../services/portfolioApi';
@@ -25,6 +25,8 @@ const CSS = `
   .work-appreciate { transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease; }
   .work-appreciate:hover:not(:disabled) { border-color: ${COLORS.primary}; }
   .work-appreciate:active:not(:disabled) { transform: scale(0.97); }
+  .work-credit-link:hover { border-bottom-color: ${COLORS.text}; }
+  .work-credit-link:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
   .work-appreciate:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
   .work-photos { display: flex; flex-direction: column; gap: 40px; }
   .work-cover  { height: min(64vh, 560px); }
@@ -332,6 +334,29 @@ export default function WorkCasePage() {
           <p style={{ fontSize: 17, lineHeight: 1.85, margin: 0, whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
             {work.story}
           </p>
+        </section>
+      )}
+
+      {work.credits?.length > 0 && (
+        <section aria-labelledby="work-credits-heading" style={{ ...TEXT_COLUMN, paddingTop: 32 }}>
+          <h2 id="work-credits-heading" style={{ fontSize: 13, fontWeight: 700, color: COLORS.textMuted, margin: '0 0 10px' }}>
+            함께한 사람
+          </h2>
+          <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 20, rowGap: 8, fontSize: 15 }}>
+            {work.credits.map((c, i) => (
+              <React.Fragment key={`${c.role}-${c.name}-${i}`}>
+                <dt style={{ color: COLORS.textMuted }}>{c.role}</dt>
+                <dd style={{ margin: 0, color: COLORS.text, fontWeight: 600 }}>
+                  {c.linked ? (
+                    <Link to={`/portfolio/${c.profileName}`} className="work-credit-link"
+                      style={{ color: COLORS.text, textDecoration: 'none', borderBottom: `1px solid ${COLORS.border}` }}>
+                      {c.name} <span aria-hidden="true" style={{ color: COLORS.textMuted, fontWeight: 400 }}>↗</span>
+                    </Link>
+                  ) : c.name}
+                </dd>
+              </React.Fragment>
+            ))}
+          </dl>
         </section>
       )}
 

@@ -47,6 +47,13 @@ public class Series {
     /** 대표 작업 — 작가당 최대 1건. 기존 행 호환을 위해 nullable(null = false) */
     private Boolean pinned;
 
+    /**
+     * 함께한 사람(공동 작업자 크레딧, WORK_QUEUE 6) — [{"role","name","profileName"}] JSON 배열.
+     * 예약 체크리스트(checklistJson)처럼 작업에 딸린 짧은 목록이라 별도 테이블 없이 둔다. profileName은 선택(회원 포트폴리오 링크).
+     */
+    @Column(columnDefinition = "TEXT")
+    private String creditsJson;
+
     @Column(nullable = false)
     private Integer displayOrder;
 

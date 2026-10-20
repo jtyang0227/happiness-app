@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +20,6 @@ public class SeriesRequest {
     private String shotOn;
     private String story;
     private Boolean pinned;
+    /** null = 변경 없음, [] = 비우기 */
+    private List<CreditDto> credits;
 }
