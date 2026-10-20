@@ -310,6 +310,9 @@ v1 로드맵 정산(모더레이션 백엔드·템플릿 "준비 중" 표시 완
 부분은 그 문서 8절 "알려진 불일치"에 모았다. `.claude/agents/designer.md`·`.claude/skills/design/SKILL.md`·
 `.claude/agents/admin.md`에 남아 있던 폐기 팔레트(Cosmos `#090909`/`#5b6ef5`, AKIRA `#E8121A`/`#22D3EE`)·
 glass.js 예외·"모더레이션 mock" 서술도 Toss 기준·현재 상태로 정정했다.
+경쟁 서비스 분석: `DESIGN_PROMPTS/planning/ANALYSIS_behance-public-features.md`(2026-10-20) — Behance 공개 기능 ↔ 앱 현황
+대조표와 우선순위(P0: 작업 단위 탐색, "촬영 문의 받는 중" 배지). 클라우드 환경 네트워크 정책이 외부 사이트를 차단해 REA 실분석이
+불가했고, 공개적으로 알려진 기능 기준이다(실화면 검증 전).
 
 ---
 
