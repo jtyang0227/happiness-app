@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../../services/api';
-import { COLORS, MOOD_COLORS } from '../../constants/colors';
+import { COLORS, MOOD_COLORS, GENRE_META } from '../../constants/colors';
 import { mq } from '../../constants/breakpoints';
 import PhotoCard from '../photo/PhotoCard';
 import PhotoModal from '../photo/PhotoModal';
@@ -64,11 +64,33 @@ function removeHistory(term) {
 
 /* ── 뷰 모드 ── */
 const VIEW_MODES = [
-  { mode: 'justified', icon: '▦', label: 'Justified' },
-  { mode: 'masonry',   icon: '⊞', label: 'Masonry'   },
-  { mode: 'list',      icon: '☰', label: 'List'       },
-  { mode: 'magazine',  icon: '⊟', label: '매거진'    },
+  { mode: 'justified', icon: '▦', label: '행 맞춤 보기' },
+  { mode: 'masonry',   icon: '▥', label: '벽돌 보기'   },
+  { mode: 'list',      icon: '☰', label: '목록 보기'   },
+  { mode: 'magazine',  icon: '▤', label: '매거진 보기' },
 ];
+
+/* ── 툴바 공통 스타일 ── */
+const pillStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 999,
+  border: '1px solid transparent', background: COLORS.bg, color: COLORS.text, fontSize: 13, fontWeight: 600,
+  cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit',
+};
+const srOnly = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+
+function FilterChip({ label, dot, onRemove }) {
+  return (
+    <button type="button" className="ptb-chip" onClick={onRemove} aria-label={`${label} 필터 해제`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, border: 'none',
+        background: COLORS.primaryLight, color: COLORS.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+      }}>
+      {dot && <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: dot }} />}
+      {label}
+      <span aria-hidden="true" style={{ fontSize: 11 }}>✕</span>
+    </button>
+  );
+}
 
 /* ── Justified Layout 셀 ── */
 function JustifiedPhotoCell({ photo, onClick }) {
@@ -186,6 +208,7 @@ export default function PhotoBrowser() {
   const [loadMoreError, setLoadMoreError] = useState('');
   const [selected, setSelected]     = useState(null);
   const [sortIdx, setSortIdx]       = useState(0);
+  const [moodOpen, setMoodOpen]     = useState(false);   // 색감 칩 줄 펼침
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem('gallery_view') ?? 'justified',
   );
@@ -375,75 +398,89 @@ export default function PhotoBrowser() {
         )}
       </form>
 
-      {/* ── 툴바 ── */}
+      {/* ── 툴바 한 줄 (PLANNING_explore-toolbar.md) — 정렬 select · 색감 펼침 · 결과 수 · 보기 방식 ── */}
+      <style>{`
+        .ptb-pill { transition: background 0.15s ease, border-color 0.15s ease; }
+        .ptb-pill:hover { background: ${COLORS.border} !important; }
+        .ptb-pill:active { transform: scale(0.97); }
+        .ptb-pill:focus-visible, .ptb-view:focus-visible, .ptb-chip:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
+        .ptb-view { transition: background 0.15s ease, color 0.15s ease; }
+        .ptb-view:hover { color: ${COLORS.text} !important; }
+        .ptb-chip:hover { filter: brightness(0.96); }
+      `}</style>
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px', gap: 10, flexWrap: 'wrap',
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '9px 16px', minHeight: 52, boxSizing: 'border-box',
         position: 'sticky', top: 0, zIndex: 10,
         background: COLORS.surface,
         borderBottom: `1px solid ${COLORS.border}`,
       }}>
+        <label style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+          <span style={srOnly}>정렬</span>
+          <select className="ptb-pill" value={sortIdx} onChange={e => setSortIdx(Number(e.target.value))}
+            style={{ ...pillStyle, appearance: 'none', WebkitAppearance: 'none', paddingRight: 28 }}>
+            {SORT_OPTIONS.map((opt, idx) => <option key={opt.key ?? opt.value + opt.order} value={idx}>{opt.label}</option>)}
+          </select>
+          <span aria-hidden="true" style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: COLORS.textMuted, pointerEvents: 'none' }}>▾</span>
+        </label>
 
-        {/* 정렬 칩 */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
-          {SORT_OPTIONS.map((opt, idx) => (
-            <button
-              key={opt.key ?? opt.value + opt.order}
-              onClick={() => setSortIdx(idx)}
-              style={{
-                padding: '5px 12px', borderRadius: 20, fontSize: 12,
-                fontWeight: sortIdx === idx ? 700 : 500,
-                cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                ...(sortIdx === idx
-                  ? {
-                      background: COLORS.primary, color: '#fff',
-                    }
-                  : { background: COLORS.surfaceDim, color: COLORS.textSecondary }
-                ),
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <button type="button" className="ptb-pill" aria-expanded={moodOpen} aria-controls="ptb-mood-row"
+          onClick={() => setMoodOpen(o => !o)}
+          style={{ ...pillStyle, flexShrink: 0, border: `1px solid ${moodOpen ? COLORS.text : 'transparent'}` }}>
+          {mood
+            ? <><span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '50%', background: MOOD_COLORS[mood].dot, display: 'inline-block' }} />{MOOD_COLORS[mood].label}</>
+            : <><span aria-hidden="true">🎨</span>색감</>}
+          <span aria-hidden="true" style={{ fontSize: 10, color: COLORS.textMuted }}>{moodOpen ? '▴' : '▾'}</span>
+        </button>
 
-        {/* 우측 컨트롤 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: COLORS.textMuted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          {displayed.length}{hasNext ? '+' : ''}장
+        </span>
 
-          {/* 뷰 모드 3종 토글 */}
-          <div style={{
-            display: 'flex',
-            background: COLORS.surfaceDim,
-            borderRadius: 10, overflow: 'hidden',
-          }}>
-            {VIEW_MODES.map(({ mode, icon, label }) => (
-              <button
-                key={mode}
-                title={label}
+        <div role="group" aria-label="보기 방식" style={{ display: 'flex', padding: 2, borderRadius: 10, background: COLORS.bg, flexShrink: 0 }}>
+          {VIEW_MODES.map(({ mode, icon, label }) => {
+            const on = viewMode === mode;
+            return (
+              <button key={mode} type="button" className="ptb-view" title={label} aria-label={label} aria-pressed={on}
                 onClick={() => setViewMode(mode)}
                 style={{
-                  padding: '6px 11px', border: 'none', cursor: 'pointer', fontSize: 14,
-                  background: viewMode === mode ? COLORS.primary : 'transparent',
-                  color: viewMode === mode ? '#fff' : COLORS.textMuted,
-                  transition: 'all 0.15s',
-                }}
-              >
-                {icon}
+                  width: 32, height: 30, border: 'none', borderRadius: 8, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, lineHeight: 1,
+                  background: on ? COLORS.surface : 'transparent',
+                  color: on ? COLORS.text : COLORS.textMuted,
+                  boxShadow: on ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}>
+                <span aria-hidden="true">{icon}</span>
               </button>
-            ))}
-          </div>
-
-          <span style={{ fontSize: 12, color: COLORS.textMuted, fontVariantNumeric: 'tabular-nums' }}>
-            {keyword ? `"${keyword}" ` : ''}{displayed.length}{hasNext ? '+' : ''}장
-          </span>
+            );
+          })}
         </div>
       </div>
 
+      {/* ── 색감 펼침 줄 (버튼으로 열 때만) ── */}
+      {moodOpen && (
+        <div id="ptb-mood-row" style={{ padding: '0 16px 4px', background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}` }}>
+          <MoodChips value={mood} onChange={handleMoodChange} />
+        </div>
+      )}
+
       {/* ── 장르 탭바 — 서버 필터 (?genre=) ── */}
-      <div style={{ padding: '8px 16px', background: COLORS.bg, borderBottom: `1px solid ${COLORS.border}` }}>
+      <div style={{ padding: '8px 16px 0', background: COLORS.bg, borderBottom: `1px solid ${COLORS.border}` }}>
         <GenreTabBar selected={genre} onChange={handleGenreChange} theme="light" />
-        <MoodChips value={mood} onChange={handleMoodChange} />
       </div>
+
+      {/* ── 적용 중인 필터 요약 (Behance 패턴) — 걸린 필터가 있을 때만 ── */}
+      {filtered && (
+        <div aria-label="적용 중인 필터" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '10px 16px 4px' }}>
+          {keyword && <FilterChip label={`🔍 ${keyword}`} onRemove={() => commitSearch('')} />}
+          {genre && GENRE_META[genre] && <FilterChip label={`${GENRE_META[genre].emoji} ${GENRE_META[genre].label}`} onRemove={() => handleGenreChange('')} />}
+          {mood && <FilterChip dot={MOOD_COLORS[mood].dot} label={MOOD_COLORS[mood].label} onRemove={() => handleMoodChange('')} />}
+          <button type="button" onClick={clearFilters}
+            style={{ marginLeft: 'auto', border: 'none', background: 'none', padding: '4px 2px', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, cursor: 'pointer' }}>
+            모두 지우기
+          </button>
+        </div>
+      )}
 
       {/* ── 콘텐츠 ── */}
       {loading ? (
