@@ -52,6 +52,7 @@ server:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://happiness.io.kr,https://www.happiness.io.kr,https://happiness-app-eight.vercel.app}
+  frontend-url: ${FRONTEND_URL:https://happiness.io.kr}
 
 logging:
   level:

@@ -16,6 +16,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
     Optional<Member> findByProfileName(String profileName);
 
+    /** 아이디 찾기 — 이름으로 후보를 좁힌 뒤 서비스에서 전화번호(숫자만)를 비교한다(저장 형식이 섞여 있어서). */
+    List<Member> findByName(String name);
+
     List<Member> findByProfileNameIn(Collection<String> profileNames);
     Optional<Member> findByProviderAndProviderId(String provider, String providerId);
     boolean existsByEmail(String email);

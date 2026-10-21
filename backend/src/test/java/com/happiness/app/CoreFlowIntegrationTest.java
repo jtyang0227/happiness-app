@@ -2,7 +2,10 @@ package com.happiness.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.happiness.app.member.entity.Authority;
+import com.happiness.app.member.entity.PasswordResetToken;
 import com.happiness.app.member.repository.MemberRepository;
+import com.happiness.app.member.repository.PasswordResetTokenRepository;
+import com.happiness.app.member.service.AccountRecoveryService;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,7 @@ class CoreFlowIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper om;
     @Autowired MemberRepository memberRepository;
+    @Autowired PasswordResetTokenRepository passwordResetTokenRepository;
 
     private record User(long id, String email, String profileName, String token) {}
 
@@ -90,6 +95,92 @@ class CoreFlowIntegrationTest {
                         .content(om.writeValueAsString(Map.of("email", u.email(), "password", "wrong-pass-1!"))))
                 .andReturn();
         assertThat(r.getResponse().getStatus()).isGreaterThanOrEqualTo(400);
+    }
+
+    // ── 아이디·비밀번호 찾기 (PLANNING_account-recovery.md) ─────────────
+    // 서비스 속도 제한이 IP 기준이라 테스트마다 다른 X-Forwarded-For를 쓴다
+
+    @Test
+    void 아이디_찾기는_이름과_번호가_맞을_때만_가린_이메일() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        String name = "찾기" + suffix;
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", "finder" + suffix + "@test.com", "password", "Passw0rd!!", "name", name,
+                                "profileName", "fd" + suffix, "tel", "010-5555-" + "1234", "termsAgreed", true))))
+                .andExpect(status().isCreated());
+        String ip = "10.1.0." + (int) (Math.random() * 200);
+        mvc.perform(post("/api/auth/find-email").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", name, "tel", "01055551234"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accounts.length()").value(1))
+                .andExpect(jsonPath("$.data.accounts[0].maskedEmail").value("fi" + "*".repeat(("finder" + suffix).length() - 2) + "@test.com"))
+                .andExpect(jsonPath("$.data.accounts[0].provider").value("local"));
+        mvc.perform(post("/api/auth/find-email").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", name, "tel", "010-9999-0000"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accounts.length()").value(0));
+    }
+
+    @Test
+    void 재설정_요청은_가입_여부와_무관하게_같은_응답() throws Exception {
+        User u = signupAndLogin();
+        String ip = "10.2.0." + (int) (Math.random() * 200);
+        MvcResult known = mvc.perform(post("/api/auth/password-reset/request").header("X-Forwarded-For", ip)
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("email", u.email()))))
+                .andExpect(status().isOk()).andReturn();
+        MvcResult unknown = mvc.perform(post("/api/auth/password-reset/request").header("X-Forwarded-For", ip)
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Map.of("email", "nobody-" + UUID.randomUUID() + "@test.com"))))
+                .andExpect(status().isOk()).andReturn();
+        String msgKnown = JsonPath.read(known.getResponse().getContentAsString(), "$.data.message");
+        String msgUnknown = JsonPath.read(unknown.getResponse().getContentAsString(), "$.data.message");
+        assertThat(msgKnown).isEqualTo(msgUnknown);
+        assertThat(passwordResetTokenRepository.findAll()).anyMatch(t -> t.getMemberId() == u.id() && t.getUsedAt() == null);
+    }
+
+    @Test
+    void 재설정_링크로_비밀번호를_바꾸면_새_비밀번호로만_로그인되고_링크는_1회용() throws Exception {
+        User u = signupAndLogin();
+        String raw = "test-token-" + UUID.randomUUID();
+        passwordResetTokenRepository.save(PasswordResetToken.builder().memberId(u.id())
+                .tokenHash(AccountRecoveryService.sha256(raw)).expiresAt(LocalDateTime.now().plusMinutes(30)).build());
+        String ip = "10.3.0." + (int) (Math.random() * 200);
+
+        mvc.perform(get("/api/auth/password-reset/verify").param("token", raw))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.valid").value(true));
+        mvc.perform(post("/api/auth/password-reset/confirm").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("token", raw, "newPassword", "NewPassw0rd!"))))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", u.email(), "password", "NewPassw0rd!"))))
+                .andExpect(status().isOk());
+        MvcResult old = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", u.email(), "password", "Passw0rd!!")))).andReturn();
+        assertThat(old.getResponse().getStatus()).isGreaterThanOrEqualTo(400);
+
+        // 같은 링크 두 번째 사용, 만료된 링크 → 400
+        mvc.perform(post("/api/auth/password-reset/confirm").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("token", raw, "newPassword", "Another1!!"))))
+                .andExpect(status().isBadRequest());
+        String expired = "expired-" + UUID.randomUUID();
+        passwordResetTokenRepository.save(PasswordResetToken.builder().memberId(u.id())
+                .tokenHash(AccountRecoveryService.sha256(expired)).expiresAt(LocalDateTime.now().minusMinutes(1)).build());
+        mvc.perform(get("/api/auth/password-reset/verify").param("token", expired))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 아이디_찾기_속도_제한은_429() throws Exception {
+        String ip = "10.4.0." + (int) (Math.random() * 200);
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/auth/find-email").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of("name", "없음", "tel", "01000000000"))))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(post("/api/auth/find-email").header("X-Forwarded-For", ip).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", "없음", "tel", "01000000000"))))
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test

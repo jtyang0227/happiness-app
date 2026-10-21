@@ -84,6 +84,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/oauth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/check-email").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/check-profile-name").permitAll()
+                // 아이디·비밀번호 찾기 (PLANNING_account-recovery.md) — 서비스에서 IP 속도 제한
+                .requestMatchers(HttpMethod.POST, "/api/auth/find-email").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/auth/password-reset/verify").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/confirm").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}").permitAll()
                 // 공개 탐색의 사진 모달이 댓글을 읽는다 — 읽기만 공개, 작성·삭제는 그대로 인증 필요

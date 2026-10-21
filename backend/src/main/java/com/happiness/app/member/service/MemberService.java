@@ -6,6 +6,7 @@ import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
+import com.happiness.app.member.repository.PasswordResetTokenRepository;
 import com.happiness.app.photo.repository.*;
 import com.happiness.app.moodboard.MoodboardItemRepository;
 import com.happiness.app.moodboard.MoodboardRepository;
@@ -40,6 +41,7 @@ public class MemberService {
     private final MoodboardItemRepository moodboardItemRepository;
     private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     // RFC 5322 간략화 이메일 정규식
     private static final Pattern EMAIL_PATTERN =
@@ -180,6 +182,7 @@ public class MemberService {
         // 5. 사진, 수신 문의, 멤버 삭제
         photoRepository.deleteByMemberId(memberId);
         inquiryRepository.deleteByReceiverMemberId(memberId);
+        passwordResetTokenRepository.deleteByMemberId(memberId);
         memberRepository.deleteById(memberId);
     }
 
