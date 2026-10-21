@@ -56,7 +56,7 @@ export default function SimilarPhotos({ photoId, onSelect }) {
 const CELL = 108;
 const styles = StyleSheet.create({
   wrap: { marginTop: SPACING.xl, marginBottom: SPACING.sm },
-  title: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.text },
+  title: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary },
   sub: { fontSize: FONT.sm, color: COLORS.textMuted, marginTop: 2, marginBottom: SPACING.md },
   row: { flexDirection: 'row', gap: SPACING.sm },
   cell: { width: CELL, height: CELL, borderRadius: RADIUS.sm, backgroundColor: COLORS.border },
