@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
 import { buildChannelLUTs, renderWithChannelLUTs, applyEffects, generateGrainTile } from '../../hooks/useImageAdjustments';
 import { uploadImage } from '../../services/uploadApi';
-import { photoApi } from '../../services/api';
+import { photoApi, seriesApi } from '../../services/api';
 
 const FORMATS  = ['JPG', 'PNG', 'WEBP'];
 const SIZES    = [
@@ -273,6 +273,25 @@ export default function ExportModal({ onClose }) {
       }
       const strip = composeCarousel(full, carouselOpts, 1);
       const ext = format.toLowerCase();
+      if (uploadToGallery) {
+        // 슬라이드를 사진으로 올리고 순서대로 작업(초안) 하나에 묶는다 — 공개는 작가가 작업 화면에서 직접 한다
+        const photoIds = [];
+        for (let i = 0; i < slideCount; i++) {
+          setProgress(`${i + 1} / ${slideCount} 올리는 중...`);
+          const blob = await canvasToBlob(sliceSlide(strip, ratio, i), format, quality);
+          const url = await uploadImage(blob, 'photos');
+          const res = await photoApi.create({
+            imageUrl: url, title: `${filename} ${i + 1}/${slideCount}`, memberId: user?.id, imageRatio: ratio.key,
+          });
+          photoIds.push(res?.data?.id);
+        }
+        setProgress('작업으로 묶는 중...');
+        const series = await seriesApi.create({ memberId: user?.id, title: filename, draft: true });
+        for (let i = 0; i < photoIds.length; i++) await seriesApi.addPhoto(series.id, photoIds[i], i);
+        setProgress(`✅ ${slideCount}장을 올리고 작업 초안 "${filename}"으로 묶었어요. 내 작업에서 확인하세요.`);
+        setDone(true);
+        return;
+      }
       for (let i = 0; i < slideCount; i++) {
         setProgress(`${i + 1} / ${slideCount} 저장 중...`);
         const blob = await canvasToBlob(sliceSlide(strip, ratio, i), format, quality);
@@ -481,11 +500,11 @@ export default function ExportModal({ onClose }) {
           />
         </div>
 
-        {/* Upload to gallery — 캐러셀 묶음 업로드는 다음 단계(P1) */}
-        {mode === 'single' && <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 12, color: COLORS.darkTextSub }}>
+        {/* Upload to gallery — 캐러셀이면 슬라이드 전부 + 작업(초안)으로 묶기 */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 12, color: COLORS.darkTextSub }}>
           <input type="checkbox" checked={uploadToGallery} onChange={e => setUploadToGallery(e.target.checked)} />
-          ☁️ 갤러리에 바로 업로드
-        </label>}
+          {mode === 'carousel' ? '☁️ 갤러리에 올리고 작업(초안)으로 묶기' : '☁️ 갤러리에 바로 업로드'}
+        </label>
 
         {/* Progress */}
         {progress && (
@@ -506,7 +525,7 @@ export default function ExportModal({ onClose }) {
               border: 'none', color: '#fff', fontSize: 14, fontWeight: 700,
               cursor: working ? 'not-allowed' : 'pointer', opacity: working ? 0.7 : 1,
             }}
-          >⬇️ {slideCount}장 다운로드</button>
+          >{uploadToGallery ? `☁️ ${slideCount}장 올리기` : `⬇️ ${slideCount}장 다운로드`}</button>
         ) : <>
         <button
           onClick={handleSingle}

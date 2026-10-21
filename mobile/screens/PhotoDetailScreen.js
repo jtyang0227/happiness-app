@@ -8,6 +8,7 @@ import { useAuth } from '../store/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
 import BoardPickerSheet from '../components/BoardPickerSheet';
+import SimilarPhotos from '../components/SimilarPhotos';
 
 export default function PhotoDetailScreen({ navigation, route }) {
   const { photo: initialPhoto } = route.params;
@@ -186,6 +187,9 @@ export default function PhotoDetailScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* 비슷한 사진 — 누르면 그 사진 상세를 위에 쌓는다(뒤로 가기로 돌아옴) */}
+        <SimilarPhotos photoId={photo.id} onSelect={p => navigation.push('PhotoDetail', { photo: p })} />
 
         {/* 댓글 섹션 */}
         <Text style={styles.commentTitle}>댓글 {comments.length > 0 ? `(${comments.length})` : ''}</Text>

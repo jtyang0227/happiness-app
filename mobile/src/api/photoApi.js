@@ -3,6 +3,8 @@ import apiClient from './apiClient';
 export const photoApi = {
   getAll:      (params = {}) => apiClient.get('/photos', { params }).then(r => r.data),
   getOne:      (id)          => apiClient.get(`/photos/${id}`).then(r => r.data),
+  /** 비슷한 사진 (공개) — 장르·색 분위기·대표색 메타데이터 점수, 같은 작가 최대 4장 */
+  getSimilar:  (id, size = 12) => apiClient.get(`/photos/${id}/similar`, { params: { size } }).then(r => r.data),
   getByMember: (memberId, params = {}) =>
     apiClient.get('/photos', { params: { memberId, ...params } }).then(r => r.data),
   search:      (params = {}) => apiClient.get('/photos', { params }).then(r => r.data),

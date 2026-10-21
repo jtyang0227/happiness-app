@@ -267,6 +267,18 @@ export default function PhotoBrowser() {
     }
   }, [page, sortParams]);
 
+  /* 무한 스크롤 (PLANNING_inside-menus-upgrade.md P1) — 목록 끝의 센티널이 보이면 다음 페이지.
+     한 번 실패하면 자동으로 다시 부르지 않고(요청 폭주 방지) 아래 "사진 더 보기" 버튼으로 재시도한다. */
+  const [sentinel, setSentinel] = useState(null);
+  useEffect(() => {
+    if (!sentinel || !hasNext || loadingMore || loadMoreError || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) loadMore();
+    }, { rootMargin: '600px 0px' });
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [sentinel, hasNext, loadingMore, loadMoreError, loadMore]);
+
   const displayed = useMemo(
     () => (currentSort.clientSort ? sortByColor(photos) : photos),
     [photos, currentSort],
@@ -621,7 +633,7 @@ export default function PhotoBrowser() {
       )}
 
       {!loading && hasNext && viewMode !== 'magazine' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 16px 40px' }}>
+        <div ref={setSentinel} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 16px 40px' }}>
           {loadMoreError && <div role="alert" style={{ color: COLORS.danger, fontSize: 13 }}>{loadMoreError}</div>}
           <Button variant="secondary" loading={loadingMore} onClick={loadMore}>
             {loadingMore ? '불러오는 중' : '사진 더 보기'}
