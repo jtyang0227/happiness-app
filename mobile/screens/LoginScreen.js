@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
 import { useAuth } from '../store/AuthContext';
+import { COLORS } from '../constants/colors';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
@@ -62,6 +63,16 @@ export default function LoginScreen({ navigation }) {
             onChangeText={setPassword}
             secureTextEntry
           />
+
+          <View style={styles.findRow}>
+            <TouchableOpacity onPress={() => navigation.navigate('FindAccount', { tab: 'email' })} hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}>
+              <Text style={styles.findText}>아이디 찾기</Text>
+            </TouchableOpacity>
+            <Text style={styles.findDot}>·</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('FindAccount', { tab: 'password' })} hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}>
+              <Text style={styles.findText}>비밀번호 찾기</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={styles.btnPrimary} onPress={handleLogin} disabled={loading}>
             {loading
@@ -176,6 +187,9 @@ const styles = StyleSheet.create({
   },
   btnAppleText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   signupLink:      { marginTop: 20, alignItems: 'center' },
+  findRow:         { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: -6, marginBottom: 14 },
+  findText:        { color: COLORS.textMuted, fontSize: 12.5 },
+  findDot:         { color: COLORS.textMuted, fontSize: 12.5, marginHorizontal: 6 },
   signupLinkText:  { color: '#9ca3af', fontSize: 13 },
   signupLinkBold:  { color: '#4E9FFF', fontWeight: '700' },
 

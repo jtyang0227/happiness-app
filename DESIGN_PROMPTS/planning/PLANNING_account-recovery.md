@@ -76,3 +76,12 @@ Railway Variables: `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD`/`MAIL
 
 - 휴대폰 본인인증(PASS 등)은 비용·계약이 필요해 제외 — 이름+번호 일치로 대신하고 이메일을 가려서 위험을 줄인다.
 - 속도 제한을 in-memory로 둔 것은 기존 패턴과 같다. 서버를 여러 대로 늘리면 Redis(이미 있음)로 옮겨야 한다.
+
+## 9. 구현 결과 (2026-10-21)
+
+- 백엔드: `PasswordResetToken`·`PasswordResetTokenRepository`·`AccountRecoveryService`·`AccountRecoveryController`, SecurityConfig 4개 공개, `app.frontend-url`. 통합 테스트 4개 추가 → `./gradlew test` 39개 통과.
+- 웹: `FindAccountPage`·`ResetPasswordPage`·로그인 링크. `npm run build` 통과. Playwright 390px(dev, 메일 서버 없음 → dev 로그의 링크 사용):
+  로그인 → 아이디 찾기 → 빈 값 오류 → `01022223333` 자동 하이픈 → `jo*****@test.com`·"이메일 가입" → 비밀번호 찾기 탭 → 앞뒤 공백 이메일 요청 → "메일을 확인해 주세요"
+  → 링크 열기(가린 이메일 표시) → 확인 불일치 오류 → 변경 완료 → 같은 링크 다시 열기 = 만료 화면. curl: 새 비밀번호 로그인 200, 예전 비밀번호 401. 가로 스크롤·페이지 에러 없음.
+- 모바일: `FindAccountScreen` + 로그인 링크. `expo export` 통과, 웹 번들에서 탭 진입·빈 이메일 오류·번호 하이픈 확인(API 호출은 웹 번들에서 `expo-secure-store` 부재로 불가 → 실기기 확인 필요).
+- 미확인: 실제 메일 발송(운영 `MAIL_*` 미설정 가능성), AC-4(재설정 후 refresh 재발급 차단)는 코드(`deleteAll`)로만 확인 — 테스트 환경에 Redis가 없어 저장소가 빈값을 돌려준다.

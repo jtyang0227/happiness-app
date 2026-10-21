@@ -489,6 +489,14 @@ CORS_ALLOWED_ORIGINS=https://app.example.com
 # Spring
 SPRING_PROFILES_ACTIVE=prod  # 운영 | dev (기본값)
 
+# 메일 (비밀번호 재설정·문의 알림 — 없으면 메일만 안 감) + 재설정 링크 주소
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=you@gmail.com
+MAIL_PASSWORD=<앱 비밀번호>
+MAIL_FROM=noreply@happiness.io.kr
+FRONTEND_URL=https://happiness.io.kr
+
 # Gemini (AI 어시스턴트 챗봇 — 백엔드 전용, aistudio.google.com/apikey 에서 발급)
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.0-flash  # 선택, 미설정 시 기본값
@@ -520,6 +528,7 @@ Feature-based package layout:
 
 - **photo/** — Core domain. `PhotoController` exposes REST endpoints for CRUD plus likes/saves/shares/tags. Entities: `Photo`, `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag`. **버그 수정**: `PhotoResponse`가 `memberId`만 담고 작성자 이름/아바타를 전혀 반환하지 않아 PhotoDetailPage·FeedPage·매거진 뷰어 등 모든 화면에서 작성자가 항상 "익명"으로 표시되던 문제 수정 — `memberName`/`memberAvatarUrl`/`memberProfileName` 필드 추가 + `PhotoResponse.attachMember(s)()` 헬퍼로 `MemberRepository` 배치 조회(N+1 방지) 후 채워넣음. `PhotoController.getAllPhotos`/`getPhoto`, `FeedController.getFeed`에 적용. `SeriesController`의 사진 목록은 아직 미적용(known gap).
 - **member/** — Auth & users. `AuthController` handles signup/login/stats/password-change. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security. `Member` entity includes: avatarUrl, coverUrl, bio, websiteUrl, location, specialties (Phase 2-8 추가). `MemberStatsResponse` — 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount). Endpoints: `GET /member/:id/stats`, `PUT /member/:id/password`, `GET /members/search?q=&size=`(인증된 유저 누구나, 이름/프로필명 검색, 최대 30건, Meets 약속 요청 상대 찾기용 — `MemberRepository.searchByNameOrProfileName`). **버그 수정**: `AuthService.login()`이 `findByEmail(request.getEmail())`을 그대로 사용해 회원가입 시 소문자로 정규화된 이메일과 대소문자가 다르면 로그인이 항상 실패하던 문제 수정 — `.trim().toLowerCase()` 추가(signup과 동일하게 정규화).
+- **member/ 아이디·비밀번호 찾기 (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_account-recovery.md`, 디자인 `DESIGN_PROMPT_account-recovery.md`. `AccountRecoveryController`(`/api/auth`, 전부 공개 — SecurityConfig): `POST /find-email {name,tel}`(이름 일치 + 전화 **숫자만** 비교 — 저장 형식이 섞여 있음, `MemberRepository.findByName`, 응답 `{accounts:[{maskedEmail "ja****@…", provider, joinedAt}]}`), `POST /password-reset/request {email}`(**가입 여부와 무관하게 같은 200 응답** — 열거 방지), `GET /password-reset/verify?token=`(`{valid, maskedEmail}`), `POST /password-reset/confirm {token,newPassword}`(8자 이상 → 저장 → 토큰 사용 처리 → `RefreshTokenStore.deleteAll` 모든 기기 로그아웃). `AccountRecoveryService`: 토큰은 32바이트 난수 URL-safe Base64, DB엔 SHA-256 해시만(`PasswordResetToken`, `password_reset_tokens`), 30분·1회용, 새 요청 시 이전 미사용 토큰 무효(`invalidateActive` bulk). 소셜 가입(비밀번호 없음)에는 재설정 대신 "○○로 로그인" 안내 메일. 링크는 `app.frontend-url`(`FRONTEND_URL`, prod 기본 `https://happiness.io.kr`)로만 만든다(Host 헤더 주입 방지). 메일은 `InquiryEmailService`와 같은 선택 주입 — `MAIL_HOST` 없으면 WARN 로그만, **dev 프로필에서만** 링크를 INFO 로그에 남김(운영 로그엔 토큰 없음). 속도 제한(in-memory, IP = X-Forwarded-For 첫 값): 아이디 찾기 10분 5회, 재설정 요청 10분 5회 + 같은 이메일 1시간 3회(초과는 응답을 바꾸지 않고 조용히 건너뜀), 확정 10분 10회 → 429. 회원 탈퇴 시 토큰 삭제(`MemberService`). 통합 테스트 4개(아이디 찾기·같은 응답·재설정 1회용/만료·429). **한계**: 이미 발급된 access token은 만료까지 유효, 메일 발송이 트랜잭션 안에서 일어남(SMTP가 느리면 DB 연결을 그만큼 붙잡음).
 - **member/service/GoogleOAuthService** — Google OAuth 2.0. `googleLogin(code)` → Token URL: `oauth2.googleapis.com/token`, UserInfo: `googleapis.com/oauth2/v2/userinfo`.
 - **member/service/NaverOAuthService** — 네이버 OAuth 2.0. `naverLogin(code, state)` → Token: `nid.naver.com/oauth2.0/token`, UserInfo: `openapi.naver.com/v1/nid/me`.
 - **member/service/AppleOAuthService** — Apple Sign In. `appleLogin(idToken, userJson)` → id_token JWT 디코딩(base64)으로 sub+email 추출. `generateClientSecret()` → JJWT ES256으로 client_secret JWT 생성.
@@ -1019,6 +1028,16 @@ CREATE INDEX IF NOT EXISTS idx_photo_saves_member_id        ON photo_saves(membe
 CREATE INDEX IF NOT EXISTS idx_follows_following_id         ON follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_members_provider             ON members(provider, provider_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_visitor_token      ON analytics_events(visitor_token, created_at);
+-- 아이디·비밀번호 찾기 (2026-10-21) — 재설정 토큰(원문은 메일 링크에만, DB엔 SHA-256 해시)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          BIGSERIAL PRIMARY KEY,
+  member_id   BIGINT NOT NULL,
+  token_hash  VARCHAR(64) NOT NULL UNIQUE,
+  expires_at  TIMESTAMP NOT NULL,
+  used_at     TIMESTAMP,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_member ON password_reset_tokens(member_id);
 -- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
 CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
 ```
@@ -1205,6 +1224,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
+- **아이디·비밀번호 찾기 웹 (2026-10-21)** — `pages/FindAccountPage.jsx`(`/find-account?tab=email|password`, 공개 Standalone — 세그먼트 탭, 이름+휴대폰으로 가린 이메일·가입 방식 표시 / 이메일로 재설정 메일 요청 → "메일을 확인해 주세요"·다시 보내기), `pages/ResetPasswordPage.jsx`(`/reset-password?token=`, 공개 Standalone — 열 때 토큰 확인(스켈레톤) → 새 비밀번호·확인(회원가입과 같은 blur 검사) → 완료/만료 화면). 공통 `Button`·`FormField`/`Input` 사용, 규칙은 `utils/signupValidation.js` 재사용. `LoginPage` 비밀번호 아래 "아이디 찾기 · 비밀번호 찾기" 링크. `authApi.findEmail/requestPasswordReset/verifyResetToken/confirmPasswordReset`. 모바일: `screens/FindAccountScreen.js`(AuthStack `FindAccount`, 같은 두 탭, 재설정 링크는 메일에서 웹으로 열림 — 딥링크 범위 밖), `LoginScreen` 링크, `authMobileApi.findEmail/requestPasswordReset`.
 - **회원가입 입력 검증 QA (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/QA_signup-validation.md`(reviewer 에이전트 QA 점검 + 직접 대조), 디자인 `DESIGN_PROMPT_signup-validation.md`. 규칙은 `utils/signupValidation.js`(웹)·`mobile/utils/signupValidation.js`(모바일, 내용 동일 — 한쪽을 바꾸면 다른 쪽도, 차이는 모바일 포트폴리오 주소가 선택)에 모으고 **서버 `MemberService`가 기준**. 검사 시점: 입력란을 **벗어날 때(blur)** 정리(앞뒤 공백·인스타그램 `@`) → 형식 검사 → 통과 시 중복 확인, 그 뒤엔 입력 중 즉시 재검사(한 번 벗어난 필드만), 비밀번호를 바꾸면 "비밀번호 확인"도 재계산, 제출 시 전체 정리·검사 + 첫 오류로 포커스. 입력 중 정규화는 소문자·전화 하이픈처럼 **글자를 지우지 않는 것만**(한글 IME 조합 보호). 휴대폰 키보드 대응: 이메일·주소·인스타그램·비밀번호에 자동 대문자·자동 수정·맞춤법 끔, 웹 `inputMode`, 모바일 `textContentType`(emailAddress/newPassword/telephoneNumber). 중복 확인 응답은 지금 값과 같을 때만 반영(응답 경쟁). 웹 접근성: `label htmlFor`, `aria-invalid`, `aria-describedby` → 오류 `role="alert"`. 모바일은 Alert 하나 → 입력란별 오류 문구 + 서버 사유(`err.response.data.message`), 색을 `COLORS` 토큰으로(폐기 팔레트 `#0a0a1a`/`#1a1a2e` 제거), 잘못된 `.happiness.app` 서브도메인 표기 제거. 서버: 전화번호(선택) 검사·정규화 `normalizeTel`(숫자만 01x 10~11자리 → `010-1234-5678`, 아니면 400), 포트폴리오 주소 오류 문구를 실제 규칙(1~30자)대로 정정. **발견·수정**: 웹 중복 확인이 `ApiResponse` 래퍼 대신 `res.available`을 읽어 **"사용 가능/이미 사용 중" 결과가 배포 이후 한 번도 반영되지 않았고**, 제출 직전 중복 재확인도 아무것도 막지 못했다 → `res.data.available`. 제출 시 형식 오류로 오류 목록을 통째로 덮어써 중복 오류가 사라지던 문제도 수정. **확인 한계**: 모바일 웹 번들에서는 `expo-secure-store`(기기 ID)가 없어 모든 API 요청이 전송 전에 실패하므로 모바일 중복 확인은 실기기에서만 확인 가능(형식 검사·정규화는 웹 번들로 확인).
 - **메뉴 통합 — 탐색·업무 (2026-10-20)** — **탐색 사진 탭 = 예전 갤러리 + 목록 + 탐색(사진)**: `pages/GalleryPage.jsx`를 `components/explore/PhotoBrowser.jsx`로 `git mv`해 검색바·자동완성·최근 검색어(기존 탐색)를 얹고, 장르를 서버 필터(`?genre=`, 장르 배지 링크 호환)로, 정렬에 조회순 추가("수동 순"은 작가별 순서라 전체 탐색에선 뺌). 보기 방식 4종(정렬·격자·목록·매거진, `gallery_view` 기억)·색상순·사진 모달 유지. `ExplorePage`는 사진|작업 탭 껍데기만. `/`·`/list`·`*`는 `/explore`로 리다이렉트, `pages/ListPage.jsx`·`hooks/usePhotos.js`(ListPage 전용)는 삭제. **버그 수정**: 공개 탐색에서 비로그인이 사진 모달을 열면 댓글 조회(`GET /api/photos/{id}/comments`, 비공개였음)의 401 → 클라이언트 로그아웃 처리 → `/login`으로 튕겼다 → 댓글 **읽기만** 공개(SecurityConfig, 작성·삭제는 인증 유지, 통합 테스트 추가). **업무 허브**: `pages/WorkspacePage.jsx`(`/workspace`, 보호) "한눈에" — 카드 5개(새 문의 · 예약 요청 REQUESTED · 미수금 예약(CONFIRMED 중 계약금/잔금 PENDING) · 고객 확인 대기 납품(PENDING/REVIEWED) · 응답 대기 약속) + 다가오는 7일 일정, 기존 API `Promise.allSettled`(실패 카드만 "—"). `components/workspace/WorkspaceTabs.jsx`(한눈에·문의·예약·일정·약속·납품, 문의·약속 배지, 높이 `WORKSPACE_TABS_HEIGHT` 고정 — `BookingDashboard`·`MeetsPage`의 데스크탑 2단 높이 계산이 이 값을 뺀다)를 `/inbox` `/bookings` `/calendar` `/meets` `/deliveries` 상단에 공통 삽입. `utils/scheduleEvents.js`(신규) — 통합 달력의 일정 병합 로직(`loadScheduleEvents`, `TYPE_META`)을 추출해 `IntegratedCalendarPage`와 허브가 공유, 예약 유형 영문 코드(WEDDING)를 한글 라벨로 표시하도록 함께 수정. **함정**: NavLink에 인라인 `color`를 주면 `.active` 클래스 색이 지므로 활성 스타일은 `style={({isActive}) => …}` 함수로 준다(업무 탭 활성 칩이 어두운 배경에 어두운 글자가 되던 문제). 모바일 앱(RN) 탭 구조는 범위 밖.
 - **4개 메뉴 내부 고도화 — Cosmos·SCRL 대조 (2026-10-20)** — 분석 `ANALYSIS_cosmos-scrl-public-features.md`(외부 사이트가 네트워크 정책으로 막혀 REA 실분석 불가 — 공개적으로 알려진 기능 기준, 실화면 검증 전), 기획 `PLANNING_inside-menus-upgrade.md`, 디자인 `DESIGN_PROMPT_inside-menus-upgrade.md`. **탐색**: `components/photo/SimilarPhotos.jsx`(theme dark/light, 결과 0이면 섹션 숨김) — `PhotoModal`(3열, 고르면 모달 안에서 그 사진으로 교체 + 패널 맨 위로, 조회 기록도 바뀐 사진 기준)·`PhotoDetailPage`(6열, 이동). `PhotoBrowser` `MoodChips`(장르 탭 아래 색 점 칩 11종, `?mood=` → 서버 `colorMood`). **내 작업**: `MoodboardPage` 공유 패널(만들기·복사·끄기 이중 확인) + `pages/SharedBoardPage.jsx`(`/b/:token`, 공개 Standalone, `<meta name="robots" content="noindex">`). **편집(SCRL)**: `components/editor/ExportModal.jsx` "한 장 | 캐러셀" — `renderEditedCanvas`(보정 적용 캔버스, 기존 `renderExport`는 이걸 감싼다) → `composeCarousel`(1장=cover 채우기, 여러 장=같은 높이 한 줄 이어 붙이기·간격=여백) → `sliceSlide`, 4:5(1080×1350)/1:1, 2~10장, 여백 0~12%, 배경 흰/검정/회색, 미리보기는 사진이 바뀔 때만 900px로 렌더링해 두고 옵션 변경 시 재배치만. 캐러셀 모드에서 "갤러리에 올리고 작업(초안)으로 묶기"(2026-10-21) — 슬라이드 업로드·사진 등록 → 초안 시리즈 생성 → 순서대로 추가. 탐색 사진 탭 무한 스크롤(센티널 + IntersectionObserver, 실패 후엔 버튼 재시도). 모바일은 `PhotoDetailScreen`에 비슷한 사진 가로 줄(`components/SimilarPhotos.js`, `photoApi.getSimilar`)만 반영, 보드 공유는 미반영. **탐색 툴바 정리(같은 날, `PLANNING_explore-toolbar.md`, Unsplash·Pinterest·Behance·Cosmos 공개 패턴 대조)**: 모바일에서 정렬 칩 6개가 3줄로 줄바꿈되고 장르·색감까지 사진 위 약 280px를 차지하던 툴바를 한 줄로 — 정렬은 네이티브 `<select>` pill, 색감은 "🎨 색감" 버튼으로 칩 줄을 펼침(고르면 버튼이 색 점+이름), 보기 방식 4개는 같은 크기·한국어 이름(행 맞춤·벽돌·목록·매거진), 장르 탭 한 줄, 필터가 걸렸을 때만 "적용 중인 필터" 요약 칩(개별 ✕ + 모두 지우기). 390px 기준 첫 사진까지 110px. **버그 수정(검증 중 발견)**: `hooks/useGalleryLayout.js`가 `useRef` + 빈 deps effect로 ResizeObserver를 붙였는데, 탐색 사진 탭은 로딩 스켈레톤을 먼저 그려 컨테이너가 마운트 시점에 없으므로 관찰이 영영 붙지 않고 초기값(창 너비)이 계속 쓰였다 → 정렬(justified) 보기에서 행이 패딩 8px만큼 넘쳐 모바일 가로 스크롤 + 창 크기 변경 무반응. 콜백 ref(`setNode`) + `[node]` effect로 바꿔 390/768/1280px 모두 문서 너비 = 창 너비 확인.
@@ -1309,6 +1329,8 @@ Routing via React Router DOM v6. No Redux — state managed through Context + lo
 - `/gatherings/:id` — GatheringDetailPage (모임 상세 — 모집공지/피드, Feature 37)
 - `/gatherings/:id/album` — GatheringAlbumPage (모임 종료 후 앨범, Feature 37)
 - `/b/:token` — SharedBoardPage (무드보드 보기 전용 공유 링크, Standalone)
+- `/find-account` — FindAccountPage (아이디·비밀번호 찾기, Standalone)
+- `/reset-password?token=` — ResetPasswordPage (메일 링크로 새 비밀번호, Standalone)
 
 **보호 라우트** (로그인 필요):
 - `/workspace` — WorkspacePage (업무 "한눈에" 허브 — 처리할 일 카드 5개 + 다가오는 7일)

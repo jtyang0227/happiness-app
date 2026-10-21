@@ -11,6 +11,7 @@ import { FONT } from '../../constants/layout';
 
 import LoginScreen       from '../../screens/LoginScreen';
 import SignUpScreen      from '../../screens/SignUpScreen';
+import FindAccountScreen from '../../screens/FindAccountScreen';
 import ExploreScreen     from '../../screens/ExploreScreen';
 import GalleryScreen     from '../../screens/GalleryScreen';
 import PhotoFormScreen   from '../../screens/PhotoFormScreen';
@@ -128,6 +129,7 @@ function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login"  component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
+      <Stack.Screen name="FindAccount" component={FindAccountScreen} />
       <Stack.Screen name="Legal"  component={LegalScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#1a1a2e', title: '법적 고지' }} />

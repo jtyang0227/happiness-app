@@ -25,6 +25,9 @@ export const authMobileApi = {
   updateProfile: (id, data) => apiClient.put(`/auth/member/${id}/profile`, data),
   checkEmail:    (email)    => apiClient.get('/auth/check-email', { params: { email } }),
   checkProfileName: (name)  => apiClient.get('/auth/check-profile-name', { params: { name } }),
+  // 아이디·비밀번호 찾기 — 재설정 링크는 메일에서 웹(/reset-password)으로 열린다
+  findEmail:            (name, tel) => apiClient.post('/auth/find-email', { name, tel }),
+  requestPasswordReset: (email)     => apiClient.post('/auth/password-reset/request', { email }),
   getMember:     (id)       => apiClient.get(`/auth/member/${id}`),
   getStats:      (id)       => apiClient.get(`/auth/member/${id}/stats`),
 };
