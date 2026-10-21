@@ -1,121 +1,123 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import Logo from '../components/common/Logo';
-
-const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const PHONE_RE = /^01[0-9]-\d{3,4}-\d{4}$/;
+import {
+  PROFILE_NAME_HINT, SIGNUP_FIELDS,
+  normalizeOnChange, normalizeOnBlur, validateField, validateAll,
+} from '../utils/signupValidation';
 
 const INITIAL = {
   name: '', email: '', password: '', confirmPassword: '',
   tel: '', profileName: '', instagramId: '', termsAgreed: false,
 };
 
-function formatPhone(value) {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length < 4) return digits;
-  if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
-}
+// 휴대폰 키보드의 자동 대문자·자동 수정·맞춤법(하이픈→대시 등)을 끄는 입력 속성
+const NO_AUTO_FIX = { autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false };
 
 export default function SignUpPage() {
   const { signup }  = useAuth();
   const navigate    = useNavigate();
   const [form, setForm]       = useState(INITIAL);
   const [errors, setErrors]   = useState({});
+  const [touched, setTouched] = useState({});
   const [success, setSuccess] = useState({ email: '', profileName: '' });
   const [loading, setLoading] = useState(false);
   const [apiErr, setApiErr]   = useState('');
   const [checking, setChecking] = useState({ email: false, profileName: false });
   const [showPw, setShowPw] = useState({ password: false, confirmPassword: false });
+  // 중복 확인 응답이 늦게 와도 "지금 값"에 대한 결과만 반영하려고 최신 값을 ref로 본다
+  const formRef = useRef(form);
+  formRef.current = form;
 
+  /* 입력(타이핑·붙여넣기·자동완성): 한 번 벗어난 필드만 즉시 재검사 — 처음 입력하는 동안 오류를 먼저 띄우지 않는다 */
   const handleChange = ({ target: { name, value } }) => {
-    const nextValue = name === 'tel' ? formatPhone(value) : value;
-    setForm(p => ({ ...p, [name]: nextValue }));
-    setErrors(p => ({ ...p, [name]: '' }));
+    const nextForm = { ...formRef.current, [name]: normalizeOnChange(name, value) };
+    setForm(nextForm);
+    setErrors(p => {
+      const next = { ...p, [name]: touched[name] ? validateField(name, nextForm) : '' };
+      if (name === 'password' && touched.confirmPassword) next.confirmPassword = validateField('confirmPassword', nextForm);
+      return next;
+    });
     setSuccess(p => (name in p ? { ...p, [name]: '' } : p));
     setApiErr('');
+  };
+
+  /* 벗어날 때: 공백·@ 정리 → 형식 검사 → (통과하면) 중복 확인 */
+  const handleBlur = ({ target: { name } }) => {
+    const raw = formRef.current[name];
+    const value = normalizeOnBlur(name, raw);
+    const nextForm = value === raw ? formRef.current : { ...formRef.current, [name]: value };
+    if (value !== raw) setForm(nextForm);
+    setTouched(p => ({ ...p, [name]: true }));
+    const msg = validateField(name, nextForm);
+    setErrors(p => ({ ...p, [name]: msg }));
+    if (!msg && (name === 'email' || name === 'profileName')) checkDuplicate(name, value);
+  };
+
+  const checkDuplicate = async (name, value) => {
+    setChecking(p => ({ ...p, [name]: true }));
+    try {
+      const res = name === 'email' ? await authApi.checkEmail(value) : await authApi.checkProfileName(value);
+      if (formRef.current[name].trim() !== value) return;  // 그 사이 값이 바뀌었으면 버린다
+      const label = name === 'email' ? '이메일' : '포트폴리오 주소';
+      // 응답은 ApiResponse 래퍼 { success, data: { available } } — 예전엔 res.available을 읽어 결과가 한 번도 반영되지 않았다
+      const available = res?.data?.available;
+      if (available === false) {
+        setErrors(p => ({ ...p, [name]: `이미 사용 중인 ${label}입니다.` }));
+        setSuccess(p => ({ ...p, [name]: '' }));
+      } else if (available === true) {
+        setErrors(p => ({ ...p, [name]: '' }));
+        setSuccess(p => ({ ...p, [name]: `사용 가능한 ${label}입니다.` }));
+      }
+    } catch { /* 확인 실패는 제출 시 서버가 다시 검사한다 */ }
+    finally { setChecking(p => ({ ...p, [name]: false })); }
   };
 
   const toggleShowPw = (field) => {
     setShowPw(p => ({ ...p, [field]: !p[field] }));
   };
 
-  const checkEmail = async () => {
-    if (!form.email || !EMAIL_RE.test(form.email)) return;
-    setChecking(p => ({ ...p, email: true }));
-    try {
-      const res = await authApi.checkEmail(form.email);
-      if (res?.available === false) {
-        setErrors(p => ({ ...p, email: '이미 사용 중인 이메일입니다.' }));
-        setSuccess(p => ({ ...p, email: '' }));
-      } else if (res?.available === true) {
-        setErrors(p => ({ ...p, email: '' }));
-        setSuccess(p => ({ ...p, email: '사용 가능한 이메일입니다.' }));
-      }
-    } catch { /* ignore */ }
-    finally { setChecking(p => ({ ...p, email: false })); }
-  };
-
-  const checkProfileName = async () => {
-    if (!form.profileName.trim()) return;
-    setChecking(p => ({ ...p, profileName: true }));
-    try {
-      const res = await authApi.checkProfileName(form.profileName);
-      if (res?.available === false) {
-        setErrors(p => ({ ...p, profileName: '이미 사용 중인 포트폴리오 주소입니다.' }));
-        setSuccess(p => ({ ...p, profileName: '' }));
-      } else if (res?.available === true) {
-        setErrors(p => ({ ...p, profileName: '' }));
-        setSuccess(p => ({ ...p, profileName: '사용 가능한 포트폴리오 주소입니다.' }));
-      }
-    } catch { /* ignore */ }
-    finally { setChecking(p => ({ ...p, profileName: false })); }
-  };
-
-  const validate = () => {
-    const e = {};
-    if (!form.name.trim())               e.name            = '이름을 입력해주세요.';
-    if (!form.email.trim())              e.email           = '이메일을 입력해주세요.';
-    else if (!EMAIL_RE.test(form.email)) e.email           = '올바른 이메일 형식이 아닙니다.';
-    if (!form.password)                  e.password        = '비밀번호를 입력해주세요.';
-    else if (form.password.length < 8)   e.password        = '최소 8자 이상 입력해주세요.';
-    if (form.password !== form.confirmPassword) e.confirmPassword = '비밀번호가 일치하지 않습니다.';
-    if (!form.profileName.trim())        e.profileName     = '포트폴리오 주소를 입력해주세요.';
-    // 서버(MemberService.PROFILE_NAME_PATTERN)와 같은 규칙 — 다르면 통과한 값이 서버에서 거절된다
-    else if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(form.profileName)) e.profileName = '영문 소문자·숫자·하이픈 3~30자, 하이픈으로 시작하거나 끝날 수 없습니다.';
-    if (form.tel && !PHONE_RE.test(form.tel)) e.tel = '올바른 전화번호 형식이 아닙니다.';
-    if (!form.termsAgreed)               e.termsAgreed     = '이용약관 및 개인정보처리방침에 동의해주세요.';
-    return e;
+  const focusFirstError = (errs) => {
+    const first = SIGNUP_FIELDS.find(f => errs[f]);
+    if (first) document.getElementById(`signup-${first}`)?.focus();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    if (Object.values(errors).some(Boolean)) return;
+    // 벗어나지 않고 바로 제출(자동완성 후 엔터 등)해도 같은 정리·검사를 거친다
+    const cleaned = { ...form };
+    SIGNUP_FIELDS.forEach(f => { cleaned[f] = normalizeOnBlur(f, cleaned[f]); });
+    setForm(cleaned);
+    setTouched(Object.fromEntries(SIGNUP_FIELDS.map(f => [f, true])));
+    // 형식 오류 + 이미 받아 둔 중복 확인 오류(값을 바꾸면 handleChange가 지우므로 지금 값 기준)를 함께 유지
+    const errs = { ...validateAll(cleaned) };
+    ['email', 'profileName'].forEach(f => { if (!errs[f] && errors[f]) errs[f] = errors[f]; });
+    if (Object.keys(errs).length) { setErrors(errs); focusFirstError(errs); return; }
 
     setLoading(true);
     setApiErr('');
     try {
       // 제출 직전 최종 중복 확인 (blur 없이 바로 제출된 경우 대비)
       const [emailRes, profileRes] = await Promise.all([
-        authApi.checkEmail(form.email).catch(() => null),
-        authApi.checkProfileName(form.profileName).catch(() => null),
+        authApi.checkEmail(cleaned.email).catch(() => null),
+        authApi.checkProfileName(cleaned.profileName).catch(() => null),
       ]);
       const finalErrs = {};
-      if (emailRes?.available === false)   finalErrs.email       = '이미 사용 중인 이메일입니다.';
-      if (profileRes?.available === false) finalErrs.profileName = '이미 사용 중인 포트폴리오 주소입니다.';
+      if (emailRes?.data?.available === false)   finalErrs.email       = '이미 사용 중인 이메일입니다.';
+      if (profileRes?.data?.available === false) finalErrs.profileName = '이미 사용 중인 포트폴리오 주소입니다.';
       if (Object.keys(finalErrs).length) {
         setErrors(p => ({ ...p, ...finalErrs }));
+        setSuccess({ email: '', profileName: '' });
+        focusFirstError(finalErrs);
         setLoading(false);
         return;
       }
 
-      const { confirmPassword, ...payload } = form;
-      await signup(payload);
+      const { confirmPassword, ...payload } = cleaned;
+      await signup({ ...payload, email: payload.email.toLowerCase() });
       navigate('/');
     } catch (err) {
       setApiErr(err.response?.data?.message || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
@@ -123,6 +125,14 @@ export default function SignUpPage() {
       setLoading(false);
     }
   };
+
+  // 입력란 공통 속성 — id·이벤트·접근성 연결
+  const bind = (name) => ({
+    id: `signup-${name}`, name, value: form[name],
+    onChange: handleChange, onBlur: handleBlur,
+    'aria-invalid': errors[name] ? true : undefined,
+    'aria-describedby': `signup-${name}-msg`,
+  });
 
   return (
     <div style={{
@@ -165,38 +175,31 @@ export default function SignUpPage() {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <Field label="이름" error={errors.name}>
+            <Field id="signup-name" label="이름" error={errors.name}>
               <input
-                type="text" name="name" value={form.name}
-                onChange={handleChange} placeholder="홍길동"
+                type="text" {...bind('name')} placeholder="홍길동"
                 autoComplete="name"
                 style={inputStyle(!!errors.name)}
               />
             </Field>
 
-            <Field label="이메일" error={errors.email} success={success.email}>
+            <Field id="signup-email" label="이메일" error={errors.email} success={success.email}>
               <div style={{ position: 'relative' }}>
                 <input
-                  type="email" name="email" value={form.email}
-                  onChange={handleChange} onBlur={checkEmail}
-                  placeholder="your@email.com"
+                  type="email" {...bind('email')} {...NO_AUTO_FIX}
+                  inputMode="email" placeholder="your@email.com"
                   autoComplete="email"
                   style={inputStyle(!!errors.email)}
                 />
-                {checking.email && (
-                  <span style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    fontSize: 11, color: COLORS.textHint,
-                  }}>확인 중...</span>
-                )}
+                {checking.email && <CheckingTag />}
               </div>
             </Field>
 
-            <Field label="비밀번호" error={errors.password}>
+            <Field id="signup-password" label="비밀번호" error={errors.password}>
               <div style={{ position: 'relative' }}>
                 <input
-                  type={showPw.password ? 'text' : 'password'} name="password" value={form.password}
-                  onChange={handleChange} placeholder="최소 8자 이상"
+                  type={showPw.password ? 'text' : 'password'} {...bind('password')} {...NO_AUTO_FIX}
+                  placeholder="최소 8자 이상"
                   autoComplete="new-password"
                   style={{ ...inputStyle(!!errors.password), paddingRight: 44 }}
                 />
@@ -204,11 +207,11 @@ export default function SignUpPage() {
               </div>
             </Field>
 
-            <Field label="비밀번호 확인" error={errors.confirmPassword}>
+            <Field id="signup-confirmPassword" label="비밀번호 확인" error={errors.confirmPassword}>
               <div style={{ position: 'relative' }}>
                 <input
-                  type={showPw.confirmPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword}
-                  onChange={handleChange} placeholder="비밀번호를 다시 입력하세요"
+                  type={showPw.confirmPassword ? 'text' : 'password'} {...bind('confirmPassword')} {...NO_AUTO_FIX}
+                  placeholder="비밀번호를 다시 입력하세요"
                   autoComplete="new-password"
                   style={{ ...inputStyle(!!errors.confirmPassword), paddingRight: 44 }}
                 />
@@ -216,40 +219,33 @@ export default function SignUpPage() {
               </div>
             </Field>
 
-            <Field label="포트폴리오 주소" error={errors.profileName} success={success.profileName}
-              hint="영문 소문자, 숫자, 하이픈만 사용 가능">
+            <Field id="signup-profileName" label="포트폴리오 주소" error={errors.profileName} success={success.profileName}
+              hint={PROFILE_NAME_HINT}>
               <div style={{ position: 'relative' }}>
                 <input
-                  type="text" name="profileName" value={form.profileName}
-                  onChange={handleChange} onBlur={checkProfileName}
-                  placeholder="my-portfolio"
+                  type="text" {...bind('profileName')} {...NO_AUTO_FIX}
+                  placeholder="my-portfolio" maxLength={30}
                   autoComplete="off"
                   style={inputStyle(!!errors.profileName)}
                 />
-                {checking.profileName && (
-                  <span style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    fontSize: 11, color: COLORS.textHint,
-                  }}>확인 중...</span>
-                )}
+                {checking.profileName && <CheckingTag />}
               </div>
             </Field>
 
-            <Field label="전화번호 (선택)" error={errors.tel}>
+            <Field id="signup-tel" label="전화번호 (선택)" error={errors.tel}>
               <input
-                type="tel" name="tel" value={form.tel}
-                onChange={handleChange} placeholder="010-0000-0000"
+                type="tel" {...bind('tel')} placeholder="010-0000-0000"
                 autoComplete="tel" inputMode="numeric" maxLength={13}
                 style={inputStyle(!!errors.tel)}
               />
             </Field>
 
-            <Field label="인스타그램 ID (선택)">
+            <Field id="signup-instagramId" label="인스타그램 ID (선택)" error={errors.instagramId}>
               <input
-                type="text" name="instagramId" value={form.instagramId}
-                onChange={handleChange} placeholder="instagram_id"
+                type="text" {...bind('instagramId')} {...NO_AUTO_FIX}
+                placeholder="instagram_id" maxLength={31}
                 autoComplete="off"
-                style={inputStyle(false)}
+                style={inputStyle(!!errors.instagramId)}
               />
             </Field>
 
@@ -258,8 +254,10 @@ export default function SignUpPage() {
               marginBottom: 18, cursor: 'pointer',
             }}>
               <input
-                type="checkbox" name="termsAgreed"
+                id="signup-termsAgreed" type="checkbox" name="termsAgreed"
                 checked={form.termsAgreed}
+                aria-invalid={errors.termsAgreed ? true : undefined}
+                aria-describedby="signup-termsAgreed-msg"
                 onChange={e => {
                   setForm(p => ({ ...p, termsAgreed: e.target.checked }));
                   setErrors(p => ({ ...p, termsAgreed: '' }));
@@ -271,7 +269,7 @@ export default function SignUpPage() {
               </span>
             </label>
             {errors.termsAgreed && (
-              <div style={{ color: COLORS.danger, fontSize: 11, marginTop: -12, marginBottom: 14 }}>
+              <div id="signup-termsAgreed-msg" role="alert" style={{ color: COLORS.danger, fontSize: 11, marginTop: -12, marginBottom: 14 }}>
                 {errors.termsAgreed}
               </div>
             )}
@@ -293,22 +291,32 @@ export default function SignUpPage() {
 
 /* ── Sub-components ───────────────────────────────────── */
 
-function Field({ label, error, success, hint, children }) {
+function Field({ id, label, error, success, hint, children }) {
+  const msgId = `${id}-msg`;
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{
+      <label htmlFor={id} style={{
         display: 'block', color: COLORS.textSecondary,
         fontSize: 12, fontWeight: 600, marginBottom: 6, letterSpacing: '0.04em',
       }}>{label}</label>
       {children}
-      {hint && !error && !success && (
-        <div style={{ color: COLORS.textHint, fontSize: 11, marginTop: 4 }}>{hint}</div>
-      )}
-      {!error && success && (
-        <div style={{ color: COLORS.success, fontSize: 11, marginTop: 4 }}>✓ {success}</div>
-      )}
-      {error && <div style={{ color: COLORS.danger, fontSize: 11, marginTop: 4 }}>{error}</div>}
+      {error ? (
+        <div id={msgId} role="alert" style={{ color: COLORS.danger, fontSize: 11, marginTop: 4 }}>⚠ {error}</div>
+      ) : success ? (
+        <div id={msgId} aria-live="polite" style={{ color: COLORS.successText, fontSize: 11, marginTop: 4 }}>✓ {success}</div>
+      ) : hint ? (
+        <div id={msgId} style={{ color: COLORS.textHint, fontSize: 11, marginTop: 4 }}>{hint}</div>
+      ) : null}
     </div>
+  );
+}
+
+function CheckingTag() {
+  return (
+    <span aria-live="polite" style={{
+      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+      fontSize: 11, color: COLORS.textHint,
+    }}>확인 중...</span>
   );
 }
 

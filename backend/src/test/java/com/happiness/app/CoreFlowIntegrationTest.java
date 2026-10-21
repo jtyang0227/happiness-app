@@ -109,6 +109,19 @@ class CoreFlowIntegrationTest {
                                 "email", "new-" + suffix + "@test.com", "password", "Passw0rd!!", "name", "테스터",
                                 "profileName", "bad-" + suffix + "-", "termsAgreed", true))))
                 .andExpect(status().isBadRequest());
+        // 전화번호(선택) — 형식이 틀리면 400, 하이픈 없이 보내면 010-1234-5678로 정규화
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", "tel-" + suffix + "@test.com", "password", "Passw0rd!!", "name", "테스터",
+                                "profileName", "tel" + suffix, "tel", "123", "termsAgreed", true))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("올바른 휴대폰 번호 형식이 아닙니다. (예: 010-1234-5678)"));
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", "tel-" + suffix + "@test.com", "password", "Passw0rd!!", "name", "테스터",
+                                "profileName", "tel" + suffix, "tel", "01012345678", "termsAgreed", true))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.tel").value("010-1234-5678"));
     }
 
     @Test

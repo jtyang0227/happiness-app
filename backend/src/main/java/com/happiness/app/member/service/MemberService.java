@@ -78,7 +78,7 @@ public class MemberService {
                 .email(request.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName().trim())
-                .tel(request.getTel() != null ? request.getTel().trim() : "")
+                .tel(normalizeTel(request.getTel()))
                 .profileName(profileName)
                 .instagramId(instagramId)
                 .status(MemberStatus.ACTIVE)
@@ -298,9 +298,20 @@ public class MemberService {
         String name = raw.trim().toLowerCase();
         if (!PROFILE_NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException(
-                "프로필 이름은 소문자, 숫자, 하이픈만 사용 가능하며 3-30자이어야 합니다. (예: my-portfolio)");
+                "프로필 이름은 영문 소문자·숫자·하이픈 30자 이하이며, 하이픈으로 시작하거나 끝날 수 없습니다. (예: my-portfolio)");
         }
         return name;
+    }
+
+    /** 전화번호(선택) — 비어 있으면 "", 아니면 숫자만 뽑아 01x 10~11자리일 때 010-1234-5678 형식으로. 그 외는 예외. */
+    private String normalizeTel(String raw) {
+        if (raw == null || raw.isBlank()) return "";
+        String digits = raw.replaceAll("\\D", "");
+        if (!digits.matches("01[0-9]\\d{7,8}")) {
+            throw new IllegalArgumentException("올바른 휴대폰 번호 형식이 아닙니다. (예: 010-1234-5678)");
+        }
+        int mid = digits.length() - 4;
+        return digits.substring(0, 3) + "-" + digits.substring(3, mid) + "-" + digits.substring(mid);
     }
 
     /** instagramId에서 @ 제거 후 정규화. null이면 null 반환. */
