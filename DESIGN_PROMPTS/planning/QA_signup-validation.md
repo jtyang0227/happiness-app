@@ -63,3 +63,14 @@
 - 백엔드 통합 테스트(전화번호 정규화·거절), `./gradlew test`
 - 웹 `npm run build` + Playwright 390px: blur 오류 표시·해제, 공백 이메일, 대문자 주소, 인스타그램, 비밀번호 확인 재계산, aria 속성
 - 모바일 `npx expo export --platform web`(실기기 키보드 동작은 이 환경에서 확인 불가 — 명시)
+
+## 5. 구현 결과 (2026-10-21)
+
+- 서버: `MemberService.normalizeTel` + 주소 오류 문구 정정, 통합 테스트(전화 `123` → 400·사유, `01012345678` → `010-1234-5678`), `./gradlew test` 35개 통과.
+- 웹: `utils/signupValidation.js` + `SignUpPage` 재작성. Playwright 390px — 입력 중 오류 없음 → 벗어나면 오류(`aria-invalid=true`) → 고치면 즉시 사라짐,
+  `" new@test.com "` → `new@test.com` + "✓ 사용 가능", `taken@test.com` → "이미 사용 중"(제출 후에도 유지), `MyPortfolio` → `myportfolio`, `hong-` 오류, `a` 허용,
+  비밀번호 변경 시 확인 재계산, 인스타그램 `내-아이디` 오류·`@my_insta` → `my_insta`, 전화 자동 하이픈·`0101` 오류, 제출 시 첫 오류(이름)로 포커스,
+  정상 가입 201 → 로그인 200 → `/explore`, 가로 스크롤 없음, 페이지 에러 없음.
+- **발견·수정**: 중복 확인 응답 언래핑 버그(결과가 한 번도 반영 안 됨), 제출 시 중복 오류 소실.
+- 모바일: `mobile/utils/signupValidation.js` + `SignUpScreen` 재작성 + `authMobileApi.checkProfileName`. `expo export` 통과, 웹 번들 390px에서 blur 오류·전화 하이픈·소문자 확인.
+  중복 확인은 웹 번들에서 `expo-secure-store` 부재로 API가 전송 전 실패해 **실기기에서만 확인 가능**. 키보드 속성(자동 대문자 등)도 실기기 확인 필요.

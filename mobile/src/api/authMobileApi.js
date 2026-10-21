@@ -24,6 +24,7 @@ export const authMobileApi = {
 
   updateProfile: (id, data) => apiClient.put(`/auth/member/${id}/profile`, data),
   checkEmail:    (email)    => apiClient.get('/auth/check-email', { params: { email } }),
+  checkProfileName: (name)  => apiClient.get('/auth/check-profile-name', { params: { name } }),
   getMember:     (id)       => apiClient.get(`/auth/member/${id}`),
   getStats:      (id)       => apiClient.get(`/auth/member/${id}/stats`),
 };
