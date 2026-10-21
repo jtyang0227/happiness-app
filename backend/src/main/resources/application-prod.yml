@@ -13,11 +13,11 @@ spring:
       data-source-properties:
         sslmode: require
         sslfactory: org.postgresql.ssl.NonValidatingFactory
-        # PgJDBC 서버 사이드 프리페어드 스테이트먼트 캐싱 (HikariCP+PostgreSQL 공식 권장 조합)
-        cachePrepStmts: true
-        prepStmtCacheSize: 250
-        prepStmtCacheSqlLimit: 2048
-        useServerPrepStmts: true
+        # Supabase 풀러(Supavisor) 트랜잭션 모드는 서버 사이드 prepared statement를 지원하지 않는다.
+        # PgJDBC 기본값(prepareThreshold=5)이면 같은 쿼리 5회째부터 "prepared statement S_n does not exist /
+        # already exists"로 실패한다(health는 prepared statement를 안 써서 UP으로 보임) → 0으로 끈다.
+        # (예전의 cachePrepStmts/prepStmtCacheSize/useServerPrepStmts는 MySQL 드라이버 속성이라 PgJDBC는 무시했다.)
+        prepareThreshold: 0
   jpa:
     hibernate:
       ddl-auto: update

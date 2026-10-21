@@ -1085,6 +1085,10 @@ base + profile 파일을 병합하므로 `application-prod.yml`의 `hibernate.jd
 
 1차 튜닝(인덱스 17개 + OSIV/fetch_size/in_clause_padding) 이후 추가로 조사해 적용한 2가지:
 
+- **[2026-10-21 정정 — 아래 항목은 잘못된 설정이었다]** 아래 4개 속성은 MySQL Connector/J 이름이라 PgJDBC가 무시했고,
+  정작 Supabase 풀러(Supavisor) 트랜잭션 모드에서 필요한 `prepareThreshold: 0`이 없어, 같은 쿼리 5회째부터 서버 prepared
+  statement 오류로 실패할 수 있었다(health는 UP으로 보임). 운영 회원가입·프로필 이름 확인이 정상 입력에도 500을 내던 증상의
+  유력 원인으로 보고 4개를 지우고 `prepareThreshold: 0`으로 교체했다(운영 로그로 확정 전). 원래 기록:
 - **`application-prod.yml`의 `spring.datasource.hikari.data-source-properties`에 PgJDBC 서버 사이드
   프리페어드 스테이트먼트 캐싱 4종 추가** (`cachePrepStmts: true`, `prepStmtCacheSize: 250`,
   `prepStmtCacheSqlLimit: 2048`, `useServerPrepStmts: true`) — HikariCP 공식 문서가 PostgreSQL
