@@ -149,6 +149,11 @@ export const authApi = {
   updateProfile:    (id, data) => apiClient.put(`/auth/member/${id}/profile`,    data).then(r => r.data),
   checkEmail:       (email)    => apiClient.get('/auth/check-email',    { params: { email } }).then(r => r.data),
   checkProfileName: (name)     => apiClient.get('/auth/check-profile-name', { params: { name } }).then(r => r.data),
+  // 아이디·비밀번호 찾기 (PLANNING_account-recovery.md) — 모두 ApiResponse 래퍼({ success, data })
+  findEmail:            (name, tel)         => apiClient.post('/auth/find-email', { name, tel }).then(r => r.data),
+  requestPasswordReset: (email)             => apiClient.post('/auth/password-reset/request', { email }).then(r => r.data),
+  verifyResetToken:     (token)             => apiClient.get('/auth/password-reset/verify', { params: { token } }).then(r => r.data),
+  confirmPasswordReset: (token, newPassword) => apiClient.post('/auth/password-reset/confirm', { token, newPassword }).then(r => r.data),
   kakaoLogin:       (code)           => apiClient.post('/auth/oauth/kakao',  { code }).then(r => r.data),
   googleLogin:      (code)           => apiClient.post('/auth/oauth/google', { code }).then(r => r.data),
   naverLogin:       (code, state)    => apiClient.post('/auth/oauth/naver',  { code, state }).then(r => r.data),

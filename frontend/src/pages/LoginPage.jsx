@@ -272,6 +272,11 @@ export default function LoginPage() {
                   style={inputStyle(!!errors.password)}
                 />
               </Field>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, margin: '-4px 0 14px', fontSize: 12.5 }}>
+                <Link to="/find-account" style={{ color: COLORS.textMuted }}>아이디 찾기</Link>
+                <span aria-hidden="true" style={{ color: COLORS.textHint }}>·</span>
+                <Link to="/find-account?tab=password" style={{ color: COLORS.textMuted }}>비밀번호 찾기</Link>
+              </div>
 
               <PrimaryBtn type="submit" loading={loading}>
                 {loading ? '로그인 중...' : '로그인'}

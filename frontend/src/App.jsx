@@ -10,6 +10,8 @@ import { GLOBAL_KEYFRAMES } from './constants/animations';
 
 import LoginPage    from './pages/LoginPage';
 import SignUpPage   from './pages/SignUpPage';
+import FindAccountPage   from './pages/FindAccountPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ExplorePage  from './pages/ExplorePage';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import PhotoFormPage   from './pages/PhotoFormPage';
@@ -57,6 +59,8 @@ import WorkspacePage from './pages/WorkspacePage';
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
   ...DARK_PATHS,
+  '/find-account',
+  '/reset-password',
   '/oauth/kakao/callback',
   '/oauth/google/callback',
   '/oauth/naver/callback',
@@ -99,6 +103,8 @@ function AppShell() {
           {/* Standalone */}
           <Route path="/login"  element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/find-account"   element={<FindAccountPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/oauth/kakao/callback"  element={<KakaoCallbackPage />} />
           <Route path="/oauth/google/callback" element={<GoogleCallbackPage />} />
           <Route path="/oauth/naver/callback"  element={<NaverCallbackPage />} />
