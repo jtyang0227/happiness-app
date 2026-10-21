@@ -19,7 +19,7 @@ export default {
   'common.new':         '新規作成',
 
   /* ─── ナビゲーション ─── */
-  'nav.explore':        '探索',
+  'nav.explore':        'アーカイブ',
   'nav.gallery':        'ギャラリー',
   'nav.upload':         'アップロード',
   'nav.list':           'リスト',

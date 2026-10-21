@@ -19,7 +19,7 @@ export default {
   'common.new':         '新建',
 
   /* ─── 导航 ─── */
-  'nav.explore':        '探索',
+  'nav.explore':        '档案',
   'nav.gallery':        '图库',
   'nav.upload':         '上传',
   'nav.list':           '列表',

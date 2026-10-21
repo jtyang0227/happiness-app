@@ -107,8 +107,8 @@ export default function FeedScreen({ navigation }) {
       <EmptyState
         icon="📡"
         title="팔로우한 작가가 없어요"
-        description="탐색 화면에서 마음에 드는 작가를 팔로우해보세요"
-        actionLabel="탐색하러 가기"
+        description="아카이브에서 마음에 드는 작가를 팔로우해보세요"
+        actionLabel="아카이브 둘러보기"
         onAction={() => navigation.navigate('ExploreTab')}
       />
     );

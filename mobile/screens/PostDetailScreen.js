@@ -13,7 +13,7 @@ export default function PostDetailScreen({ post, liked, onBack, onLike, onShare,
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-        <Text style={styles.backText}>← 탐색으로</Text>
+        <Text style={styles.backText}>← 아카이브로</Text>
       </TouchableOpacity>
 
       <Image source={{ uri: post.image }} style={styles.image} />

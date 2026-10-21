@@ -16,14 +16,14 @@ import { WORKSPACE_PATHS } from '../workspace/WorkspaceTabs';
 // 목적별 4개로: 탐색(갤러리·목록 흡수) · 내 작업(시리즈) · 업무(문의·예약·일정·약속·납품 허브) · 모임.
 // 올리기는 메뉴가 아니라 행동이라 오른쪽 버튼으로, 프로필은 아바타 메뉴로 옮겼다.
 const NAV_ITEMS = [
-  { to: '/explore',    label: '탐색' },
+  { to: '/explore',    label: '아카이브' },
   { to: '/series',     label: '내 작업', auth: true },
   { to: '/workspace',  label: '업무', badge: 'workspace', match: WORKSPACE_PATHS, auth: true },
   { to: '/gatherings', label: '모임', badge: 'gatherings' },
 ];
 
 const BOTTOM_NAV_ITEMS = [
-  { to: '/explore',   label: '탐색',   icon: '⊙' },
+  { to: '/explore',   label: '아카이브', icon: '⊙' },
   { to: '/series',    label: '내 작업', icon: '✦' },
   { to: '/photo/new', label: '올리기', icon: '+', isCenter: true },
   { to: '/workspace', label: '업무',   icon: '▤', match: WORKSPACE_PATHS, badge: 'workspace' },

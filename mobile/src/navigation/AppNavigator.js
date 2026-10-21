@@ -79,8 +79,8 @@ function MainTabs() {
         name="ExploreTab"
         component={ExploreScreen}
         options={{
-          title: '탐색',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🔍" label="탐색" focused={focused} />,
+          title: '아카이브',
+          tabBarIcon: ({ focused }) => <TabIcon icon="🔍" label="아카이브" focused={focused} />,
         }}
       />
       <Tab.Screen

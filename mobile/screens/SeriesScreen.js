@@ -99,7 +99,7 @@ function WorkNoteModal({ series, onClose, onSaved }) {
             <View style={styles.draftRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.fieldLabel}>초안으로 두기</Text>
-                <Text style={styles.modalHint}>켜두면 나만 볼 수 있어요. 끄면 포트폴리오와 탐색에 공개돼요.</Text>
+                <Text style={styles.modalHint}>켜두면 나만 볼 수 있어요. 끄면 포트폴리오와 아카이브에 공개돼요.</Text>
               </View>
               <Switch value={form.draft} onValueChange={v => setForm(f => ({ ...f, draft: v }))}
                 trackColor={{ true: COLORS.primary }} accessibilityLabel="초안으로 두기" />
