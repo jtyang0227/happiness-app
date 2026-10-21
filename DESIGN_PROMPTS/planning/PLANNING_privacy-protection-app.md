@@ -31,3 +31,10 @@
 
 - 잠금은 인메모리(어드민과 같음) — 서버를 여러 대로 늘리면 Redis로 옮겨야 한다. 잠금은 이메일 기준이라, 남이 내 이메일로 일부러 틀려 15분 잠글 수 있다(어드민과 같은 선택 — IP 기준 전역 Rate Limit과 함께 동작).
 - App 관리자 회원 목록의 이메일 검색은 마스킹된 값 기준이 된다(앞 2자·도메인). 원문 검색·열람은 happiness-admin에서.
+
+## 4. 구현 결과 (2026-10-21)
+
+- 백엔드: `privacy/PrivacyMasker`, `MemberResponse.withoutContact()/maskedContact()`, `PortfolioController`·`AuthController`(회원 조회·검색·관리자 목록)·`FollowController` 적용, `security/auth/LoginAttemptLimiter` + `AuthService.login` 더미 해시 비교. 통합 테스트 2개 추가 → `./gradlew test` 41개 통과.
+- 웹: `AdminLayout` 30분 유휴 로그아웃. `npm run build` 통과. 브라우저(로컬 dev): 헤더 "아카이브", 관리자 회원 목록 `ad***@test.com`, 시계를 31분 앞당기면 안내 후 `/login`. curl: 공개 포트폴리오 `email: null`, `tel: null`.
+- 모바일: 문구만 변경, `expo export` 통과.
+- 운영 반영은 Railway 재배포 필요(자동 배포가 멈춰 있음).

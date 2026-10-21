@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
@@ -26,6 +26,33 @@ export default function AdminLayout({ children, currentPageTitle = '' }) {
     await logout?.();
     navigate('/login');
   };
+
+  // 관리자 화면 30분 무조작 시 자동 로그아웃 — 안전성 확보조치 기준 제6조(일정 시간 미사용 시 접속 차단),
+  // happiness-admin과 같은 규칙. 활동이 들어오면 먼저 유휴 시간을 검사한 뒤 기록한다
+  // (반대로 하면 오래 방치된 세션이 첫 마우스 움직임에 되살아난다). PLANNING_privacy-protection-app.md
+  useEffect(() => {
+    const IDLE_MS = 30 * 60 * 1000;
+    let last = Date.now();
+    let done = false;
+    const expire = async () => {
+      if (done) return;
+      done = true;
+      await logout?.();
+      alert('30분 동안 사용하지 않아 안전을 위해 로그아웃했어요. 다시 로그인해 주세요.');
+      navigate('/login');
+    };
+    const onActivity = () => {
+      if (Date.now() - last >= IDLE_MS) { expire(); return; }
+      last = Date.now();
+    };
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'visibilitychange'];
+    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+    const timer = setInterval(() => { if (Date.now() - last >= IDLE_MS) expire(); }, 30 * 1000);
+    return () => {
+      events.forEach(e => window.removeEventListener(e, onActivity));
+      clearInterval(timer);
+    };
+  }, [logout, navigate]);
 
   const sidebar = (
     <div style={{
