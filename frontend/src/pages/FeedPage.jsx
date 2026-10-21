@@ -163,7 +163,7 @@ export default function FeedPage() {
             background: COLORS.surface,
             color: COLORS.textSecondary, cursor: 'pointer',
           }}>
-            아카이브 둘러보기
+            둘러보러 가기
           </button>
         )}
       </div>
@@ -177,7 +177,7 @@ export default function FeedPage() {
           icon="✨"
           title="팔로우한 작가가 없어요"
           description="마음에 드는 작가를 팔로우하면 여기에 최신 사진이 나타납니다."
-          actionLabel="아카이브에서 작가 찾기"
+          actionLabel="둘러보며 작가 찾기"
           onAction={() => navigate('/explore')}
           theme="light"
         />

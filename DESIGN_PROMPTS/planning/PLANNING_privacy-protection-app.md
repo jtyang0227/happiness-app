@@ -35,6 +35,6 @@
 ## 4. 구현 결과 (2026-10-21)
 
 - 백엔드: `privacy/PrivacyMasker`, `MemberResponse.withoutContact()/maskedContact()`, `PortfolioController`·`AuthController`(회원 조회·검색·관리자 목록)·`FollowController` 적용, `security/auth/LoginAttemptLimiter` + `AuthService.login` 더미 해시 비교. 통합 테스트 2개 추가 → `./gradlew test` 41개 통과.
-- 웹: `AdminLayout` 30분 유휴 로그아웃. `npm run build` 통과. 브라우저(로컬 dev): 헤더 "아카이브", 관리자 회원 목록 `ad***@test.com`, 시계를 31분 앞당기면 안내 후 `/login`. curl: 공개 포트폴리오 `email: null`, `tel: null`.
+- 웹: `AdminLayout` 30분 유휴 로그아웃. `npm run build` 통과. 브라우저(로컬 dev): 헤더 "둘러보기"(당시 "아카이브", 같은 날 "둘러보기"로 다시 변경), 관리자 회원 목록 `ad***@test.com`, 시계를 31분 앞당기면 안내 후 `/login`. curl: 공개 포트폴리오 `email: null`, `tel: null`.
 - 모바일: 문구만 변경, `expo export` 통과.
 - 운영 반영은 Railway 재배포 필요(자동 배포가 멈춰 있음).

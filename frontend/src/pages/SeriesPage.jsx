@@ -351,7 +351,7 @@ function SeriesModal({ series, onClose, onSave, memberId }) {
               style={{ width: 18, height: 18, marginTop: 2, accentColor: COLORS.primary }} />
             <span>
               <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: COLORS.text }}>초안으로 두기</span>
-              <span style={{ fontSize: 12, color: COLORS.textMuted }}>켜두면 나만 볼 수 있어요. 다듬은 뒤 끄면 포트폴리오와 아카이브에 공개돼요.</span>
+              <span style={{ fontSize: 12, color: COLORS.textMuted }}>켜두면 나만 볼 수 있어요. 다듬은 뒤 끄면 포트폴리오와 둘러보기 화면에 공개돼요.</span>
             </span>
           </label>
 

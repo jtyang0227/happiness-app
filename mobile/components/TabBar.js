@@ -4,7 +4,7 @@ import { COLORS } from '../constants/colors';
 import { FONT } from '../constants/layout';
 
 const TABS = [
-  { key: 'explore', label: '아카이브' },
+  { key: 'explore', label: '둘러보기' },
   { key: 'gallery', label: '갤러리' },
   { key: 'list',    label: '목록'   },
   { key: 'add',     label: '등록'   },

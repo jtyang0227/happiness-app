@@ -19,7 +19,7 @@ export default {
   'common.new':         'Create new',
 
   /* ─── Navigation ─── */
-  'nav.explore':        'Archive',
+  'nav.explore':        'Browse',
   'nav.gallery':        'Gallery',
   'nav.upload':         'Upload',
   'nav.list':           'List',

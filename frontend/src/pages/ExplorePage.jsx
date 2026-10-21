@@ -16,7 +16,7 @@ const TABS = [
 
 function TabSegment({ value, onChange }) {
   return (
-    <div role="tablist" aria-label="아카이브 보기 대상" style={{
+    <div role="tablist" aria-label="둘러볼 대상" style={{
       display: 'inline-flex', padding: 4, borderRadius: 12, background: COLORS.bg,
     }}>
       {TABS.map(t => {

@@ -83,7 +83,7 @@ export default function AdminCurationPage() {
     <AdminLayout currentPageTitle="작업 큐레이션">
       <div style={{ maxWidth: 960 }}>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.6 }}>
-          추천한 작업은 아카이브 → 작업 탭 맨 위 "✦ 에디터 추천"에 최근 추천한 순으로 보여요.
+          추천한 작업은 둘러보기 → 작업 탭 맨 위 "✦ 에디터 추천"에 최근 추천한 순으로 보여요.
           초안·비공개 작가·사진 없는 작업은 후보에 나오지 않아요.
         </p>
         <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
