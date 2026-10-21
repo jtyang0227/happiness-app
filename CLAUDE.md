@@ -530,7 +530,10 @@ Feature-based package layout:
   있었다(예: 중복 예약 409 → 500) → 상태 코드와 reason을 보존해 `ApiResponse{success:false, code:"409", message:reason}`
   으로 반환하는 핸들러 추가. 프론트 13곳이 `err.response.data.message`를 읽으므로 이제 실제 사유가 표시된다.
   **알려진 갭(일부 해소)**: 좋아요/저장/태그 등 일부 사진 하위 API가 `@RequestParam memberId`를 받는 구조라 같은
-  계열의 신뢰 문제가 있었다 → 2026-10-20 **좋아요·저장(취소 포함) 4개는 `isSelfOrAdmin(memberId)` 검사 추가로 해소**
+  계열의 신뢰 문제가 있었다. (2026-10-21) **전역 예외 처리 2차**: 서비스 계층 입력 검증이 던지는 `IllegalArgumentException`도
+  핸들러가 없어 회원가입 "이미 등록된 이메일" 등이 전부 500 "Request failed with status code 500"으로 보였다 → 400 + 사유로 반환하는
+  핸들러 추가. 회원가입 중복 검사도 소문자 정규화 후 비교(대소문자만 다른 이메일이 검사를 통과해 DB 유니크 제약에서 500), 웹 `SignUpPage`의
+  포트폴리오 주소 규칙을 서버와 같게(3~30자, 하이픈 시작·끝 불가) 맞추고 오류 시 서버 사유를 표시 → 2026-10-20 **좋아요·저장(취소 포함) 4개는 `isSelfOrAdmin(memberId)` 검사 추가로 해소**
   (남의 이름으로 좋아요/저장 → 403). 태그 등 나머지는 아직 미수정.
   이후 테스트가 22개로 늘면서 전역 `RateLimitFilter`(IP당 100req/60s)에 걸려 무작위 429가 나와, 테스트 클래스에서만
   `security.rate-limit.capacity`/`refill-tokens`를 크게 덮어쓴다(운영 설정 변경 없음).

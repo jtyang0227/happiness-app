@@ -84,7 +84,8 @@ export default function SignUpPage() {
     else if (form.password.length < 8)   e.password        = '최소 8자 이상 입력해주세요.';
     if (form.password !== form.confirmPassword) e.confirmPassword = '비밀번호가 일치하지 않습니다.';
     if (!form.profileName.trim())        e.profileName     = '포트폴리오 주소를 입력해주세요.';
-    else if (!/^[a-z0-9-]+$/.test(form.profileName)) e.profileName = '영문 소문자, 숫자, 하이픈만 사용 가능합니다.';
+    // 서버(MemberService.PROFILE_NAME_PATTERN)와 같은 규칙 — 다르면 통과한 값이 서버에서 거절된다
+    else if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(form.profileName)) e.profileName = '영문 소문자·숫자·하이픈 3~30자, 하이픈으로 시작하거나 끝날 수 없습니다.';
     if (form.tel && !PHONE_RE.test(form.tel)) e.tel = '올바른 전화번호 형식이 아닙니다.';
     if (!form.termsAgreed)               e.termsAgreed     = '이용약관 및 개인정보처리방침에 동의해주세요.';
     return e;
@@ -117,7 +118,7 @@ export default function SignUpPage() {
       await signup(payload);
       navigate('/');
     } catch (err) {
-      setApiErr(err.message || '회원가입에 실패했습니다.');
+      setApiErr(err.response?.data?.message || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

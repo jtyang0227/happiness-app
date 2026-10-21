@@ -57,7 +57,7 @@ public class MemberService {
         validateEmail(request.getEmail());
         validatePassword(request.getPassword());
 
-        if (memberRepository.existsByEmail(request.getEmail())) {
+        if (memberRepository.existsByEmail(request.getEmail().trim().toLowerCase())) {
             throw new IllegalArgumentException("이미 등록된 이메일입니다.");
         }
         if (!request.isTermsAgreed()) {

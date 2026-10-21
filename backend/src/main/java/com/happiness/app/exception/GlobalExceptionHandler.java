@@ -79,6 +79,15 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    // 서비스 계층의 입력 검증(회원가입·로그인 등)은 IllegalArgumentException + 한국어 사유로 던진다 — 500이 아닌 400 + 사유로 응답.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
+        log.debug("[400] {}", e.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.INVALID_INPUT.getHttpStatus())
+                .body(ApiResponse.fail(ErrorCode.INVALID_INPUT, e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception e) {
         log.error("[ERROR] Unhandled exception", e);

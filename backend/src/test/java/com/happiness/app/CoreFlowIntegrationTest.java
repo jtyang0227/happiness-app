@@ -93,6 +93,25 @@ class CoreFlowIntegrationTest {
     }
 
     @Test
+    void 회원가입_입력_오류는_500이_아니라_400과_사유() throws Exception {
+        User u = signupAndLogin();
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        // 대소문자만 다른 중복 이메일 — 예전엔 중복 검사를 통과한 뒤 DB 유니크 제약에서 500
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", u.email().toUpperCase(), "password", "Passw0rd!!", "name", "테스터",
+                                "profileName", "dup" + suffix, "termsAgreed", true))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("이미 등록된 이메일입니다."));
+        // 하이픈으로 끝나는 프로필 주소 — 서버 형식 검증 실패
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", "new-" + suffix + "@test.com", "password", "Passw0rd!!", "name", "테스터",
+                                "profileName", "bad-" + suffix + "-", "termsAgreed", true))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void 인증이_필요한_API는_토큰_없이_401() throws Exception {
         mvc.perform(get("/api/booking")).andExpect(status().isUnauthorized());
     }
