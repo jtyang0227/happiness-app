@@ -15,7 +15,7 @@
 | 2 | ✅ | 앱 안에서 회원 탈퇴(모바일) | 탈퇴 시 댓글·차단도 삭제 |
 | 3 | ✅ | 사진·댓글 신고 + 사용자 차단 (+ 댓글 작성자 위조·모바일 댓글 500/400 수정) | 모임 게시물 신고는 메일 |
 | 4 | ✅ | 약관·연락처, 권한 최소화, 아이콘·스플래시, ATS·암호화 키 | |
-| 5 | ✅ | 검증 + CLAUDE.md + push | gradle test 44/44, web build, expo export web·android |
+| 5 | ✅ | 검증 + CLAUDE.md + push | gradle test 44/44, web build, expo export web·android — cfc8689 |
 | 6 | ⏸ | Expo SDK 49 → 최신 업그레이드 | 스토어 targetSdk·Xcode 요구 — 큰 별도 작업이라 사용자 결정 필요 |
 | 7 | ⏸ | 콘솔 작업(데모 계정·개인정보 URL·App Privacy·데이터 안전·지원 메일함·Railway 재배포) | 사용자 작업 — 기획서 4절 |
 
