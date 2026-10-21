@@ -40,7 +40,7 @@ Claude Code는 단순 코드 생성기가 아니라 스스로 계획·실행·�
    실행한다.
 8. **실패하면 원인을 분석하고 수정한다** — 실패 상태로 완료라고 보고하지 않는다. 확인 → 원인 분석 →
    관련 코드 확인 → 수정 → 재실행 → 통과 확인 루프를 돈다. 에러 은닉, 테스트 삭제, 검증 우회로 실패를
-   숨기지 않는다.
+   숨기지 않는다. 사용자가 에러를 보고하면 아래 "에러 원인 분석 루프"를 따른다.
 9. **자기검토(Self Review)** — 완료 전 Correctness / Regression / Edge Cases / Security / Performance /
    Maintainability / Scope(요청 범위를 벗어난 불필요한 변경 여부) 7가지를 스스로 점검한다.
 10. **git diff 확인** — push 전 `git status`/`git diff`로 의도치 않은 파일 변경, 디버그 코드
@@ -66,6 +66,43 @@ Claude Code는 단순 코드 생성기가 아니라 스스로 계획·실행·�
 개념·트레이드오프·함정(gotcha) 하나만 2~3문장으로 짧게 덧붙인다 — 왜 뻔한 방식 대신 이 방식을 택했는지,
 어떤 기본값을 신뢰했는지, 규모가 커지면 무엇이 먼저 깨지는지 같은, 코드 자체가 보여주지 않는 내용이어야
 한다. diff를 그대로 되풀이하는 수준이거나 사용자가 이미 아는 내용이면 생략한다.
+
+---
+
+## 에러 원인 분석 루프 (사용자가 에러를 보고했을 때)
+
+"500 나와", "안 돼요", 에러 문구 붙여넣기 등 **에러 보고가 들어오면 추측으로 고치지 말고** 아래 루프를 돈다.
+루프는 **증상 → 버전 → 로그 → 재현 → 원인 → 수정 → 재검증 → 운영 반영 확인** 순서이며, 각 단계의 근거(명령·출력 줄)를 남긴다.
+
+1. **증상 고정** — 정확한 문구·화면/URL·동작(무엇을 눌렀는지)·플랫폼(웹/모바일)·시각을 정리한다. 부족하면
+   질문 하나로 묻되, 코드로 좁힐 수 있는 건 먼저 좁힌다. 프론트 문구가 `Request failed with status code N`이면
+   axios 기본 메시지라 **서버 사유가 가려진 것** — 그 화면의 catch가 `err.response?.data?.message`를 읽는지부터 본다.
+2. **운영 버전 확인** — 운영이 어떤 커밋으로 돌고 있는지 먼저 확인한다(고친 코드가 배포 안 된 상태에서 "재현 안 됨"으로
+   결론 내리지 않기 위해). 웹: `gh api repos/jtyang0227/happiness-app/deployments?per_page=5`(vercel[bot] Production),
+   API: 커밋 상태의 Railway 기록 또는 `railway deployment list`.
+3. **로그 확보** — 위에서부터 가능한 것을 쓴다. 못 쓰면 왜 못 썼는지 보고에 적는다.
+   - 운영 API(Railway, 환경 변수 `RAILWAY_TOKEN` + 허용 도메인 `backboard.railway.com` 필요):
+     `npm i -g @railway/cli` → `railway logs --deployment`(런타임) / `railway logs --build`(빌드 실패).
+     `GlobalExceptionHandler`가 처리 못 한 예외는 `[ERROR] Unhandled exception` + 스택트레이스로 남으니 그 줄을 찾는다.
+     로그 조회는 바로 해도 되지만 재배포·환경 변수 변경·재시작은 사용자 확인 후, 삭제 계열은 하지 않는다.
+   - CI: `mcp__github__actions_list` / `get_job_logs`.
+   - 로컬 재현 로그: `./gradlew bootRun -q > <scratchpad>/boot.log 2>&1 &` 후 health 대기, 요청을 curl로 보내고
+     `grep -n "ERROR\|Exception" boot.log`. 웹 화면 문제는 Playwright로 콘솔·네트워크 응답 본문까지 캡처.
+4. **재현** — 정상 입력 1개 + 의심 입력 여러 개를 curl(또는 Playwright)로 보내 **상태 코드 매트릭스**를 만든다
+   (예: 정상 201 / 중복 이메일 500 / 대소문자만 다른 이메일 500). 재현이 안 되면 운영과 dev의 차이(PostgreSQL vs H2,
+   환경 변수, 배포 버전)를 의심하고 그 차이를 명시한다.
+5. **원인 특정** — 스택트레이스 또는 코드 경로로 한 줄 원인을 쓴다. 이 저장소에서 반복된 원인 유형:
+   예외 핸들러 누락으로 4xx가 500으로 바뀜, 프론트·서버 검증 규칙 불일치, 정규화(소문자·trim) 전 비교,
+   응답 래퍼(`ApiResponse` vs `{status,data}`) 언래핑 실수, 존재하지 않는 API 경로 호출, Jackson `isXxx` 필드명.
+6. **수정 + 회귀 테스트** — 원인을 고치는 최소 수정과, 그 원인을 다시 잡는 테스트(백엔드는 `CoreFlowIntegrationTest`에
+   상태 코드·메시지 단언)를 함께 넣는다. 같은 유형이 다른 곳에도 있는지 grep으로 한 번 훑고, 고치지 않은 곳은 보고에 남긴다.
+7. **재검증** — 4번의 매트릭스를 그대로 다시 돌려 전후를 비교하고, 기존 검증 명령(`./gradlew test`, `npm run build` 등)을 실행한다.
+8. **운영 반영 확인** — push 후 Vercel·Railway 배포 기록이 새 커밋으로 생겼는지 확인한다. 배포가 안 됐으면
+   "코드는 고쳤지만 운영은 아직"이라고 분명히 말하고 사용자가 할 일(대시보드 확인 등)을 적는다. 운영에서 실제로
+   사라졌는지 확인하지 못했으면 "해결됨"이라고 보고하지 않는다.
+
+**함정**: `pkill -f bootRun`이나 `kill $(pgrep -f ...)`처럼 명령줄 패턴으로 프로세스를 찾으면, 그 패턴 문자열이 들어 있는
+내 셸 명령까지 걸려 함께 죽는다(exit 144) — 로컬 서버는 포트로 찾아 종료한다(`fuser -k 8080/tcp` 또는 `lsof -ti:8080 | xargs kill`).
 
 ---
 
