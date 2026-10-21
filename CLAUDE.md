@@ -1586,6 +1586,19 @@ master 브랜치 push 시 자동 실행:
 PR 시: 1, 2번(CI)만 실행
 ```
 
+**실제 배포 경로(2026-10-21 점검, GitHub 커밋 상태·deployment 기록 기준)**: 위 4·5번 Actions 배포 job은 `RAILWAY_TOKEN`·
+`VERCEL_*` 시크릿이 없어 **매번 "건너뜀" 경고만 남기고 성공으로 끝난다**(배포 0회). 실제 배포는 두 서비스의 **GitHub 앱 연동**이 한다:
+- **Vercel**(`vercel[bot]`, 팀 `happiness-team/happiness-app`): master push마다 Production, 브랜치 push마다 Preview. 정상.
+- **Railway**(`railway-app[bot]`, 서비스 상태 이름 "Happiness - happiness-app", 환경 "Happiness / production", 도메인 `api.happiness.io.kr`):
+  감시 경로(backend/) 변경 시에만 배포하고, 아니면 커밋에 "No deployment needed - watched paths not modified"를 남긴다.
+  재배포가 필요하면 `backend/railway.toml`의 `# redeploy-trigger-N` 숫자를 올려 push한다(저장소 관례).
+- **알려진 문제(⏸ 사용자 확인 필요)**: 마지막 Railway 배포는 256718e(2026-10-20 13:49). 이후 백엔드가 바뀐 push(b6dcdb9 — 비슷한 사진 API·
+  보드 공유 링크, e8fede9 — 재배포 트리거)에는 Railway가 상태·deployment를 **전혀 남기지 않았다**(백엔드 무변경 커밋에는 "No deployment needed"를
+  정상 기록). 웹훅은 살아 있고 배포 단계에서 막힌 것으로 보인다 — Railway 대시보드의 Deployments 탭·요금제/사용량·서비스 일시정지 여부 확인 필요.
+  그 전까지 운영 웹(Vercel)은 새 코드, 운영 API는 이전 코드라 "비슷한 사진"은 빈 섹션으로 숨겨지고 보드 공유 링크 만들기는 실패한다.
+- 클라우드 개발 세션에서는 egress 정책으로 `*.happiness.io.kr`·`*.vercel.app`에 직접 접속할 수 없어, 운영 상태는 GitHub API
+  (`gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`, `.../deployments`)로만 확인할 수 있다.
+
 ### GitHub Secrets 등록 목록
 
 ```
