@@ -11,8 +11,10 @@ import BoardPickerSheet from '../components/BoardPickerSheet';
 import SimilarPhotos from '../components/SimilarPhotos';
 import ReportSheet from '../components/ReportSheet';
 import useBlockedMembers from '../hooks/useBlockedMembers';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PhotoDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();   // 노치·상태바 아래로 (자체 헤더라 내비게이터가 여백을 안 줌)
   const { photo: initialPhoto } = route.params;
   const { user } = useAuth();
   const [photo, setPhoto] = useState(initialPhoto);
@@ -126,7 +128,7 @@ export default function PhotoDetailScreen({ navigation, route }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* 뒤로가기 + (남의 사진) 신고 */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backText}>← 뒤로</Text>
           </TouchableOpacity>
@@ -154,6 +156,15 @@ export default function PhotoDetailScreen({ navigation, route }) {
         )}
 
         <Text style={styles.title}>{photo.title}</Text>
+        {!!photo.memberName && (
+          <View style={styles.authorRow}>
+            {photo.memberAvatarUrl
+              ? <Image source={{ uri: photo.memberAvatarUrl }} style={styles.authorAvatar} />
+              : <View style={styles.authorAvatar}><Text style={styles.authorInitial}>{photo.memberName[0]}</Text></View>}
+            <Text style={styles.authorName}>{photo.memberName}</Text>
+            {!!photo.memberProfileName && <Text style={styles.authorHandle}>@{photo.memberProfileName}</Text>}
+          </View>
+        )}
         {photo.description ? (
           <Text style={styles.description}>{photo.description}</Text>
         ) : null}
@@ -351,9 +362,15 @@ const styles = StyleSheet.create({
   tagText: { color: COLORS.tagText, fontSize: FONT.xs, fontWeight: '600' },
   actionRow: { flexDirection: 'row', marginHorizontal: SPACING.lg, marginTop: SPACING.md, gap: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.lg, alignItems: 'center' },
-  btnLike:   { backgroundColor: '#f5f5ff', borderWidth: 1, borderColor: COLORS.border },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: SPACING.lg, marginTop: SPACING.sm },
+  authorAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  authorInitial: { color: COLORS.white, fontSize: 11, fontWeight: '700' },
+  authorName: { color: COLORS.textPrimary, fontSize: FONT.sm, fontWeight: '700' },
+  authorHandle: { color: COLORS.textMuted, fontSize: FONT.sm },
+  btnLike:   { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
   btnLiked:  { backgroundColor: '#fce4f3' },
-  btnSave:   { backgroundColor: '#f5f5ff', borderWidth: 1, borderColor: COLORS.border },
+  btnSave:   { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
   btnSaved:  { backgroundColor: '#fff8e0' },
   btnEdit:   { backgroundColor: COLORS.primary },
   btnDelete: { backgroundColor: COLORS.danger },

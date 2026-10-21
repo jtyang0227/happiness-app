@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   Alert, SectionList, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -90,6 +90,18 @@ export default function BookingScreen({ navigation }) {
   const openAvailabilitySettings = () => {
     navigation.navigate && navigation.navigate('AvailabilitySettings');
   };
+  // 가용 시간 설정은 공통 헤더 오른쪽에 (예전 자체 헤더는 뒤로 가기·노치 여백이 없었다)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={openAvailabilitySettings} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button" accessibilityLabel="가용 시간 설정">
+          <Text style={styles.settingsLink}>⚙ 설정</Text>
+        </TouchableOpacity>
+      ),
+    });
+  });
+
 
   const sections = SECTION_ORDER
     .map(s => ({ ...s, data: bookings.filter(b => b.status === s.key) }))
@@ -98,12 +110,6 @@ export default function BookingScreen({ navigation }) {
   if (!loading && bookings.length === 0) {
     return (
       <View style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>예약 관리</Text>
-          <TouchableOpacity onPress={openAvailabilitySettings}>
-            <Text style={styles.settingsLink}>⚙ 설정</Text>
-          </TouchableOpacity>
-        </View>
         <EmptyState
           icon="📅"
           title="예약이 없습니다"
@@ -115,13 +121,6 @@ export default function BookingScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>예약 관리</Text>
-        <TouchableOpacity onPress={openAvailabilitySettings}>
-          <Text style={styles.settingsLink}>⚙ 설정</Text>
-        </TouchableOpacity>
-      </View>
-
       <SectionList
         sections={sections}
         keyExtractor={item => String(item.id)}
@@ -177,13 +176,7 @@ export default function BookingScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  headerTitle: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary },
-  settingsLink: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.primary },
+  settingsLink: { fontSize: FONT.sm, fontWeight: '600', color: COLORS.primary, marginRight: SPACING.md },
   list: { padding: SPACING.md, paddingBottom: 40 },
   sectionTitle: { fontSize: FONT.sm, fontWeight: '700', color: COLORS.textMuted, marginTop: SPACING.md, marginBottom: SPACING.sm },
   card: {

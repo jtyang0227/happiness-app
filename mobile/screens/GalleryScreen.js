@@ -47,14 +47,15 @@ export default function GalleryScreen({ navigation }) {
 
   return (
     <FlatList
-      data={photos}
+      // 사진 수가 홀수면 빈 칸을 하나 붙여 마지막 카드가 한 줄 전체로 늘어나지 않게
+      data={photos.length % 2 ? [...photos, { id: '__spacer' }] : photos}
       keyExtractor={item => String(item.id)}
       numColumns={2}
       contentContainerStyle={styles.listContent}
       columnWrapperStyle={styles.row}
       refreshing={refreshing}
       onRefresh={handleRefresh}
-      renderItem={({ item }) => (
+      renderItem={({ item }) => item.id === '__spacer' ? <View style={styles.spacer} /> : (
         <PhotoCard photo={item} onPress={() => navigation.navigate('PhotoDetail', { photo: item })} />
       )}
       ListEmptyComponent={
@@ -73,6 +74,7 @@ export default function GalleryScreen({ navigation }) {
 const styles = StyleSheet.create({
   listContent: { padding: 4, flexGrow: 1, backgroundColor: COLORS.bg },
   row: { marginHorizontal: 4 },
+  spacer: { flex: 1, margin: 4 },   // PhotoCard와 같은 폭
   skeletonGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', padding: 4, backgroundColor: COLORS.bg },
   skeletonCol: { width: '50%' },
 });

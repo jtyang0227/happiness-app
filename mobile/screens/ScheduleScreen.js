@@ -126,20 +126,9 @@ export default function ScheduleScreen({ navigation }) {
     { key: 'later', title: '이후', data: upcoming.filter(e => e.dateKey > weekEndKey) },
   ].filter(s => s.data.length > 0);
 
-  const header = (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="뒤로">
-        <Text style={styles.back}>‹</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>통합 일정</Text>
-      <View style={{ width: 24 }} />
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={styles.container}>
-        {header}
         <ActivityIndicator style={{ marginTop: 48 }} size="large" color={COLORS.primary} />
       </View>
     );
@@ -147,7 +136,6 @@ export default function ScheduleScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {header}
       <View style={styles.legend}>
         {Object.values(TYPE_META).map(m => (
           <View key={m.label} style={styles.legendItem}>
@@ -204,13 +192,6 @@ export default function ScheduleScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  back: { fontSize: 28, color: COLORS.textPrimary, width: 24, lineHeight: 30 },
-  headerTitle: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary },
   legend: { flexDirection: 'row', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },

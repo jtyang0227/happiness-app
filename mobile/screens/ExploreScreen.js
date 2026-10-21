@@ -25,6 +25,7 @@ export default function ExploreScreen({ navigation }) {
   const [tab, setTab] = useState('photos');
   const [photos, setPhotos] = useState([]);
   const { isBlocked } = useBlockedMembers();   // 차단한 회원의 사진은 숨김
+  const visiblePhotos = photos.filter(p => !isBlocked(p.memberId));   // 목록과 "사진 n장"이 같은 수를 보도록
   const [keyword, setKeyword] = useState('');
   const [moodFilter, setMoodFilter] = useState(null);
   const [genre, setGenre] = useState(null);
@@ -189,7 +190,7 @@ export default function ExploreScreen({ navigation }) {
 
       {!loading && (
         <Text style={styles.resultCount}>
-          {moodFilter || genre || keyword.trim() ? `검색 결과 ${photos.length}${hasNext ? '+' : ''}건` : `사진 ${photos.length}${hasNext ? '+' : ''}장`}
+          {moodFilter || genre || keyword.trim() ? `검색 결과 ${visiblePhotos.length}${hasNext ? '+' : ''}건` : `사진 ${visiblePhotos.length}${hasNext ? '+' : ''}장`}
         </Text>
       )}
     </View>
@@ -234,7 +235,7 @@ export default function ExploreScreen({ navigation }) {
 
     return (
       <FlatList
-        data={photos.filter(p => !isBlocked(p.memberId))}
+        data={visiblePhotos}
         keyExtractor={item => String(item.id)}
         numColumns={2}
         contentContainerStyle={styles.listContent}

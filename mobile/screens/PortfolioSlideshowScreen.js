@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { photoApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { StatusBar } from 'expo-status-bar';
 
 const MOOD_LABELS = {
   WARM: '따뜻함', COOL: '시원함', DRAMATIC: '드라마틱',
@@ -111,6 +112,7 @@ export default function PortfolioSlideshowScreen({ navigation, route }) {
 
   return (
     <View style={styles.root}>
+      <StatusBar style="light" />
       <FlatList
         ref={listRef}
         data={slides}

@@ -5,6 +5,7 @@ import {
 import { bookingApi } from '../src/api/bookingApi';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']; // index: 0=일 ... 6=토 (백엔드는 1=월..7=일)
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -19,6 +20,7 @@ function backendToUiIndex(val) {
 }
 
 export default function AvailabilitySettingsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();   // 노치·상태바 아래로 (자체 헤더라 내비게이터가 여백을 안 줌)
   const [enabledDays, setEnabledDays] = useState(new Set([1, 2, 3, 4, 5])); // 백엔드 값 기준, 기본 월-금
   const [slots, setSlots] = useState(['10:00', '14:00']);
   const [newSlot, setNewSlot] = useState('');
@@ -131,8 +133,9 @@ export default function AvailabilitySettingsScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button" accessibilityLabel="뒤로">
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>가용 시간 설정</Text>

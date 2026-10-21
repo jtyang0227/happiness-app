@@ -328,8 +328,9 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg, padding: SPACING.xl },
   list: { padding: SPACING.md, paddingBottom: 100, flexGrow: 1 },
 
-  tabScroll: { backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  tabScrollContent: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: 6 },
+  // flexGrow 0 + 가운데 정렬 — 없으면 가로 ScrollView가 남은 높이를 차지하고 칩이 세로로 늘어났다(약 200px)
+  tabScroll: { flexGrow: 0, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  tabScrollContent: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: 6, alignItems: 'center' },
   tabChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
   tabChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },

@@ -7,6 +7,7 @@ import { meetApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TABS = [
   { key: 'chat', label: '💬 채팅' },
@@ -280,6 +281,7 @@ function LocationTab({ meetId, meet, onRefresh }) {
 }
 
 export default function MeetDetailScreen({ route, navigation }) {
+  const insets = useSafeAreaInsets();   // 노치·상태바 아래로 (자체 헤더라 내비게이터가 여백을 안 줌)
   const { meetId } = route.params;
   const { user } = useAuth();
   const [meet, setMeet] = useState(null);
@@ -337,8 +339,9 @@ export default function MeetDetailScreen({ route, navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>←</Text></TouchableOpacity>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button" accessibilityLabel="뒤로"><Text style={styles.backBtn}>←</Text></TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{otherName}</Text>
         <View style={{ width: 24 }} />
       </View>

@@ -5,7 +5,17 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
-## 현재 묶음 — 모바일 앱 심사(App Store·Google Play) 대응 (2026-10-21)
+## 현재 묶음 — 모바일 UI/UX 정리 (2026-10-21)
+
+디자인: `DESIGN_PROMPT_mobile-ux-polish.md`.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 390px 실화면 점검(웹 번들 + 로컬 백엔드, 로그인 후 화면까지) | `secureStorage.web.js` |
+| 2 | ✅ | 탭·헤더·상태바·토큰·레이아웃·대비·진입점 수정 13건 | 디자인 프롬프트 표 |
+| 3 | ✅ | 재검증 + 커밋 | 차단 숨김·신고 저장 확인, expo export web·android |
+
+## 이전 묶음 — 모바일 앱 심사(App Store·Google Play) 대응 (2026-10-21)
 
 기획: `PLANNING_app-store-review.md`.
 

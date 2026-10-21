@@ -356,7 +356,7 @@ export default function ProfileScreen({ navigation = {} }) {
                 setEditing(false);
               }}
             >
-              <Text style={styles.btnText}>취소</Text>
+              <Text style={[styles.btnText, styles.btnCancelText]}>취소</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -365,6 +365,11 @@ export default function ProfileScreen({ navigation = {} }) {
       {/* 메뉴 */}
       <View style={styles.legalSection}>
         <Text style={styles.legalTitle}>메뉴</Text>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Series')}>
+          <Text style={styles.legalItemText}>📁 내 작업(시리즈)</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.legalItem}
           onPress={() => navigation.navigate && navigation.navigate('Gatherings')}>
           <Text style={styles.legalItemText}>📷 사진 모임</Text>
@@ -550,7 +555,8 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, alignItems: 'center' },
   btnSave:   { backgroundColor: COLORS.primary },
-  btnCancel: { backgroundColor: COLORS.cancel },
+  btnCancel: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },   // 흰 글자+연회색은 대비 부족
+  btnCancelText: { color: COLORS.textPrimary },
   btnText:   { color: '#fff', fontWeight: '700' },
 
   legalSection: { backgroundColor: COLORS.white, borderRadius: RADIUS.card,

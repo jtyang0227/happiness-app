@@ -43,10 +43,6 @@ export default function DeliveryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>납품 관리</Text>
-      </View>
-
       <FlatList
         data={deliveries}
         keyExtractor={item => String(item.id)}
@@ -88,11 +84,6 @@ export default function DeliveryScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  headerTitle: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary },
   list: { padding: SPACING.md, paddingBottom: 40, flexGrow: 1 },
   card: {
     backgroundColor: COLORS.white, borderRadius: RADIUS.card,

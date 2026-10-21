@@ -38,7 +38,7 @@ export default function SimilarPhotos({ photoId, onSelect }) {
           data={photos.filter(p => !isBlocked(p.memberId))}
           keyExtractor={p => String(p.id)}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: SPACING.sm }}
+          contentContainerStyle={{ gap: SPACING.sm, paddingHorizontal: SPACING.lg }}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => onSelect?.(item)}
@@ -58,9 +58,10 @@ export default function SimilarPhotos({ photoId, onSelect }) {
 const CELL = 108;
 const styles = StyleSheet.create({
   wrap: { marginTop: SPACING.xl, marginBottom: SPACING.sm },
-  title: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary },
-  sub: { fontSize: FONT.sm, color: COLORS.textMuted, marginTop: 2, marginBottom: SPACING.md },
-  row: { flexDirection: 'row', gap: SPACING.sm },
+  // 제목은 화면의 다른 섹션과 같은 16px 여백, 사진 줄은 끝까지 스크롤되게 안쪽 여백으로
+  title: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary, marginHorizontal: SPACING.lg },
+  sub: { fontSize: FONT.sm, color: COLORS.textMuted, marginTop: 2, marginBottom: SPACING.md, marginHorizontal: SPACING.lg },
+  row: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg },
   cell: { width: CELL, height: CELL, borderRadius: RADIUS.sm, backgroundColor: COLORS.border },
   skeleton: { opacity: 0.6 },
   author: { width: CELL, fontSize: 12, color: COLORS.textMuted, marginTop: 4 },

@@ -214,7 +214,7 @@ export default function PhotoFormScreen({ navigation, route }) {
               : <Text style={styles.btnText}>{mode === 'edit' ? '저장' : '등록'}</Text>}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => navigation.goBack()}>
-            <Text style={styles.btnText}>취소</Text>
+            <Text style={[styles.btnText, styles.btnCancelText]}>취소</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -264,7 +264,9 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 8 },
   btn: { flex: 1, paddingVertical: 14, borderRadius: RADIUS.lg, alignItems: 'center' },
   btnSave:     { backgroundColor: COLORS.primary },
-  btnCancel:   { backgroundColor: COLORS.cancel },
+  // 흰 글자 + 연회색(대비 약 2.3:1)이던 취소 → 흰 바탕 보조 버튼
+  btnCancel:   { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
+  btnCancelText: { color: COLORS.textPrimary },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#fff', fontWeight: '700', fontSize: FONT.base },
 });

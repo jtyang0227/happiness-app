@@ -32,9 +32,20 @@ import AvailabilitySettingsScreen from '../../screens/AvailabilitySettingsScreen
 import ScheduleScreen from '../../screens/ScheduleScreen';
 import BlockedUsersScreen from '../../screens/BlockedUsersScreen';
 import GatheringNotifBadge from '../../components/GatheringNotifBadge';
+import { StatusBar } from 'expo-status-bar';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
+
+// 헤더·탭바는 본문과 같은 밝은 Toss 서페이스(흰 바탕 + 회색 구분선). 예전 남색 헤더는 밝은 본문과 따로 놀았다.
+// 어두운 화면은 사진 뷰어·슬라이드쇼·로그인 계열만(CLAUDE.md "다크 예외 영역").
+const HEADER = {
+  headerShown: true,
+  headerStyle: { backgroundColor: COLORS.white },
+  headerTintColor: COLORS.textPrimary,
+  headerTitleStyle: { fontWeight: '700', fontSize: FONT.lg, color: COLORS.textPrimary },
+  headerShadowVisible: true,
+};
 
 // ── Splash ──────────────────────────────────────────────────────────
 function SplashScreen() {
@@ -49,9 +60,9 @@ function SplashScreen() {
 // ── Tab icon helper ──────────────────────────────────────────────────
 function TabIcon({ icon, label, focused }) {
   return (
-    <View style={styles.tabIconWrap}>
+    <View style={styles.tabIconWrap} accessibilityLabel={label}>
       <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>{icon}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>{label}</Text>
+      <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }
@@ -63,12 +74,10 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerStyle:     { backgroundColor: COLORS.darkDeep },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700', fontSize: FONT.lg },
+        ...HEADER,
         tabBarStyle: {
-          backgroundColor: COLORS.darkDeep,
-          borderTopColor: COLORS.darkAlt,
+          backgroundColor: COLORS.white,
+          borderTopColor: COLORS.border,
           height: 56 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 6,
@@ -132,8 +141,7 @@ function AuthStack() {
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="FindAccount" component={FindAccountScreen} />
       <Stack.Screen name="Legal"  component={LegalScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#1a1a2e', title: '법적 고지' }} />
+        options={{ ...HEADER, title: '법적 고지' }} />
     </Stack.Navigator>
   );
 }
@@ -145,36 +153,28 @@ function MainStack() {
       <Stack.Screen name="Main"        component={MainTabs}         options={{ headerShown: false }} />
       <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhotoForm"   component={PhotoFormScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '사진 등록' }} />
+        options={{ ...HEADER, title: '사진 등록' }} />
       <Stack.Screen name="Series"      component={SeriesScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '시리즈' }} />
+        options={{ ...HEADER, title: '시리즈' }} />
       <Stack.Screen name="Meets"       component={MeetsScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '약속' }} />
+        options={{ ...HEADER, title: '약속' }} />
       <Stack.Screen name="MeetDetail"  component={MeetDetailScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Booking"     component={BookingScreen}    options={{ headerShown: false }} />
+      <Stack.Screen name="Booking"     component={BookingScreen}    options={{ ...HEADER, title: '예약 관리' }} />
       <Stack.Screen name="AvailabilitySettings" component={AvailabilitySettingsScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Schedule"    component={ScheduleScreen}   options={{ headerShown: false }} />
-      <Stack.Screen name="Delivery"    component={DeliveryScreen}   options={{ headerShown: false }} />
+      <Stack.Screen name="Schedule"    component={ScheduleScreen}   options={{ ...HEADER, title: '통합 일정' }} />
+      <Stack.Screen name="Delivery"    component={DeliveryScreen}   options={{ ...HEADER, title: '납품 관리' }} />
       <Stack.Screen name="PortfolioSlideshow" component={PortfolioSlideshowScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Gatherings"  component={GatheringsScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '사진 모임',
+        options={{ ...HEADER, title: '사진 모임',
           headerRight: () => <GatheringNotifBadge /> }} />
       <Stack.Screen name="GatheringDetail" component={GatheringDetailScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: '모임 상세' }} />
+        options={{ ...HEADER, title: '모임 상세' }} />
       <Stack.Screen name="GatheringInstagramShare" component={GatheringInstagramShareScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: COLORS.darkDeep },
-          headerTintColor: '#fff', title: 'Instagram Story 공유' }} />
+        options={{ ...HEADER, title: 'Instagram Story 공유' }} />
       <Stack.Screen name="Legal"       component={LegalScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#1a1a2e', title: '법적 고지' }} />
+        options={{ ...HEADER, title: '법적 고지' }} />
       <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen}
-        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#1a1a2e', title: '차단한 사용자' }} />
+        options={{ ...HEADER, title: '차단한 사용자' }} />
     </Stack.Navigator>
   );
 }
@@ -196,6 +196,8 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
+      {/* 로그인 계열은 어두운 화면 → 흰 글자, 로그인 후는 밝은 헤더 → 검은 글자 (슬라이드쇼는 화면 안에서 다시 흰 글자) */}
+      <StatusBar style={isAuthenticated ? 'dark' : 'light'} />
       {isAuthenticated ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
@@ -203,24 +205,25 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   center: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.darkDeep,
+    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg,   // splash.png와 같은 바탕
   },
   splashText: {
-    marginTop: 16, fontSize: 28, fontWeight: '800', color: '#fff', letterSpacing: 2,
+    marginTop: 16, fontSize: 28, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: 1,
   },
 
-  tabIconWrap: { alignItems: 'center', justifyContent: 'center' },
-  tabIcon:      { fontSize: 20, opacity: 0.5 },
+  // 아이콘 칸이 좁아 라벨이 한 글자씩 줄바꿈되던 문제("둘러/보기") — 폭을 주고 한 줄로
+  tabIconWrap: { alignItems: 'center', justifyContent: 'center', minWidth: 64 },
+  tabIcon:      { fontSize: 20, opacity: 0.55 },
   tabIconFocused: { opacity: 1 },
-  tabLabel:     { fontSize: 10, color: '#888', marginTop: 2 },
+  tabLabel:     { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
   tabLabelFocused: { color: COLORS.primary, fontWeight: '700' },
 
   addTabWrap: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
     marginTop: -12,
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },   // 중립 그림자만(브랜드색 그림자 금지)
+    shadowOpacity: 0.12, shadowRadius: 6, elevation: 4,
   },
   addTabIcon: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 32 },
 });
