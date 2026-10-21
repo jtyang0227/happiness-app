@@ -25,7 +25,8 @@ export default function PhotoNavigation({ currentId, photoList = [], onNavigate 
       title={side === 'left' ? '이전 사진 (←)' : '다음 사진 (→)'}
       style={{
         position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-        [side === 'left' ? 'left' : 'right']: -20,
+        // 사진 영역 안쪽에 — 예전 -20은 모바일에선 화면 밖으로, 데스크탑에선 사진 패널에 반쯤 잘려 보였다
+        [side === 'left' ? 'left' : 'right']: 12,
         width: 42, height: 42, borderRadius: '50%',
         background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.15)',
         color: '#fff', fontSize: 22, cursor: visible ? 'pointer' : 'default',

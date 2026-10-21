@@ -50,12 +50,15 @@ export default function WorkspaceTabs() {
         .ws-tab:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
       `}</style>
       <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto', padding: '0 16px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {TABS.map(t => {
+        {TABS.map((t, i) => {
           const n = t.badge ? counts[t.badge] : 0;
           return (
             <NavLink key={t.to} to={t.to} end className={({ isActive }) => `ws-tab${isActive ? ' active' : ''}`}
               // 활성 색은 style 함수로 — 인라인 color가 .active 클래스보다 우선해 어두운 칩에 어두운 글자가 되던 문제 방지
               style={({ isActive }) => ({
+                // 첫·마지막 탭의 auto 여백으로 가운데 정렬 — 아래 업무 화면들이 가운데 정렬이라 왼쪽에 붙은 탭과 어긋났다.
+                // 좁은 화면에서 넘치면 auto 여백이 0이 되어 왼쪽부터 가로 스크롤된다.
+                marginLeft: i === 0 ? 'auto' : 0, marginRight: i === TABS.length - 1 ? 'auto' : 0,
                 flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 999,
                 fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap',
                 fontWeight: isActive ? 700 : 500,

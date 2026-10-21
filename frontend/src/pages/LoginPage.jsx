@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 import Logo from '../components/common/Logo';
+import { photoApi } from '../services/api';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -13,6 +14,18 @@ export default function LoginPage() {
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
   const [apiErr, setApiErr]   = useState('');
+  // 왼쪽 모자이크 프레임 3개에 최근 공개 사진을 채운다(예전엔 빈 회색 상자만 보였다). 실패하면 빈 프레임 그대로.
+  const [covers, setCovers]   = useState([]);
+  useEffect(() => {
+    let alive = true;
+    photoApi.search({ page: 0, size: 3 })
+      .then(res => { if (alive) setCovers((res?.data || []).map(p => p.thumbnailUrl || p.imageUrl).filter(Boolean)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const frameImg = (i) => covers[i]
+    ? { backgroundImage: `url("${covers[i]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : null;
 
   const validate = () => {
     const e = {};
@@ -133,6 +146,7 @@ export default function LoginPage() {
                 background: COLORS.darkSurface,
                 borderRadius: 10,
                 border: `1px solid ${COLORS.darkBorder}`,
+                ...frameImg(0),
               }} />
               {/* 프레임 B — 오른쪽 상단 */}
               <div style={{
@@ -143,6 +157,7 @@ export default function LoginPage() {
                 background: COLORS.darkElevated,
                 borderRadius: 10,
                 border: `1px solid ${COLORS.darkBorder}`,
+                ...frameImg(1),
               }} />
               {/* 프레임 C — 오른쪽 하단 */}
               <div style={{
@@ -153,6 +168,7 @@ export default function LoginPage() {
                 background: COLORS.darkSurface,
                 borderRadius: 10,
                 border: `1px solid ${COLORS.darkBorder}`,
+                ...frameImg(2),
               }} />
               {/* Primary 액센트 라인 */}
               <div style={{

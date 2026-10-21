@@ -655,13 +655,13 @@ export default function SeriesPage() {
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 20px 48px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>
             시리즈
           </h1>
           <p style={{ color: COLORS.textSecondary, fontSize: 14 }}>
-            사진을 프로젝트/컴렝션으로 묶어 포트폴리오를 구성하세요
+            사진을 프로젝트·컬렉션으로 묶어 포트폴리오를 구성하세요
           </p>
         </div>
         <button
@@ -670,7 +670,7 @@ export default function SeriesPage() {
             padding: '10px 20px', borderRadius: 10, border: 'none',
             background: COLORS.primary, color: '#fff',
             fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
           }}
         >
           + 새 시리즈
@@ -682,13 +682,14 @@ export default function SeriesPage() {
         <div style={{
           background: COLORS.primaryLight, borderRadius: 12, padding: '12px 16px',
           marginBottom: 24, display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: 12,
+          justifyContent: 'space-between', gap: 8, flexWrap: 'wrap',
         }}>
-          <span style={{ fontSize: 13, color: COLORS.primary, fontWeight: 600 }}>
+          <span style={{ fontSize: 13, color: COLORS.primary, fontWeight: 600, whiteSpace: 'nowrap' }}>
             포트폴리오 공개 주소
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <code style={{ fontSize: 12, color: COLORS.primary, background: '#fff', padding: '3px 8px', borderRadius: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <code style={{ fontSize: 12, color: COLORS.primary, background: '#fff', padding: '3px 8px', borderRadius: 6,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
               /portfolio/{user.profileName}
             </code>
             <button
@@ -696,7 +697,7 @@ export default function SeriesPage() {
               style={{
                 padding: '5px 12px', borderRadius: 8, border: 'none',
                 background: COLORS.primary, color: '#fff',
-                fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               보기

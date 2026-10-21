@@ -295,7 +295,7 @@ export default function PhotoDetailPage() {
       {/* 액션 버튼 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button onClick={handleLike} style={{
-          flex: 1, minWidth: 80, padding: '10px', borderRadius: 10,
+          flex: '1 0 auto', padding: '10px 12px', borderRadius: 10,   // 글자 폭 이하로 줄지 않게("보드에 담기"가 잘렸다)
           border: `1.5px solid ${liked ? COLORS.danger : COLORS.border}`,
           background: liked ? '#fff0f0' : COLORS.surface,
           color: liked ? COLORS.danger : COLORS.textSecondary,
@@ -304,7 +304,7 @@ export default function PhotoDetailPage() {
           {liked ? '♥' : '♡'} 좋아요 {likeCount > 0 && likeCount}
         </button>
         <button onClick={handleSave} style={{
-          flex: 1, minWidth: 80, padding: '10px', borderRadius: 10,
+          flex: '1 0 auto', padding: '10px 12px', borderRadius: 10,   // 글자 폭 이하로 줄지 않게("보드에 담기"가 잘렸다)
           border: `1.5px solid ${saved ? COLORS.primary : COLORS.border}`,
           background: saved ? COLORS.primaryLight : COLORS.surface,
           color: saved ? COLORS.primary : COLORS.textSecondary,
@@ -313,7 +313,7 @@ export default function PhotoDetailPage() {
           {saved ? '★' : '☆'} 저장 {photo.savesCount > 0 && photo.savesCount}
         </button>
         <button onClick={() => (user?.id ? setBoardPickerOpen(true) : navigate('/login'))} style={{
-          flex: 1, minWidth: 80, padding: '10px', borderRadius: 10, border: `1.5px solid ${COLORS.border}`,
+          flex: '1 0 auto', padding: '10px 12px', borderRadius: 10,   // 글자 폭 이하로 줄지 않게("보드에 담기"가 잘렸다) border: `1.5px solid ${COLORS.border}`,
           background: COLORS.surface, color: COLORS.textSecondary, cursor: 'pointer', fontWeight: 700, fontSize: 13,
           whiteSpace: 'nowrap',
         }} className="no-print">

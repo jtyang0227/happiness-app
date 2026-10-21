@@ -50,9 +50,9 @@ export default function ColorPalette({ colors = [], loading = false, theme = 'li
             색상 추출 실패
           </div>
         ) : (
-          colors.map((hex) => (
+          colors.map((hex, i) => (
             <div
-              key={hex}
+              key={`${hex}-${i}`}   // 같은 색이 여러 번 나올 수 있다
               role="button"
               tabIndex={0}
               aria-label={`색상 ${hex} 복사`}
@@ -60,6 +60,7 @@ export default function ColorPalette({ colors = [], loading = false, theme = 'li
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCopy(hex); } }}
               style={{
                 flex: 1, height: 44, borderRadius: 10, background: hex,
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',   // 흰색·아주 밝은 색 칩도 바탕과 구분되게
                 cursor: 'pointer', position: 'relative',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 outline: 'none',
@@ -70,7 +71,7 @@ export default function ColorPalette({ colors = [], loading = false, theme = 'li
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = '';
-                e.currentTarget.style.boxShadow = '';
+                e.currentTarget.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.08)';
               }}
             >
               {/* HEX 텍스트 */}

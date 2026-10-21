@@ -653,13 +653,13 @@ export default function GatheringDetailPage() {
         {/* 해시태그 */}
         {gathering.hashtags && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {gathering.hashtags.split(/\s+/).filter(Boolean).map((tag, i) => (
+            {gathering.hashtags.split(/[\s,]+/).map(t => t.replace(/^#+/, '')).filter(Boolean).map((tag, i) => (   // 서버는 콤마 구분으로도 저장한다
               <span key={i} style={{
                 padding: '4px 10px', borderRadius: 99,
                 background: COLORS.surfaceDim, border: `1px solid ${COLORS.border}`,
                 fontSize: 12, color: COLORS.textSecondary,
               }}>
-                {tag.startsWith('#') ? tag : `#${tag}`}
+                #{tag}
               </span>
             ))}
           </div>

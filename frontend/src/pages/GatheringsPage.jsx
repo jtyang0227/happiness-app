@@ -297,9 +297,9 @@ export default function GatheringsPage() {
         {/* 페이지 헤더 */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 28, gap: 12,
+          marginBottom: 28, gap: 12, flexWrap: 'wrap',   // 좁은 화면에선 버튼이 아래 줄로 — 설명이 3줄로 눌리던 문제
         }}>
-          <div>
+          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.text }}>
               사진 모임
             </h1>

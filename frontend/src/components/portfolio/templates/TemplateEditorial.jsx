@@ -480,11 +480,14 @@ export default function TemplateEditorial({
             {/* 촬영 유형 필터 — 작업 노트에 유형이 2개 이상일 때만 보인다 */}
             <WorkTypeFilter series={series} value={workType} onChange={setWorkType} style={{ justifyContent: 'center', marginTop: 16 }} />
           </div>
-          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
-            {pinnedFirst(filterWorksByType(series, workType)).map(s => (
-              <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick}
-                workPath={member?.profileName ? `/portfolio/${member.profileName}/work/${s.id}` : null} />
-            ))}
+          <div style={{ display: 'flex', overflowX: 'auto', padding: '0 24px', scrollbarWidth: 'none' }}>
+            {/* 카드가 화면보다 적으면 가운데(위 제목·필터와 같은 축), 넘치면 auto 여백이 0이 되어 왼쪽부터 스크롤 */}
+            <div style={{ display: 'flex', gap: 16, margin: '0 auto' }}>
+              {pinnedFirst(filterWorksByType(series, workType)).map(s => (
+                <SeriesScrollCard key={s.id} series={s} onPhotoClick={handlePhotoClick}
+                  workPath={member?.profileName ? `/portfolio/${member.profileName}/work/${s.id}` : null} />
+              ))}
+            </div>
           </div>
         </div>
       )}
