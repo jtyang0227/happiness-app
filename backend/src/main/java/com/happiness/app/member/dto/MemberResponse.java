@@ -3,6 +3,7 @@ package com.happiness.app.member.dto;
 import com.happiness.app.member.entity.Authority;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
+import com.happiness.app.privacy.PrivacyMasker;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,5 +67,23 @@ public class MemberResponse {
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 본인·관리자가 아닌 사람에게 보내는 응답 — 연락처(이메일·전화)를 뺀다.
+     * 공개 포트폴리오·남의 회원 조회·회원 검색·팔로워 목록은 화면에서 연락처를 쓰지 않는다(전수 확인).
+     * 기획: PLANNING_privacy-protection-app.md (개인정보 최소 노출)
+     */
+    public MemberResponse withoutContact() {
+        this.email = null;
+        this.tel = null;
+        return this;
+    }
+
+    /** 관리자 목록용 — 연락처를 마스킹한다(원문 열람·접속기록은 happiness-admin에서). */
+    public MemberResponse maskedContact() {
+        this.email = PrivacyMasker.email(this.email);
+        this.tel = PrivacyMasker.tel(this.tel);
+        return this;
     }
 }

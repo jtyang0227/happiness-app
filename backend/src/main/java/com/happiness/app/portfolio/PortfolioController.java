@@ -90,7 +90,7 @@ public class PortfolioController {
         }).collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("member",         MemberResponse.fromEntity(member));
+        response.put("member",         MemberResponse.fromEntity(member).withoutContact());   // 공개 API — 연락처 제외
         response.put("photos",         photos);
         response.put("photoCount",     photos.size());
         response.put("series",         series);

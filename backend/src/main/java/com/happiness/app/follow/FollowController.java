@@ -56,12 +56,14 @@ public class FollowController {
     /** 팔로워 목록 */
     @GetMapping("/followers")
     public ResponseEntity<ApiResponse<List<MemberResponse>>> getFollowers(@RequestParam Long memberId) {
-        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowers(memberId)));
+        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowers(memberId).stream()
+                .map(MemberResponse::withoutContact).toList()));   // 남의 연락처 제외
     }
 
     /** 팔로잉 목록 */
     @GetMapping("/following")
     public ResponseEntity<ApiResponse<List<MemberResponse>>> getFollowing(@RequestParam Long memberId) {
-        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowing(memberId)));
+        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowing(memberId).stream()
+                .map(MemberResponse::withoutContact).toList()));   // 남의 연락처 제외
     }
 }

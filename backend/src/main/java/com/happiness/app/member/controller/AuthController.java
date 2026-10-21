@@ -95,7 +95,9 @@ public class AuthController {
     @GetMapping("/member/{id}")
     public ResponseEntity<ApiResponse<MemberResponse>> getMember(@PathVariable Long id) {
         MemberResponse response = memberService.getMember(id);
-        return ResponseEntity.ok(ApiResponse.ok(response));
+        // 남의 회원 정보에는 연락처를 싣지 않는다 — 본인·관리자만 원문
+        boolean selfOrAdmin = id.equals(SecurityUtil.getCurrentMemberId()) || SecurityUtil.isAdmin();
+        return ResponseEntity.ok(ApiResponse.ok(selfOrAdmin ? response : response.withoutContact()));
     }
 
     @GetMapping("/member/{id}/stats")
@@ -122,7 +124,9 @@ public class AuthController {
     @GetMapping("/members")
     @PreAuthorize("hasAnyRole('WM', 'SA')")
     public ResponseEntity<ApiResponse<List<MemberResponse>>> getAllMembers() {
-        return ResponseEntity.ok(ApiResponse.ok(memberService.getAllMembers()));
+        // 관리자 목록도 연락처는 마스킹 — 원문 열람·접속기록은 happiness-admin으로 일원화
+        return ResponseEntity.ok(ApiResponse.ok(
+                memberService.getAllMembers().stream().map(MemberResponse::maskedContact).toList()));
     }
 
     /** GET /api/auth/members/search — 회원 이름/프로필명 검색 (인증된 유저 누구나, 약속 요청 상대 찾기용) */
@@ -130,7 +134,8 @@ public class AuthController {
     public ResponseEntity<List<MemberResponse>> searchMembers(
             @RequestParam String q,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(memberService.searchMembers(q, size));
+        return ResponseEntity.ok(memberService.searchMembers(q, size).stream()
+                .map(MemberResponse::withoutContact).toList());
     }
 
     @PutMapping("/member/{id}/role")

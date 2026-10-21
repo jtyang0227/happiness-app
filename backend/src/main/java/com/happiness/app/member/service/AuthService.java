@@ -7,6 +7,7 @@ import com.happiness.app.member.dto.*;
 import com.happiness.app.member.entity.Member;
 import com.happiness.app.member.entity.MemberStatus;
 import com.happiness.app.member.repository.MemberRepository;
+import com.happiness.app.security.auth.LoginAttemptLimiter;
 import com.happiness.app.security.jwt.JwtProperties;
 import com.happiness.app.security.jwt.JwtTokenProvider;
 import com.happiness.app.security.token.RefreshTokenStore;
@@ -17,10 +18,15 @@ import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Duration;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -34,6 +40,15 @@ public class AuthService {
     private final AuditLogService auditLogService;
     private final RefreshTokenStore refreshTokenStore;
     private final TokenBlacklistService tokenBlacklistService;
+    private final LoginAttemptLimiter loginAttemptLimiter;
+
+    /** 없는 계정·소셜 계정에도 BCrypt 비교를 해서 응답 시간으로 가입 여부를 추측하지 못하게 하는 더미 해시. */
+    private volatile String dummyHash;
+
+    private String dummyHash() {
+        if (dummyHash == null) dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
+        return dummyHash;
+    }
 
     private static final String DEVICE_ID_HEADER = "X-Device-Id";
     private static final String DEFAULT_DEVICE = "default";
@@ -43,16 +58,26 @@ public class AuthService {
         String ip       = getClientIp(httpRequest);
         String deviceId = resolveDeviceId(request.getDeviceId(), httpRequest);
 
-        Member member = memberRepository.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> {
-                    auditLogService.recordLoginFailure(request.getEmail(), ip);
-                    return new SecurityException(ErrorCode.LOGIN_FAILED);
-                });
+        String email = request.getEmail().trim().toLowerCase();
 
-        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+        // 같은 이메일 5회 연속 실패 시 15분 잠금 (PLANNING_privacy-protection-app.md, 어드민과 같은 규칙)
+        Duration locked = loginAttemptLimiter.remainingLock(email);
+        if (!locked.isZero()) {
+            long minutes = Math.max(1, (locked.getSeconds() + 59) / 60);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "로그인 시도가 너무 많습니다. " + minutes + "분 뒤에 다시 시도해주세요.");
+        }
+
+        Member member = memberRepository.findByEmail(email).orElse(null);
+        // 계정이 없거나 비밀번호 없는(소셜) 계정이어도 같은 비용의 비교를 거친다 — 응답 시간·문구로 가입 여부를 알 수 없게
+        String hash = (member != null && member.getPassword() != null) ? member.getPassword() : dummyHash();
+        boolean matches = passwordEncoder.matches(request.getPassword(), hash);
+        if (member == null || member.getPassword() == null || !matches) {
+            loginAttemptLimiter.recordFailure(email);
             auditLogService.recordLoginFailure(request.getEmail(), ip);
             throw new SecurityException(ErrorCode.LOGIN_FAILED);
         }
+        loginAttemptLimiter.recordSuccess(email);
 
         if (MemberStatus.SUSPENDED.equals(member.getStatus())) {
             throw new SecurityException(ErrorCode.ACCOUNT_LOCKED);

@@ -97,6 +97,79 @@ class CoreFlowIntegrationTest {
         assertThat(r.getResponse().getStatus()).isGreaterThanOrEqualTo(400);
     }
 
+    // ── 개인정보 최소 노출 · 로그인 잠금 (PLANNING_privacy-protection-app.md, 어드민 34984ce와 같은 기준) ──
+
+    @Test
+    void 공개_포트폴리오와_남의_회원_조회에는_연락처가_없다() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        String email = "pv" + suffix + "@test.com";
+        String profileName = "pv" + suffix;
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", email, "password", "Passw0rd!!", "name", "연락처" + suffix,
+                                "profileName", profileName, "tel", "01055556666", "termsAgreed", true))))
+                .andExpect(status().isCreated());
+        MvcResult login = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", email, "password", "Passw0rd!!"))))
+                .andExpect(status().isOk()).andReturn();
+        String body = login.getResponse().getContentAsString();
+        User owner = new User(((Number) JsonPath.read(body, "$.data.member.id")).longValue(), email, profileName,
+                JsonPath.read(body, "$.data.accessToken"));
+        User other = signupAndLogin();
+
+        // 비로그인 공개 포트폴리오
+        String portfolio = mvc.perform(get("/api/portfolio/" + profileName))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(portfolio).doesNotContain(email).doesNotContain("010-5555-6666");
+
+        // 남의 회원 조회 · 회원 검색 → 연락처 없음, 본인은 원문
+        mvc.perform(get("/api/auth/member/" + owner.id()).header("Authorization", bearer(other)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.tel").doesNotExist());
+        mvc.perform(get("/api/auth/member/" + owner.id()).header("Authorization", bearer(owner)))
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andExpect(jsonPath("$.data.tel").value("010-5555-6666"));
+        String search = mvc.perform(get("/api/auth/members/search").param("q", "연락처" + suffix)
+                        .header("Authorization", bearer(other)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(search).contains(profileName).doesNotContain(email).doesNotContain("6666");
+
+        // 관리자 목록 → 마스킹
+        User admin = promoteToAdmin(signupAndLogin());
+        String list = mvc.perform(get("/api/auth/members").header("Authorization", bearer(admin)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(list).doesNotContain(email).contains("pv***@test.com").contains("010-****-6666");
+    }
+
+    @Test
+    void 같은_이메일_5회_실패하면_15분_잠기고_없는_계정도_같은_응답() throws Exception {
+        User u = signupAndLogin();
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of("email", u.email(), "password", "wrong-" + i))))
+                    .andExpect(status().isUnauthorized());
+        }
+        // 6번째는 올바른 비밀번호여도 잠김
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", u.email(), "password", "Passw0rd!!"))))
+                .andExpect(status().isTooManyRequests());
+
+        // 없는 계정과 틀린 비밀번호는 같은 상태·같은 문구
+        User v = signupAndLogin();
+        String wrong = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", v.email(), "password", "nope-nope"))))
+                .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        String missing = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", "ghost-" + UUID.randomUUID() + "@test.com", "password", "nope-nope"))))
+                .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        assertThat((String) JsonPath.read(wrong, "$.message")).isEqualTo(JsonPath.read(missing, "$.message"));
+        // 실패 후 성공하면 횟수 초기화
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", v.email(), "password", "Passw0rd!!"))))
+                .andExpect(status().isOk());
+    }
+
     // ── 아이디·비밀번호 찾기 (PLANNING_account-recovery.md) ─────────────
     // 서비스 속도 제한이 IP 기준이라 테스트마다 다른 X-Forwarded-For를 쓴다
 
