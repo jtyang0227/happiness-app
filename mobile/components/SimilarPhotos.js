@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { photoApi } from '../services/api';
+import useBlockedMembers from '../hooks/useBlockedMembers';
 import { COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
 
@@ -10,6 +11,7 @@ import { RADIUS, SPACING, FONT } from '../constants/layout';
  */
 export default function SimilarPhotos({ photoId, onSelect }) {
   const [photos, setPhotos] = useState(null);   // null = 불러오는 중
+  const { isBlocked } = useBlockedMembers();
 
   useEffect(() => {
     let alive = true;
@@ -33,7 +35,7 @@ export default function SimilarPhotos({ photoId, onSelect }) {
       ) : (
         <FlatList
           horizontal
-          data={photos}
+          data={photos.filter(p => !isBlocked(p.memberId))}
           keyExtractor={p => String(p.id)}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: SPACING.sm }}

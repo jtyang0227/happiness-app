@@ -12,6 +12,7 @@ import useAuthStore, { getAuthStore } from '../src/store/authStore';
 import { authMobileApi } from '../src/api/authMobileApi';
 import { secureStorage } from '../src/storage/secureStorage';
 import apiClient from '../src/api/apiClient';
+import { resetBlockedMembers } from '../hooks/useBlockedMembers';
 
 const AuthContext = createContext(null);
 
@@ -74,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // 서버 오류와 무관하게 로컬 로그아웃 진행
     } finally {
+      resetBlockedMembers();   // 다음 로그인 회원에게 이전 회원의 차단 목록이 남지 않게
       await store.logout();
     }
   }, [store]);

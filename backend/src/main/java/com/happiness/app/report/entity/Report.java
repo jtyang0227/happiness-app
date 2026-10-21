@@ -25,6 +25,10 @@ public class Report {
     @Column(name = "photo_id", nullable = false)
     private Long photoId;
 
+    /** 댓글 신고일 때 그 댓글 ID (사진 신고는 null). photoId는 댓글이 달린 사진 */
+    @Column(name = "comment_id")
+    private Long commentId;
+
     /** 신고자 회원 ID (JWT principal 에서 추출) */
     @Column(name = "reporter_id", nullable = false)
     private Long reporterId;

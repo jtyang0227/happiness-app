@@ -12,12 +12,7 @@
 import axios from 'axios';
 import { getAuthStore } from '../store/authStore';
 import { secureStorage } from '../storage/secureStorage';
-import { Platform } from 'react-native';
-
-// Android 에뮬레이터: localhost → 10.0.2.2
-const BASE_URL = Platform.OS === 'android'
-  ? 'http://10.0.2.2:8080/api'
-  : 'http://localhost:8080/api';
+import { API_BASE_URL as BASE_URL } from '../../constants/config';
 
 function generateTraceId() {
   return Math.random().toString(36).slice(2, 18);

@@ -539,6 +539,7 @@ Feature-based package layout:
 - **inquiry/** — `InquiryController` (`/api/inquiry`) — 촬영 문의. `Inquiry` 엔티티. POST(문의 전송)는 공개. `InquiryEmailService`는 `@Autowired(required=false)`로 메일 서버 없어도 동작. 수신함/읽음처리/삭제는 인증 필요. **작업 노트 P1(2026-10-20)**: `Inquiry.sourceSeriesId`(BIGINT, nullable) — 작업 페이지 CTA로 들어온 문의의 출처 작업. 전송 시 그 시리즈가 수신 작가 것이 아니면 조용히 버림(문의 자체는 저장). 수신함 응답에 `sourceSeriesId`/`sourceSeriesTitle`(제목은 `findAllById` 배치 조회, 삭제된 작업이면 null). **보안 수정**: `GET /inbox`·`GET /inbox/unread-count`가 `memberId` 파라미터를 그대로 믿어 로그인한 누구나 남의 수신함(고객 이름·이메일·메시지)을 읽을 수 있었고, `PUT /{id}/read`·`DELETE /{id}`에도 소유자 확인이 없던 IDOR → 수신자 본인 또는 관리자 외 403(`isSelfOrAdmin`). 통합 테스트 2개 추가. **작업 노트 P2**: 문의 저장 시 서버가 `AnalyticsEvent(INQUIRY_SENT, targetType SERIES|PORTFOLIO)`를 직접 기록(실패는 warn 로그로 격리, 문의 접수는 막지 않음) — 이전엔 아무도 기록하지 않아 분석 KPI "문의"가 항상 0이었다. `InquiryRepository.countBySourceSeriesSince()`(작업별 문의 수).
 - **storage/** — Supabase Storage 연동. `SupabaseStorageService` (WebClient 기반 업로드/삭제), `StorageController` (`POST /api/upload/image`).
 - **follow/** — `FollowController` (`/api/follows`) — 팔로우/언팔로우/확인/카운트/목록. `Follow` 엔티티 (UniqueConstraint on follower_id+following_id). `FollowService.getFollowingIds()` — FeedController에서 피드 구성에 사용.
+- **block/ 사용자 차단 + 앱 심사 대응 (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_app-store-review.md`, 디자인 `DESIGN_PROMPT_app-store-safety.md`. `MemberBlock`(`member_blocks`, UNIQUE blocker_id+blocked_id) + `BlockController`(`/api/blocks`, 전부 인증, 로그인 회원 기준): GET 내 차단 목록(`[{memberId,name,profileName,avatarUrl,blockedAt}]`, 연락처 없음)/POST `/{memberId}`(멱등, 자기 자신 400, 없는 회원 404, INFO 로그)/DELETE `/{memberId}`. 공개 응답은 바꾸지 않고 **모바일이 목록으로 숨긴다**(웹 차단 UI는 없음). 탈퇴 시 `deleteAllInvolving`. **댓글 신고**: `Report.commentId`(nullable, photoId는 댓글이 달린 사진) + `report/controller/CommentReportController`(`POST /api/comments/{id}/report`, 사진 신고와 같은 사유·rate limit, 본인 댓글 400) → 어드민 목록 응답에 `commentId/commentContent/commentAuthorName`(배치 조회), 웹 `AdminModerationPage`가 댓글 내용 표시 + "댓글 삭제". **버그 수정(댓글)**: `addComment`가 요청의 `memberId`·`memberName`을 그대로 저장해 남의 이름으로 댓글을 달 수 있었고, 이름을 안 보내는 모바일은 NOT NULL 위반으로 **댓글 작성이 500**, 삭제는 필수 `memberId` 파라미터가 없어 **400**이었다 → 작성자는 로그인 회원(이름·아바타는 `MemberRepository`), 답글은 같은 사진의 댓글에만, 삭제는 본인 또는 관리자(`memberId` 파라미터는 무시). 회원 탈퇴 시 내 댓글·내 사진의 댓글도 삭제(이전엔 이름과 함께 남음). 통합 테스트 3개.
 - **comment/** — `CommentController` (`GET/POST /api/photos/:id/comments`, `DELETE /api/comments/:id`). GET(읽기)은 공개(2026-10-20, 공개 탐색의 사진 모달용), 작성·삭제는 인증. `Comment` 엔티티 (parentId nullable = 대댓글 지원). `CommentService.getComments()` — LinkedHashMap으로 top-level 수집 후 replies attach.
 - **feed/** — `FeedController` (`GET /api/feed?memberId=&page=&size=`) — `FollowService.getFollowingIds()` + `PhotoRepository.findByMemberIdInOrderByCreatedAtDesc()` (JPQL + Pageable).
 - **photo/ 비슷한 사진 (2026-10-20, P0-A, Cosmos "비슷한 요소" 재해석)** — `GET /api/photos/{id}/similar?size=12`(공개, 최대 24). 이미지 임베딩이 아니라 **메타데이터 점수**: 장르 3 + 색 분위기 2 + 서브장르 겹침 1씩(`subGenres`는 `'["A","B"]'` JSON 문자열이라 괄호·따옴표를 걷어내고 분리) + 대표색 RGB 거리(최대 2) + 같은 비율 0.5(기본값이 전부 1:1이라 다른 점수가 있을 때만). 후보 = `PhotoRepository.findSimilarCandidates`(같은 장르 OR 같은 색 분위기 최근 300장, 둘 다 없으면 `findRecentExcept`), 같은 작가 최대 4장, 점수 0 제외, 동점은 최신순. 통합 테스트 1개.
@@ -1039,6 +1040,16 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_member ON password_reset_tokens(member_id);
+-- 앱 심사 대응 (2026-10-21) — 사용자 차단 + 댓글 신고
+CREATE TABLE IF NOT EXISTS member_blocks (
+  id          BIGSERIAL PRIMARY KEY,
+  blocker_id  BIGINT NOT NULL,
+  blocked_id  BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (blocker_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS idx_member_blocks_blocked_id ON member_blocks(blocked_id);
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS comment_id BIGINT;   -- 댓글 신고 (사진 신고는 null)
 -- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
 CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
 ```
@@ -1477,6 +1488,8 @@ mobile/
     └── uploadImage.js
 ```
 
+**앱 심사 대응(2026-10-21, `PLANNING_app-store-review.md`)**: (1) **서버 주소는 `constants/config.js` 한 곳** — `__DEV__`면 로컬(Android 10.0.2.2), 배포 빌드는 `https://api.happiness.io.kr`·`https://happiness.io.kr`, `SUPPORT_EMAIL`. **버그 수정**: 예전엔 `apiClient`·`authMobileApi`·`uploadImage`가 빌드 종류와 무관하게 localhost를, 포트폴리오·납품·알림 링크가 `app.example.com`을 써서 배포 빌드가 아무것도 불러오지 못했다(Hermes 번들에서 `localhost:8080` 0건 확인). (2) 로그인 화면의 동작하지 않던 소셜 버튼 4개 제거(다시 붙일 땐 Apple 로그인 포함). (3) `ProfileScreen` 맨 아래 "회원 탈퇴"(2단계 확인 → `DELETE /auth/member/{id}` → 로그아웃) + "🚫 차단한 사용자"(`screens/BlockedUsersScreen.js`). (4) `components/ReportSheet.js` — 사진·댓글 신고(사유 5종, 기타는 메모 필수) + 작성자 차단, `PhotoDetailScreen` 상단 "🚩 신고"·남의 댓글 "신고". `hooks/useBlockedMembers.js`(모듈 캐시+구독, 로그아웃 시 `resetBlockedMembers`)로 둘러보기·피드·비슷한 사진·작업 탐색·댓글·모임 게시물/댓글에서 차단 회원 숨김. 모임 게시물은 신고 API가 없어 "🚩 신고" → 운영팀 `mailto:` + 작성자 차단. (5) `LegalScreen` 약관 무관용 조항·제3조의2 신고와 차단(24시간 내 확인)·탈퇴 위치·연락처 `support@happiness.io.kr`, 프로필의 가짜 주소 `○○.happiness.app` → `happiness.io.kr/portfolio/○○`. (6) `app.json`: 실제 아이콘·스플래시(브랜드 블루 + 흰 프레임 미소, 생성 스크립트는 세션 스크래치에만), image-picker 플러그인(한국어 설명, `microphonePermission:false`), `blockedPermissions`(READ_MEDIA_IMAGES/VIDEO·READ_EXTERNAL_STORAGE·RECORD_AUDIO·SYSTEM_ALERT_WINDOW — 사진은 권한 없는 시스템 선택기라 Android에선 `ensureLibraryAccess()`가 권한을 묻지 않음), `NSAllowsArbitraryLoads:false`, `ITSAppUsesNonExemptEncryption:false`. **남은 것(사용자)**: Expo SDK 49 → 최신 업그레이드(스토어 targetSdk·Xcode 요구), 데모 계정, 개인정보처리방침 공개 URL, 콘솔 개인정보 항목, 지원 메일함 확인.
+
 **규칙:**
 - 화면(페이지) 단위 컴포넌트 → `screens/`
 - 여러 화면에서 쓰는 UI 조각 → `components/`
@@ -1741,14 +1754,16 @@ React Native(Expo) 코드가 App Store / Google Play 심사를 통과하기 위�
     "android": {
       "package": "com.happiness.gallery",
       "versionCode": 1,
-      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "CAMERA"]
+      "permissions": ["CAMERA"],
+      "blockedPermissions": ["android.permission.READ_MEDIA_IMAGES", "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE", "android.permission.RECORD_AUDIO", "android.permission.SYSTEM_ALERT_WINDOW"]
     },
     "web": { "favicon": "./assets/favicon.png", "bundler": "metro" }
   }
 }
 ```
 
-**배포 전 필수:** `assets/icon.png` 1024×1024px, `assets/splash.png` 실제 이미지로 교체 (현재 placeholder).
+(위는 요약 — 실제 파일은 infoPlist 설명 문구·`ITSAppUsesNonExemptEncryption`·ATS·image-picker 플러그인까지 포함, `mobile/app.json` 참고.)
 
 ### App Store (iOS) 심사 체크리스트
 
@@ -1762,8 +1777,13 @@ React Native(Expo) 코드가 App Store / Google Play 심사를 통과하기 위�
 | **사용자 데이터** | 수집 항목 명시 | ⚠️ App Store Connect "App Privacy" 섹션 수동 작성 필요 |
 | **연령 등급** | 콘텐츠 등급 설정 | ⚠️ App Store Connect에서 "4+" 수동 선택 필요 |
 | **스크린샷** | 기기별 최소 3장 | ⚠️ 6.5", 5.5" iPhone, 12.9" iPad 수동 캡처 필요 |
-| **앱 아이콘** | 1024×1024px PNG (알파 없음) | ⚠️ `assets/icon.png` 실제 아이콘으로 교체 필요 |
-| **스플래시 스크린** | 로딩 화면 | ⚠️ `assets/splash.png` 실제 이미지로 교체 필요 |
+| **앱 아이콘** | 1024×1024px PNG (알파 없음) | ✅ RGB 1024 (2026-10-21, 디자이너 최종본으로 교체 가능) |
+| **스플래시 스크린** | 로딩 화면 | ✅ 1284×2778 (2026-10-21) |
+| **완성도(2.1)** | 배포 빌드가 실제 서버 사용, 미완성 버튼 없음 | ✅ `constants/config.js`, 소셜 버튼 제거 (2026-10-21) |
+| **계정 삭제(5.1.1(v))** | 앱 안에서 탈퇴 | ✅ 프로필 › 회원 탈퇴 |
+| **UGC(1.2)** | 신고·차단·약관 무관용·연락처 | ✅ 사진·댓글 신고, 차단/해제, 약관 제3조·제3조의2 (모임 게시물 신고는 메일) |
+| **빌드 SDK** | 최신 Xcode/iOS SDK | ⚠️ Expo SDK 49 — 업그레이드 필요 |
+| **데모 계정** | 심사용 로그인 정보 | ⚠️ App Store Connect 앱 심사 정보에 입력 필요 |
 
 ### Google Play 심사 체크리스트
 
@@ -1773,15 +1793,18 @@ React Native(Expo) 코드가 App Store / Google Play 심사를 통과하기 위�
 | **데이터 안전** | 수집 데이터 선언 | ⚠️ Play Console "데이터 안전" 섹션 수동 작성 필요 |
 | **개인정보처리방침** | 공개 URL 필수 | ✅ 앱 내 LegalScreen 포함 / ⚠️ Play Console URL 등록 필요 |
 | **CAMERA 권한** | 실제로 사용하는 권한만 선언 | ✅ PhotoFormScreen 카메라 촬영에 사용 |
-| **STORAGE 권한** | READ/WRITE 선언 | ✅ 갤러리 이미지 선택에 사용 |
-| **타겟 API 레벨** | Android 14(API 34) 이상 | ✅ `compileSdkVersion 34`, `targetSdkVersion 34` 설정 완료 |
+| **사진 권한** | 사진 선택기 사용 시 READ_MEDIA_* 선언 금지 | ✅ blockedPermissions로 제거, WRITE_EXTERNAL_STORAGE만 남음(Android 12 이하 카메라) |
+| **계정 삭제** | 앱 안 + 웹 URL | ✅ 앱 안 / ⚠️ Play Console 계정 삭제 URL 필요 |
+| **타겟 API 레벨** | 최신 요구(2025-08부터 35) | ⚠️ 현재 34(Expo SDK 49) — SDK 업그레이드 필요 |
 | **콘텐츠 등급** | 설문 후 자동 부여 | ⚠️ Play Console 콘텐츠 등급 설문 수동 완료 필요 |
 
 ### 코딩 규칙 (심사 통과 유지)
 
 - **실제 기능 구현**: 테스트 계정, 더미 버튼, 빈 화면 등 미완성 UI 금지
 - **개인정보 최소 수집**: 이메일, 이름 외 불필요한 데이터 수집 금지
-- **권한 최소화**: 실제로 필요한 권한만 선언 (현재 카메라·사진 라이브러리)
+- **권한 최소화**: 실제로 필요한 권한만 선언 (카메라 + iOS 사진 보관함). 새 라이브러리가 manifest에 권한을 추가하면 `npx expo config --type introspect`로 확인하고 필요 없으면 `blockedPermissions`에 넣는다
+- **서버 주소**: 화면·API 파일에 주소를 쓰지 말고 `constants/config.js`만 사용 (배포 빌드가 localhost를 부르던 사고 재발 방지)
+- **사용자 생성 콘텐츠**: 새로 남의 글·사진을 보여 주는 화면을 만들면 `useBlockedMembers`로 차단 회원을 거르고 신고 진입점을 둔다
 - **오류 처리**: 모든 API 호출에 사용자 친화적 오류 메시지 제공
 - **로딩 상태**: 비동기 작업 중 반드시 ActivityIndicator 표시
 - **오프라인 대응**: 네트워크 없을 때 앱이 크래시되지 않도록 try-catch 처리

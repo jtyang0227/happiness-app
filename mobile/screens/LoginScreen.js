@@ -81,25 +81,8 @@ export default function LoginScreen({ navigation }) {
             }
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>또는</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity style={styles.btnKakao} onPress={() => Alert.alert('준비 중', '카카오 로그인은 준비 중입니다.')}>
-            <Text style={styles.btnKakaoText}>💬  카카오로 계속하기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnNaver} onPress={() => Alert.alert('준비 중', '네이버 로그인은 준비 중입니다.')}>
-            <Text style={styles.btnNaverText}>N  네이버로 계속하기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnGoogle} onPress={() => Alert.alert('준비 중', 'Google 로그인은 준비 중입니다.')}>
-            <Text style={styles.btnGoogleText}>G  Google로 계속하기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnApple} onPress={() => Alert.alert('준비 중', 'Apple 로그인은 준비 중입니다.')}>
-            <Text style={styles.btnAppleText}> Apple로 계속하기</Text>
-          </TouchableOpacity>
-
+          {/* 소셜 로그인 버튼은 모바일에서 아직 동작하지 않아 숨김 — 미완성 기능은 앱 심사 거절 사유(Apple 2.1).
+              다시 붙일 때 Apple 로그인도 함께 넣어야 한다(Apple 4.8). PLANNING_app-store-review.md */}
           <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate('SignUp')}>
             <Text style={styles.signupLinkText}>
               계정이 없으신가요? <Text style={styles.signupLinkBold}>회원가입</Text>
@@ -150,42 +133,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#374151' },
-  dividerText: { color: '#6b7280', marginHorizontal: 12, fontSize: 13 },
-  btnKakao: {
-    backgroundColor: '#FEE500',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  btnKakaoText: { color: '#3C1E1E', fontWeight: '700', fontSize: 15 },
-  btnNaver: {
-    backgroundColor: '#03C75A',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  btnNaverText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnGoogle: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: '#dadce0',
-  },
-  btnGoogleText: { color: '#3c4043', fontWeight: '700', fontSize: 15 },
-  btnApple: {
-    backgroundColor: '#000',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  btnAppleText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   signupLink:      { marginTop: 20, alignItems: 'center' },
   findRow:         { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: -6, marginBottom: 14 },
   findText:        { color: COLORS.textMuted, fontSize: 12.5 },

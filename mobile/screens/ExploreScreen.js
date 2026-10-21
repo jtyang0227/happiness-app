@@ -9,6 +9,7 @@ import { FONT, RADIUS, SPACING } from '../constants/layout';
 import { SkeletonPhotoCard } from '../components/SkeletonCard';
 import EmptyState from '../components/EmptyState';
 import WorkDiscoveryList from '../components/WorkDiscoveryList';
+import useBlockedMembers from '../hooks/useBlockedMembers';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
 const GENRES = [{ code: null, label: '전체', emoji: '✦' }, ...GENRE_LIST];
@@ -23,6 +24,7 @@ const TABS = [
 export default function ExploreScreen({ navigation }) {
   const [tab, setTab] = useState('photos');
   const [photos, setPhotos] = useState([]);
+  const { isBlocked } = useBlockedMembers();   // 차단한 회원의 사진은 숨김
   const [keyword, setKeyword] = useState('');
   const [moodFilter, setMoodFilter] = useState(null);
   const [genre, setGenre] = useState(null);
@@ -232,7 +234,7 @@ export default function ExploreScreen({ navigation }) {
 
     return (
       <FlatList
-        data={photos}
+        data={photos.filter(p => !isBlocked(p.memberId))}
         keyExtractor={item => String(item.id)}
         numColumns={2}
         contentContainerStyle={styles.listContent}

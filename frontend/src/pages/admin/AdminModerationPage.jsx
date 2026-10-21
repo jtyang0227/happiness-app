@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { photoApi, reportApi } from '../../services/api';
+import { photoApi, reportApi, commentApi } from '../../services/api';
 
 const STATUS_META = {
   PENDING:   { label: '대기중',  color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
@@ -39,13 +39,15 @@ function DeletePhotoDialog({ report, onConfirm, onCancel, processing }) {
         }}>
           <span style={{ fontSize: 20 }}>⚠️</span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: DANGER_RED }}>사진 영구 삭제</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: DANGER_RED }}>{report.commentId ? '댓글' : '사진'} 영구 삭제</div>
             <div style={{ fontSize: 11, color: '#9090b0' }}>이 작업은 되돌릴 수 없습니다</div>
           </div>
         </div>
 
         <div style={{ fontSize: 13, color: '#5c5c7a', marginBottom: 20, lineHeight: 1.7 }}>
-          신고된 사진 <strong style={{ color: '#1a1a2e' }}>"{report.photo.title}"</strong>을 삭제하고
+          {report.commentId
+            ? <>신고된 댓글 <strong style={{ color: '#1a1a2e' }}>"{report.commentContent || '(이미 삭제됨)'}"</strong>을 삭제하고</>
+            : <>신고된 사진 <strong style={{ color: '#1a1a2e' }}>"{report.photo.title}"</strong>을 삭제하고</>}
           신고를 <strong style={{ color: '#059669' }}>처리완료</strong> 상태로 변경합니다.
         </div>
 
@@ -92,7 +94,7 @@ function DeletePhotoDialog({ report, onConfirm, onCancel, processing }) {
                   border: 'none', background: processing ? '#9090b0' : DANGER_RED,
                   color: '#fff', cursor: processing ? 'not-allowed' : 'pointer',
                 }}
-              >{processing ? '삭제 중...' : '사진 삭제'}</button>
+              >{processing ? '삭제 중...' : report.commentId ? '댓글 삭제' : '사진 삭제'}</button>
             </div>
           </div>
         )}
@@ -148,6 +150,12 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
           <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 2 }}>
             {report.photo.title}
           </div>
+          {report.commentId && (
+            <div style={{ fontSize: 12, color: '#5c5c7a', marginBottom: 2 }}>
+              💬 댓글{report.commentAuthorName ? ` · ${report.commentAuthorName}` : ''}:{' '}
+              {report.commentContent ? `"${report.commentContent}"` : '(이미 삭제된 댓글)'}
+            </div>
+          )}
           <div style={{ fontSize: 11, color: '#9090b0' }}>
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 4,
@@ -215,7 +223,7 @@ function ReportRow({ report, index, total, onDismiss, onDeletePhoto, actionLoadi
                   cursor: actionLoading === report.id ? 'not-allowed' : 'pointer',
                   whiteSpace: 'nowrap',
                 }}
-              >사진 삭제</button>
+              >{report.commentId ? '댓글 삭제' : '사진 삭제'}</button>
             </div>
           ) : (
             <span style={{ fontSize: 11, color: '#9090b0' }}>처리 완료</span>
@@ -402,8 +410,12 @@ export default function AdminModerationPage() {
     if (!deleteTarget) return;
     setDeleteProcessing(true);
     try {
-      // 1. 사진 삭제 (존재하지 않으면 무시)
-      await photoApi.remove(deleteTarget.photo.id).catch(() => {});
+      // 1. 신고 대상 삭제 — 댓글 신고면 댓글만, 아니면 사진 (이미 없으면 무시)
+      if (deleteTarget.commentId) {
+        await commentApi.deleteComment(deleteTarget.commentId).catch(() => {});
+      } else {
+        await photoApi.remove(deleteTarget.photo.id).catch(() => {});
+      }
       // 2. 신고 RESOLVED 처리
       await reportApi.update(deleteTarget.id, { status: 'RESOLVED' });
       setReports(prev => prev.map(r =>
@@ -411,7 +423,7 @@ export default function AdminModerationPage() {
       ));
       setDeleteTarget(null);
     } catch {
-      alert('사진 삭제에 실패했습니다.');
+      alert('삭제에 실패했습니다.');
     } finally {
       setDeleteProcessing(false);
     }

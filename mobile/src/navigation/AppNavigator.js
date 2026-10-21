@@ -30,6 +30,7 @@ import BookingScreen     from '../../screens/BookingScreen';
 import DeliveryScreen    from '../../screens/DeliveryScreen';
 import AvailabilitySettingsScreen from '../../screens/AvailabilitySettingsScreen';
 import ScheduleScreen from '../../screens/ScheduleScreen';
+import BlockedUsersScreen from '../../screens/BlockedUsersScreen';
 import GatheringNotifBadge from '../../components/GatheringNotifBadge';
 
 const Stack = createNativeStackNavigator();
@@ -171,6 +172,9 @@ function MainStack() {
       <Stack.Screen name="Legal"       component={LegalScreen}
         options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#1a1a2e', title: '법적 고지' }} />
+      <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen}
+        options={{ headerShown: true, headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#1a1a2e', title: '차단한 사용자' }} />
     </Stack.Navigator>
   );
 }

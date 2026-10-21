@@ -5,6 +5,7 @@ import { deliveryApi } from '../src/api/deliveryApi';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 import EmptyState from '../components/EmptyState';
+import { WEB_ORIGIN } from '../constants/config';
 
 const STATUS_META = {
   PENDING:  { label: '대기 중', color: COLORS.textMuted, bg: COLORS.bg },
@@ -13,7 +14,6 @@ const STATUS_META = {
   REJECTED: { label: '거절됨',  color: COLORS.danger,     bg: '#fff0f0' },
 };
 
-const WEB_ORIGIN = __DEV__ ? 'http://localhost:3000' : 'https://app.example.com';
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';

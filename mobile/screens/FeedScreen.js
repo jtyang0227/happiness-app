@@ -9,12 +9,14 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { FONT, SPACING } from '../constants/layout';
 import { SkeletonFeedCard } from '../components/SkeletonCard';
 import EmptyState from '../components/EmptyState';
+import useBlockedMembers from '../hooks/useBlockedMembers';
 
 const PAGE_SIZE = 20;
 
 export default function FeedScreen({ navigation }) {
   const { user } = useAuth();
   const [photos, setPhotos] = useState([]);
+  const { isBlocked } = useBlockedMembers();   // 차단한 회원의 사진은 숨김
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ export default function FeedScreen({ navigation }) {
 
   return (
     <FlatList
-      data={photos}
+      data={photos.filter(p => !isBlocked(p.memberId))}
       keyExtractor={item => String(item.id)}
       contentContainerStyle={styles.list}
       renderItem={renderItem}

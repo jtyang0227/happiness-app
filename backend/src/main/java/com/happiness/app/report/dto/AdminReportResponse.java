@@ -26,6 +26,10 @@ public class AdminReportResponse {
     private LocalDateTime reportedAt;   // = report.createdAt
     private String status;
     private String resolutionNote;
+    /** 댓글 신고일 때만 채움 — 삭제된 댓글이면 commentContent null */
+    private Long commentId;
+    private String commentContent;
+    private String commentAuthorName;
 
     @Data
     @Builder

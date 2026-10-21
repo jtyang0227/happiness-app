@@ -9,6 +9,8 @@ import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
 import BoardPickerSheet from '../components/BoardPickerSheet';
 import SimilarPhotos from '../components/SimilarPhotos';
+import ReportSheet from '../components/ReportSheet';
+import useBlockedMembers from '../hooks/useBlockedMembers';
 
 export default function PhotoDetailScreen({ navigation, route }) {
   const { photo: initialPhoto } = route.params;
@@ -22,6 +24,8 @@ export default function PhotoDetailScreen({ navigation, route }) {
   const [replyTo, setReplyTo] = useState(null);
   const [loadingComments, setLoadingComments] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);   // { kind, id, authorId, authorName }
+  const { isBlocked } = useBlockedMembers(!!user);
 
   const loadComments = useCallback(async () => {
     try {
@@ -108,15 +112,35 @@ export default function PhotoDetailScreen({ navigation, route }) {
   };
 
   const isOwner = user && photo.memberId === user.id;
+  // 차단한 회원의 댓글·답글은 숨긴다 (차단은 내 화면에만 적용)
+  const visibleComments = comments
+    .filter(c => !isBlocked(c.memberId))
+    .map(c => ({ ...c, replies: (c.replies || []).filter(r => !isBlocked(r.memberId)) }));
+  const openReport = (target) => {
+    if (!user) { Alert.alert('알림', '로그인이 필요합니다.'); return; }
+    setReportTarget(target);
+  };
   const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* 뒤로가기 */}
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← 뒤로</Text>
-        </TouchableOpacity>
+        {/* 뒤로가기 + (남의 사진) 신고 */}
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backText}>← 뒤로</Text>
+          </TouchableOpacity>
+          {!isOwner && (
+            <TouchableOpacity style={styles.backBtn} accessibilityRole="button" accessibilityLabel="사진 신고 또는 작성자 차단"
+              onPress={() => openReport({ kind: 'photo', id: photo.id, authorId: photo.memberId, authorName: photo.memberName })}>
+              <Text style={styles.reportText}>🚩 신고</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {user && !isOwner && isBlocked(photo.memberId) ? (
+          <Text style={styles.blockedNotice}>차단한 회원의 사진이에요. 프로필 › 차단한 사용자에서 해제하면 다시 볼 수 있어요.</Text>
+        ) : (<>
 
         {/* 이미지 */}
         <Image source={{ uri: photo.imageUrl }} style={styles.image} resizeMode="cover" />
@@ -188,18 +212,20 @@ export default function PhotoDetailScreen({ navigation, route }) {
           </View>
         )}
 
+        </>)}
+
         {/* 비슷한 사진 — 누르면 그 사진 상세를 위에 쌓는다(뒤로 가기로 돌아옴) */}
         <SimilarPhotos photoId={photo.id} onSelect={p => navigation.push('PhotoDetail', { photo: p })} />
 
         {/* 댓글 섹션 */}
-        <Text style={styles.commentTitle}>댓글 {comments.length > 0 ? `(${comments.length})` : ''}</Text>
+        <Text style={styles.commentTitle}>댓글 {visibleComments.length > 0 ? `(${visibleComments.length})` : ''}</Text>
 
         {loadingComments ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
-        ) : comments.length === 0 ? (
+        ) : visibleComments.length === 0 ? (
           <Text style={styles.emptyComment}>첫 번째 댓글을 남겨보세요.</Text>
         ) : (
-          comments.map(c => (
+          visibleComments.map(c => (
             <View key={c.id} style={styles.commentItem}>
               <View style={styles.commentHeader}>
                 <View style={styles.commentAvatar}>
@@ -213,9 +239,14 @@ export default function PhotoDetailScreen({ navigation, route }) {
                     {new Date(c.createdAt).toLocaleDateString('ko-KR')}
                   </Text>
                 </View>
-                {user && c.memberId === user.id && (
+                {user && c.memberId === user.id ? (
                   <TouchableOpacity onPress={() => handleDeleteComment(c.id)}>
                     <Text style={styles.deleteBtn}>삭제</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="댓글 신고 또는 작성자 차단"
+                    onPress={() => openReport({ kind: 'comment', id: c.id, authorId: c.memberId, authorName: c.memberName })}>
+                    <Text style={styles.reportBtn}>신고</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -234,9 +265,14 @@ export default function PhotoDetailScreen({ navigation, route }) {
                     <Text style={styles.commentName}>{r.memberName}</Text>
                     <Text style={styles.commentContent}>{r.content}</Text>
                   </View>
-                  {user && r.memberId === user.id && (
+                  {user && r.memberId === user.id ? (
                     <TouchableOpacity onPress={() => handleDeleteComment(r.id)}>
                       <Text style={styles.deleteBtn}>삭제</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="답글 신고 또는 작성자 차단"
+                      onPress={() => openReport({ kind: 'comment', id: r.id, authorId: r.memberId, authorName: r.memberName })}>
+                      <Text style={styles.reportBtn}>신고</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -274,13 +310,25 @@ export default function PhotoDetailScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      {reportTarget && (
+        <ReportSheet target={reportTarget} onClose={() => setReportTarget(null)}
+          onBlocked={(memberId) => {
+            Alert.alert('차단했어요', '이 회원의 사진과 댓글이 더 이상 보이지 않아요.');
+            if (memberId === photo.memberId) navigation.goBack();
+          }} />
+      )}
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   backBtn: { padding: SPACING.md },
+  reportText: { color: COLORS.textMuted, fontWeight: '600', fontSize: FONT.sm },
+  reportBtn: { color: COLORS.textMuted, fontSize: FONT.sm - 1, fontWeight: '600' },
+  blockedNotice: { color: COLORS.textMuted, fontSize: FONT.sm, lineHeight: 20, textAlign: 'center',
+    marginHorizontal: SPACING.lg, marginVertical: SPACING.xl },
   backText: { color: COLORS.primary, fontWeight: '600', fontSize: FONT.md },
   image: { width: '100%', height: 300, backgroundColor: '#000' },
   moodBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',

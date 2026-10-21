@@ -9,6 +9,7 @@ import { photoApi, authApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
 import { getPortfolioUrl } from '../src/utils/portfolioUrl';
+import { ensureLibraryAccess } from '../utils/uploadImage';
 
 const PROFILE_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$/;
 const SPECIALTIES_OPTIONS = ['웨딩', '포트레이트', '풍경', '제품', '음식', '건축', '스트릿', '패션', '스포츠', '반려동물'];
@@ -58,8 +59,7 @@ export default function ProfileScreen({ navigation = {} }) {
   const initials = (user?.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const handleAvatarPick = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) { Alert.alert('권한 필요', '사진 라이브러리 접근 권한이 필요합니다.'); return; }
+    if (!(await ensureLibraryAccess())) { Alert.alert('권한 필요', '사진 라이브러리 접근 권한이 필요합니다.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true, aspect: [1, 1], quality: 0.8,
@@ -105,6 +105,35 @@ export default function ProfileScreen({ navigation = {} }) {
     } catch (err) {
       Alert.alert('오류', err.message || '저장 중 오류가 발생했습니다.');
     } finally { setSaving(false); }
+  };
+
+  // 회원 탈퇴 — 앱 안에서 바로 (Apple 5.1.1(v)·Google Play 계정 삭제 정책). 되돌릴 수 없어 두 번 확인한다.
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteAccount = () => {
+    Alert.alert('회원 탈퇴',
+      '탈퇴하면 계정과 함께 올린 사진·시리즈·댓글·보드가 모두 삭제되고 되돌릴 수 없어요.', [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '계속', style: 'destructive',
+          onPress: () => Alert.alert('정말 탈퇴할까요?', '이 작업은 취소할 수 없습니다.', [
+            { text: '취소', style: 'cancel' },
+            {
+              text: '탈퇴하기', style: 'destructive',
+              onPress: async () => {
+                setDeleting(true);
+                try {
+                  await authApi.deleteAccount(user.id);
+                  await logout();
+                  Alert.alert('탈퇴가 완료됐어요', '그동안 Happiness를 이용해 주셔서 감사합니다.');
+                } catch (err) {
+                  setDeleting(false);
+                  Alert.alert('탈퇴하지 못했어요', err.response?.data?.message || '잠시 후 다시 시도해 주세요.');
+                }
+              },
+            },
+          ]),
+        },
+      ]);
   };
 
   const handleLogout = () => {
@@ -165,7 +194,7 @@ export default function ProfileScreen({ navigation = {} }) {
         <Text style={styles.userName}>{user?.name}</Text>
         {user?.profileName && (
           <View style={styles.subdomainBadge}>
-            <Text style={styles.subdomainText}>✦ {user.profileName}.happiness.app</Text>
+            <Text style={styles.subdomainText}>✦ happiness.io.kr/portfolio/{user.profileName}</Text>
           </View>
         )}
       </View>
@@ -208,6 +237,7 @@ export default function ProfileScreen({ navigation = {} }) {
             <>
               <Text style={styles.fieldHint}>소문자·숫자·하이픈, 3-30자</Text>
               <View style={styles.profileNameRow}>
+                <Text style={styles.domainSuffix}>/portfolio/</Text>
                 <TextInput
                   style={[styles.input, styles.profileNameInput]}
                   value={form.profileName}
@@ -216,12 +246,11 @@ export default function ProfileScreen({ navigation = {} }) {
                   placeholderTextColor={COLORS.textHint}
                   autoCapitalize="none" autoCorrect={false}
                 />
-                <Text style={styles.domainSuffix}>.happiness.app</Text>
               </View>
             </>
           ) : (
             <Text style={styles.fieldValue}>
-              {user?.profileName ? `${user.profileName}.happiness.app` : '미설정'}
+              {user?.profileName ? `happiness.io.kr/portfolio/${user.profileName}` : '미설정'}
             </Text>
           )}
         </View>
@@ -398,6 +427,11 @@ export default function ProfileScreen({ navigation = {} }) {
           <Text style={styles.legalItemText}>이용약관</Text>
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('BlockedUsers')}>
+          <Text style={styles.legalItemText}>🚫 차단한 사용자</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
         <View style={styles.appVersionRow}>
           <Text style={styles.appVersion}>Happiness v1.0.0</Text>
         </View>
@@ -405,6 +439,13 @@ export default function ProfileScreen({ navigation = {} }) {
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>로그아웃</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount} disabled={deleting}
+        accessibilityRole="button" accessibilityLabel="회원 탈퇴">
+        {deleting
+          ? <ActivityIndicator color={COLORS.textMuted} />
+          : <Text style={styles.deleteAccountText}>회원 탈퇴</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -487,9 +528,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg, fontSize: FONT.base,
   },
   profileNameRow: { flexDirection: 'row', alignItems: 'center' },
-  profileNameInput: { flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRightWidth: 0 },
-  domainSuffix: { borderWidth: 1, borderColor: COLORS.borderLight,
-    borderTopRightRadius: RADIUS.md, borderBottomRightRadius: RADIUS.md,
+  profileNameInput: { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeftWidth: 0 },
+  domainSuffix: { borderWidth: 1, borderColor: COLORS.borderLight,   // 주소 앞부분(/portfolio/) — 입력란 왼쪽에 붙는다
+    borderTopLeftRadius: RADIUS.md, borderBottomLeftRadius: RADIUS.md,
     paddingHorizontal: 10, paddingVertical: 10,
     color: COLORS.textMuted, fontSize: FONT.sm, backgroundColor: COLORS.bg },
   instagramRow: { flexDirection: 'row', alignItems: 'center' },
@@ -528,4 +569,6 @@ const styles = StyleSheet.create({
   logoutBtn: { backgroundColor: '#fff', borderRadius: RADIUS.md, paddingVertical: 14,
     alignItems: 'center', borderWidth: 1, borderColor: '#ff3b30' },
   logoutText: { color: '#ff3b30', fontWeight: '700', fontSize: FONT.base },
+  deleteAccountBtn: { alignItems: 'center', paddingVertical: 16, marginTop: SPACING.sm, marginBottom: SPACING.lg },
+  deleteAccountText: { color: COLORS.textMuted, fontSize: FONT.sm, textDecorationLine: 'underline' },
 });

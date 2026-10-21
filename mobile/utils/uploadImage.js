@@ -1,18 +1,25 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
+import { API_ORIGIN as API_URL } from '../constants/config';
 
-const API_URL = Platform.OS === 'android'
-  ? 'http://10.0.2.2:8080'   // Android 에뮬레이터 → 호스트 머신
-  : 'http://localhost:8080';  // iOS 시뮬레이터
+/**
+ * 사진 보관함 접근 확인. Android는 시스템 사진 선택기(권한 불필요)를 쓰고, 사진·동영상 전체 접근 권한
+ * (READ_MEDIA_IMAGES 등)은 Google Play 정책 때문에 app.json blockedPermissions로 막아 두었다 —
+ * 그래서 Android에서는 권한을 묻지 않는다(물으면 항상 거부로 돌아온다).
+ */
+export async function ensureLibraryAccess() {
+  if (Platform.OS === 'android') return true;
+  const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  return granted;
+}
 
 /**
  * 갤러리에서 이미지를 선택한다.
  * iOS/Android 권한 요청 포함.
  */
 export async function pickImage() {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
+  if (!(await ensureLibraryAccess())) {
     throw new Error('사진 라이브러리 접근 권한이 필요합니다.');
   }
 

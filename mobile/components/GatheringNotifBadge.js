@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { gatheringApi } from '../src/api/gatheringApi';
+import { WEB_ORIGIN } from '../constants/config';
 
-const WEB_NOTIFICATIONS_URL = __DEV__
-  ? 'http://localhost:3000/gatherings/notifications'
-  : 'https://app.example.com/gatherings/notifications';
+const WEB_NOTIFICATIONS_URL = `${WEB_ORIGIN}/gatherings/notifications`;
 
 const POLL_INTERVAL_MS = 30000;
 

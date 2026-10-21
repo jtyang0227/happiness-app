@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, Image, Platform,
+  ActivityIndicator, Alert, FlatList, Image, Linking, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { gatheringApi } from '../src/api/gatheringApi';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { SUPPORT_EMAIL } from '../constants/config';
+import useBlockedMembers, { blockMember } from '../hooks/useBlockedMembers';
 
 const STATUS_STYLE = {
   RECRUITING:         { label: '모집중',    bg: 'rgba(0,196,113,0.12)',  color: '#00C471' },
@@ -159,7 +161,29 @@ function interactionErrorMessage(e) {
   return e?.response?.data?.message || '잠시 후 다시 시도해주세요.';
 }
 
-function PostCard({ post, gatheringId, myStatus, navigation, canInteract }) {
+/** 모임 게시물 신고·작성자 차단 — 모임 게시물은 신고 API가 없어 신고는 운영팀 메일로 받는다 */
+function openPostSafetyMenu(post, gatheringId) {
+  Alert.alert('게시물 신고·차단', `${post.memberName || '작성자'}님의 게시물`, [
+    {
+      text: '신고하기',
+      onPress: () => {
+        const subject = encodeURIComponent(`[게시물 신고] 모임 ${gatheringId} / 게시물 ${post.id}`);
+        const body = encodeURIComponent('신고 사유를 적어 주세요:\n\n');
+        Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`)
+          .catch(() => Alert.alert('메일 앱을 열 수 없어요', `${SUPPORT_EMAIL}로 게시물 번호 ${post.id}와 사유를 보내 주세요.`));
+      },
+    },
+    {
+      text: '작성자 차단', style: 'destructive',
+      onPress: () => blockMember(post.memberId)
+        .then(() => Alert.alert('차단했어요', '이 회원의 게시물과 댓글이 더 이상 보이지 않아요.'))
+        .catch(e => Alert.alert('차단하지 못했어요', e.response?.data?.message || '잠시 후 다시 시도해 주세요.')),
+    },
+    { text: '취소', style: 'cancel' },
+  ]);
+}
+
+function PostCard({ post, gatheringId, myStatus, navigation, canInteract, isMine, isBlocked }) {
   const hasPhotos = post.photos && post.photos.length > 0;
   const canShare = hasPhotos && (myStatus === 'PARTICIPATING' || myStatus === 'WAITING');
 
@@ -218,6 +242,12 @@ function PostCard({ post, gatheringId, myStatus, navigation, canInteract }) {
           <Text style={styles.postAuthorName}>{post.memberName}</Text>
           <Text style={styles.postTime}>{relativeTime(post.createdAt)}</Text>
         </View>
+        {canInteract && !isMine && (
+          <TouchableOpacity onPress={() => openPostSafetyMenu(post, gatheringId)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="게시물 신고 또는 작성자 차단">
+            <Text style={styles.postTime}>🚩 신고</Text>
+          </TouchableOpacity>
+        )}
         {canShare && (
           <TouchableOpacity
             style={styles.igShareBtn}
@@ -273,7 +303,7 @@ function PostCard({ post, gatheringId, myStatus, navigation, canInteract }) {
       {/* 댓글 목록 */}
       {comments.length > 0 && (
         <View style={styles.commentList}>
-          {comments.map(c => (
+          {comments.filter(c => !isBlocked(c.memberId)).map(c => (
             <Text key={c.id} style={styles.commentText}>
               <Text style={styles.commentAuthor}>{c.memberName} </Text>
               {c.content}
@@ -341,6 +371,7 @@ function StatusBanner({ status }) {
 export default function GatheringDetailScreen({ route, navigation }) {
   const { gatheringId } = route.params;
   const { user } = useAuth();
+  const { isBlocked } = useBlockedMembers(!!user);   // 차단한 회원의 게시물·댓글은 숨김
 
   const [gathering, setGathering] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -423,13 +454,15 @@ export default function GatheringDetailScreen({ route, navigation }) {
       myStatus={myStatus}
       navigation={navigation}
       canInteract={!!user}
+      isMine={!!user && item.memberId === user.id}
+      isBlocked={isBlocked}
     />
   );
 
   return (
     <FlatList
       style={styles.container}
-      data={isOngoingOrEnded ? feed : []}
+      data={isOngoingOrEnded ? feed.filter(p => !isBlocked(p.memberId)) : []}
       keyExtractor={(item) => String(item.id)}
       renderItem={renderFeedItem}
       onEndReached={handleLoadMoreFeed}

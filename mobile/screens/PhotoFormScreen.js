@@ -9,6 +9,7 @@ import { photoApi } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { COLORS, MOOD_COLORS } from '../constants/colors';
 import { RADIUS, SPACING, FONT } from '../constants/layout';
+import { ensureLibraryAccess } from '../utils/uploadImage';
 
 const MOODS = Object.entries(MOOD_COLORS).map(([key, val]) => ({ key, ...val }));
 const EMPTY = { title: '', description: '', gridColSpan: 6, colorMood: '' };
@@ -31,8 +32,7 @@ export default function PhotoFormScreen({ navigation, route }) {
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const pickImage = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
+    if (!(await ensureLibraryAccess())) {
       Alert.alert('권한 필요', '사진 라이브러리 접근 권한이 필요합니다.');
       return;
     }

@@ -10,3 +10,4 @@ export { seriesApi } from '../src/api/seriesApi';
 export { meetApi } from '../src/api/meetApi';
 export { gatheringApi } from '../src/api/gatheringApi';
 export { moodboardApi } from '../src/api/moodboardApi';
+export { reportApi, blockApi } from '../src/api/safetyApi';

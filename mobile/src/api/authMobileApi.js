@@ -1,11 +1,7 @@
 import axios from 'axios';
 import apiClient from './apiClient';
 import { secureStorage } from '../storage/secureStorage';
-import { Platform } from 'react-native';
-
-const BASE_URL = Platform.OS === 'android'
-  ? 'http://10.0.2.2:8080/api'
-  : 'http://localhost:8080/api';
+import { API_BASE_URL as BASE_URL } from '../../constants/config';
 
 export const authMobileApi = {
   async login(email, password) {
@@ -30,4 +26,6 @@ export const authMobileApi = {
   requestPasswordReset: (email)     => apiClient.post('/auth/password-reset/request', { email }),
   getMember:     (id)       => apiClient.get(`/auth/member/${id}`),
   getStats:      (id)       => apiClient.get(`/auth/member/${id}/stats`),
+  // 회원 탈퇴 — 사진·시리즈·댓글·보드 등 함께 삭제 (서버 MemberService.deleteAccount)
+  deleteAccount: (id)       => apiClient.delete(`/auth/member/${id}`),
 };

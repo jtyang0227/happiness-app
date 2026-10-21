@@ -1217,4 +1217,92 @@ class CoreFlowIntegrationTest {
         mvc.perform(get("/api/moodboards/shared/" + token)).andExpect(status().isNotFound());
         mvc.perform(get("/api/moodboards/" + board)).andExpect(status().isUnauthorized());
     }
+
+    // ── 앱 심사(UGC): 댓글 작성자·신고·차단 ─────────────────────────────
+
+    private long addComment(User author, long photoId, Map<String, Object> body) throws Exception {
+        MvcResult r = mvc.perform(post("/api/photos/" + photoId + "/comments").header("Authorization", bearer(author))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(body)))
+                .andExpect(status().isOk()).andReturn();
+        Number id = JsonPath.read(r.getResponse().getContentAsString(), "$.data.id");
+        return id.longValue();
+    }
+
+    @Test
+    void 댓글_작성자는_로그인_회원이고_남의_댓글은_지울_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        long photoId = createPhoto(owner);
+
+        // 남의 이름·id를 실어 보내도 로그인 회원으로 저장된다
+        long c = addComment(other, photoId, Map.of("memberId", owner.id(), "memberName", "사칭", "content", "안녕하세요"));
+        // 모바일처럼 이름 없이 보내도 저장된다(예전엔 NOT NULL 위반 500)
+        addComment(owner, photoId, Map.of("memberId", owner.id(), "content", "반가워요"));
+        mvc.perform(get("/api/photos/" + photoId + "/comments"))
+                .andExpect(jsonPath("$.data[0].memberId").value(other.id()))
+                .andExpect(jsonPath("$.data[0].memberName").value("테스터"))
+                .andExpect(jsonPath("$.data[1].memberName").value("테스터"));
+
+        mvc.perform(delete("/api/comments/" + c).param("memberId", String.valueOf(other.id()))
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete("/api/comments/" + c).header("Authorization", bearer(other)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void 댓글_신고는_신고_목록에_댓글_내용과_함께_들어가고_본인_댓글은_신고할_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User reporter = signupAndLogin();
+        long photoId = createPhoto(owner);
+        String text = "나쁜 말 " + UUID.randomUUID();
+        long c = addComment(owner, photoId, Map.of("content", text));
+
+        mvc.perform(post("/api/comments/" + c + "/report").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"SPAM\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/comments/" + c + "/report").header("Authorization", bearer(reporter))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"INAPPROPRIATE\"}"))
+                .andExpect(status().isCreated());
+        mvc.perform(post("/api/comments/999999999/report").header("Authorization", bearer(reporter))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"SPAM\"}"))
+                .andExpect(status().isNotFound());
+
+        User admin = promoteToAdmin(signupAndLogin());
+        String list = mvc.perform(get("/api/admin/reports").param("size", "100").header("Authorization", bearer(admin)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<String> contents = JsonPath.read(list, "$.content[?(@.commentId == " + c + ")].commentContent");
+        assertThat(contents).containsExactly(text);
+        List<Number> photoIds = JsonPath.read(list, "$.content[?(@.commentId == " + c + ")].photo.id");
+        assertThat(photoIds.get(0).longValue()).isEqualTo(photoId);
+
+        // 관리자는 신고된 남의 댓글을 지울 수 있다
+        mvc.perform(delete("/api/comments/" + c).header("Authorization", bearer(admin)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void 차단은_목록에_추가_해제되고_탈퇴하면_정리된다() throws Exception {
+        User me = signupAndLogin();
+        User troll = signupAndLogin();
+
+        mvc.perform(post("/api/blocks/" + me.id()).header("Authorization", bearer(me)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/blocks/999999999").header("Authorization", bearer(me)))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/blocks/" + troll.id()).header("Authorization", bearer(me))).andExpect(status().isOk());
+        mvc.perform(post("/api/blocks/" + troll.id()).header("Authorization", bearer(me))).andExpect(status().isOk());
+        mvc.perform(get("/api/blocks").header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].memberId").value(troll.id()))
+                .andExpect(jsonPath("$.data[0].email").doesNotExist());
+
+        mvc.perform(delete("/api/blocks/" + troll.id()).header("Authorization", bearer(me))).andExpect(status().isOk());
+        mvc.perform(get("/api/blocks").header("Authorization", bearer(me))).andExpect(jsonPath("$.data.length()").value(0));
+
+        mvc.perform(post("/api/blocks/" + troll.id()).header("Authorization", bearer(me))).andExpect(status().isOk());
+        mvc.perform(delete("/api/auth/member/" + troll.id()).header("Authorization", bearer(troll))).andExpect(status().isOk());
+        mvc.perform(get("/api/blocks").header("Authorization", bearer(me))).andExpect(jsonPath("$.data.length()").value(0));
+        mvc.perform(get("/api/blocks")).andExpect(status().isUnauthorized());
+    }
 }

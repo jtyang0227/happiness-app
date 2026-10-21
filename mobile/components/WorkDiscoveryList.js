@@ -10,6 +10,7 @@ import { SHOOT_TYPES, shootTypeLabel } from '../constants/shootTypes';
 import { getPortfolioUrl } from '../src/utils/portfolioUrl';
 import { SkeletonGatheringCard } from './SkeletonCard';
 import EmptyState from './EmptyState';
+import useBlockedMembers from '../hooks/useBlockedMembers';
 
 /**
  * 작업 탐색 (탐색 탭의 "작업") — 웹 components/discover/WorkDiscovery.jsx와 같은 API(GET /series/discover).
@@ -25,6 +26,7 @@ const SORTS = [
 
 export default function WorkDiscoveryList() {
   const [shootType, setShootType] = useState('');
+  const { isBlocked } = useBlockedMembers();   // 차단한 회원의 작업은 숨김
   const [sort, setSort] = useState('recent');
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
@@ -182,7 +184,7 @@ export default function WorkDiscoveryList() {
   const filtered = Boolean(shootType || location);
   return (
     <FlatList
-      data={works}
+      data={works.filter(w => !isBlocked(w.memberId))}
       keyExtractor={item => String(item.id)}
       renderItem={renderWork}
       ListHeaderComponent={header}

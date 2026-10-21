@@ -1,5 +1,7 @@
 package com.happiness.app.member.service;
 
+import com.happiness.app.block.MemberBlockRepository;
+import com.happiness.app.comment.CommentRepository;
 import com.happiness.app.inquiry.repository.InquiryRepository;
 import com.happiness.app.member.dto.*;
 import com.happiness.app.member.entity.Authority;
@@ -42,6 +44,8 @@ public class MemberService {
     private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final MemberBlockRepository memberBlockRepository;
+    private final CommentRepository commentRepository;
 
     // RFC 5322 간략화 이메일 정규식
     private static final Pattern EMAIL_PATTERN =
@@ -162,6 +166,7 @@ public class MemberService {
             photoShareRepository.deleteByPhotoId(photoId);
             photoTagRepository.deleteByPhotoId(photoId);
             seriesPhotoRepository.deleteByPhotoId(photoId);
+            commentRepository.deleteByPhotoId(photoId);          // 내 사진에 달린 댓글
         }
 
         // 3. 멤버가 다른 사진에 남긴 좋아요/저장 삭제
@@ -183,6 +188,8 @@ public class MemberService {
         photoRepository.deleteByMemberId(memberId);
         inquiryRepository.deleteByReceiverMemberId(memberId);
         passwordResetTokenRepository.deleteByMemberId(memberId);
+        commentRepository.deleteByMemberId(memberId);              // 남의 사진에 남긴 내 댓글(이름·아바타 포함)
+        memberBlockRepository.deleteAllInvolving(memberId);
         memberRepository.deleteById(memberId);
     }
 

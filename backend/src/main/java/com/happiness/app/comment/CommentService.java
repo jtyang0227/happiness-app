@@ -1,5 +1,7 @@
 package com.happiness.app.comment;
 
+import com.happiness.app.member.entity.Member;
+import com.happiness.app.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,18 +15,31 @@ import java.util.stream.Collectors;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final MemberRepository memberRepository;
 
-    public CommentResponse addComment(Long photoId, CommentRequest request) {
+    /**
+     * 작성자는 로그인 회원으로 정한다 — 요청의 memberId·memberName을 믿으면 남의 이름으로 댓글을 달 수 있고,
+     * 이름을 보내지 않는 모바일은 NOT NULL 제약에 걸려 500이 났다.
+     */
+    public CommentResponse addComment(Long photoId, CommentRequest request, Long currentMemberId) {
         if (request.getContent() == null || request.getContent().isBlank())
             throw new IllegalArgumentException("댓글 내용을 입력해주세요.");
         if (request.getContent().length() > 500)
             throw new IllegalArgumentException("댓글은 500자 이하로 작성해주세요.");
+        if (request.getParentId() != null) {
+            Comment parent = commentRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new IllegalArgumentException("답글을 달 댓글을 찾을 수 없습니다."));
+            if (!parent.getPhotoId().equals(photoId))
+                throw new IllegalArgumentException("답글을 달 댓글을 찾을 수 없습니다.");
+        }
+        Member author = memberRepository.findById(currentMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
         Comment comment = Comment.builder()
                 .photoId(photoId)
-                .memberId(request.getMemberId())
-                .memberName(request.getMemberName())
-                .memberAvatarUrl(request.getMemberAvatarUrl())
+                .memberId(author.getId())
+                .memberName(author.getName())
+                .memberAvatarUrl(author.getAvatarUrl())
                 .content(request.getContent().trim())
                 .parentId(request.getParentId())
                 .build();
@@ -51,10 +66,11 @@ public class CommentService {
         return new ArrayList<>(topLevel.values());
     }
 
-    public void deleteComment(Long commentId, Long memberId) {
+    /** 본인 댓글 또는 관리자(신고 처리)만 삭제 — 요청 파라미터의 memberId는 믿지 않는다. */
+    public void deleteComment(Long commentId, Long currentMemberId, boolean admin) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
-        if (!comment.getMemberId().equals(memberId))
+        if (!admin && !comment.getMemberId().equals(currentMemberId))
             throw new IllegalArgumentException("본인의 댓글만 삭제할 수 있습니다.");
         // 대댓글 먼저 삭제
         commentRepository.findByParentId(commentId)
