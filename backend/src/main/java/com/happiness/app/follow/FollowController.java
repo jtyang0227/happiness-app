@@ -1,10 +1,13 @@
 package com.happiness.app.follow;
 
+import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.member.dto.MemberResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -16,11 +19,19 @@ public class FollowController {
 
     private final FollowService followService;
 
+    /** 팔로우·언팔로우는 로그인 회원 본인으로만 — 예전엔 followerId를 그대로 믿어 남을 대신 팔로우·언팔로우할 수 있었다 */
+    private static void requireSelf(Long followerId) {
+        if (!SecurityUtil.getCurrentMemberId().equals(followerId) && !SecurityUtil.isAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
+        }
+    }
+
     /** 팔로우 */
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> follow(
             @RequestParam Long followerId,
             @RequestParam Long followingId) {
+        requireSelf(followerId);
         followService.follow(followerId, followingId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -30,6 +41,7 @@ public class FollowController {
     public ResponseEntity<ApiResponse<Void>> unfollow(
             @RequestParam Long followerId,
             @RequestParam Long followingId) {
+        requireSelf(followerId);
         followService.unfollow(followerId, followingId);
         return ResponseEntity.ok(ApiResponse.ok());
     }

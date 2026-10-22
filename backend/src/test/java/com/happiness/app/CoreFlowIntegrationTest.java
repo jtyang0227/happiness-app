@@ -1305,4 +1305,97 @@ class CoreFlowIntegrationTest {
         mvc.perform(get("/api/blocks").header("Authorization", bearer(me))).andExpect(jsonPath("$.data.length()").value(0));
         mvc.perform(get("/api/blocks")).andExpect(status().isUnauthorized());
     }
+
+    // ── 보안 점검 2026-10-22 — 남의 이름으로 하는 행동·비밀번호 우회 ─────────────────
+
+    @Test
+    void 남을_대신해_팔로우하거나_피드를_볼_수_없다() throws Exception {
+        User a = signupAndLogin();
+        User b = signupAndLogin();
+        User c = signupAndLogin();
+        // c가 a를 b의 팔로워로 만들려는 시도
+        mvc.perform(post("/api/follows").header("Authorization", bearer(c))
+                        .param("followerId", String.valueOf(a.id())).param("followingId", String.valueOf(b.id())))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/follows").header("Authorization", bearer(c))
+                        .param("followerId", String.valueOf(a.id())).param("followingId", String.valueOf(b.id())))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/follows").header("Authorization", bearer(a))
+                        .param("followerId", String.valueOf(a.id())).param("followingId", String.valueOf(b.id())))
+                .andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/feed").header("Authorization", bearer(c)).param("memberId", String.valueOf(a.id())))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/feed").header("Authorization", bearer(a)).param("memberId", String.valueOf(a.id()))
+                        .param("size", "100000"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void 사진_태그는_주인만_달고_이름은_서버가_채운다() throws Exception {
+        User owner = signupAndLogin();
+        User friend = signupAndLogin();
+        User stranger = signupAndLogin();
+        long photoId = createPhoto(owner);
+
+        mvc.perform(post("/api/photos/" + photoId + "/tags").header("Authorization", bearer(stranger))
+                        .param("memberId", String.valueOf(friend.id())).param("memberName", "가짜이름"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/photos/" + photoId + "/tags").header("Authorization", bearer(owner))
+                        .param("memberId", String.valueOf(friend.id())).param("memberName", "가짜이름"))
+                .andExpect(status().isCreated());
+        String body = mvc.perform(get("/api/photos/" + photoId + "/tags").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(body).doesNotContain("가짜이름").contains("테스터");
+        Number tagId = JsonPath.read(body, "$.data[0].id");
+
+        // 남의 사진 경로로 지우기·관계없는 회원이 지우기 → 거절, 태그된 본인은 지울 수 있다
+        long otherPhoto = createPhoto(stranger);
+        mvc.perform(delete("/api/photos/" + otherPhoto + "/tags/" + tagId).header("Authorization", bearer(stranger)))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/photos/" + photoId + "/tags/" + tagId).header("Authorization", bearer(stranger)))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/photos/" + photoId + "/tags/" + tagId).header("Authorization", bearer(friend)))
+                .andExpect(status().is2xxSuccessful());
+    }
+
+    @Test
+    void 남의_이름으로_공유를_기록하거나_남의_사진에_AI_태그를_요청할_수_없다() throws Exception {
+        User owner = signupAndLogin();
+        User other = signupAndLogin();
+        long photoId = createPhoto(owner);
+        mvc.perform(post("/api/photos/" + photoId + "/shares").header("Authorization", bearer(other))
+                        .param("memberId", String.valueOf(owner.id())).param("platform", "LINK"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/photos/" + photoId + "/shares").header("Authorization", bearer(other))
+                        .param("memberId", String.valueOf(other.id())).param("platform", "LINK"))
+                .andExpect(status().is2xxSuccessful());
+        mvc.perform(post("/api/photos/" + photoId + "/auto-tags").header("Authorization", bearer(other)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void 비밀번호가_걸린_납품은_승인_반려에도_비밀번호가_필요하다() throws Exception {
+        User owner = signupAndLogin();
+        long photoId = createPhoto(owner);
+        MvcResult r = mvc.perform(post("/api/delivery").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "납품", "photoIds", List.of(photoId),
+                                "expiresInDays", 7, "password", "secret12"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String token = JsonPath.read(r.getResponse().getContentAsString(), "$.token");
+
+        mvc.perform(put("/api/delivery/" + token + "/approve").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("feedback", "좋아요"))))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/delivery/" + token + "/reject").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("password", "wrong"))))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/delivery/" + token + "/approve").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("password", "secret12", "feedback", "x".repeat(2001)))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/delivery/" + token + "/approve").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("password", "secret12", "feedback", "좋아요"))))
+                .andExpect(status().is2xxSuccessful());
+    }
 }

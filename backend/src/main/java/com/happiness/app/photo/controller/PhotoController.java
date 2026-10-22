@@ -479,13 +479,23 @@ public class PhotoController {
     public ResponseEntity<?> addTag(
             @PathVariable Long photoId,
             @RequestParam Long memberId,
-            @RequestParam String memberName,
+            @RequestParam(required = false) String memberName,   // 무시 — 서버가 회원 이름을 채운다
             @RequestParam(required = false) Double positionX,
             @RequestParam(required = false) Double positionY) {
 
-        if (!photoRepository.existsById(photoId)) {
+        Photo tagged = photoRepository.findById(photoId).orElse(null);
+        if (tagged == null) {
             return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
         }
+        // 태그는 사진 주인(또는 관리자)만 — 예전엔 누구나 남의 사진에 아무 이름으로 태그를 달 수 있었다
+        if (!isSelfOrAdmin(tagged.getMemberId())) {
+            return errorResponse(HttpStatus.FORBIDDEN, "내 사진에만 태그할 수 있습니다.");
+        }
+        Member taggedMember = memberRepository.findById(memberId).orElse(null);
+        if (taggedMember == null) {
+            return errorResponse(HttpStatus.NOT_FOUND, "태그할 회원을 찾을 수 없습니다.");
+        }
+        memberName = taggedMember.getName();   // 요청의 이름은 믿지 않는다
         if (photoTagRepository.existsByPhotoIdAndMemberId(photoId, memberId)) {
             return errorResponse(HttpStatus.BAD_REQUEST, "이미 태그된 사용자입니다.");
         }
@@ -526,8 +536,15 @@ public class PhotoController {
 
     @DeleteMapping("/{photoId}/tags/{tagId}")
     public ResponseEntity<?> removeTag(@PathVariable Long photoId, @PathVariable Long tagId) {
+        Photo photo = photoRepository.findById(photoId).orElse(null);
         return photoTagRepository.findById(tagId)
+                .filter(tag -> photo != null && tag.getPhotoId().equals(photoId))
                 .map(tag -> {
+                    // 사진 주인·태그된 본인·관리자만 — 예전엔 로그인한 누구나 아무 태그를 지울 수 있었다
+                    Long me = SecurityUtil.getCurrentMemberId();
+                    if (!me.equals(photo.getMemberId()) && !me.equals(tag.getMemberId()) && !SecurityUtil.isAdmin()) {
+                        return errorResponse(HttpStatus.FORBIDDEN, "이 태그를 지울 권한이 없습니다.");
+                    }
                     photoTagRepository.delete(tag);
                     Map<String, Object> result = new HashMap<>();
                     result.put("status", "success");
@@ -597,6 +614,7 @@ public class PhotoController {
             @RequestParam Long memberId,
             @RequestParam String platform) {
 
+        if (!isSelfOrAdmin(memberId)) return errorResponse(HttpStatus.FORBIDDEN, "본인 계정으로만 할 수 있습니다.");
         Photo photo = photoRepository.findById(photoId).orElse(null);
         if (photo == null) return errorResponse(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다.");
 
@@ -736,6 +754,10 @@ public class PhotoController {
     public ResponseEntity<?> autoTagSuggestions(@PathVariable Long id) {
         return photoRepository.findById(id)
                 .map(photo -> {
+                    // 외부 AI(비전) 호출 비용이 드는 기능이라 사진 주인·관리자만
+                    if (!isSelfOrAdmin(photo.getMemberId())) {
+                        return errorResponse(HttpStatus.FORBIDDEN, "내 사진에만 쓸 수 있습니다.");
+                    }
                     List<String> suggestions = autoTagService.suggestWithVision(
                             photo.getTitle(), photo.getDescription(), photo.getColorMood(), photo.getImageUrl());
                     Map<String, Object> result = new HashMap<>();

@@ -33,6 +33,8 @@ public class DeliverySetService {
     private final PhotoRepository photoRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final int MAX_FEEDBACK_LENGTH = 2000;
+
     // in-memory rate limiting: token -> [attemptCount, blockedUntilEpochSecond]
     private final ConcurrentHashMap<String, long[]> passwordAttempts = new ConcurrentHashMap<>();
 
@@ -134,14 +136,7 @@ public class DeliverySetService {
             throw new ResponseStatusException(HttpStatus.GONE, "링크가 만료되었습니다");
         }
 
-        if (set.getPasswordHash() != null) {
-            checkRateLimit(token);
-            if (password == null || !passwordEncoder.matches(password, set.getPasswordHash())) {
-                incrementAttempt(token);
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다");
-            }
-            resetAttempts(token);
-        }
+        verifyPassword(set, token, password);
 
         List<DeliverySetPhoto> setPhotos = deliverySetPhotoRepository
                 .findByIdDeliverySetIdOrderBySortOrder(set.getId());
@@ -203,6 +198,9 @@ public class DeliverySetService {
         if (set.isExpired()) {
             throw new ResponseStatusException(HttpStatus.GONE, "링크가 만료되었습니다");
         }
+        // 비밀번호가 걸린 세트는 승인·반려에도 비밀번호 필요 — 예전엔 토큰만 알면 열람 없이 승인·반려할 수 있었다
+        verifyPassword(set, token, req.getPassword());
+        validateFeedback(req.getFeedback());
 
         // Update liked photos
         if (req.getLikedPhotoIds() != null && !req.getLikedPhotoIds().isEmpty()) {
@@ -231,6 +229,9 @@ public class DeliverySetService {
         if (set.isExpired()) {
             throw new ResponseStatusException(HttpStatus.GONE, "링크가 만료되었습니다");
         }
+        // 비밀번호가 걸린 세트는 승인·반려에도 비밀번호 필요 — 예전엔 토큰만 알면 열람 없이 승인·반려할 수 있었다
+        verifyPassword(set, token, req.getPassword());
+        validateFeedback(req.getFeedback());
 
         set.setStatus("REJECTED");
         set.setFeedback(req.getFeedback());
@@ -275,6 +276,22 @@ public class DeliverySetService {
                 .approvedAt(set.getApprovedAt())
                 .hasPassword(set.getPasswordHash() != null)
                 .build();
+    }
+
+    private void verifyPassword(DeliverySet set, String token, String password) {
+        if (set.getPasswordHash() == null) return;
+        checkRateLimit(token);
+        if (password == null || !passwordEncoder.matches(password, set.getPasswordHash())) {
+            incrementAttempt(token);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다");
+        }
+        resetAttempts(token);
+    }
+
+    private static void validateFeedback(String feedback) {
+        if (feedback != null && feedback.length() > MAX_FEEDBACK_LENGTH) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "의견은 " + MAX_FEEDBACK_LENGTH + "자 이하로 적어 주세요");
+        }
     }
 
     private void checkRateLimit(String token) {

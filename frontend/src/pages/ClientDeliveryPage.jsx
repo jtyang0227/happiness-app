@@ -16,10 +16,13 @@ export default function ClientDeliveryPage() {
   const [approved, setApproved] = useState(false);
   const [error, setError] = useState('');
   const viewedRef = useRef(false);
+  // 비밀번호가 걸린 세트는 승인에도 비밀번호가 필요하다 — 메모리에만 둔다(저장소 금지)
+  const passwordRef = useRef(undefined);
 
   const loadDelivery = async (password = undefined) => {
     try {
       const data = await deliveryApi.getDetail(token, password);
+      passwordRef.current = password;
       setDelivery(data);
       setStatus('ok');
       setPwError(false);
@@ -76,6 +79,7 @@ export default function ClientDeliveryPage() {
     await deliveryApi.approve(token, {
       likedPhotoIds: Array.from(likedIds),
       feedback,
+      password: passwordRef.current,
     });
     setApproved(true);
     setShowApproveModal(false);
