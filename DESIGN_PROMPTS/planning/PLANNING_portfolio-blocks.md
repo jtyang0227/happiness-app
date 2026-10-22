@@ -52,11 +52,11 @@
 |---|---|---|---|
 | `hero` | 첫 화면 | tagline(80자), align(left/center), showStats | 회원 정보·커버 |
 | `featuredWork` | 대표 작업 | title | 📌 고정 작업 |
-| `works` | 작업 노트 목록 | title, showFilter | 시리즈 |
+| `works` | 작업 노트 목록 | title (유형 필터는 유형이 2개 이상이면 자동) | 시리즈 |
 | `photos` | 사진 그리드 | title, columns(2~4), limit(3~60), genre(장르 코드 또는 빈 값) | 공개 사진 |
 | `text` | 글 | title(60자), body(2000자) | — |
 | `quote` | 인용 | text(300자), author(40자) | — |
-| `testimonials` | 고객 후기 | title | 추천사 API |
+| `testimonials` | 고객 후기 | — | 추천사 API |
 | `pricing` | 촬영 패키지 | — | 가격 API |
 | `press` | 언론·수상 | — | 언론 API |
 | `clients` | 함께한 브랜드 | — | 브랜드 API |

@@ -11,6 +11,7 @@ import TemplateEditorial from '../components/portfolio/templates/TemplateEditori
 import TemplateMinimal   from '../components/portfolio/templates/TemplateMinimal';
 import TemplateScrl      from '../components/portfolio/templates/TemplateScrl';
 import TemplateDarkRoom  from '../components/portfolio/templates/TemplateDarkRoom';
+import TemplateBlocks    from '../components/portfolio/templates/TemplateBlocks';
 
 /* ── Follow List Modal ────────────────────────────── */
 function FollowListModal({ title, members, loading, onClose }) {
@@ -47,6 +48,7 @@ const TEMPLATE_REGISTRY = {
   SCRL:      TemplateScrl,
   MINIMAL:   TemplateMinimal,
   DARK_ROOM: TemplateDarkRoom,
+  BLOCKS:    TemplateBlocks,   // 직접 구성 — PLANNING_portfolio-blocks.md
 };
 
 /* ── 레지스트리에 없는 템플릿(FILM/SPLIT/MOSAIC/MAGAZINE)용 배너 래퍼 ──────── */
@@ -81,6 +83,7 @@ export default function PortfolioPage() {
   const [isPrivate, setIsPrivate] = useState(false);
 
   const [template, setTemplate]   = useState('EDITORIAL');
+  const [portfolioConfig, setPortfolioConfig] = useState(null);
   const [configLoaded, setConfigLoaded] = useState(false);
 
   const [following, setFollowing]         = useState(false);
@@ -117,6 +120,7 @@ export default function PortfolioPage() {
         if (configRes.status === 'fulfilled') {
           const cfg = configRes.value.data;
           setTemplate(cfg?.template || 'EDITORIAL');
+          setPortfolioConfig(cfg || null);
         }
         setConfigLoaded(true);
       } finally {
@@ -227,6 +231,7 @@ export default function PortfolioPage() {
     isOwnPage,
     photoCount, followerCount, followingCount, totalLikes,
     acceptingBookings,   // "예약 받는 중" 배지 — 예약 가용 설정을 켠 작가만 true
+    portfolioConfig,     // 직접 구성(BLOCKS)의 sectionsJson·styleJson
     following: !isOwnPage && user?.id ? following : undefined,
     followLoading,
     onFollow: !isOwnPage && user?.id ? handleFollow : null,

@@ -11,8 +11,9 @@ import apiClient from '../api/apiClient';
 
 /* ── 포트폴리오 템플릿 목록 ────────────────── */
 const PORTFOLIO_TEMPLATES = [
+  { id: 'BLOCKS',    name: '직접 구성',   desc: '블록을 골라 순서·내용·색을 자유롭게', preview: '▤▥▤▥' },
   { id: 'EDITORIAL', name: '에디토리얼', desc: '단일 스크롤 · 무드 필터 · 히어로 이미지', preview: '▌▌▌▌▌▌' },
-  { id: 'MINIMAL',   name: '미니볼',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
+  { id: 'MINIMAL',   name: '미니멀',     desc: '깔끔한 그리드 · 라이트 배경 · 타이포 포커스', preview: '⊞⊞⊞⊞' },
   { id: 'SCRL',      name: '스크롤',     desc: '풀스크린 스냵 스크롤 · 몰입형 사진 감상', preview: '━━━━━━' },
   { id: 'DARK_ROOM', name: '다크룸',     desc: '순수 블랙 · 대형 타일 · 이미지 온리', preview: '░░░░░░' },
   { id: 'FILM',      name: '필름',       desc: '필름 스트립 · 시네마틱 레터박스', preview: '▐▐▐▐▐▐', disabled: true },
@@ -772,7 +773,15 @@ export default function ProfilePage() {
                       );
                     })}
                   </div>
-                  {user?.profileName ? (
+                  {user?.profileName && portfolioTemplate === 'BLOCKS' ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/portfolio-builder')}
+                      style={{ ...primaryBtn(false) }}
+                    >
+                      구성 편집하기 →
+                    </button>
+                  ) : user?.profileName ? (
                     <button
                       type="button"
                       disabled={savingTemplate}

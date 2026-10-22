@@ -55,6 +55,7 @@ import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
 import MoodboardPage from './pages/MoodboardPage';
 import SharedBoardPage from './pages/SharedBoardPage';
 import WorkspacePage from './pages/WorkspacePage';
+import PortfolioBuilderPage from './pages/PortfolioBuilderPage';
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -67,6 +68,7 @@ const STANDALONE_PATHS = [
   '/oauth/apple/result',
   '/editor',
   '/photo/new',
+  '/portfolio-builder',
 ];
 
 function AppShell() {
@@ -127,6 +129,7 @@ function AppShell() {
           <Route path="/photo/:id/edit" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
+          <Route path="/portfolio-builder" element={<ProtectedRoute><PortfolioBuilderPage /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><InquiryInboxPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/boards/:id" element={<ProtectedRoute><MoodboardPage /></ProtectedRoute>} />

@@ -41,11 +41,11 @@ public final class PortfolioLayoutValidator {
     private static final Map<String, Map<String, Prop>> BLOCK_PROPS = Map.ofEntries(
             Map.entry("hero", Map.of("tagline", Prop.text(80), "align", Prop.oneOf("left", "center"), "showStats", Prop.bool())),
             Map.entry("featuredWork", Map.of("title", Prop.text(40))),
-            Map.entry("works", Map.of("title", Prop.text(40), "showFilter", Prop.bool())),
+            Map.entry("works", Map.of("title", Prop.text(40))),
             Map.entry("photos", Map.of("title", Prop.text(40), "columns", Prop.num(2, 4), "limit", Prop.num(3, 60), "genre", Prop.genre())),
             Map.entry("text", Map.of("title", Prop.text(60), "body", Prop.text(2000))),
             Map.entry("quote", Map.of("text", Prop.text(300), "author", Prop.text(40))),
-            Map.entry("testimonials", Map.of("title", Prop.text(40))),
+            Map.entry("testimonials", Map.of()),
             Map.entry("pricing", Map.of()),
             Map.entry("press", Map.of()),
             Map.entry("clients", Map.of()),
