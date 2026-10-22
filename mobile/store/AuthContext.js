@@ -26,7 +26,18 @@ export const AuthProvider = ({ children }) => {
 
   // ── 로그인: JWT 응답 처리 + SecureStore 저장 ─────────────────────
   const login = useCallback(async (email, password) => {
-    const res = await authMobileApi.login(email, password);
+    let res;
+    try {
+      res = await authMobileApi.login(email, password);
+    } catch (err) {
+      // axios 기본 문구("Request failed with status code 401") 대신 서버 사유를 보여 준다
+      const msg = err?.response?.data?.message;
+      if (msg) throw new Error(msg);
+      if (!err?.response) throw new Error('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해 주세요.');
+      if (err.response.status === 429) throw new Error('로그인 시도가 너무 많아요. 잠시 후 다시 시도해 주세요.');
+      if (err.response.status >= 500) throw new Error('서버에 일시적인 문제가 있어요. 잠시 후 다시 시도해 주세요.');
+      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
     const payload = res.data;
 
     if (!payload.success) {

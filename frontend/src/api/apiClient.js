@@ -90,8 +90,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // 로그인·회원가입 같은 인증 요청의 401은 "자격 증명이 틀림"이지 "토큰 만료"가 아니다.
+    // 예전엔 여기서도 재발급→실패→logout()이 돌아 /login을 새로 불러와, 틀린 비밀번호를 넣으면 안내 없이 화면만 새로고침됐다.
+    const isAuthRequest = /\/auth\/(login|signup|refresh|oauth|find-email|password-reset)/.test(originalRequest?.url || '');
+
     // 401 + 재시도 아닌 경우에만 재발급 시도
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       const store = getAuthStore();
       const refreshToken = store.refreshToken;
 

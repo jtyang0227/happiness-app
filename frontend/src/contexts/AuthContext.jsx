@@ -14,11 +14,28 @@ import useAuthStore from '../store/authStore';
  */
 const AuthContext = createContext(null);
 
+/** 로그인 실패 사유 — 서버 메시지 우선, 서버에 닿지 못했으면 연결 안내 */
+export function loginErrorMessage(err) {
+  const status = err?.response?.status;
+  const msg = err?.response?.data?.message;
+  if (msg) return msg;
+  if (!err?.response) return '서버에 연결하지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해 주세요.';
+  if (status === 429) return '로그인 시도가 너무 많아요. 잠시 후 다시 시도해 주세요.';
+  if (status >= 500) return '서버에 일시적인 문제가 있어요. 잠시 후 다시 시도해 주세요.';
+  return '이메일 또는 비밀번호가 올바르지 않습니다.';
+}
+
 export function AuthProvider({ children }) {
   const user = useAuthStore(state => state.user);
 
   const login = useCallback(async (email, password) => {
-    const res = await authApi.login({ email, password });
+    let res;
+    try {
+      res = await authApi.login({ email, password });
+    } catch (err) {
+      // axios 기본 문구("Request failed with status code 401") 대신 서버 사유를 보여 준다
+      throw new Error(loginErrorMessage(err));
+    }
     if (!res || !res.success) {
       throw new Error(res?.message || '이메일 또는 비밀번호가 올바르지 않습니다.');
     }

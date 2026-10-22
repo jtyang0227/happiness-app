@@ -47,7 +47,8 @@
 4. **존재하지 않는 API 경로 호출**, **Jackson `isXxx` 필드명**(`isActive` → JSON `active`), 정규화(소문자·trim) 전 비교, 프론트·서버 검증 규칙 불일치.
 5. 웹 access token은 메모리에만 → 새로고침 직후 공개 GET에는 토큰이 없어 "…ByMe" 값이 항상 false(인증 경로로 따로 조회).
 6. hover에 `transform`을 쓰는 카드에 등장 애니메이션을 같은 요소에 주면 hover가 죽는다 → wrapper/inner 분리.
-7. 모바일 네이티브 전용 모듈은 `*.web.js` 스텁으로 웹 번들에서 뺀다(metro 커스텀 리졸버는 동작 안 함). 서버 주소는 `mobile/constants/config.js` 한 곳.
+7. **공개·인증 요청의 401을 토큰 만료로 처리하면** apiClient가 `logout()`→`/login` 새로고침을 돌려 오류 문구가 사라진다(틀린 비밀번호가 "아무 반응 없음"으로 보였던 원인). 인증 요청은 인터셉터 예외 목록에 둔다.
+8. 모바일 네이티브 전용 모듈은 `*.web.js` 스텁으로 웹 번들에서 뺀다(metro 커스텀 리졸버는 동작 안 함). 서버 주소는 `mobile/constants/config.js` 한 곳.
 
 ## 7. 운영·배포 현황
 - Vercel: GitHub 앱 연동으로 master push마다 Production — 정상.
