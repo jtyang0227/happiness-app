@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**프로젝트 메모리(한 장 요약)** — 제품·구조·검증 명령·작업 규칙·반복된 함정·배포 현황·남은 일을 모은 문서. 세션 시작 시 먼저 읽고,
+큰 작업을 끝내면 해당 줄을 갱신한다: @DESIGN_PROMPTS/planning/PROJECT_MEMORY.md
+
 ---
 
 ## Harness 작업 원칙 (Inspect → Plan → Execute → Verify → Review → Fix → Re-verify)
