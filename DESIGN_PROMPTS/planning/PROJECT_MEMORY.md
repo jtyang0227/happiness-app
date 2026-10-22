@@ -7,6 +7,7 @@
 ## 1. 제품
 - **사진작가 포트폴리오 + 업무 앱.** "보여주기(포트폴리오·작업 노트) → 일 받기(문의·예약) → 일 처리하기(일정·약속·납품·수금)".
 - 운영 주소: 웹 `https://happiness.io.kr`(Vercel), API `https://api.happiness.io.kr`(Railway). 별도 저장소 **happiness-admin**(운영자용)과 DB를 공유한다.
+- 포트폴리오: 템플릿 4종 + **직접 구성(BLOCKS)** — 새 블록은 서버 `PortfolioLayoutValidator.BLOCK_PROPS` + 웹 `blocks/blockRegistry.js` 두 곳에 추가.
 - 웹 메뉴 4개: **둘러보기**(`/explore`, 공개 — 사진|작업 탭) · **내 작업**(`/series`) · **업무**(`/workspace` 허브 + 문의·예약·일정·약속·납품 탭) · **모임**(`/gatherings`) + "＋ 올리기"(`/photo/new` = 이미지 에디터).
 - 모바일(Expo) 탭: 탐색 · 갤러리(내 사진) · 등록 · 피드 · 프로필(나머지 기능은 프로필 메뉴에서 진입).
 
@@ -20,7 +21,7 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **50개** 통과: `CoreFlowIntegrationTest` 48 + `JwtTokenProviderTest` 2).
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **52개** 통과: `CoreFlowIntegrationTest` 50 + `JwtTokenProviderTest` 2).
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully."
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
@@ -61,6 +62,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 10-22 | (이 커밋) | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |
 | 10-22 | 8dfe427 | 보안 점검 8건(JWT 기본값, 납품 비밀번호, 팔로우·피드·태그·공유·AI 태그 IDOR) | `planning/SECURITY_AUDIT_2026-10-22.md` |
 | 10-21 | 0131220 | 웹 화면 깨짐·위치 정리(390/1280 가로 넘침 0) | `design/DESIGN_PROMPT_web-layout-polish.md` |
 | 10-21 | f389434 | 모바일 UI/UX 정리(흰 헤더·노치·대비·진입점) | `design/DESIGN_PROMPT_mobile-ux-polish.md` |
