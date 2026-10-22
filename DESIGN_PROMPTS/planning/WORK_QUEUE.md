@@ -5,7 +5,19 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
-## 현재 묶음 — 모바일 UI/UX 정리 (2026-10-21)
+## 현재 묶음 — 포트폴리오 "직접 구성" 블록 빌더 (2026-10-22)
+
+기획: `PLANNING_portfolio-blocks.md`, 디자인: `DESIGN_PROMPT_portfolio-blocks.md`.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 기획·디자인 프롬프트 (Behance 대조 — 네트워크 차단으로 공개 기능 기준) | |
+| 2 | 🔄 | 서버: `PortfolioLayoutValidator` + BLOCKS 템플릿 + 통합 테스트 | |
+| 3 | ⏳ | 웹: 블록 레지스트리·렌더러 12종 + `TemplateBlocks` | |
+| 4 | ⏳ | 웹: `/portfolio-builder` 편집 화면 + 프로필 템플릿 카드 | |
+| 5 | ⏳ | 검증(빌드·테스트·브라우저 390/1280) + 문서 반영 + 커밋 | |
+
+## 이전 묶음 — 모바일 UI/UX 정리 (2026-10-21)
 
 디자인: `DESIGN_PROMPT_mobile-ux-polish.md`.
 
