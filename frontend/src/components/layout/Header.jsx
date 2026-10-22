@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
 import { COLORS } from '../../constants/colors';
@@ -10,31 +10,8 @@ import meetApi from '../../services/meetApi';
 import { gatheringApi } from '../../services/gatheringApi';
 import { LANG_META, SUPPORTED_LANGS } from '../../i18n';
 import Logo from '../common/Logo';
-import { WORKSPACE_PATHS } from '../workspace/WorkspaceTabs';
-
-// 메뉴 통합 (PLANNING_nav-consolidation.md) — 예전 10개(탐색·갤러리·시리즈·목록·등록/편집·문의함·일정·약속·모임·프로필)를
-// 목적별 4개로: 탐색(갤러리·목록 흡수) · 내 작업(시리즈) · 업무(문의·예약·일정·약속·납품 허브) · 모임.
-// 올리기는 메뉴가 아니라 행동이라 오른쪽 버튼으로, 프로필은 아바타 메뉴로 옮겼다.
-const NAV_ITEMS = [
-  { to: '/explore',    label: '둘러보기' },
-  { to: '/series',     label: '내 작업', auth: true },
-  { to: '/workspace',  label: '업무', badge: 'workspace', match: WORKSPACE_PATHS, auth: true },
-  { to: '/gatherings', label: '모임', badge: 'gatherings' },
-];
-
-const BOTTOM_NAV_ITEMS = [
-  { to: '/explore',   label: '둘러보기', icon: '⊙' },
-  { to: '/series',    label: '내 작업', icon: '✦' },
-  { to: '/photo/new', label: '올리기', icon: '+', isCenter: true },
-  { to: '/workspace', label: '업무',   icon: '▤', match: WORKSPACE_PATHS, badge: 'workspace' },
-  { to: '/profile',   label: '프로필', icon: '◎' },
-];
-
-/** 업무처럼 여러 화면을 한 메뉴로 묶은 경우, 하위 경로 어디에 있어도 활성으로 */
-function isMenuActive(item, pathname, isActive) {
-  if (!item.match) return isActive;
-  return item.match.some(p => pathname === p || pathname.startsWith(`${p}/`));
-}
+import { NAV_ITEMS, BOTTOM_NAV_ITEMS, visibleItems, isMenuActive } from './navConfig';
+import NavIcon from './NavIcon';
 
 function LangSwitcher() {
   const { lang, changeLang } = useLang();
@@ -336,14 +313,22 @@ export default function Header() {
       </header>
 
       {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
-      <BottomNav workspaceCount={unreadCount + pendingMeets} pathname={pathname} />
+      <BottomNav
+        items={visibleItems(BOTTOM_NAV_ITEMS, !!user?.id)}
+        badges={{ workspace: unreadCount + pendingMeets, gatherings: gatheringNotifCount }}
+        pathname={pathname}
+      />
     </>
   );
 }
 
-function BottomNav({ workspaceCount, pathname }) {
+/**
+ * 모바일 하단 탭 — 아이콘만(DESIGN_PROMPT_bottom-nav-icons.md). 항목·배지는 navConfig에서 오므로 탭 수가 바뀌어도 이 코드는 그대로다.
+ * 글자가 없으니 aria-label(배지 수 포함)·title로 이름을 전한다.
+ */
+function BottomNav({ items, badges, pathname }) {
   return (
-    <nav className="h-mobile" style={{
+    <nav className="h-mobile" aria-label="주요 메뉴" style={{
       position: 'fixed', left: 12, right: 12, zIndex: 200,
       bottom: 'calc(10px + env(safe-area-inset-bottom))',
       height: 60,
@@ -351,64 +336,49 @@ function BottomNav({ workspaceCount, pathname }) {
       borderRadius: 999,
       border: `1px solid ${COLORS.border}`,
       boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+      display: 'flex', alignItems: 'stretch', padding: '0 6px',
     }}>
-      {BOTTOM_NAV_ITEMS.map((item) => {
+      <style>{`
+        .bn-tab { transition: transform 0.12s ease-out; -webkit-tap-highlight-color: transparent; }
+        .bn-tab:active { transform: scale(0.92); }
+        .bn-tab:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: -4px; border-radius: 999px; }
+        @media (prefers-reduced-motion: reduce) { .bn-tab { transition: none; } }
+      `}</style>
+      {items.map((item) => {
         const { to, label, icon, isCenter, badge } = item;
+        const count = badge ? badges[badge] || 0 : 0;
+        const name = count > 0 ? `${label}, 새 알림 ${count}건` : label;
+        // NavLink와 같은 규칙(경로 또는 그 하위) + 업무처럼 여러 화면을 묶은 탭은 match 목록으로 판정
+        const isActive = !isCenter && isMenuActive(item, pathname, pathname === to || pathname.startsWith(`${to}/`));
         return (
-        <NavLink
-          key={to} to={to}
-          style={({ isActive: raw }) => {
-            const isActive = isMenuActive(item, pathname, raw);
-            return ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', gap: isCenter ? 0 : 3,
-            textDecoration: 'none', flex: 1, padding: '6px 0',
-            color: isActive && !isCenter ? COLORS.text : COLORS.textMuted,
-            transition: `color 0.2s, transform 0.25s ${SPRING}`,
-            transform: 'scale(1)',
-            position: 'relative',
-          });
-          }}
-        >
-          {({ isActive: raw }) => {
-            const isActive = isMenuActive(item, pathname, raw);
-            return (
-            <>
-              {isActive && !isCenter && (
-                <span style={{
-                  position: 'absolute', top: 0, left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 24, height: 2, borderRadius: 99,
-                  background: COLORS.primary,
-                }} />
-              )}
-              {isCenter ? (
-                <div style={{
-                  width: 46, height: 46, borderRadius: '50%',
-                  background: COLORS.primary,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 22, fontWeight: 700,
-                }}>+</div>
-              ) : (
-                <>
-                  <span style={{ fontSize: 19, lineHeight: 1, position: 'relative' }}>
-                    {icon}
-                    {badge === 'workspace' && workspaceCount > 0 && (
-                      <span aria-label={`처리할 일 ${workspaceCount}건`} style={{
-                        position: 'absolute', top: -4, right: -10, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 99,
-                        background: COLORS.danger, color: '#fff', fontSize: 9, fontWeight: 800,
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      }}>{workspaceCount > 99 ? '99+' : workspaceCount}</span>
-                    )}
-                  </span>
-                  <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em' }}>{label}</span>
-                </>
-              )}
-            </>
-            );
-          }}
-        </NavLink>
+          <Link
+            key={to} to={to} className="bn-tab" aria-label={name} title={label} aria-current={isActive ? 'page' : undefined}
+            style={{ flex: 1, minWidth: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', position: 'relative' }}
+          >
+            {isCenter ? (
+              <span style={{ width: 46, height: 46, borderRadius: '50%', background: COLORS.primary, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <NavIcon name={icon} size={24} active />
+              </span>
+            ) : (
+              <>
+                {isActive && (
+                  <span aria-hidden="true" style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                    width: 20, height: 2, borderRadius: 99, background: COLORS.primary }} />
+                )}
+                <span style={{ position: 'relative', display: 'flex', color: isActive ? COLORS.primary : COLORS.textMuted, transition: 'color 0.2s' }}>
+                  <NavIcon name={icon} size={24} active={isActive} />
+                  {count > 0 && (
+                    <span aria-hidden="true" style={{
+                      position: 'absolute', top: -8, right: -14, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 99,
+                      background: COLORS.danger, color: '#fff', fontSize: 9, fontWeight: 800, border: `2px solid ${COLORS.surface}`,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'content-box', lineHeight: 1,
+                    }}>{count > 99 ? '99+' : count}</span>
+                  )}
+                </span>
+              </>
+            )}
+          </Link>
         );
       })}
     </nav>
