@@ -141,21 +141,37 @@ public class PortfolioController {
         // 템플릿 화이트리스트 검증
         String template = (String) body.get("template");
         if (template != null) {
-            List<String> allowed = List.of("SCRL", "EDITORIAL", "FILM", "SPLIT", "MOSAIC", "MAGAZINE", "MINIMAL", "DARK_ROOM");
+            List<String> allowed = List.of("SCRL", "EDITORIAL", "FILM", "SPLIT", "MOSAIC", "MAGAZINE", "MINIMAL", "DARK_ROOM", "BLOCKS");
             if (!allowed.contains(template)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "유효하지 않은 템플릿입니다."));
             }
             member.setPortfolioTemplate(template);
         }
 
+        // 직접 구성(BLOCKS) — 예전엔 아무 문자열(크기 무제한)이나 저장됐다. 검증·정규화 후 저장 (PLANNING_portfolio-blocks.md)
         if (body.containsKey("styleJson")) {
-            member.setPortfolioStyleJson((String) body.get("styleJson"));
+            member.setPortfolioStyleJson(PortfolioLayoutValidator.normalizeStyle(asJsonText(body.get("styleJson"))));
         }
         if (body.containsKey("sectionsJson")) {
-            member.setPortfolioSectionsJson((String) body.get("sectionsJson"));
+            member.setPortfolioSectionsJson(PortfolioLayoutValidator.normalizeSections(asJsonText(body.get("sectionsJson"))));
         }
 
         memberRepository.save(member);
-        return ResponseEntity.ok(Map.of("status", "success", "template", member.getPortfolioTemplate()));
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "success");
+        res.put("template", member.getPortfolioTemplate());
+        res.put("sectionsJson", member.getPortfolioSectionsJson());
+        res.put("styleJson", member.getPortfolioStyleJson());
+        return ResponseEntity.ok(res);
+    }
+
+    /** 문자열 JSON으로도, 객체로도 받는다(객체면 직렬화). 그 외 타입은 형식 오류로 처리된다. */
+    private static String asJsonText(Object v) {
+        if (v == null || v instanceof String) return (String) v;
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(v);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "구성 형식이 올바르지 않습니다.");
+        }
     }
 }

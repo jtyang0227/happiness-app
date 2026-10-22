@@ -12,8 +12,8 @@
 | # | 상태 | 항목 | 메모 |
 |---|---|---|---|
 | 1 | ✅ | 기획·디자인 프롬프트 (Behance 대조 — 네트워크 차단으로 공개 기능 기준) | |
-| 2 | 🔄 | 서버: `PortfolioLayoutValidator` + BLOCKS 템플릿 + 통합 테스트 | |
-| 3 | ⏳ | 웹: 블록 레지스트리·렌더러 12종 + `TemplateBlocks` | |
+| 2 | ✅ | 서버: `PortfolioLayoutValidator` + BLOCKS 템플릿 + 통합 테스트 | 테스트 52개 통과 |
+| 3 | 🔄 | 웹: 블록 레지스트리·렌더러 12종 + `TemplateBlocks` | |
 | 4 | ⏳ | 웹: `/portfolio-builder` 편집 화면 + 프로필 템플릿 카드 | |
 | 5 | ⏳ | 검증(빌드·테스트·브라우저 390/1280) + 문서 반영 + 커밋 | |
 

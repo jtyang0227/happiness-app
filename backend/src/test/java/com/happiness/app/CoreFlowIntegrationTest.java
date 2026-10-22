@@ -1398,4 +1398,68 @@ class CoreFlowIntegrationTest {
                         .content(om.writeValueAsString(Map.of("password", "secret12", "feedback", "좋아요"))))
                 .andExpect(status().is2xxSuccessful());
     }
+
+    // ── 포트폴리오 직접 구성(BLOCKS) — PLANNING_portfolio-blocks.md ─────────────────
+
+    @Test
+    void 직접_구성은_정규화되어_저장되고_공개_설정으로_읽힌다() throws Exception {
+        User u = signupAndLogin();
+        String sections = om.writeValueAsString(Map.of("version", 1, "blocks", List.of(
+                Map.of("id", "hero", "type", "hero", "props", Map.of("tagline", "<b>빛</b>을 찍습니다", "align", "center", "future", "x")),
+                Map.of("id", "BAD ID!", "type", "photos", "visible", false, "props", Map.of("columns", 9, "limit", 1, "genre", "WEDDING")),
+                Map.of("type", "text", "props", Map.of("title", "작업 방식", "body", "a".repeat(2500))))));
+        String style = om.writeValueAsString(Map.of("accent", "#00c471", "background", "paper", "spacing", "airy", "headingFont", "serif"));
+
+        mvc.perform(put("/api/portfolio/" + u.profileName() + "/template").header("Authorization", bearer(u))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("template", "BLOCKS", "sectionsJson", sections, "styleJson", style))))
+                .andExpect(status().isOk());
+
+        String cfg = mvc.perform(get("/api/portfolio/" + u.profileName() + "/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.template").value("BLOCKS"))
+                .andReturn().getResponse().getContentAsString();
+        var saved = om.readTree(om.readTree(cfg).get("sectionsJson").asText());
+        var blocks = saved.get("blocks");
+        assertThat(blocks).hasSize(3);
+        assertThat(blocks.get(0).get("props").get("tagline").asText()).isEqualTo("빛을 찍습니다");   // 태그 제거
+        assertThat(blocks.get(0).get("props").has("future")).isFalse();                              // 모르는 설정 키 버림
+        assertThat(blocks.get(1).get("id").asText()).matches("[a-z0-9-]{1,24}");                     // 잘못된 id 재발급
+        assertThat(blocks.get(1).get("visible").asBoolean()).isFalse();
+        assertThat(blocks.get(1).get("props").get("columns").asInt()).isEqualTo(4);                   // 범위 클램프
+        assertThat(blocks.get(1).get("props").get("limit").asInt()).isEqualTo(3);
+        assertThat(blocks.get(2).get("props").get("body").asText()).hasSize(2000);                    // 길이 컷
+        var savedStyle = om.readTree(om.readTree(cfg).get("styleJson").asText());
+        assertThat(savedStyle.get("accent").asText()).isEqualTo("#00C471");
+    }
+
+    @Test
+    void 잘못된_직접_구성은_400_사유와_함께_거절된다() throws Exception {
+        User u = signupAndLogin();
+        String path = "/api/portfolio/" + u.profileName() + "/template";
+        java.util.function.Function<Object, String> body = sj -> {
+            try { return om.writeValueAsString(Map.of("template", "BLOCKS", "sectionsJson", sj)); }
+            catch (Exception e) { throw new RuntimeException(e); }
+        };
+        mvc.perform(put(path).header("Authorization", bearer(u)).contentType(MediaType.APPLICATION_JSON)
+                        .content(body.apply("{\"blocks\":[{\"type\":\"script\"}]}")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("알 수 없는 블록")));
+        mvc.perform(put(path).header("Authorization", bearer(u)).contentType(MediaType.APPLICATION_JSON)
+                        .content(body.apply("not json")))
+                .andExpect(status().isBadRequest());
+        StringBuilder many = new StringBuilder("{\"blocks\":[");
+        for (int i = 0; i < 31; i++) many.append(i == 0 ? "" : ",").append("{\"type\":\"text\"}");
+        mvc.perform(put(path).header("Authorization", bearer(u)).contentType(MediaType.APPLICATION_JSON)
+                        .content(body.apply(many.append("]}").toString())))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path).header("Authorization", bearer(u)).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("styleJson", "{\"accent\":\"red\"}"))))
+                .andExpect(status().isBadRequest());
+        // 남의 포트폴리오는 기존대로 403
+        User other = signupAndLogin();
+        mvc.perform(put(path).header("Authorization", bearer(other)).contentType(MediaType.APPLICATION_JSON)
+                        .content(body.apply("{\"blocks\":[]}")))
+                .andExpect(status().isForbidden());
+    }
 }
