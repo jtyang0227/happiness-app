@@ -317,6 +317,7 @@ export default function Header() {
         items={visibleItems(BOTTOM_NAV_ITEMS, !!user?.id)}
         badges={{ workspace: unreadCount + pendingMeets, gatherings: gatheringNotifCount }}
         pathname={pathname}
+        user={user}
       />
     </>
   );
@@ -326,61 +327,91 @@ export default function Header() {
  * 모바일 하단 탭 — 아이콘만(DESIGN_PROMPT_bottom-nav-icons.md). 항목·배지는 navConfig에서 오므로 탭 수가 바뀌어도 이 코드는 그대로다.
  * 글자가 없으니 aria-label(배지 수 포함)·title로 이름을 전한다.
  */
-function BottomNav({ items, badges, pathname }) {
+const BAR = COLORS.text; // 하단 바: 단색 다크 알약(blur 없음 — Toss 플랫 규칙)
+
+function TabAvatar({ user, active }) {
+  const [broken, setBroken] = useState(false);
+  const initial = (user?.name || user?.profileName || '?').trim().charAt(0).toUpperCase();
+  return (
+    <span style={{
+      width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: COLORS.primary, color: '#fff', fontSize: 12, fontWeight: 800,
+      boxShadow: active ? `0 0 0 2px ${BAR}, 0 0 0 4px #fff` : '0 0 0 1.5px rgba(255,255,255,0.35)',
+      transition: 'box-shadow 0.2s ease-out',
+    }}>
+      {user?.avatarUrl && !broken
+        ? <img src={user.avatarUrl} alt="" onError={() => setBroken(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : initial}
+    </span>
+  );
+}
+
+function BottomNav({ items, badges, pathname, user }) {
+  const tabs = items.filter(i => !i.isCenter);
+  const action = items.find(i => i.isCenter);
   return (
     <nav className="h-mobile" aria-label="주요 메뉴" style={{
       position: 'fixed', left: 12, right: 12, zIndex: 200,
       bottom: 'calc(10px + env(safe-area-inset-bottom))',
-      height: 60,
-      background: COLORS.surface,
-      borderRadius: 999,
-      border: `1px solid ${COLORS.border}`,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-      display: 'flex', alignItems: 'stretch', padding: '0 6px',
+      display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'none',
     }}>
       <style>{`
-        .bn-tab { transition: transform 0.12s ease-out; -webkit-tap-highlight-color: transparent; }
+        .bn-tab { transition: transform 0.12s ease-out; -webkit-tap-highlight-color: transparent; pointer-events: auto; }
         .bn-tab:active { transform: scale(0.92); }
-        .bn-tab:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: -4px; border-radius: 999px; }
-        @media (prefers-reduced-motion: reduce) { .bn-tab { transition: none; } }
+        .bn-tab:focus-visible { outline: 2px solid #fff; outline-offset: -2px; border-radius: 999px; }
+        .bn-cap { transition: background-color 0.2s ease-out; }
+        @media (prefers-reduced-motion: reduce) { .bn-tab, .bn-cap { transition: none; } }
       `}</style>
-      {items.map((item) => {
-        const { to, label, icon, isCenter, badge } = item;
-        const count = badge ? badges[badge] || 0 : 0;
-        const name = count > 0 ? `${label}, 새 알림 ${count}건` : label;
-        // NavLink와 같은 규칙(경로 또는 그 하위) + 업무처럼 여러 화면을 묶은 탭은 match 목록으로 판정
-        const isActive = !isCenter && isMenuActive(item, pathname, pathname === to || pathname.startsWith(`${to}/`));
-        return (
-          <Link
-            key={to} to={to} className="bn-tab" aria-label={name} title={label} aria-current={isActive ? 'page' : undefined}
-            style={{ flex: 1, minWidth: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', position: 'relative' }}
-          >
-            {isCenter ? (
-              <span style={{ width: 46, height: 46, borderRadius: '50%', background: COLORS.primary, color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <NavIcon name={icon} size={24} active />
-              </span>
-            ) : (
-              <>
-                {isActive && (
-                  <span aria-hidden="true" style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 20, height: 2, borderRadius: 99, background: COLORS.primary }} />
+      <div style={{
+        flex: 1, height: 60, minWidth: 0, pointerEvents: 'auto',
+        background: BAR, borderRadius: 999,
+        boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
+        display: 'flex', alignItems: 'center', padding: '0 6px',
+      }}>
+        {tabs.map((item) => {
+          const { to, label, icon, badge, avatar } = item;
+          const count = badge ? badges[badge] || 0 : 0;
+          const name = count > 0 ? `${label}, 새 알림 ${count}건` : label;
+          // NavLink와 같은 규칙(경로 또는 그 하위) + 업무처럼 여러 화면을 묶은 탭은 match 목록으로 판정
+          const isActive = isMenuActive(item, pathname, pathname === to || pathname.startsWith(`${to}/`));
+          return (
+            <Link
+              key={to} to={to} className="bn-tab" aria-label={name} title={label} aria-current={isActive ? 'page' : undefined}
+              style={{ flex: 1, minWidth: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+            >
+              {/* Instagram처럼 활성 탭만 둥근 캡슐 배경 */}
+              <span className="bn-cap" style={{
+                position: 'relative', width: 52, height: 40, borderRadius: 999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                color: isActive ? '#fff' : 'rgba(255,255,255,0.62)',
+              }}>
+                {avatar && user?.id
+                  ? <TabAvatar user={user} active={isActive} />
+                  : <NavIcon name={icon} size={24} active={isActive} cut={BAR} />}
+                {count > 0 && (
+                  <span aria-hidden="true" style={{
+                    position: 'absolute', top: 1, right: 6, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 99,
+                    background: COLORS.danger, color: '#fff', fontSize: 9, fontWeight: 800, border: `2px solid ${BAR}`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'content-box', lineHeight: 1,
+                  }}>{count > 99 ? '99+' : count}</span>
                 )}
-                <span style={{ position: 'relative', display: 'flex', color: isActive ? COLORS.primary : COLORS.textMuted, transition: 'color 0.2s' }}>
-                  <NavIcon name={icon} size={24} active={isActive} />
-                  {count > 0 && (
-                    <span aria-hidden="true" style={{
-                      position: 'absolute', top: -8, right: -14, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 99,
-                      background: COLORS.danger, color: '#fff', fontSize: 9, fontWeight: 800, border: `2px solid ${COLORS.surface}`,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'content-box', lineHeight: 1,
-                    }}>{count > 99 ? '99+' : count}</span>
-                  )}
-                </span>
-              </>
-            )}
-          </Link>
-        );
-      })}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+      {/* Cosmos의 검색 원처럼 주요 행동은 알약 밖 별도 원 */}
+      {action && (
+        <Link to={action.to} className="bn-tab" aria-label={action.label} title={action.label} style={{
+          width: 56, height: 56, borderRadius: '50%', flexShrink: 0, textDecoration: 'none',
+          background: COLORS.primary, color: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <NavIcon name={action.icon} size={26} />
+        </Link>
+      )}
     </nav>
   );
 }

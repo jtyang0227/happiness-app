@@ -2,7 +2,8 @@ import { WORKSPACE_PATHS } from '../workspace/WorkspaceTabs';
 
 /*
  * 메뉴 설정 한 곳 — 상단(PC) 메뉴와 하단(모바일) 탭이 모두 여기서 읽는다.
- * 항목: { to, label, icon, auth(로그인 필요), guestOnly(비로그인만), match(하위 경로도 활성), badge(badges 객체의 키), isCenter }
+ * 항목: { to, label, icon, auth(로그인 필요), guestOnly(비로그인만), match(하위 경로도 활성), badge(badges 객체의 키),
+ *        isCenter(알약 밖 오른쪽 원형 주요 행동), avatar(로그인 회원 사진으로 표시) }
  * 탭을 늘리거나 바꿀 때는 이 배열만 고치면 된다. 아이콘 이름은 NavIcon의 PATHS 키.
  *
  * 메뉴 통합 (PLANNING_nav-consolidation.md) — 예전 10개를 목적별 4개로: 둘러보기 · 내 작업 · 업무(문의·예약·일정·약속·납품 허브) · 모임.
@@ -21,7 +22,7 @@ export const BOTTOM_NAV_ITEMS = [
   { to: '/gatherings', label: '모임',     icon: 'gatherings', badge: 'gatherings', guestOnly: true },
   { to: '/photo/new',  label: '사진 올리기', icon: 'plus', isCenter: true, auth: true },
   { to: '/workspace',  label: '업무',     icon: 'workspace', match: WORKSPACE_PATHS, badge: 'workspace', auth: true },
-  { to: '/profile',    label: '프로필',   icon: 'profile', auth: true },
+  { to: '/profile',    label: '프로필',   icon: 'profile', avatar: true, auth: true },
   { to: '/login',      label: '로그인',   icon: 'login', guestOnly: true },
 ];
 

@@ -63,7 +63,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 10-22 | (이 커밋) | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |
+| 10-22 | (이 커밋) | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |
+| 10-22 | 2dc0f60 | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |
 | 10-22 | 8dfe427 | 보안 점검 8건(JWT 기본값, 납품 비밀번호, 팔로우·피드·태그·공유·AI 태그 IDOR) | `planning/SECURITY_AUDIT_2026-10-22.md` |
 | 10-21 | 0131220 | 웹 화면 깨짐·위치 정리(390/1280 가로 넘침 0) | `design/DESIGN_PROMPT_web-layout-polish.md` |
 | 10-21 | f389434 | 모바일 UI/UX 정리(흰 헤더·노치·대비·진입점) | `design/DESIGN_PROMPT_mobile-ux-polish.md` |

@@ -95,8 +95,8 @@ export default function ChatWidget() {
           bottom: 88px;
         }
         @media (max-width: 767px) {
-          .assistant-fab   { bottom: calc(76px + env(safe-area-inset-bottom)); }
-          .assistant-panel { bottom: calc(140px + env(safe-area-inset-bottom)); }
+          .assistant-fab   { bottom: calc(84px + env(safe-area-inset-bottom)); }
+          .assistant-panel { bottom: calc(148px + env(safe-area-inset-bottom)); }
         }
       `}</style>
 
