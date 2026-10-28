@@ -2847,6 +2847,13 @@ PR 시: 1, 2번(CI)만 실행
   보드 공유 링크, e8fede9 — 재배포 트리거)에는 Railway가 상태·deployment를 **전혀 남기지 않았다**(백엔드 무변경 커밋에는 "No deployment needed"를
   정상 기록). 웹훅은 살아 있고 배포 단계에서 막힌 것으로 보인다 — Railway 대시보드의 Deployments 탭·요금제/사용량·서비스 일시정지 여부 확인 필요.
   그 전까지 운영 웹(Vercel)은 새 코드, 운영 API는 이전 코드라 "비슷한 사진"은 빈 섹션으로 숨겨지고 보드 공유 링크 만들기는 실패한다.
+- **백엔드 자동 배포를 Actions로 이전(2026-10-28)**: `deploy-backend` job이 `docker-build`가 아니라 `backend-ci`(테스트 통과) 뒤에 실행되고,
+  `backend/` 변경이 있는 master push(또는 Actions 탭 수동 실행 `workflow_dispatch`)에만 `railway up --ci --service $RAILWAY_SERVICE`로 배포 →
+  `API_HEALTH_URL`(기본 `https://api.happiness.io.kr/actuator/health`)이 5분 안에 UP인지 확인(아니면 job 실패). 업로드는 저장소 루트 기준(서비스
+  Root Directory=backend·`backend/railway.toml` 그대로). **수정**: 예전 job은 `--service backend`(실제 서비스 이름은 "happiness-app" 추정)·`--detach`
+  (빌드 실패해도 성공)로 토큰이 있어도 실패·오탐했을 것. **사용자가 할 일**: Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰, production 환경) 등록,
+  서비스 이름이 다르면 Variable `RAILWAY_SERVICE`. 토큰이 없으면 지금처럼 경고만 남기고 건너뛴다. Railway GitHub 연동이 다시 살아나면 같은 커밋이
+  두 번 배포될 수 있으니 한쪽(대시보드 Settings › Source의 자동 배포)을 끈다.
 - 클라우드 개발 세션에서는 egress 정책으로 `*.happiness.io.kr`·`*.vercel.app`에 직접 접속할 수 없어, 운영 상태는 GitHub API
   (`gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`, `.../deployments`)로만 확인할 수 있다.
 

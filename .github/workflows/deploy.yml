@@ -5,6 +5,8 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  # Actions 탭에서 수동 배포 (백엔드 변경 여부와 무관하게 Railway 배포)
+  workflow_dispatch:
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -28,8 +30,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Java 21로 Gradle 실행. build.gradle toolchain=25 이므로
-      # Gradle이 Adoptium에서 JDK 25를 자동 다운로드(auto-provision)함.
       - name: Set up Java 21 (Gradle host JVM)
         uses: actions/setup-java@v4
         with:
@@ -139,36 +139,69 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ────────────────────────────────────────────────────────────────────
-  # 4. Deploy Backend → Railway (master 브랜치만)
+  # 4. Deploy Backend → Railway (master push 중 backend/ 변경 시, 또는 수동 실행)
+  #
+  # Railway GitHub 연동이 2026-10-20 이후 백엔드 커밋을 배포하지 않아 Actions가 직접 배포한다.
+  # 필요: Secret RAILWAY_TOKEN(프로젝트 토큰 — Railway › 프로젝트 Settings › Tokens, production 환경).
+  # 선택: Variable RAILWAY_SERVICE(기본 happiness-app), API_HEALTH_URL(기본 api.happiness.io.kr).
+  # 업로드는 저장소 루트 기준 — 서비스의 Root Directory(backend) 설정과 backend/railway.toml을 그대로 쓴다.
   # ────────────────────────────────────────────────────────────────────
   deploy-backend:
     name: Deploy Backend (Railway)
     runs-on: ubuntu-latest
-    needs: docker-build
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: backend-ci
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE || 'happiness-app' }}
+      API_HEALTH_URL: ${{ vars.API_HEALTH_URL || 'https://api.happiness.io.kr/actuator/health' }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Check Railway token
-        id: railway-check
+      - name: Decide whether to deploy
+        id: decide
         run: |
-          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
-            echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::warning::RAILWAY_TOKEN secret이 설정되지 않았습니다. 배포를 건너뜁니다."
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "::warning::RAILWAY_TOKEN secret이 없어 백엔드 배포를 건너뜁니다. GitHub › Settings › Secrets and variables › Actions 에 등록하세요."
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deploy=true" >> $GITHUB_OUTPUT; exit 0
+          fi
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            echo "deploy=true" >> $GITHUB_OUTPUT; exit 0   # 비교 기준이 없으면 배포
+          fi
+          if git diff --quiet "$BEFORE" "${{ github.sha }}" -- backend/; then
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "backend/ 변경 없음 — 배포 생략"
           else
-            echo "configured=true" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Install Railway CLI
-        if: steps.railway-check.outputs.configured == 'true'
-        run: npm install -g @railway/cli
+        if: steps.decide.outputs.deploy == 'true'
+        run: npm install -g @railway/cli@5.71.0
 
-      - name: Deploy to Railway
-        if: steps.railway-check.outputs.configured == 'true'
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend --detach
+      - name: Deploy to Railway (빌드 로그를 끝까지 보고 실패하면 job 실패)
+        if: steps.decide.outputs.deploy == 'true'
+        run: railway up --ci --service "$RAILWAY_SERVICE" --message "${{ github.sha }}"
+
+      - name: Health check
+        if: steps.decide.outputs.deploy == 'true'
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "$API_HEALTH_URL" | grep -q '"UP"'; then
+              echo "API UP ($API_HEALTH_URL)"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::배포 후 5분 동안 $API_HEALTH_URL 이 UP이 아닙니다. Railway 대시보드 Deploy Logs를 확인하세요."
+          exit 1
 
   # ────────────────────────────────────────────────────────────────────
   # 5. Deploy Frontend → Vercel (master 브랜치만)

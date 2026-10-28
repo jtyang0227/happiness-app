@@ -53,10 +53,11 @@
 ## 7. 운영·배포 현황
 - Vercel: GitHub 앱 연동으로 master push마다 Production — 정상.
 - Railway: GitHub 앱 연동, `backend/` 변경 시에만 배포. **2026-10-20 13:49(256718e) 이후 배포가 멈춰 있음(⏸ 사용자 대시보드 확인 필요)** — 그 뒤 백엔드 수정(비슷한 사진, 보드 공유, 계정 찾기, 개인정보, 신고·차단, 보안 점검)은 운영 API에 미반영. 재배포 관례: `backend/railway.toml`의 `# redeploy-trigger-N` 숫자 올리기.
-- GitHub Actions 배포 job은 시크릿이 없어 매번 건너뜀(실배포 0회) — CI 빌드·테스트 용도.
+- GitHub Actions: 백엔드는 `deploy-backend`가 테스트 통과 후 `backend/` 변경 시 `railway up --ci` + health 확인(2026-10-28). **Secret `RAILWAY_TOKEN` 없으면 건너뜀** — 등록 필요. 수동 배포는 Actions › CI/CD — Deploy › Run workflow.
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
 - Railway: `JWT_SECRET` 설정 확인(없으면 재시작마다 로그인 풀림), 멈춘 배포 원인 확인 후 재배포, 메일(`MAIL_*`)·`FRONTEND_URL`.
 - 앱 스토어: Expo SDK 49 → 최신 업그레이드(Play targetSdk 35·최신 Xcode), 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
 
