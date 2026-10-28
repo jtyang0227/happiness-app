@@ -8,7 +8,12 @@
       "Glob(*)",
       "Grep(*)",
       "mcp__claude_ai_Google_Drive__*",
-      "mcp__Gmail__*"
+      "mcp__Gmail__*",
+      "mcp__jenkins__list_jobs",
+      "mcp__jenkins__get_build_status"
+    ],
+    "ask": [
+      "mcp__jenkins__trigger_build"
     ],
     "defaultMode": "acceptEdits"
   },

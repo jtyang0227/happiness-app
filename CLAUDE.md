@@ -1557,6 +1557,1167 @@ API base URL:
 
 ### Claude Code 개발 도구 MCP 서버 (`.mcp.json`)
 
+**주의**: 위 `mcp-server/`(제품 기능)와 별개로, Claude Code로 이 저장소를 개발할 때 쓰는 **무료** 개발도구 MCP 3종을
+project scope로 등록한다(2026-10-28 교체 — 유료 API가 필요한 perplexity·firecrawl과 URL이 비어 연결 실패하던 composio는 제거,
+필요하면 git 이력에서 복원). 시크릿은 `${VAR}`로만 참조하고 값은 `.env`(커밋 금지)에 둔다 — 목록은 `.env.example`.
+Claude Code는 `.env`를 자동으로 읽지 않으므로 `set -a && source .env && set +a && claude`로 실행한다.
+
+- **github** — 공식 원격 서버 `https://api.githubcopilot.com/mcp/`(HTTP), `Authorization: Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}`(무료 PAT).
+- **jenkins** — `uvx --with "mcp<2" jenkins-mcp`(PyPI 0.1.1). **함정**: 의존성 상한이 없어 그대로 `uvx jenkins-mcp`면 `mcp` 2.x가 깔려
+  `No module named 'mcp.server.fastmcp'`로 시작조차 못 한다 → `mcp<2` 고정. 도구는 `list_jobs`·`get_build_status`(조회, 허용)·
+  `trigger_build`(빌드 실행 — `.claude/settings.json`의 `permissions.ask`로 **항상 확인**). 패키지는 `JENKINS_USE_API_TOKEN`을 읽지 않고
+  `JENKINS_PASSWORD`에 API 토큰을 넣으면 그대로 동작한다.
+- **playwright** — `npx -y @playwright/mcp@latest`(키 불필요).
+
+**검증**: `claude mcp list` — 3개 모두 등록, 새 project 서버라 "Pending approval"(대화형 `claude`에서 한 번 승인), 환경변수 미설정 경고.
+Playwright `--version` 0.0.83, jenkins-mcp는 MCP `tools/list`로 도구 3개 응답 확인. GitHub 원격 서버는 클라우드 세션 네트워크 정책상 접속 불가(HTTP 000)라 미확인.
+
+### Docker (로컬 전체 스택 실행)
+```bash
+# 루트에서
+cp .env.local.example .env.local   # 처음 한 번만 — 실제 값 채울 것
+docker-compose up --build          # backend + redis 컨테이너 기동
+docker-compose down                # 종료
+```
+
+---
+
+## Deployment Architecture
+
+```
+User (Web / iOS / Android)
+       │
+       ▼
+Cloudflare (무료 DNS + SSL + CDN + DDoS 보호)
+       │
+ ┌─────┴──────────────┐
+ ▼                    ▼
+app.example.com    api.example.com
+ │                    │
+Vercel             Railway
+React SPA          Spring Boot
+(무료)             (Hobby $5/월)
+                       │
+          ┌────────────┼──────────────┐
+          ▼            ▼              ▼
+     Supabase      Supabase       Upstash Redis
+     PostgreSQL    Storage        (무료 10K cmd/일)
+     (무료 500MB)  (무료 1GB)
+```
+
+### 서비스별 역할
+
+| 영역 | 서비스 | 비용 |
+|------|--------|------|
+| Frontend | Vercel | 무료 |
+| Backend | Railway | $5/월 |
+| DB | Supabase PostgreSQL | 무료 (500MB) |
+| Storage | Supabase Storage | 무료 (1GB) |
+| Cache | Upstash Redis | 무료 (10K/일) |
+| DNS + SSL | Cloudflare | 무료 |
+| CI/CD | GitHub Actions | 무료 (2000분/월) |
+| 도메인 | .com 구매 | ~$10/년 |
+
+---
+
+## Environment Variables
+
+### 환경변수 관리 원칙
+- **`.env.local`** — 로컬 개발 시크릿 (절대 커밋 금지, .gitignore 포함)
+- **`.env.local.example`** — 팀원 공유용 템플릿 (커밋 가능, 실제 값 없음)
+- **Railway Variables** — 운영 환경변수 (Railway 대시보드에서 설정)
+- **GitHub Secrets** — CI/CD 파이프라인용 시크릿
+
+### 필수 환경변수 목록
+
+```bash
+# Supabase
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY=eyJ...           # 프론트엔드/백엔드 공용
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # 백엔드 전용 (절대 프론트 노출 금지)
+SUPABASE_BUCKET=images
+
+# JWT
+JWT_SECRET=<openssl rand -base64 64>  # 최소 256비트
+
+# Database (운영)
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Redis
+REDIS_URL=redis://default:token@host:port  # 운영 Upstash
+REDIS_HOST=localhost                        # 로컬 개발
+
+# CORS
+CORS_ALLOWED_ORIGINS=https://app.example.com
+
+# Spring
+SPRING_PROFILES_ACTIVE=prod  # 운영 | dev (기본값)
+
+# 메일 (비밀번호 재설정·문의 알림 — 없으면 메일만 안 감) + 재설정 링크 주소
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=you@gmail.com
+MAIL_PASSWORD=<앱 비밀번호>
+MAIL_FROM=noreply@happiness.io.kr
+FRONTEND_URL=https://happiness.io.kr
+
+# Gemini (AI 어시스턴트 챗봇 — 백엔드 전용, aistudio.google.com/apikey 에서 발급)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_MODEL=gemini-2.0-flash  # 선택, 미설정 시 기본값
+
+# Kakao OAuth (프론트엔드 — .env.development / Vercel)
+REACT_APP_KAKAO_APP_KEY=YOUR_KAKAO_REST_API_KEY
+REACT_APP_KAKAO_REDIRECT_URI=https://app.example.com/oauth/kakao/callback
+
+# Google OAuth
+REACT_APP_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+REACT_APP_GOOGLE_REDIRECT_URI=https://app.example.com/oauth/google/callback
+
+# Naver OAuth
+REACT_APP_NAVER_CLIENT_ID=YOUR_NAVER_CLIENT_ID
+REACT_APP_NAVER_REDIRECT_URI=https://app.example.com/oauth/naver/callback
+
+# Apple OAuth (HTTPS 필수)
+REACT_APP_APPLE_CLIENT_ID=com.happiness.gallery.web
+REACT_APP_APPLE_REDIRECT_URI=https://api.example.com/api/auth/oauth/apple/callback
+```
+
+---
+
+## Architecture
+
+### Backend (`com.happiness.app`)
+
+Feature-based package layout:
+
+- **photo/** — Core domain. `PhotoController` exposes REST endpoints for CRUD plus likes/saves/shares/tags. Entities: `Photo`, `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag`. **버그 수정**: `PhotoResponse`가 `memberId`만 담고 작성자 이름/아바타를 전혀 반환하지 않아 PhotoDetailPage·FeedPage·매거진 뷰어 등 모든 화면에서 작성자가 항상 "익명"으로 표시되던 문제 수정 — `memberName`/`memberAvatarUrl`/`memberProfileName` 필드 추가 + `PhotoResponse.attachMember(s)()` 헬퍼로 `MemberRepository` 배치 조회(N+1 방지) 후 채워넣음. `PhotoController.getAllPhotos`/`getPhoto`, `FeedController.getFeed`에 적용. `SeriesController`의 사진 목록은 아직 미적용(known gap).
+- **member/** — Auth & users. `AuthController` handles signup/login/stats/password-change. `KakaoOAuthService` handles Kakao OAuth. `SecurityConfig` (in `config/`) configures Spring Security. `Member` entity includes: avatarUrl, coverUrl, bio, websiteUrl, location, specialties (Phase 2-8 추가). `MemberStatsResponse` — 통계 6종(photoCount/totalLikes/totalSaves/totalShares/inquiryCount/unreadInquiryCount). Endpoints: `GET /member/:id/stats`, `PUT /member/:id/password`, `GET /members/search?q=&size=`(인증된 유저 누구나, 이름/프로필명 검색, 최대 30건, Meets 약속 요청 상대 찾기용 — `MemberRepository.searchByNameOrProfileName`). **버그 수정**: `AuthService.login()`이 `findByEmail(request.getEmail())`을 그대로 사용해 회원가입 시 소문자로 정규화된 이메일과 대소문자가 다르면 로그인이 항상 실패하던 문제 수정 — `.trim().toLowerCase()` 추가(signup과 동일하게 정규화).
+- **privacy/ 개인정보 보호 — 어드민과 같은 기준 (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_privacy-protection-app.md`, 기준은 happiness-admin 커밋 34984ce `PRIVACY_PROTECTION_PLAN.md`(개인정보 보호법 제29조·안전성 확보조치 기준 제5~8조). **발견·수정(치명)**: 비로그인 공개 `GET /api/portfolio/{profileName}`이 작가의 이메일·전화번호가 든 `MemberResponse`를 그대로 반환했고, 로그인 회원이면 누구나 `GET /api/auth/member/{남의 id}`·`/members/search`·`/follows/followers·following`으로 남의 연락처를 볼 수 있었다 → `MemberResponse.withoutContact()`(본인·관리자 외 email/tel null — 화면은 이 값을 쓰지 않음, 전수 grep). 관리자 목록 `GET /api/auth/members`는 `maskedContact()`(`privacy/PrivacyMasker` — 어드민과 같은 규칙 `us***@test.com`·`010-****-0002`, 원문 열람·접속기록은 happiness-admin으로 일원화). 로그인: 문구는 원래 단일, 없는 계정·소셜 계정도 더미 해시와 BCrypt 비교(응답 시간으로 가입 여부 추측 방지), `security/auth/LoginAttemptLimiter`(어드민과 동일, 인메모리) 같은 이메일 5회 실패 → 15분 429, 성공 시 초기화. 웹 `AdminLayout` 30분 무조작 자동 로그아웃(활동 시 유휴 검사 먼저 → 기록, 30초 간격 점검). **의도적으로 안 한 것**: 앱 소유 컬럼(문의 본문·예약 메모 등) 필드 암호화 — 공유 DB에서 어드민도 읽으므로 한쪽만 암호화하면 다른 쪽이 암호문을 표시(어드민 기획서 3절과 같은 이유, 공통 키·블라인드 인덱스 이관은 공동 후속). 사용자 access token은 이미 30분. 통합 테스트 2개.
+- **포트폴리오 "직접 구성"(BLOCKS) (2026-10-22)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_portfolio-blocks.md`(Behance 프로젝트 모듈·스타일 재해석, 네트워크 차단으로 공개 기능 기준), 디자인 `DESIGN_PROMPT_portfolio-blocks.md`. 쓰이지 않던 `members.portfolio_sections_json`·`portfolio_style_json`을 블록 목록 `{version:1, blocks:[{id,type,visible,props}]}`·스타일 `{accent,background,spacing,headingFont}`로 사용(스키마 변경 없음). `portfolio/PortfolioLayoutValidator`(정적 유틸): 원문 20KB·블록 30개·모르는 블록 종류·잘못된 enum/hex → 400 + 사유, 모르는 설정 키는 버림(다음 버전 웹 호환), 문자열 태그 제거·길이 컷, 숫자 클램프, 잘못된 id 재발급. `PUT /api/portfolio/{p}/template`가 BLOCKS 허용 + 두 JSON을 검증·정규화해 저장하고 응답에 정규화된 값을 돌려준다(**보안 수정**: 예전엔 아무 문자열·크기 무제한 저장). **새 블록 = 서버 `BLOCK_PROPS` 한 줄 + 웹 `blocks/blockRegistry.js` 한 항목**. 통합 테스트 2개. 웹: `components/portfolio/blocks/`(`layout.js` 파싱·출발점 3종·스타일 토큰, `PortfolioBlocks.jsx` 12종 — hero·featuredWork·works·photos·text·quote·testimonials·pricing·press·clients·contact·newsletter, `blockRegistry.js` 설정 입력란·요약·`isEmpty`), `templates/TemplateBlocks.jsx`(공개 페이지·편집 미리보기 공용, 신뢰 신호는 그 블록이 있을 때만 로드, 빈 블록은 공개에선 빠지고 미리보기에선 점선 안내, 모르는 블록은 건너뜀), `PortfolioPage`가 config를 `portfolioConfig`로 넘김, `pages/PortfolioBuilderPage.jsx`(`/portfolio-builder`, 보호·Standalone — 출발점 고르기, 블록 ↑↓·보이기·복제·삭제(확인)·추가 카탈로그, 블록 설정, 페이지 스타일, 데스크탑/모바일 미리보기, 저장 전 이탈 경고), `ProfilePage` 템플릿 카드 "직접 구성" + "구성 편집하기". **한계**: 명조 글꼴은 웹폰트를 따로 불러오지 않아 기기 기본 명조, `PricingSection` 등 기존 섹션은 자체 머리말·색을 그대로 씀, 모바일 앱 편집 없음(웹 링크), 드래그 정렬·임베드는 P1.
+- **보안 점검 (2026-10-22)** — `DESIGN_PROMPTS/planning/SECURITY_AUDIT_2026-10-22.md`. 요청 파라미터의 `memberId`를 믿던 곳 정리: 팔로우·언팔로우(`followerId`)·피드(`memberId`, size 1~50)·공유 기록은 본인/관리자 외 403, 사진 태그 추가는 사진 주인만(이름은 서버가 회원 정보로, `memberName` 파라미터는 무시), 태그 삭제는 사진 주인·태그된 본인·관리자만(다른 사진의 태그면 404), AI 자동 태그(유료 비전 API)는 사진 주인만. **납품**: 비밀번호가 걸린 세트도 토큰만으로 승인·반려되던 것 → `approve/reject`에 같은 비밀번호 검사·차단(`verifyPassword`), 의견 2000자, 웹 `ClientDeliveryPage`가 비밀번호를 메모리(`passwordRef`)에 두고 함께 전송. **JWT**: prod 프로필에서 `JWT_SECRET`이 공개 기본값이거나 32바이트 미만이면 `JwtTokenProvider.initKey()`가 실행마다 난수 키 + ERROR 로그(기본값 위조 차단, 서버는 뜨지만 재시작마다 로그인 풀림 — Railway에 `JWT_SECRET` 설정 필요). 테스트: 통합 4개 + `security/jwt/JwtTokenProviderTest` 2개.
+- **member/ 아이디·비밀번호 찾기 (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_account-recovery.md`, 디자인 `DESIGN_PROMPT_account-recovery.md`. `AccountRecoveryController`(`/api/auth`, 전부 공개 — SecurityConfig): `POST /find-email {name,tel}`(이름 일치 + 전화 **숫자만** 비교 — 저장 형식이 섞여 있음, `MemberRepository.findByName`, 응답 `{accounts:[{maskedEmail "ja****@…", provider, joinedAt}]}`), `POST /password-reset/request {email}`(**가입 여부와 무관하게 같은 200 응답** — 열거 방지), `GET /password-reset/verify?token=`(`{valid, maskedEmail}`), `POST /password-reset/confirm {token,newPassword}`(8자 이상 → 저장 → 토큰 사용 처리 → `RefreshTokenStore.deleteAll` 모든 기기 로그아웃). `AccountRecoveryService`: 토큰은 32바이트 난수 URL-safe Base64, DB엔 SHA-256 해시만(`PasswordResetToken`, `password_reset_tokens`), 30분·1회용, 새 요청 시 이전 미사용 토큰 무효(`invalidateActive` bulk). 소셜 가입(비밀번호 없음)에는 재설정 대신 "○○로 로그인" 안내 메일. 링크는 `app.frontend-url`(`FRONTEND_URL`, prod 기본 `https://happiness.io.kr`)로만 만든다(Host 헤더 주입 방지). 메일은 `InquiryEmailService`와 같은 선택 주입 — `MAIL_HOST` 없으면 WARN 로그만, **dev 프로필에서만** 링크를 INFO 로그에 남김(운영 로그엔 토큰 없음). 속도 제한(in-memory, IP = X-Forwarded-For 첫 값): 아이디 찾기 10분 5회, 재설정 요청 10분 5회 + 같은 이메일 1시간 3회(초과는 응답을 바꾸지 않고 조용히 건너뜀), 확정 10분 10회 → 429. 회원 탈퇴 시 토큰 삭제(`MemberService`). 통합 테스트 4개(아이디 찾기·같은 응답·재설정 1회용/만료·429). **한계**: 이미 발급된 access token은 만료까지 유효, 메일 발송이 트랜잭션 안에서 일어남(SMTP가 느리면 DB 연결을 그만큼 붙잡음).
+- **member/service/GoogleOAuthService** — Google OAuth 2.0. `googleLogin(code)` → Token URL: `oauth2.googleapis.com/token`, UserInfo: `googleapis.com/oauth2/v2/userinfo`.
+- **member/service/NaverOAuthService** — 네이버 OAuth 2.0. `naverLogin(code, state)` → Token: `nid.naver.com/oauth2.0/token`, UserInfo: `openapi.naver.com/v1/nid/me`.
+- **member/service/AppleOAuthService** — Apple Sign In. `appleLogin(idToken, userJson)` → id_token JWT 디코딩(base64)으로 sub+email 추출. `generateClientSecret()` → JJWT ES256으로 client_secret JWT 생성.
+- **member/service/AuthService** — `issueTokensForOAuth(MemberResponse, HttpRequest)` 추가 — 소셜 로그인 공통 JWT 발급.
+- **portfolio/** — `PortfolioController` — 공개 포트폴리오. `GET /api/portfolio/{profileName}` (공개, 사진/시리즈/통계 포함). `GET /api/portfolio/{profileName}/config` (공개, 템플릿·스타일·섹션 JSON 반환). `PUT /api/portfolio/{profileName}/template` (인증 필요, IDOR 방지: 본인/ADMIN만). `PortfolioConfigResponse` DTO (`template`, `styleJson`, `sectionsJson`). `Member` 엔티티에 `portfolioTemplate`(VARCHAR 20), `portfolioStyleJson`(TEXT), `portfolioSectionsJson`(TEXT) 3개 컬럼 추가.
+- **series/** — `SeriesController` (`/api/series`) — 시리즈/컬렉션 CRUD. `Series` 엔티티 + `SeriesPhoto` 조인 테이블. GET(목록/상세)은 공개, POST/PUT/DELETE/사진추가제거는 인증 필요. **작업 노트(포트폴리오 컨셉 "Work Notes", 2026-10-20, 기획 `DESIGN_PROMPTS/planning/PLANNING_portfolio-work-notes-concept.md`)**: `Series`에 `shootType`(VARCHAR 30, 문의 폼과 같은 한글 어휘 7종 — `SeriesController.SHOOT_TYPES` ↔ 웹 `constants/shootTypes.js`가 반드시 일치해야 프리필 동작)·`clientLabel`(100자)·`shotOn`(`YYYY.MM`)·`story`(TEXT, 3000자, HTML 태그 제거) 4개 nullable 컬럼 추가. 생성/수정 모두 `applyWorkNote()`로 반영 — null=변경 없음, 빈 문자열=비우기, 잘못된 값은 `ResponseStatusException` 400. **보안 수정**: `POST /api/series`가 요청 `memberId`를 그대로 믿어 남의 명의로 시리즈를 만들 수 있던 IDOR — 본인/관리자 외 403, `memberId` 생략 시 로그인 회원으로 채움. (기존 `getSeries`/포트폴리오의 시리즈 커버 조회가 사진마다 `findById`를 도는 N+1은 이번에 손대지 않은 알려진 갭.) 통합 테스트 3개 추가(저장·공개 조회·비우기 / 잘못된 값 400 / 타인 명의 생성 403). **P2 — 대표 작업**: `Series.pinned`(Boolean, nullable — 기존 행 호환, null=false). `PUT /api/series/{id}` `{pinned:true}` 시 `SeriesRepository.unpinOthers()`(bulk `@Modifying`, 그래서 `updateSeries`에 `@Transactional`)로 같은 작가의 다른 고정 해제 → 작가당 최대 1건. **작업 탐색(2026-10-20, `PLANNING_work-discovery.md`, Behance 분석 P0)**: `GET /api/series/discover?shootType=&location=&page=&size=`(공개, SecurityConfig에 명시) — 공개 포트폴리오 작가의 **사진 1장 이상** 작업만, 최근 수정순, `Slice` 페이징(size 기본 24·최대 60, 응답 `{data,page,size,hasNext}`). `SeriesRepository.discover()`(Series·Member 세타 조인 JPQL + `EXISTS SeriesPhoto`), 모르는 `shootType`은 400 대신 전체, `location`은 작가 위치 부분 일치·대소문자 무시·50자 컷. 작가·가용설정·작업사진·사진을 각 1회 배치 조회(`findBySeriesIdInOrderBySeriesIdAscDisplayOrderAsc`, `BookingAvailabilityRepository.findByMemberIdIn`)해 N+1 없음. 응답 DTO `DiscoverWorkResponse`(작업 요약 + 작가 이름·프로필명·아바타·위치 + `acceptingBookings` + `appreciationCount`/`viewCount`, 이야기 전문 제외). 통합 테스트 2개. **작업 감상(WORK_QUEUE 3)**: `SeriesAppreciation`(`series_appreciations`, UNIQUE series_id+member_id) — `POST/DELETE /api/series/{id}/appreciation`(인증, 멱등, 본인 작업 400, 응답 `{appreciationCount, appreciatedByMe}`), `GET /api/series/{id}/appreciation`(인증 — 내 감상 여부). 공개 `GET /api/series/{id}`에 `appreciationCount`/`viewCount`(작업 노트 `WORK_VIEW` 수, `AnalyticsEventRepository.countWorkViews` 배치 집계)/`appreciatedByMe`. 작업·회원 삭제 시 감상 행도 정리(`deleteSeries`, `MemberService` 탈퇴 cascade). `AnalyticsEvent`에 `idx_analytics_target(target_type, target_id, event_type)` 추가. **함정**: 웹은 access token을 메모리에만 두므로 새로고침 직후 공개 GET에는 토큰이 없고 401도 안 나서 재발급이 안 일어난다 → "…ByMe" 류 값은 공개 응답에서 항상 false. 그래서 내 감상 여부는 인증 경로로 따로 조회한다(같은 문제가 모임 피드 `likedByMe`에도 있음, 미수정). **에디터 추천(큐레이션, WORK_QUEUE 8)**: `Series.featuredAt`(nullable). `AdminSeriesController`(`PUT /api/admin/series/{id}/featured` `{featured}`, URL·`@PreAuthorize` WM/SA 이중 방어, INFO 로그, 초안은 400). 저장은 `SeriesRepository.updateFeaturedAt` bulk UPDATE — 엔티티 save면 `@PreUpdate`가 `updatedAt`을 바꿔 "최근 수정순"이 흔들리기 때문. 탐색 `featured=true`는 `discoverFeatured()`(추천 시각 최근순, 유형·지역·정렬 미적용), 응답 `featured`. 웹: `WorkDiscovery` 필터 없을 때 상단 "✦ 에디터 추천" 가로 띠(최대 8) + 카드 "✦ 에디터 추천" 배지, 어드민 `pages/admin/AdminCurationPage.jsx`(`/admin/curation`, 전체/추천 중 탭, 올리기·내리기 이중 확인 — 내리기는 danger). **작업 초안(WORK_QUEUE 7)**: `Series.draft`(Boolean nullable, 공개는 null로 저장). 초안은 탐색 3개 쿼리·공개 목록 `GET /api/series?memberId=`·포트폴리오 응답에서 빠지고, 공개 상세·감상은 작가 본인/관리자 외 404(`visibleToRequester`). 작가 관리 화면은 **`GET /api/series/mine`**(인증, 초안 포함 — `SecurityConfig`에서 `/api/series/{id}` 공개 패턴보다 먼저 `authenticated()`로 명시해야 401→재발급이 동작)을 쓴다: 웹 `SeriesPage`·`ProfilePage` 시리즈 탭·`PortfolioContentManager`, 모바일 `SeriesScreen`. 웹 모달 "초안으로 두기" 체크박스, 카드 "초안" 배지, 초안은 작업 페이지 링크·대표 토글 숨김(모바일도 대표 토글 숨김 + "초안 ·" 표시). **함께한 사람(크레딧, WORK_QUEUE 6)**: `Series.creditsJson`(TEXT, `[{role,name,profileName}]`) — 예약 체크리스트처럼 작업에 딸린 짧은 목록이라 별도 테이블 없음(`dto/CreditsJson` 읽기/쓰기, 깨진 JSON은 빈 목록). `SeriesRequest.credits`(null=변경 없음, []=비우기) → `applyCredits()`: 최대 20명, 역할 20자·이름 40자 필수, 빈 줄 무시, 태그 제거, `@프로필명` 형식만 검사(존재는 강제 안 함 — 나중에 가입하는 협업자). 상세 조회는 `withLinks()`가 `findByProfileNameIn` 한 번으로 공개 회원이면 `linked=true`. 웹: `SeriesPage` 모달 "함께한 사람" fieldset(역할 datalist 제안·이름·@프로필명, 한 칸만 채운 줄은 저장 막음), `WorkCasePage` "함께한 사람" 정의 목록(연결된 사람은 포트폴리오 링크). **탐색 정렬(WORK_QUEUE 4)**: discover `sort=recent|appreciated|viewed`(모르는 값은 recent) — `SeriesRepository.discoverByAppreciation/discoverByViews`가 `ORDER BY (SELECT COUNT…)` 서브쿼리로 DB 정렬(페이지 경계에서도 정확). 사진 `GET /api/photos?sortBy=views`: `page` 경로는 `PhotoRepository.searchPageByViews`(PHOTO_VIEW 서브쿼리 정렬), 키워드·태그·비페이지 경로는 `AnalyticsEventRepository.countPhotoViews` 배치 집계 후 메모리 안정 정렬. 웹 탐색 사진 정렬에 "조회 순", 작업 탭에 정렬 select, 모바일 작업 탭에 최근/감상순/조회순. 웹: `WorkCasePage` 메타 아래 "조회 n · 감상 n" + 👏 감상 토글(낙관적 반영·실패 시 롤백, 비로그인은 로그인으로, 작가 본인은 수치만), 탐색 카드·모바일 카드에 "👏 n · 👁 n".
+- **inquiry/** — `InquiryController` (`/api/inquiry`) — 촬영 문의. `Inquiry` 엔티티. POST(문의 전송)는 공개. `InquiryEmailService`는 `@Autowired(required=false)`로 메일 서버 없어도 동작. 수신함/읽음처리/삭제는 인증 필요. **작업 노트 P1(2026-10-20)**: `Inquiry.sourceSeriesId`(BIGINT, nullable) — 작업 페이지 CTA로 들어온 문의의 출처 작업. 전송 시 그 시리즈가 수신 작가 것이 아니면 조용히 버림(문의 자체는 저장). 수신함 응답에 `sourceSeriesId`/`sourceSeriesTitle`(제목은 `findAllById` 배치 조회, 삭제된 작업이면 null). **보안 수정**: `GET /inbox`·`GET /inbox/unread-count`가 `memberId` 파라미터를 그대로 믿어 로그인한 누구나 남의 수신함(고객 이름·이메일·메시지)을 읽을 수 있었고, `PUT /{id}/read`·`DELETE /{id}`에도 소유자 확인이 없던 IDOR → 수신자 본인 또는 관리자 외 403(`isSelfOrAdmin`). 통합 테스트 2개 추가. **작업 노트 P2**: 문의 저장 시 서버가 `AnalyticsEvent(INQUIRY_SENT, targetType SERIES|PORTFOLIO)`를 직접 기록(실패는 warn 로그로 격리, 문의 접수는 막지 않음) — 이전엔 아무도 기록하지 않아 분석 KPI "문의"가 항상 0이었다. `InquiryRepository.countBySourceSeriesSince()`(작업별 문의 수).
+- **storage/** — Supabase Storage 연동. `SupabaseStorageService` (WebClient 기반 업로드/삭제), `StorageController` (`POST /api/upload/image`).
+- **follow/** — `FollowController` (`/api/follows`) — 팔로우/언팔로우/확인/카운트/목록. `Follow` 엔티티 (UniqueConstraint on follower_id+following_id). `FollowService.getFollowingIds()` — FeedController에서 피드 구성에 사용.
+- **block/ 사용자 차단 + 앱 심사 대응 (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_app-store-review.md`, 디자인 `DESIGN_PROMPT_app-store-safety.md`. `MemberBlock`(`member_blocks`, UNIQUE blocker_id+blocked_id) + `BlockController`(`/api/blocks`, 전부 인증, 로그인 회원 기준): GET 내 차단 목록(`[{memberId,name,profileName,avatarUrl,blockedAt}]`, 연락처 없음)/POST `/{memberId}`(멱등, 자기 자신 400, 없는 회원 404, INFO 로그)/DELETE `/{memberId}`. 공개 응답은 바꾸지 않고 **모바일이 목록으로 숨긴다**(웹 차단 UI는 없음). 탈퇴 시 `deleteAllInvolving`. **댓글 신고**: `Report.commentId`(nullable, photoId는 댓글이 달린 사진) + `report/controller/CommentReportController`(`POST /api/comments/{id}/report`, 사진 신고와 같은 사유·rate limit, 본인 댓글 400) → 어드민 목록 응답에 `commentId/commentContent/commentAuthorName`(배치 조회), 웹 `AdminModerationPage`가 댓글 내용 표시 + "댓글 삭제". **버그 수정(댓글)**: `addComment`가 요청의 `memberId`·`memberName`을 그대로 저장해 남의 이름으로 댓글을 달 수 있었고, 이름을 안 보내는 모바일은 NOT NULL 위반으로 **댓글 작성이 500**, 삭제는 필수 `memberId` 파라미터가 없어 **400**이었다 → 작성자는 로그인 회원(이름·아바타는 `MemberRepository`), 답글은 같은 사진의 댓글에만, 삭제는 본인 또는 관리자(`memberId` 파라미터는 무시). 회원 탈퇴 시 내 댓글·내 사진의 댓글도 삭제(이전엔 이름과 함께 남음). 통합 테스트 3개.
+- **comment/** — `CommentController` (`GET/POST /api/photos/:id/comments`, `DELETE /api/comments/:id`). GET(읽기)은 공개(2026-10-20, 공개 탐색의 사진 모달용), 작성·삭제는 인증. `Comment` 엔티티 (parentId nullable = 대댓글 지원). `CommentService.getComments()` — LinkedHashMap으로 top-level 수집 후 replies attach.
+- **feed/** — `FeedController` (`GET /api/feed?memberId=&page=&size=`) — `FollowService.getFollowingIds()` + `PhotoRepository.findByMemberIdInOrderByCreatedAtDesc()` (JPQL + Pageable).
+- **photo/ 비슷한 사진 (2026-10-20, P0-A, Cosmos "비슷한 요소" 재해석)** — `GET /api/photos/{id}/similar?size=12`(공개, 최대 24). 이미지 임베딩이 아니라 **메타데이터 점수**: 장르 3 + 색 분위기 2 + 서브장르 겹침 1씩(`subGenres`는 `'["A","B"]'` JSON 문자열이라 괄호·따옴표를 걷어내고 분리) + 대표색 RGB 거리(최대 2) + 같은 비율 0.5(기본값이 전부 1:1이라 다른 점수가 있을 때만). 후보 = `PhotoRepository.findSimilarCandidates`(같은 장르 OR 같은 색 분위기 최근 300장, 둘 다 없으면 `findRecentExcept`), 같은 작가 최대 4장, 점수 0 제외, 동점은 최신순. 통합 테스트 1개.
+- **photo/service/AutoTagService** — 키워드 추출(title+description, stop-word 필터) + MOOD_TAGS 매핑. `POST /api/photos/:id/auto-tags` (max 10 tags).
+- **common/** — `HelloController` (health check), `ImageProcessingUtil` (upload + Thumbnailator resize).
+- **board/** — Placeholder; `Board`/`Content` entities with repositories, no service layer yet.
+- **config/** — `WebConfig` (CORS 설정 포함), `SecurityConfig`, `RedisConfig`, `AsyncConfig` (@EnableScheduling 추가).
+- **delivery/** — 클라이언트 배달 포털. `DeliverySetController` (`/api/delivery`). `DeliverySet` 엔티티 (token 32자 UUID, expiresAt, BCrypt 비밀번호, status PENDING/APPROVED/REJECTED). `DeliverySetPhoto` (EmbeddedId 복합 PK, liked 필드). 공개 엔드포인트: GET/PUT `/api/delivery/{token}**`. 인증 엔드포인트: POST/GET/DELETE. 비밀번호 시도 5회 초과 시 15분 차단 (in-memory ConcurrentHashMap). @Scheduled(cron="0 0 * * * *") 만료 세트 자동 정리.
+- **analytics/** — 방문자 분석. **작업 노트 P2**: `GET /api/analytics/top-works?memberId=&period=&limit=`(본인만) — `WORK_VIEW`/`SERIES` 이벤트 상위 작업 + 작업별 문의 수(`TopWorkDto`: seriesId/title/coverImageUrl/views/inquiries). `trackEvent`가 `targetType=SERIES`면 그 시리즈의 실제 작가인지 확인 후에만 기록(남의 작업 조회수 부풀리기 차단). **발견·수정**: 웹 어디에서도 `analyticsApi.track`을 호출하지 않아 대시보드 "포트폴리오 방문"이 배포 이후 항상 0이었음 → `utils/trackView.js`로 `PORTFOLIO_VIEW`(PortfolioPage)·`WORK_VIEW`(WorkCasePage) 기록(작가 본인 방문 제외, 세션 단위 visitorToken). **사진 조회(2026-10-20)**: `PhotoDetailPage`·`PhotoModal`이 `PHOTO_VIEW`(targetType `PHOTO`)를 기록하고, `trackEvent`가 PHOTO 대상도 실제 작가 소유일 때만 저장, `KpiSummaryDto`에 `photoViews`/`photoViewsPrev`/`photoViewsChange` 추가 — 대시보드 "사진 조회"가 항상 0이던 문제 해소. **버그 수정 — "인기 사진" 카드**: 기록된 적 없는 PHOTO_LIKE/PHOTO_SAVE 이벤트로 집계하고 "공유"는 조회로 매핑, 프론트는 `id`/`likesCount`를 기대하는데 서버는 `photoId`/`count`를 보내 배포 이후 항상 비어 있었음 → `getTopPhotos`가 좋아요·저장·공유는 `Photo` 카운터 컬럼 기준(`PhotoRepository.findByMemberId(memberId, Pageable)` + Sort, 0건 제외), 조회는 PHOTO_VIEW 이벤트 기준(삭제된 사진 제외)으로 재작성, `TopPhotoDto`에 likes/saves/sharesCount 추가, `TopPhotos.jsx`에 "조회" 탭(기본값)·`photoId` 사용. 개발 모드(StrictMode)에서는 모달 effect가 두 번 돌아 조회가 1회 더 기록됨(운영 빌드는 1회). `AnalyticsController` (`/api/analytics`). `AnalyticsEvent` 엔티티 (eventType/targetType/targetId/memberId/visitorToken). 공개: POST `/api/analytics/track` (visitorToken 60req/min rate limit). 인증(본인만): GET summary/daily/top-photos/genre-distribution. `AnalyticsService`: KpiSummaryDto(기간 대비 % 변화), 일별 조회수(JPQL YEAR/MONTH/DAY), 장르 분포(PhotoRepository.countByGenre 재사용).
+- **booking/** — 촬영 예약 캘린더. `BookingController` (`/api/booking`). `Booking` 엔티티 (shootDate/shootTime/status REQUESTED/CONFIRMED/REJECTED/CANCELLED). `BookingAvailability` (weekdays 콤마CSV, timeSlots 콤마CSV, isActive). `BookingBlockedDate` (UniqueConstraint member_id+blocked_date). 공개: GET `/{profileName}/availability`, POST `/{profileName}` (IP 기준 10req/min rate limit). 인증: 예약 확정/거절/취소, 예약 설정, 차단 날짜 관리. **"예약 받는 중" 판정**: `BookingAvailabilityRepository.isAcceptingBookings()` — 가용 설정 행이 **있고** active일 때만 true(행이 없으면 예약 페이지는 기본값으로 열리지만 작가가 켠 적이 없으므로 배지 없음, 의도된 보수적 판정). `GET /api/portfolio/{profileName}` 응답에 `acceptingBookings` 포함. IDOR 검사: findByIdAndMemberId. `BookingBatchService.expireStaleBookings()` — `@Scheduled(cron="0 0 2 * * *")` 매일 02:00, `shootDate` 가 지난 REQUESTED 예약을 CANCELLED로 일괄 전환(bulk `@Modifying @Query`, 달력 슬롯 영구 점유 버그 해소) + `blockedDate` 30일 초과 `BookingBlockedDate` 삭제. 예외 발생 시 catch(Exception)+log.error로 스킵 후 다음날 재시도(delivery cleanup과 동일 패턴).
+- **report/** — 콘텐츠 신고. `PhotoReportController` (`/api/photos`) — 사용자 신고 접수(`POST /api/photos/{photoId}/report`, reason 유효성 검사, OTHER이면 detail 필수, rate limit 10분 5건), 내 신고 목록(`GET /api/photos/reports/mine`), 읽지 않은 처리 결과 수(`GET /api/photos/reports/mine/unread-count`, `{"count":N}`), 결과 확인 처리(`PUT /api/photos/reports/mine/{id}/seen`). `AdminReportController` (`/api/admin/reports`) — 목록 페이징(`GET ?status=&page=&size=`), 상태 변경(`PUT /{id}`, RESOLVED/DISMISSED + resolutionNote). `Report` 엔티티 (photoId/reporterId/reason/detail/evidenceUrl/status/resolutionNote/reporterSeen/createdAt/resolvedAt). 배치 조회로 N+1 방지. 운영 로그 INFO 레벨.
+- **testimonial/** — `TestimonialController` (`/api/testimonials`). `Testimonial` 엔티티 (memberId/clientName/clientRole/content/shootDate/featured/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id} (IDOR 검사). **작업 노트 P2**: `seriesId`(nullable) — 작업 노트 페이지에 "이 작업의 고객 후기"로 노출. 생성/수정 시 본인 시리즈만 허용(`resolveSeriesId`, 아니면 400). 타인 추천사 수정 시 `RuntimeException`→500이던 것을 404로 정정.
+- **press/** — `PressController` (`/api/press`). `PressFeature` 엔티티 (publication/title/url/publishedDate/logoUrl), `Achievement` 엔티티 (type AWARD|EXHIBITION|PUBLICATION/title/organizer/location/yearMonth). 공개: GET `/member/{memberId}` → `{press:[], achievements:[]}`. 인증: POST/DELETE (각각).
+- **pricing/** — `PricingController` (`/api/pricing`). `PricingPackage` 엔티티 (name/price/priceLabel/description/features TEXT/featured/displayOrder/active). 공개: GET `/member/{memberId}` (active만). 인증: GET `/my` (전체), POST/PUT/{id}/DELETE/{id}.
+- **brand/** — `ClientBrandController` (`/api/brands`). `ClientBrand` 엔티티 (name/logoUrl/displayOrder). 공개: GET `/member/{memberId}`. 인증: POST/PUT/{id}/DELETE/{id}.
+- **newsletter/** — `NewsletterController` (`/api/newsletter`). `NewsletterSubscriber` 엔티티 (memberId/email/token UUID/subscribedAt/unsubscribedAt, UNIQUE member_id+email). 공개: POST `/subscribe/{memberId}` (IP 기준 5req/min, 재구독 처리), GET `/unsubscribe/{token}`. 인증: GET `/subscribers`.
+- **meet/** — `MeetController` (`/api/meets`) — 모델·작가 약속 커뮤니케이션 공간 (Feature 35). `Meet` 엔티티 (status PENDING/NEGOTIATING/CONFIRMED/COMPLETED/CANCELLED, locationName/Address/Lat/Lng, confirmedDate DATE, confirmedTime VARCHAR(10), initialMessage TEXT, @PrePersist/@PreUpdate updatedAt). `MeetAvailability` (meetId+memberId UNIQUE, availableDates/Times TEXT 콤마구분). `MeetMessage` (senderId/senderName/senderAvatar/content TEXT). IDOR 검사: `findByIdAndMemberId()` — 요청자·수신자 외 접근 차단. XSS: `sanitize()` HTML 태그 제거. 좌표 검증: lat(-90~90)/lng(-180~180). 상태 전환: PENDING→NEGOTIATING(accept), NEGOTIATING→CONFIRMED(confirmDate), CONFIRMED→COMPLETED(complete), 언제나→CANCELLED. 인증 필요(모든 엔드포인트): POST(생성), GET(목록/상세/pending-count), PUT(respond/confirm/location/cancel/complete), GET/POST(messages), GET/POST(availability). `MeetBatchService.completeExpiredMeets()` — `@Scheduled(cron="0 0 3 * * *")` 매일 03:00, `confirmedDate` 가 지난 CONFIRMED 약속을 COMPLETED로 일괄 전환(bulk `@Modifying @Query`). PENDING/NEGOTIATING 장기 무응답 자동 취소는 컷오프 일수 제품 결정 필요로 P1 보류 (`DESIGN_PROMPTS/planning/PLANNING_batch-jobs.md` 참고).
+- **gathering/** — 사진 모임(Photo Gathering) SNS (Feature 37, 기획: `DESIGN_PROMPTS/planning/37_PHOTO_GATHERING_SNS.md`). **`meet/`(Feature 35, 1:1 모델-작가 약속)와 이름이 겹치지 않도록 의도적으로 `gathering`으로 명명** — 완전히 다른 기능(N명 그룹 촬영 모집)이니 혼동 금지. STEP3 슬라이스 1~5(모임 CRUD + 참여/미참여 + 대기자 승격 + 자동 상태전환 배치 + 모임 진행중 피드 + 좋아요/댓글 + 앨범 + 달력 + 인앱 알림 + Instagram 공유 백엔드+모바일)까지 구현 완료. **애니메이션 폴리시 패스**(`animate` 스킬, CLAUDE.md "장식 애니메이션 최소화" 정책 그대로 유지 — 스프링 바운스 없이 `fadeInUp`/`slideUp` 등 기존 실용적 모션만 재사용): 목록/피드/앨범/알림/참여자 관리/달력의 리스트 아이템에 30~40ms 스태거 등장 모션 추가, 참여·미참여 모달과 사진 업로드 바텀시트에 배경 페이드+카드 스케일업(scale(0) 아님, 0.97→1) 등장 모션 추가, 좋아요 하트 아이콘에 클릭 시 스케일 피드백(transition 기반, 반복 클릭에도 keyframe처럼 처음부터 재생되지 않음) 추가. **버그 회피**: 등장 애니메이션이 `transform`을 쓰는데 카드가 hover 시에도 `transform`(리프트/확대)을 쓰면 마운트 애니메이션의 `fill-mode: both`가 hover 값을 영구히 덮어써버려 호버가 죽는다 — `GatheringCard`/`AlbumPhoto`처럼 hover-transform이 있는 컴포넌트는 등장 애니메이션을 바깥 wrapper에, hover는 안쪽 요소에 분리해서 회피(이 패턴을 다른 곳에도 재사용할 것). `styles/global.css`의 전역 `fadeInUp`/`slideUp`/`fadeUp` keyframe에 `prefers-reduced-motion: reduce` 시 위치 이동 제거(페이드만 유지) 대응 추가 — 기존에 없던 전역 접근성 갭이었음. `GatheringInstagramController`(`/api/gatherings`, sibling 컨트롤러, 전체 인증 필요) — GET `/{id}/instagram-candidates`(이 모임의 PARTICIPATING 참여자 중 `Member.instagramId` 등록자 목록, 본인 제외, 요청자도 PARTICIPATING이어야 함)/POST `/{id}/instagram-share`(공유 시도 로깅, template은 PHOTO_ONLY/PHOTO_PARTICIPANTS/PHOTO_TEXT 중 하나). `InstagramStoryShare` 엔티티 — **status 컬럼 없음**(OS 레벨 딥링크의 실제 완료 여부를 서버가 알 방법이 없어 "시도"만 기록, 39_PHOTO_GATHERING_SNS.md 섹션 9 참고). `taggedMemberIds`는 `Gathering.hashtags`와 동일하게 콤마구분 문자열로 저장(별도 조인 테이블 없음). Instagram 실제 멘션/음악 자동 삽입은 API로 불가능하다는 조사 결과에 따라 서버는 태그 후보 목록 제공 + 로깅만 담당하고, 실제 이미지 합성·OS 딥링크 호출은 모바일 클라이언트 책임. `GatheringNotificationController`(`/api/gatherings/notifications`, 전체 인증 필요) — GET(목록, 페이징)/GET `/unread-count`(`{"count":N}`, `PhotoReportController.myUnreadCount()`와 동일 응답 구조)/PUT `/{id}/read`(단건 읽음, IDOR)/POST `/read-all`(전체 읽음). `GatheringNotification` 엔티티(memberId/gatheringId/type/message/relatedPostId/isRead) — FCM/APNs 없이 기존 폴링 배지 패턴(inquiry/meets와 동일)만 사용하는 Phase 1 범위. 알림 생성 트리거: 대기자 자동 승격(`PARTICIPATION_CONFIRMED`), 수동·자동 모집마감(`RECRUITMENT_CLOSED`), 배치 모임시작(`GATHERING_STARTED`)/모임종료(`GATHERING_ENDED`), 새 게시물(`NEW_POST`, 작성자 제외 참여자 전원)/새 댓글·좋아요(`NEW_COMMENT`/`NEW_LIKE`, 게시물 작성자에게만). "모집 마감 임박"·"모임 시작 1시간 전" 사전 알림은 별도 시간창 배치가 필요해 이번 슬라이스에서 제외(차기 과제). `GatheringBatchService`는 각 상태 전환 UPDATE 직전에 대상 모임 ID를 먼저 SELECT해 배치 알림 발송에 사용하고, 알림 발송 실패는 상태 전환 트랜잭션에 영향 없도록 별도 try/catch로 격리. `GatheringPostController`(`/api/gatherings`, sibling 컨트롤러) — 공개: GET `/{gatheringId}/posts`(피드, ONGOING/ENDED 상태만, 인증 시 `likedByMe` 포함)/GET `/{gatheringId}/album`(앨범, ENDED 상태만). 인증: POST `/{gatheringId}/posts`(게시물 작성, PARTICIPATING 참여자 + ONGOING만)/DELETE `/posts/{postId}`(삭제, 작성자 IDOR)/POST·DELETE `/posts/{postId}/like`(좋아요, PARTICIPATING + ONGOING·ENDED)/POST `/posts/{postId}/comments`(댓글, 동일 권한). `GatheringPost`/`GatheringPostComment` — `Comment`/`MeetMessage`와 동일하게 memberName/memberAvatarUrl을 작성 시점에 비정규화 저장(N+1 방지). `GatheringPhoto`(EXIF 없음, 이번 슬라이스 미포함) — sortOrder만 지원. `GatheringPostLike`(UNIQUE gathering_post_id+member_id). 피드 조회는 postId 목록으로 사진/좋아요/댓글을 각각 배치 조회 후 Java에서 그룹핑(N+1 방지). `likedByMe`는 `SecurityUtil.isAuthenticated()`로 선택적 인증 처리 — 비로그인 시 항상 false. 게시물 삭제는 작성자 본인만 가능하고 수정은 없음(모임 종료 후에도 동일). `GatheringBatchService.transitionGatheringStatuses()` — `@Scheduled(cron="0 */5 * * * *")` 5분마다, `BookingBatchService`/`MeetBatchService`와 동일하게 한 메서드 안에서 순차 bulk `@Modifying @Query` 4단계(모집마감시간 경과 RECRUITING→RECRUITMENT_CLOSED, RECRUITMENT_CLOSED→SCHEDULED, 시작시간 경과 SCHEDULED→ONGOING, 종료시간 경과 ONGOING→ENDED) 실행 후 `catch(Exception)` 로깅. `GatheringController`(`/api/gatherings`) — 공개: GET 목록(`?status=&page=&size=`)/상세. 인증: POST(생성, 아무 로그인 회원이나 가능 — 별도 운영자 역할 없음)/PUT·DELETE(수정·삭제, IDOR `findByIdAndCreatedBy`)/GET `/my`(생성+참여중 모임)/POST·DELETE `/{id}/participation`(참여·미참여 응답/취소)/GET `/{id}/participants`(참여자·대기자 목록, 생성자 전용)/POST `/{id}/close-recruitment`(수동 모집 마감). `Gathering` 엔티티 — status는 `Meet`/`Booking`과 동일하게 plain `String`(RECRUITING/RECRUITMENT_CLOSED/SCHEDULED/ONGOING/ENDED, 뒤 3개는 이번 슬라이스 미사용·차기 배치 전용). `GatheringParticipant` 엔티티(UNIQUE gathering_id+member_id, status PARTICIPATING/WAITING/NOT_PARTICIPATING/CANCELLED) — 참여 응답 시 정원 초과면 서버가 자동으로 WAITING 배정, 참여 취소 시 대기자 1순위(`joinedAt` 기준)를 같은 트랜잭션에서 자동 승격(동시 취소 경합 시 과소승격 가능성 있음 — `MeetBatchService`와 동일하게 별도 락 없이 허용, 기존 컨벤션 준수). `reason`(미참여 사유)은 서비스/DTO 레이어에서 생성자 전용 응답에만 채워짐. 모집 종료 후에는 참여/미참여 응답 API가 400을 반환. Member.instagramId(이미 구현되어 있던 필드) 재사용 예정 — 이번 슬라이스에는 아직 노출 안 함(다음 슬라이스인 Instagram 공유에서 사용).
+- **assistant/** — AI 어시스턴트 챗봇 (Gemini 연동). `AssistantController` (`/api/assistant`) — 공개: `POST /chat`(포트폴리오 방문객 상담, IP 기준 10req/min). 인증: `POST /chat/workspace`(로그인 회원용 앱 사용법 안내, 회원 기준 20req/min). `GeminiClient` — Google Gemini `generateContent` REST API(`v1beta/models/{model}:generateContent`) 호출, 인증은 쿼리 파라미터가 아닌 `x-goog-api-key` 헤더 사용(access 로그에 키 노출 방지). DB 조회 없이 시스템 프롬프트만 사용하는 stateless 설계 — 대화 history는 프론트엔드가 클라이언트 메모리에서만 들고 있다가 매 요청에 실어 보내고, 서버는 저장하지 않는다. `gemini.api-key`(`GEMINI_API_KEY` 환경변수) 미설정 시 `AssistantException`으로 503 + 안내 메시지 반환(조용히 실패하지 않음). 메시지 길이(2000자)·history 턴 수(20턴) 상한으로 비용 폭주 방지.
+- **moodboard/** — 무드보드(WORK_QUEUE 5, Behance Moodboard 재해석): 사진을 이름 붙은 **비공개** 보드에 모은다. 기존 "저장"(`PhotoSave`)과는 별개 목록(데이터 이전 없음). `Moodboard`(member_id·name 50자, updatedAt — 담을 때 직접 갱신해 최근 사용 보드가 위로) + `MoodboardItem`(UNIQUE moodboard_id+photo_id). `MoodboardController`(`/api/moodboards`, 전부 인증): GET 목록(`?photoId=` 주면 보드별 `containsPhoto`, 항목·사진 배치 조회)/POST 생성(최대 30개)/GET·PUT·DELETE `/{id}`/POST `/{id}/photos`(멱등, 보드당 500장)/DELETE `/{id}/photos/{photoId}`. 모든 접근이 `findByIdAndMemberId` — 남의 보드는 404. **공유 링크(2026-10-20, `PLANNING_inside-menus-upgrade.md` P0-C, Cosmos 공개 클러스터 재해석)**: `Moodboard.shareToken`(32자, nullable, UNIQUE 인덱스) — null=비공개. `PUT /{id}/share` `{enabled}`(켜면 토큰 발급·이미 있으면 유지, 끄면 null → 이전 링크 즉시 404), 공개 `GET /shared/{token}`(보드 이름·주인 표시명·사진 + 원작자 이름 배치 조회, 보드 주인 id·이메일 없음 — SecurityConfig `GET /api/moodboards/shared/*` permitAll). 상세 응답에 `shareToken`. 사진 삭제(`PhotoController.deletePhoto`)·회원 탈퇴(`MemberService`, 내 보드 + 남의 보드에 담긴 내 사진) 시 항목 정리. 통합 테스트 1개.
+- **Redis 장애 대응** — `IpBlockFilter`, `RefreshTokenStore`, `TokenBlacklistService` 모두 `catch(Exception)` 로 Redis 연결 실패 시 허용 통과/빈값 반환 (개발 환경 Redis 없이도 동작).
+- **자동화 테스트 (MASTER_PLAN v2 P0-3, AC-T1)** — `backend/src/test/java/com/happiness/app/CoreFlowIntegrationTest.java`
+  (저장소 최초의 백엔드 테스트). `@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("dev")`(H2)로 실제 JWT
+  필터까지 태우는 통합 테스트 11개: 회원가입→로그인(이메일 대소문자 무관), 틀린 비밀번호, 무토큰 401, 사진 등록·조회·
+  본인 수정/삭제, **IDOR 4종**(타인 명의 사진 등록·타인 사진 수정/삭제·타인 프로필 수정·타인 계정 삭제 → 403),
+  가용시간 저장 후 예약 가능일 유지(Feature 39 `active` 회귀), 예약 생성→중복 슬롯 409→타인 확정 차단→본인 확정.
+  테스트끼리 같은 H2를 공유하므로 이메일·프로필명은 매번 UUID로 생성한다. `./gradlew test`가 이제 NO-SOURCE가 아니다.
+  **이 테스트로 발견·수정한 결함 3건**: (1) **IDOR — 계정**: `AuthController`의 `PUT /member/{id}/profile`·
+  `PUT /member/{id}/password`·`DELETE /member/{id}`에 본인 확인이 없어 로그인한 아무 회원이 남의 프로필을 바꾸거나
+  남의 계정을 사진까지 통째로 삭제할 수 있었다 → `verifySelfOrAdmin()`(본인 또는 WM/SA) 추가, 위반 시
+  `SecurityException(FORBIDDEN)` 403. (2) **IDOR — 사진**: `PhotoController`가 생성(`POST /photos`, `POST /photos/upload`)
+  시 요청의 `memberId`를 그대로 믿고, 수정·삭제(`PUT/DELETE /photos/{id}`)는 소유자 확인이 없었다 →
+  `isSelfOrAdmin()` 검사 추가(어드민 강제삭제·인라인 장르 편집은 WM/SA라 그대로 동작). (3) **전역 예외 처리**:
+  `GlobalExceptionHandler`에 `ResponseStatusException` 핸들러가 없어, booking/meet/gathering/report 등이 던지는
+  400/403/404/409가 전부 범용 `Exception` 핸들러에 잡혀 **500 "서버 내부 오류"로 바뀌어** 클라이언트에 전달되고
+  있었다(예: 중복 예약 409 → 500) → 상태 코드와 reason을 보존해 `ApiResponse{success:false, code:"409", message:reason}`
+  으로 반환하는 핸들러 추가. 프론트 13곳이 `err.response.data.message`를 읽으므로 이제 실제 사유가 표시된다.
+  **알려진 갭(일부 해소)**: 좋아요/저장/태그 등 일부 사진 하위 API가 `@RequestParam memberId`를 받는 구조라 같은
+  계열의 신뢰 문제가 있었다. (2026-10-21) **전역 예외 처리 2차**: 서비스 계층 입력 검증이 던지는 `IllegalArgumentException`도
+  핸들러가 없어 회원가입 "이미 등록된 이메일" 등이 전부 500 "Request failed with status code 500"으로 보였다 → 400 + 사유로 반환하는
+  핸들러 추가. 회원가입 중복 검사도 소문자 정규화 후 비교(대소문자만 다른 이메일이 검사를 통과해 DB 유니크 제약에서 500), 웹 `SignUpPage`의
+  포트폴리오 주소 규칙을 서버와 같게(3~30자, 하이픈 시작·끝 불가) 맞추고 오류 시 서버 사유를 표시 → 2026-10-20 **좋아요·저장(취소 포함) 4개는 `isSelfOrAdmin(memberId)` 검사 추가로 해소**
+  (남의 이름으로 좋아요/저장 → 403). 태그 등 나머지는 아직 미수정.
+  이후 테스트가 22개로 늘면서 전역 `RateLimitFilter`(IP당 100req/60s)에 걸려 무작위 429가 나와, 테스트 클래스에서만
+  `security.rate-limit.capacity`/`refill-tokens`를 크게 덮어쓴다(운영 설정 변경 없음).
+
+#### Spring 프로파일 구성
+
+```
+src/main/resources/
+├── application.yml          # 공통 설정 + 환경변수 바인딩
+├── application-dev.yml      # H2 in-memory, Redis localhost, SQL 로그 ON, ddl-auto=create-drop
+└── application-prod.yml     # PostgreSQL, Upstash Redis, SQL 로그 OFF, ddl-auto=update
+```
+
+**버그 수정(문서-코드 불일치, 인덱스 성능 개선 작업 중 발견)**: 이 섹션과 "DBA" 역할 규칙·보안
+체크리스트가 오래전부터 "운영 DB는 `ddl-auto: validate` 고정, `create`/`create-drop` 절대 금지"라고
+서술해왔으나, 실제 `application-prod.yml`은 `ddl-auto: update`로 설정되어 있다(`validate`가 아님).
+`update`는 Hibernate가 배포 시 스키마 차이를 자동으로 반영한다는 뜻이라 — 지금까지 각 Feature마다
+CLAUDE.md에 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`를 "수동 마이그레이션"으로 기록해왔지만
+실제로는 대부분 Hibernate가 배포 시점에 자동으로 이미 적용했을 가능성이 높다(그래서 별도로 수동
+psql 실행 없이도 배포가 계속 정상 동작해온 것으로 보인다). 이번에 추가한 인덱스들도 마찬가지로
+다음 배포에서 Hibernate가 자동 반영할 것으로 예상되지만, 검증 없이 자동 반영에만 의존하는 것은
+`update` 모드 특유의 위험(대규모 테이블에서 락 경합, 예상 밖의 컬럼 타입 변경 등)이 있으므로
+CLAUDE.md의 SQL 기록 관행 자체는 계속 유지한다. **`ddl-auto`를 실제로 `validate`로 되돌릴지는
+운영 정책 결정이 필요한 별도 사안** — 이번 작업(인덱스 추가)의 범위를 벗어나 임의로 변경하지
+않았다.
+
+**운영 DB 수동 마이그레이션 필요** (새 컬럼 추가 시):
+```sql
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS display_order INTEGER;
+ALTER TABLE series ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+-- Phase 4 — 포트폴리오 레이아웃
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_layout VARCHAR(20) DEFAULT 'grid';
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_cover_photo_id BIGINT;
+-- Feature 28 — 포트폴리오 템플릿 시스템
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_template VARCHAR(20) DEFAULT 'EDITORIAL';
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_style_json TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_sections_json TEXT;
+CREATE INDEX IF NOT EXISTS idx_members_portfolio_template ON members(portfolio_template);
+CREATE TABLE IF NOT EXISTS inquiries (
+  id BIGSERIAL PRIMARY KEY,
+  receiver_member_id BIGINT NOT NULL,
+  sender_name VARCHAR(100) NOT NULL,
+  sender_email VARCHAR(255) NOT NULL,
+  shoot_type VARCHAR(50),
+  shoot_date VARCHAR(100),
+  budget VARCHAR(100),
+  message TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+-- Phase 3 — 팔로우/댓글/EXIF
+CREATE TABLE IF NOT EXISTS follows (
+  id BIGSERIAL PRIMARY KEY,
+  follower_id BIGINT NOT NULL,
+  following_id BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (follower_id, following_id)
+);
+CREATE TABLE IF NOT EXISTS comments (
+  id BIGSERIAL PRIMARY KEY,
+  photo_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  member_name VARCHAR(100) NOT NULL,
+  member_avatar_url VARCHAR(500),
+  content TEXT NOT NULL,
+  parent_id BIGINT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS camera_model  VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS lens_model    VARCHAR(100);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS aperture      VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS shutter_speed VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS iso           INTEGER;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS focal_length  VARCHAR(20);
+-- Phase 5 — 장르 분류 (26_GENRE_CLASSIFICATION)
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS genre      VARCHAR(20);
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS sub_genres VARCHAR(60);
+-- Feature 25 — 매거진 면·판 레이아웃
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS pan_type         VARCHAR(20) DEFAULT 'EDITORIAL';
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS magazine_caption TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS image_right      BOOLEAN DEFAULT FALSE;
+-- Module: delivery — 클라이언트 배달 포털
+CREATE TABLE IF NOT EXISTS delivery_sets (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  token          VARCHAR(64) UNIQUE NOT NULL,
+  title          VARCHAR(200) NOT NULL,
+  client_name    VARCHAR(100),
+  status         VARCHAR(20) DEFAULT 'PENDING',
+  password_hash  VARCHAR(255),
+  expires_at     TIMESTAMP NOT NULL,
+  feedback       TEXT,
+  approved_at    TIMESTAMP,
+  viewed_at      TIMESTAMP,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS delivery_set_photos (
+  delivery_set_id BIGINT NOT NULL,
+  photo_id        BIGINT NOT NULL,
+  sort_order      INTEGER DEFAULT 0,
+  liked           BOOLEAN DEFAULT FALSE,
+  PRIMARY KEY (delivery_set_id, photo_id)
+);
+-- Module: analytics — 방문자 분석
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id            BIGSERIAL PRIMARY KEY,
+  event_type    VARCHAR(30) NOT NULL,
+  target_type   VARCHAR(20),
+  target_id     BIGINT,
+  member_id     BIGINT NOT NULL,
+  visitor_token VARCHAR(32),
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_analytics_member_type ON analytics_events (member_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_created_at  ON analytics_events (created_at);
+-- Module: booking — 촬영 예약 캘린더
+CREATE TABLE IF NOT EXISTS booking_availability (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT UNIQUE NOT NULL,
+  weekdays      VARCHAR(20)  DEFAULT '1,2,3,4,5',
+  time_slots    VARCHAR(100) DEFAULT '10:00,14:00',
+  buffer_hours  INTEGER DEFAULT 0,
+  booking_note  TEXT,
+  is_active     BOOLEAN DEFAULT TRUE,
+  updated_at    TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS booking_blocked_dates (
+  id           BIGSERIAL PRIMARY KEY,
+  member_id    BIGINT NOT NULL,
+  blocked_date DATE NOT NULL,
+  reason       VARCHAR(100),
+  UNIQUE (member_id, blocked_date)
+);
+CREATE TABLE IF NOT EXISTS bookings (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  shoot_date     DATE NOT NULL,
+  shoot_time     VARCHAR(10),
+  shoot_type     VARCHAR(20),
+  client_name    VARCHAR(100) NOT NULL,
+  client_phone   VARCHAR(30),
+  client_email   VARCHAR(255),
+  memo           TEXT,
+  status         VARCHAR(20) DEFAULT 'REQUESTED',
+  reject_reason  VARCHAR(200),
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+  confirmed_at   TIMESTAMP,
+  cancelled_at   TIMESTAMP
+);
+-- Module: portfolio-world-class — 세계 수준 포트폴리오 (32_PORTFOLIO_WORLD_CLASS)
+CREATE TABLE IF NOT EXISTS testimonials (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  client_name   VARCHAR(100) NOT NULL,
+  client_role   VARCHAR(100),
+  content       TEXT NOT NULL,
+  shoot_date    VARCHAR(20),
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id ON testimonials(member_id);
+CREATE TABLE IF NOT EXISTS press_features (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      BIGINT NOT NULL,
+  publication    VARCHAR(100) NOT NULL,
+  title          VARCHAR(200),
+  url            VARCHAR(500),
+  published_date VARCHAR(20),
+  logo_url       VARCHAR(500),
+  display_order  INTEGER DEFAULT 0,
+  created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS achievements (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  type          VARCHAR(20) NOT NULL,   -- AWARD | EXHIBITION | PUBLICATION
+  title         VARCHAR(200) NOT NULL,
+  organizer     VARCHAR(100),
+  location      VARCHAR(100),
+  year_month    VARCHAR(7),             -- "2025.05"
+  url           VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS pricing_packages (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  price         INTEGER,
+  price_label   VARCHAR(50),
+  description   TEXT,
+  features      TEXT,           -- JSON 배열
+  is_featured   BOOLEAN DEFAULT FALSE,
+  display_order INTEGER DEFAULT 0,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS client_brands (
+  id            BIGSERIAL PRIMARY KEY,
+  member_id     BIGINT NOT NULL,
+  name          VARCHAR(100) NOT NULL,
+  logo_url      VARCHAR(500),
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id               BIGSERIAL PRIMARY KEY,
+  member_id        BIGINT NOT NULL,
+  email            VARCHAR(255) NOT NULL,
+  token            VARCHAR(64) UNIQUE NOT NULL,
+  subscribed_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+  unsubscribed_at  TIMESTAMP,
+  UNIQUE (member_id, email)
+);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS cover_video_url VARCHAR(500);
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_taglines TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS portfolio_sections_enabled TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS blur_hash VARCHAR(500);
+-- Feature 35 — 모델-작가 약속 커뮤니케이션
+CREATE TABLE IF NOT EXISTS meets (
+  id BIGSERIAL PRIMARY KEY,
+  requester_id BIGINT NOT NULL,
+  receiver_id BIGINT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  location_name VARCHAR(200),
+  location_address VARCHAR(400),
+  location_lat DOUBLE PRECISION,
+  location_lng DOUBLE PRECISION,
+  confirmed_date DATE,
+  confirmed_time VARCHAR(10),
+  initial_message TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meets_requester ON meets(requester_id);
+CREATE INDEX IF NOT EXISTS idx_meets_receiver ON meets(receiver_id);
+CREATE TABLE IF NOT EXISTS meet_availabilities (
+  id BIGSERIAL PRIMARY KEY,
+  meet_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  available_dates TEXT,
+  available_times TEXT,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (meet_id, member_id)
+);
+CREATE TABLE IF NOT EXISTS meet_messages (
+  id BIGSERIAL PRIMARY KEY,
+  meet_id BIGINT NOT NULL,
+  sender_id BIGINT NOT NULL,
+  sender_name VARCHAR(100) NOT NULL,
+  sender_avatar VARCHAR(500),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meet_messages_meet_id ON meet_messages(meet_id);
+-- Module: report — 콘텐츠 신고 (PhotoReportController / AdminReportController)
+CREATE TABLE IF NOT EXISTS reports (
+  id              BIGSERIAL PRIMARY KEY,
+  photo_id        BIGINT NOT NULL,
+  reporter_id     BIGINT NOT NULL,
+  reason          VARCHAR(30) NOT NULL,     -- COPYRIGHT | INAPPROPRIATE | PRIVACY | SPAM | OTHER
+  detail          TEXT,                    -- reason=OTHER 일 때 필수, 그 외 선택
+  evidence_url    VARCHAR(500),
+  status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING | RESOLVED | DISMISSED
+  resolution_note VARCHAR(300),
+  reporter_seen   BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+  resolved_at     TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_reports_photo_id    ON reports(photo_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status      ON reports(status);
+-- Module: gathering — 사진 모임 SNS (Feature 37, 첫 슬라이스만 — 모임 CRUD + 참여/대기자)
+CREATE TABLE IF NOT EXISTS gatherings (
+  id                        BIGSERIAL PRIMARY KEY,
+  title                     VARCHAR(200) NOT NULL,
+  description               TEXT,
+  detail_description        TEXT,
+  location                  VARCHAR(300) NOT NULL,
+  start_date_time           TIMESTAMP NOT NULL,
+  end_date_time             TIMESTAMP NOT NULL,
+  max_participants          INTEGER NOT NULL,
+  recruitment_end_date_time TIMESTAMP NOT NULL,
+  status                    VARCHAR(20) NOT NULL DEFAULT 'RECRUITING',
+  thumbnail_url             VARCHAR(500),
+  preparation_note         TEXT,
+  fee                       VARCHAR(100),
+  shoot_theme               VARCHAR(200),
+  location_intro            TEXT,
+  reference_image_url       VARCHAR(500),
+  hashtags                  VARCHAR(300),
+  created_by                BIGINT NOT NULL,
+  created_at                TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gatherings_status     ON gatherings(status);
+CREATE INDEX IF NOT EXISTS idx_gatherings_start_date ON gatherings(start_date_time);
+CREATE INDEX IF NOT EXISTS idx_gatherings_created_by ON gatherings(created_by);
+CREATE TABLE IF NOT EXISTS gathering_participants (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  status       VARCHAR(20) NOT NULL,  -- PARTICIPATING | WAITING | NOT_PARTICIPATING | CANCELLED
+  reason       VARCHAR(200),          -- 미참여 사유, 생성자만 조회
+  joined_at    TIMESTAMP NOT NULL,
+  UNIQUE (gathering_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_participants_gathering ON gathering_participants(gathering_id, status);
+CREATE INDEX IF NOT EXISTS idx_gathering_participants_member    ON gathering_participants(member_id);
+-- Module: gathering — 모임 진행중 피드 + 앨범 (Feature 37, 두 번째 슬라이스)
+CREATE TABLE IF NOT EXISTS gathering_posts (
+  id                BIGSERIAL PRIMARY KEY,
+  gathering_id      BIGINT NOT NULL,
+  member_id         BIGINT NOT NULL,
+  member_name       VARCHAR(100) NOT NULL,
+  member_avatar_url VARCHAR(500),
+  content           TEXT,
+  hashtags          VARCHAR(300),
+  created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_posts_gathering ON gathering_posts(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_photos (
+  id                  BIGSERIAL PRIMARY KEY,
+  gathering_post_id   BIGINT NOT NULL,
+  image_url           VARCHAR(500) NOT NULL,
+  caption             VARCHAR(300),
+  sort_order          INTEGER DEFAULT 0,
+  created_at          TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_photos_post ON gathering_photos(gathering_post_id);
+CREATE TABLE IF NOT EXISTS gathering_post_likes (
+  id                 BIGSERIAL PRIMARY KEY,
+  gathering_post_id  BIGINT NOT NULL,
+  member_id          BIGINT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (gathering_post_id, member_id)
+);
+CREATE TABLE IF NOT EXISTS gathering_post_comments (
+  id                 BIGSERIAL PRIMARY KEY,
+  gathering_post_id  BIGINT NOT NULL,
+  member_id          BIGINT NOT NULL,
+  member_name        VARCHAR(100) NOT NULL,
+  member_avatar_url  VARCHAR(500),
+  content            TEXT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_post_comments_post ON gathering_post_comments(gathering_post_id);
+-- Module: gathering — 인앱 알림 Phase 1 (Feature 37, 네 번째 슬라이스)
+CREATE TABLE IF NOT EXISTS gathering_notifications (
+  id               BIGSERIAL PRIMARY KEY,
+  member_id        BIGINT NOT NULL,
+  gathering_id     BIGINT NOT NULL,
+  type             VARCHAR(30) NOT NULL,
+  message          VARCHAR(300) NOT NULL,
+  related_post_id  BIGINT,
+  is_read          BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gn_member_read ON gathering_notifications(member_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_gn_created_at  ON gathering_notifications(created_at);
+-- Module: gathering — Instagram Story 공유 로그 (Feature 37, 다섯 번째 슬라이스)
+CREATE TABLE IF NOT EXISTS instagram_story_shares (
+  id                  BIGSERIAL PRIMARY KEY,
+  gathering_id        BIGINT NOT NULL,
+  member_id           BIGINT NOT NULL,
+  gathering_post_id   BIGINT,
+  template            VARCHAR(30) NOT NULL,
+  caption_text        VARCHAR(300),
+  tagged_member_ids   VARCHAR(500),
+  shared_at           TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_instagram_shares_gathering ON instagram_story_shares(gathering_id);
+CREATE INDEX IF NOT EXISTS idx_instagram_shares_member    ON instagram_story_shares(member_id);
+-- Feature 39(b): 촬영 준비 체크리스트
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS checklist_json TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS delivery_deadline DATE;
+-- Feature 39(c): 계약금/잔금 수금 상태
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_status      VARCHAR(20) DEFAULT 'PENDING';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_amount      INTEGER;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_received_at TIMESTAMP;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_status      VARCHAR(20) DEFAULT 'PENDING';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_amount      INTEGER;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS balance_received_at TIMESTAMP;
+-- 포트폴리오 컨셉 "작업 노트" (PLANNING_portfolio-work-notes-concept.md) — Series 작업 사례 필드
+ALTER TABLE series ADD COLUMN IF NOT EXISTS shoot_type   VARCHAR(30);
+ALTER TABLE series ADD COLUMN IF NOT EXISTS client_label VARCHAR(100);
+ALTER TABLE series ADD COLUMN IF NOT EXISTS shot_on      VARCHAR(7);
+ALTER TABLE series ADD COLUMN IF NOT EXISTS story        TEXT;
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS source_series_id BIGINT;  -- 작업 노트 P1: 문의 출처 작업
+ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS series_id BIGINT;     -- 작업 노트 P2: 후기 ↔ 작업
+ALTER TABLE series ADD COLUMN IF NOT EXISTS pinned BOOLEAN;                -- 작업 노트 P2: 대표 작업 (null = false)
+ALTER TABLE series ADD COLUMN IF NOT EXISTS credits_json TEXT;             -- 함께한 사람 (WORK_QUEUE 6)
+ALTER TABLE series ADD COLUMN IF NOT EXISTS draft BOOLEAN;                 -- 작업 초안 (WORK_QUEUE 7, null = 공개)
+ALTER TABLE series ADD COLUMN IF NOT EXISTS featured_at TIMESTAMP;         -- 에디터 추천 (WORK_QUEUE 8)
+-- 작업 감상 (WORK_QUEUE 3)
+CREATE TABLE IF NOT EXISTS series_appreciations (
+  id         BIGSERIAL PRIMARY KEY,
+  series_id  BIGINT NOT NULL,
+  member_id  BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (series_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_series_appreciations_member ON series_appreciations(member_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_target ON analytics_events(target_type, target_id, event_type);  -- 작업 조회수 공개 집계
+-- 무드보드 (WORK_QUEUE 5)
+CREATE TABLE IF NOT EXISTS moodboards (
+  id         BIGSERIAL PRIMARY KEY,
+  member_id  BIGINT NOT NULL,
+  name       VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_moodboards_member ON moodboards(member_id);
+CREATE TABLE IF NOT EXISTS moodboard_items (
+  id            BIGSERIAL PRIMARY KEY,
+  moodboard_id  BIGINT NOT NULL,
+  photo_id      BIGINT NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (moodboard_id, photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_moodboard_items_photo ON moodboard_items(photo_id);
+ALTER TABLE moodboards ADD COLUMN IF NOT EXISTS share_token VARCHAR(32);   -- 보드 공유 링크 (null = 비공개)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_moodboards_share_token ON moodboards(share_token);
+-- 성능 개선: 기존에 인덱스가 없던 채로 memberId/photoId 등으로 자주 필터링되던 테이블 17개에
+-- 인덱스 추가 (엔티티 @Table(indexes=...)에도 동일하게 반영, dev H2에서 DDL 생성 확인 완료).
+-- ddl-auto가 실제로는 prod에서도 update이므로 배포 시 Hibernate가 자동 생성하지만,
+-- 다른 마이그레이션과 동일하게 수동 참조용으로 기록한다.
+CREATE INDEX IF NOT EXISTS idx_photos_member_created        ON photos(member_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_photos_genre                 ON photos(genre);
+CREATE INDEX IF NOT EXISTS idx_photos_color_mood            ON photos(color_mood);
+CREATE INDEX IF NOT EXISTS idx_comments_photo_id            ON comments(photo_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id           ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_series_member_id             ON series(member_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_receiver_member_id ON inquiries(receiver_member_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_member_shoot_date   ON bookings(member_id, shoot_date);
+CREATE INDEX IF NOT EXISTS idx_bookings_status_shoot_date   ON bookings(status, shoot_date);
+CREATE INDEX IF NOT EXISTS idx_delivery_sets_member_id      ON delivery_sets(member_id);
+CREATE INDEX IF NOT EXISTS idx_testimonials_member_id       ON testimonials(member_id);
+CREATE INDEX IF NOT EXISTS idx_press_features_member_id     ON press_features(member_id);
+CREATE INDEX IF NOT EXISTS idx_achievements_member_id       ON achievements(member_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_packages_member_id   ON pricing_packages(member_id);
+CREATE INDEX IF NOT EXISTS idx_client_brands_member_id      ON client_brands(member_id);
+CREATE INDEX IF NOT EXISTS idx_photo_shares_photo_id        ON photo_shares(photo_id);
+CREATE INDEX IF NOT EXISTS idx_photo_tags_photo_id          ON photo_tags(photo_id);
+CREATE INDEX IF NOT EXISTS idx_photo_saves_member_id        ON photo_saves(member_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following_id         ON follows(following_id);
+CREATE INDEX IF NOT EXISTS idx_members_provider             ON members(provider, provider_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_visitor_token      ON analytics_events(visitor_token, created_at);
+-- 아이디·비밀번호 찾기 (2026-10-21) — 재설정 토큰(원문은 메일 링크에만, DB엔 SHA-256 해시)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          BIGSERIAL PRIMARY KEY,
+  member_id   BIGINT NOT NULL,
+  token_hash  VARCHAR(64) NOT NULL UNIQUE,
+  expires_at  TIMESTAMP NOT NULL,
+  used_at     TIMESTAMP,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_member ON password_reset_tokens(member_id);
+-- 앱 심사 대응 (2026-10-21) — 사용자 차단 + 댓글 신고
+CREATE TABLE IF NOT EXISTS member_blocks (
+  id          BIGSERIAL PRIMARY KEY,
+  blocker_id  BIGINT NOT NULL,
+  blocked_id  BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (blocker_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS idx_member_blocks_blocked_id ON member_blocks(blocked_id);
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS comment_id BIGINT;   -- 댓글 신고 (사진 신고는 null)
+-- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
+CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
+```
+
+#### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
+
+`findBy*`/`countBy*`/`@Query` 메서드가 실제로 필터·정렬하는 컬럼을 모든 Repository에서 훑어
+기존 `@Table(indexes=...)`/`uniqueConstraints`로 이미 커버되는지 대조한 결과, 아래 17개 테이블이
+WHERE/ORDER BY 컬럼에 인덱스가 전혀 없거나(예: `photos.member_id` — 프로필 페이지 조회마다
+`findByMemberIdOrderByCreatedAtDesc` + likes/saves/shares 합계 쿼리 4개가 매번 풀스캔), 기존
+복합 유니크 제약의 후행 컬럼만 단독으로 필터링해 prefix 규칙의 혜택을 못 받고 있었다(예:
+`follows` — `UNIQUE(follower_id, following_id)`는 있지만 `countByFollowingId`/`findByFollowingId`
+는 후행 컬럼만 쓰므로 인덱스를 못 탐; `photo_saves`도 동일하게 `findByMemberId`가 후행 컬럼만 사용).
+엔티티의 `@Table(indexes=...)`에 추가하고 `./gradlew bootRun`으로 H2 dev에 실제 기동해 DDL 로그로
+21개(신규 17 + 기존 4) 인덱스가 전부 에러 없이 생성되는 것까지 확인했다(위 목록 참고). 대상:
+`photos`(member_id+created_at 복합, genre, color_mood), `comments`(photo_id, parent_id),
+`series`(member_id), `inquiries`(receiver_member_id), `bookings`(member_id+shoot_date 복합,
+status+shoot_date 복합 — 배치잡 `cancelExpiredRequestedBookings`용), `delivery_sets`/`testimonials`/
+`press_features`/`achievements`/`pricing_packages`/`client_brands`(각 member_id), `photo_shares`/
+`photo_tags`(각 photo_id), `photo_saves`(member_id), `follows`(following_id), `members`(provider+
+provider_id — OAuth 로그인 조회), `analytics_events`(visitor_token+created_at 복합 — 익명 방문자
+rate limit 체크가 트래킹 이벤트마다 호출됨).
+
+**저장 프로시저(procedure)는 도입하지 않았다** — 이 저장소는 처음부터 끝까지 JPA + JPQL, 배치 로직도
+전부 `@Modifying` bulk UPDATE를 서비스 레이어(BookingBatchService/MeetBatchService/GatheringBatchService)
+에서 실행하는 일관된 패턴이며 DB 프로시저가 단 하나도 없다. 이번에 훑어본 범위에서 프로시저가 필요할
+만큼 복잡한 다단계 집계·트랜잭션 로직(단순 GROUP BY 통계 몇 개, bulk UPDATE 배치가 전부)도 발견하지
+못했다. "기존 코드로 구현 가능한지 먼저 검토" 원칙에 따라, 근거 없이 새 패러다임(DB 프로시저)을
+들여오지 않고 인덱스 추가로 범위를 한정했다.
+
+#### DB 튜닝 — Hibernate/JDBC 설정 (`application.yml` 공통)
+
+인덱스 외에 커넥션·쿼리 실행 레벨에서 개선 가능한 부분을 조사해 아래 3가지를 dev/prod 공통
+`spring.jpa` 설정으로 추가했다(`application.yml`, 프로필별 파일이 아닌 공통 파일 — Spring Boot가
+base + profile 파일을 병합하므로 `application-prod.yml`의 `hibernate.jdbc.batch_size` 등 기존
+설정과 충돌 없이 함께 적용됨):
+
+- **`spring.jpa.open-in-view: false`** — 기본값(`true`)이면 HTTP 요청마다 커넥션을 응답 직렬화가
+  끝날 때까지 계속 붙잡아둔다(Open Session In View). 이 저장소는 순수 REST API라 뷰 렌더링 중
+  지연 로딩이 필요 없고, 실제로 엔티티 연관관계(`@ManyToOne`/`@OneToMany` 등) 기반 지연 로딩을
+  쓰는 곳이 저장소 전체에 `board/entity/Content.java` 딱 하나뿐인데 그마저 `board/`가 컨트롤러·
+  서비스가 없는 미사용 placeholder라 실제로 호출되는 코드 경로가 아님을 확인했다(`grep`으로
+  `ContentRepository`/`Content` 참조가 `board/` 패키지 밖에 전혀 없음 확인). 즉 끌 때 깨질 수 있는
+  지연 로딩 의존성이 전혀 없어 안전하게 껐다 — Hikari 풀(운영 max 10)이 요청당 커넥션을 실제
+  트랜잭션 구간에만 붙잡도록 바뀌어 동시 요청 처리량이 늘어난다. `./gradlew bootRun`으로 H2 dev
+  기동 시 기존에 매번 뜨던 "spring.jpa.open-in-view is enabled by default" 경고가 사라진 것과,
+  회원가입→포트폴리오 조회(`GET /api/portfolio/{profileName}`, 여러 배치 쿼리 후 DTO 직렬화)가
+  `LazyInitializationException` 없이 200으로 정상 동작하는 것까지 curl로 재확인했다.
+- **`hibernate.jdbc.fetch_size: 50`** — JDBC 드라이버가 한 번의 네트워크 왕복으로 가져오는 행 수를
+  제한한다. `PhotoRepository.search`/`findByMemberIdOrderByCreatedAtDesc` 등 다수의 조회 메서드가
+  `Pageable` 없이 `List<Photo>` 전체를 반환하는 구조라(아래 "알려진 갭" 참고), 사진 수가 늘어날 때
+  드라이버가 결과셋 전체를 한 번에 메모리로 끌어오는 것을 완화한다.
+- **`hibernate.query.in_clause_parameter_padding: true`** — 이 저장소의 지배적인 N+1 방지 패턴은
+  `findAllById(Set<Long>)`/`WHERE x IN :ids` 형태의 배치 조회다(`attachMemberInfo`,
+  `GatheringPhotoRepository.findByPostIds` 등 수십 곳). IN절 크기가 호출마다 달라지면(회원 2명 조회
+  vs 3명 조회) Hibernate가 매번 새 SQL 쿼리 플랜을 준비해 DB의 플랜 캐시 적중률이 떨어지는데, 이
+  옵션을 켜면 IN절 파라미터 수를 2의 거듭제곱(2,4,8,16...)으로 패딩해 플랜 재사용률을 높인다.
+
+**검증**: `./gradlew clean build -x test` BUILD SUCCESSFUL, `./gradlew bootRun`으로 H2 dev 기동 후
+`GET /api/photos`, `POST /api/auth/signup`, `GET /api/portfolio/{profileName}` curl 스모크 테스트
+모두 200 확인, 로그에 ERROR/Exception 없음.
+
+#### DB 튜닝 2차 — PgJDBC 프리페어드 스테이트먼트 캐싱 + AnalyticsEvent 복합 인덱스
+
+1차 튜닝(인덱스 17개 + OSIV/fetch_size/in_clause_padding) 이후 추가로 조사해 적용한 2가지:
+
+- **[2026-10-21 정정 — 아래 항목은 잘못된 설정이었다]** 아래 4개 속성은 MySQL Connector/J 이름이라 PgJDBC가 무시했고,
+  정작 Supabase 풀러(Supavisor) 트랜잭션 모드에서 필요한 `prepareThreshold: 0`이 없어, 같은 쿼리 5회째부터 서버 prepared
+  statement 오류로 실패할 수 있었다(health는 UP으로 보임). 운영 회원가입·프로필 이름 확인이 정상 입력에도 500을 내던 증상의
+  유력 원인으로 보고 4개를 지우고 `prepareThreshold: 0`으로 교체했다(운영 로그로 확정 전). 원래 기록:
+- **`application-prod.yml`의 `spring.datasource.hikari.data-source-properties`에 PgJDBC 서버 사이드
+  프리페어드 스테이트먼트 캐싱 4종 추가** (`cachePrepStmts: true`, `prepStmtCacheSize: 250`,
+  `prepStmtCacheSqlLimit: 2048`, `useServerPrepStmts: true`) — HikariCP 공식 문서가 PostgreSQL
+  조합에서 명시적으로 권장하는 설정인데 기존에는 `sslmode`/`sslfactory`만 있고 이 4개가 전혀 없었다.
+  서버 사이드 프리페어드 스테이트먼트를 캐싱해 반복 실행되는 쿼리(예: `findByMemberIdOrderByCreatedAtDesc`,
+  `findAllById` 배치조회 등 이 저장소에서 가장 빈번한 쿼리 패턴)의 매 실행마다 발생하는 파싱·플래닝
+  비용을 줄인다 — 1차 튜닝의 `in_clause_parameter_padding`(IN절 파라미터 개수를 2의 거듭제곱으로
+  패딩)과 정확히 같은 목적(플랜 캐시 재사용률 향상)으로 서로 상호보완적인 설정이라 함께 적용하는 것이
+ 자연스럽다. **주의**: 이 설정은 PostgreSQL(prod)에만 적용되고 H2(dev)는 이 프로퍼티들을 사용하지 않으므로
+  H2 dev 기동으로는 PgJDBC 자체의 캐싱 동작(플랜 캐시 히트 여부 등)을 검증할 수 없다 — 이번 세션에서는
+  실제 운영 Postgres 접근 권한이 없어 `EXPLAIN ANALYZE` 등으로 캐시 적중 여부까지 확인하지 못했고,
+  설정값 자체가 공식 문서상 안전하고 널리 쓰이는 기본값 조합이라는 점에 근거해 적용했다.
+- **`AnalyticsEvent`에 `idx_analytics_member_type_created (member_id, event_type, created_at)`
+  복합 인덱스 추가** (기존 `idx_analytics_member_type (member_id, event_type)`는 그대로 유지, 완전히
+  새 인덱스를 추가 — 기존 인덱스의 컬럼 구성을 변경하면 `ddl-auto: update`가 실제로 `ALTER`/재생성을
+  보장하지 않아 위험하므로, 안전한 "순수 추가"만 선택). `AnalyticsEventRepository.countByMemberAndTypeSince`/
+  `dailyViewsByMember` 두 쿼리가 `WHERE memberId = :x AND eventType = '...' AND createdAt >= :since`
+  형태로 등치(member_id, event_type) 다음에 range 필터(created_at)를 거는데, 기존 2컬럼 인덱스로는 이
+  range 조건을 인덱스 레벨에서 못 거르고 힙 조회 후 필터링해야 했다 — leftmost-prefix 규칙상 3번째
+  컬럼(created_at)까지 포함해야 인덱스만으로 걸러진다. `AnalyticsController`의 방문자 분석 대시보드
+  (일별 조회수 차트, KPI 요약)가 호출하는 경로.
+- **투자했지만 적용하지 않은 것들**(근거와 함께 기록):
+  - **HikariCP `autoCommit: false` + `hibernate.connection.provider_disables_autocommit: true`
+    조합** — 트랜잭션 시작을 커넥션 체크아웃 시점이 아니라 실제 첫 쿼리 시점으로 늦춰 커넥션 점유
+    시간을 더 줄일 수 있는 잘 알려진 최적화이지만, 이 설정이 안전하려면 모든 쓰기 경로가 반드시
+    `@Transactional` 경계 안에 있어야 한다(그렇지 않은 쓰기는 오토커밋이 꺼진 상태에서 커밋 없이
+    끝나 롤백되거나 커넥션이 반환되지 않을 수 있음). 이 저장소 전체 서비스 레이어의 모든 쓰기
+    메서드가 `@Transactional`로 감싸여 있는지를 안전하게 보장하려면 전수조사가 필요한데, 이번
+    세션에서 grep으로 확인한 범위에서는 대부분 클래스 레벨 `@Transactional`을 쓰고 있었지만 100%
+    확신할 수 있는 근거(정적 분석 도구 등)가 없어 "설정 하나로 전체 쓰기 경로가 깨질 수 있는" 리스크
+    대비 이득이 크지 않다고 판단해 보류했다.
+  - **`application-dev.yml`에 `hibernate.jdbc.batch_size`/`order_inserts`/`order_updates` 추가**
+    (prod에는 이미 있음) — dev는 H2 in-memory라 배치 insert/update 성능이 실사용에 영향을 주지 않고,
+    프로필 간 완전한 대칭을 맞추는 것 자체가 목적이 되면 안 된다고 판단해 우선순위 낮음으로 보류.
+  - **N+1 재점검** — `BookingService`/`GatheringPostService`/`GatheringService`/`MemberService`/
+    `MeetService`/`DeliverySetService`의 모든 for/forEach 루프를 다시 훑었으나 전부 이미 배치 조회된
+    컬렉션을 메모리에서 순회하거나(예: `DeliverySetService`의 `findAllById` 결과 맵핑), 계정 삭제
+    cascade처럼 저빈도 관리자 경로에서만 발생하는 루프뿐이었다 — 추가로 고칠 만한 새 N+1 패턴은
+    발견하지 못했다.
+  - **`GET /api/photos` 페이지네이션 부재** — 1차 튜닝에서 이미 "알려진 갭"으로 기록한 API 계약 변경
+    사안. 이번에도 다시 검토했으나 결론은 동일 — 웹/모바일 소비 코드를 함께 바꿔야 하는 별도 작업.
+
+**검증**: `./gradlew clean build -x test` BUILD SUCCESSFUL. `./gradlew bootRun`으로 H2 dev 기동 후
+DDL 로그에서 `create index idx_analytics_member_type_created` 생성 확인, `Started HappinessAppApplication`
+정상 기동, ERROR/Exception 없음. curl 스모크 테스트: `POST /api/auth/signup`(termsAgreed 포함) 201,
+`GET /api/photos` 200, `GET /api/portfolio/{임의프로필}` 404(정상 — 존재하지 않는 프로필), `POST
+/api/analytics/track` 200, `GET /api/photos/genres/stats`(비로그인) 401(인증 경계 정상). PgJDBC
+프리페어드 스테이트먼트 캐싱 설정 자체는 위에 명시한 대로 H2 dev 환경에서는 실제 동작 검증이
+불가능함을 재차 밝힌다.
+
+**해소됨(P1-1, 2026-10-07) — `GET /api/photos` 페이지네이션**: 과거 이 자리에 "전체 `List<Photo>`를
+반환하는 구조적 병목, API 계약 변경이라 보류"라는 알려진 갭이 기록돼 있었다. 계약을 깨지 않도록
+**opt-in** 방식으로 해결했다 — `page` 파라미터를 보낸 요청만 페이지 단위로 응답하고(`size` 기본 30,
+1~100으로 클램프), 응답의 `data` 배열 형태는 그대로 유지한 채 `page`/`size`/`hasNext` 필드만 추가한다.
+`page`를 안 보내면 기존처럼 전체 목록을 반환하므로 어드민(`AdminPhotosPage`)·프로필·포트폴리오처럼
+전체 목록이 필요한 화면은 손대지 않았다(기본 size를 강제하면 이 화면들이 조용히 잘려 보이는 회귀가 남).
+키워드·태그가 없을 때는 `PhotoRepository.searchPage()`(`search()`와 같은 JPQL + `Pageable`, 반환 타입
+`Slice`라 COUNT 쿼리 없이 `hasNext`만 계산)로 DB 레벨 페이징, 키워드(pg_trgm fuzzy → LIKE fallback)·태그
+경로는 기존 전체 조회 결과를 메모리에서 잘라 응답한다(검색 결과는 원래 작은 집합이라 허용). 소비 코드:
+웹 `GalleryPage`·`ExplorePage`는 첫 30장 + 공통 `Button`(secondary) "사진 더 보기"(실패 시 버튼 위 인라인
+에러, 이미 불러온 목록은 유지, id 기준 중복 제거), 결과 수는 다음 페이지가 있으면 `30+장`처럼 `+` 표시.
+모바일 `ExploreScreen`은 `FeedScreen`과 같은 `onEndReached` 무한 스크롤. `GalleryPage`의 클라이언트 색상
+정렬(`clientSort`)·장르 필터는 지금까지 불러온 사진에만 적용된다는 한계가 있다(전체 기준 정렬이 필요하면
+서버 정렬로 옮겨야 함). `CoreFlowIntegrationTest`에 페이지 경계·hasNext·키워드 경로·page 미지정 시 전체
+반환 케이스를 추가했다.
+
+#### PhotoRepository 주요 쿼리 메서드
+
+```java
+findByMemberIdOrderByCreatedAtDesc(Long memberId)        // 멤버별 사진
+findByColorMoodOrderByCreatedAtDesc(String mood)          // 무드별 사진
+search(keyword, colorMood, memberId, imageRatio, genre, Sort) // 복합 필터+동적 정렬 (JPQL + Sort)
+searchFuzzy(kw, colorMood, memberId, imageRatio, genre)   // pg_trgm 유사도 검색 (native, PostgreSQL only, H2 fallback)
+countByGenre()                                            // 전체 장르별 사진 수 통계
+countByGenreForMember(Long memberId)                      // 멤버별 장르 통계
+findTitleSuggestions(q, Pageable)                        // 자동완성용 제목 목록 (JPQL LIKE, 최대 5건)
+findByMemberIdInOrderByCreatedAtDesc(List<Long>, Pageable) // 피드 — 팔로우 유저 최신순
+findIdsByMemberId(Long memberId)                          // 계정 삭제 cascade용 photo ID 목록
+deleteByMemberId(Long memberId)                           // 회원 탈퇴 시 cascade
+```
+
+**검색 fallback 전략** (`PhotoController.getAllPhotos`):
+- 키워드 있을 때: `searchFuzzy()` → `DataAccessException` 시 `search()` LIKE로 자동 fallback
+- 키워드 없을 때: `search()` JPQL (동적 Sort 지원)
+
+**운영 DB 설정** (Supabase SQL Editor, 최초 1회):
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- 한글·영문 대소문자 무관 검색을 위한 LOWER() 표현식 GIN 인덱스
+CREATE INDEX IF NOT EXISTS idx_photos_title_trgm ON photos USING GIN (LOWER(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_photos_desc_trgm  ON photos USING GIN (LOWER(description) gin_trgm_ops);
+```
+
+**사진 삭제 시 cascade 순서** (`PhotoController.deletePhoto`):
+1. `PhotoLike`, `PhotoSave`, `PhotoShare`, `PhotoTag` 연관 레코드 먼저 삭제
+2. 이미지 파일 삭제 (`ImageProcessingUtil.deleteImage`)
+3. `Photo` 엔티티 삭제
+
+#### 파일 업로드 API
+
+```
+POST /api/upload/image?folder=photos
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Body: file=<이미지>
+
+Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photos/uuid.jpg", "status": "success" }
+```
+
+- 허용 타입: JPEG, PNG, WebP, GIF
+- 최대 크기: 20MB
+- 파일명: UUID 자동 생성 (경로 예측 불가)
+- `folder` 파라미터에 `..` 및 `/` 포함 시 400 반환
+
+### Frontend (`src/`)
+
+- **로그인 실패 안내 (2026-10-22)** — **버그 수정**: 틀린 비밀번호(서버 401)에 `api/apiClient.js` 응답 인터셉터가 토큰 만료로 보고 재발급 → refresh 토큰 없음 → `logout()` → `/login` 전체 새로고침을 돌려, **안내 문구 없이 화면만 새로 고쳐졌다**(사용자 체감 "로그인이 안 됨"). 인증 요청(`/auth/login|signup|refresh|oauth|find-email|password-reset`)의 401은 재발급·로그아웃 대상에서 뺐다. `AuthContext.login`은 axios 오류를 `loginErrorMessage()`로 바꿔 서버 사유(401 문구·429 잠금 안내)를, 연결 실패·5xx는 한국어 안내를 보인다(이전엔 "Request failed with status code 401"). 모바일 `store/AuthContext.js`도 같은 처리. 확인: 로컬 Playwright — 틀린 비밀번호 새로고침 0회·문구 표시, 5회 실패 후 429 문구, 정상 로그인 이동.
+- **웹 화면 깨짐·위치 정리 (2026-10-21, `DESIGN_PROMPTS/design/DESIGN_PROMPT_web-layout-polish.md`)** — 21개 화면 390/1280px 캡처 + 가로 넘침 자동 검사. 사진 상세 가로 스크롤·화살표 위치(`PhotoNavigation` 안쪽 12px)·액션 버튼 잘림·흰색 팔레트 칩(`ColorPalette` 안쪽 테두리, 중복 key), `WorkspaceTabs` 가운데 정렬(첫·마지막 탭 auto 여백), `LoginPage` 빈 모자이크를 최근 공개 사진으로, `GatheringsPage`·`SeriesPage` 머리말 줄바꿈, 모임 해시태그 콤마 분리, Editorial 컬렉션 카드 가운데. 재검사 결과 390·1280 모두 가로 넘침 0건.
+- **아이디·비밀번호 찾기 웹 (2026-10-21)** — `pages/FindAccountPage.jsx`(`/find-account?tab=email|password`, 공개 Standalone — 세그먼트 탭, 이름+휴대폰으로 가린 이메일·가입 방식 표시 / 이메일로 재설정 메일 요청 → "메일을 확인해 주세요"·다시 보내기), `pages/ResetPasswordPage.jsx`(`/reset-password?token=`, 공개 Standalone — 열 때 토큰 확인(스켈레톤) → 새 비밀번호·확인(회원가입과 같은 blur 검사) → 완료/만료 화면). 공통 `Button`·`FormField`/`Input` 사용, 규칙은 `utils/signupValidation.js` 재사용. `LoginPage` 비밀번호 아래 "아이디 찾기 · 비밀번호 찾기" 링크. `authApi.findEmail/requestPasswordReset/verifyResetToken/confirmPasswordReset`. 모바일: `screens/FindAccountScreen.js`(AuthStack `FindAccount`, 같은 두 탭, 재설정 링크는 메일에서 웹으로 열림 — 딥링크 범위 밖), `LoginScreen` 링크, `authMobileApi.findEmail/requestPasswordReset`.
+- **회원가입 입력 검증 QA (2026-10-21)** — 기획 `DESIGN_PROMPTS/planning/QA_signup-validation.md`(reviewer 에이전트 QA 점검 + 직접 대조), 디자인 `DESIGN_PROMPT_signup-validation.md`. 규칙은 `utils/signupValidation.js`(웹)·`mobile/utils/signupValidation.js`(모바일, 내용 동일 — 한쪽을 바꾸면 다른 쪽도, 차이는 모바일 포트폴리오 주소가 선택)에 모으고 **서버 `MemberService`가 기준**. 검사 시점: 입력란을 **벗어날 때(blur)** 정리(앞뒤 공백·인스타그램 `@`) → 형식 검사 → 통과 시 중복 확인, 그 뒤엔 입력 중 즉시 재검사(한 번 벗어난 필드만), 비밀번호를 바꾸면 "비밀번호 확인"도 재계산, 제출 시 전체 정리·검사 + 첫 오류로 포커스. 입력 중 정규화는 소문자·전화 하이픈처럼 **글자를 지우지 않는 것만**(한글 IME 조합 보호). 휴대폰 키보드 대응: 이메일·주소·인스타그램·비밀번호에 자동 대문자·자동 수정·맞춤법 끔, 웹 `inputMode`, 모바일 `textContentType`(emailAddress/newPassword/telephoneNumber). 중복 확인 응답은 지금 값과 같을 때만 반영(응답 경쟁). 웹 접근성: `label htmlFor`, `aria-invalid`, `aria-describedby` → 오류 `role="alert"`. 모바일은 Alert 하나 → 입력란별 오류 문구 + 서버 사유(`err.response.data.message`), 색을 `COLORS` 토큰으로(폐기 팔레트 `#0a0a1a`/`#1a1a2e` 제거), 잘못된 `.happiness.app` 서브도메인 표기 제거. 서버: 전화번호(선택) 검사·정규화 `normalizeTel`(숫자만 01x 10~11자리 → `010-1234-5678`, 아니면 400), 포트폴리오 주소 오류 문구를 실제 규칙(1~30자)대로 정정. **발견·수정**: 웹 중복 확인이 `ApiResponse` 래퍼 대신 `res.available`을 읽어 **"사용 가능/이미 사용 중" 결과가 배포 이후 한 번도 반영되지 않았고**, 제출 직전 중복 재확인도 아무것도 막지 못했다 → `res.data.available`. 제출 시 형식 오류로 오류 목록을 통째로 덮어써 중복 오류가 사라지던 문제도 수정. **확인 한계(해소)**: 당시엔 모바일 웹 번들에 `expo-secure-store`가 없어 API 요청이 전송 전에 실패했다 — 2026-10-21 `secureStorage.web.js`로 웹 번들에서도 API 확인 가능(아래 Mobile 섹션 "UI/UX 정리").
+- **메뉴 통합 — 탐색·업무 (2026-10-20)** — **탐색 사진 탭 = 예전 갤러리 + 목록 + 탐색(사진)**: `pages/GalleryPage.jsx`를 `components/explore/PhotoBrowser.jsx`로 `git mv`해 검색바·자동완성·최근 검색어(기존 탐색)를 얹고, 장르를 서버 필터(`?genre=`, 장르 배지 링크 호환)로, 정렬에 조회순 추가("수동 순"은 작가별 순서라 전체 탐색에선 뺌). 보기 방식 4종(정렬·격자·목록·매거진, `gallery_view` 기억)·색상순·사진 모달 유지. `ExplorePage`는 사진|작업 탭 껍데기만. `/`·`/list`·`*`는 `/explore`로 리다이렉트, `pages/ListPage.jsx`·`hooks/usePhotos.js`(ListPage 전용)는 삭제. **버그 수정**: 공개 탐색에서 비로그인이 사진 모달을 열면 댓글 조회(`GET /api/photos/{id}/comments`, 비공개였음)의 401 → 클라이언트 로그아웃 처리 → `/login`으로 튕겼다 → 댓글 **읽기만** 공개(SecurityConfig, 작성·삭제는 인증 유지, 통합 테스트 추가). **업무 허브**: `pages/WorkspacePage.jsx`(`/workspace`, 보호) "한눈에" — 카드 5개(새 문의 · 예약 요청 REQUESTED · 미수금 예약(CONFIRMED 중 계약금/잔금 PENDING) · 고객 확인 대기 납품(PENDING/REVIEWED) · 응답 대기 약속) + 다가오는 7일 일정, 기존 API `Promise.allSettled`(실패 카드만 "—"). `components/workspace/WorkspaceTabs.jsx`(한눈에·문의·예약·일정·약속·납품, 문의·약속 배지, 높이 `WORKSPACE_TABS_HEIGHT` 고정 — `BookingDashboard`·`MeetsPage`의 데스크탑 2단 높이 계산이 이 값을 뺀다)를 `/inbox` `/bookings` `/calendar` `/meets` `/deliveries` 상단에 공통 삽입. `utils/scheduleEvents.js`(신규) — 통합 달력의 일정 병합 로직(`loadScheduleEvents`, `TYPE_META`)을 추출해 `IntegratedCalendarPage`와 허브가 공유, 예약 유형 영문 코드(WEDDING)를 한글 라벨로 표시하도록 함께 수정. **함정**: NavLink에 인라인 `color`를 주면 `.active` 클래스 색이 지므로 활성 스타일은 `style={({isActive}) => …}` 함수로 준다(업무 탭 활성 칩이 어두운 배경에 어두운 글자가 되던 문제). 모바일 앱(RN) 탭 구조는 범위 밖.
+- **4개 메뉴 내부 고도화 — Cosmos·SCRL 대조 (2026-10-20)** — 분석 `ANALYSIS_cosmos-scrl-public-features.md`(외부 사이트가 네트워크 정책으로 막혀 REA 실분석 불가 — 공개적으로 알려진 기능 기준, 실화면 검증 전), 기획 `PLANNING_inside-menus-upgrade.md`, 디자인 `DESIGN_PROMPT_inside-menus-upgrade.md`. **탐색**: `components/photo/SimilarPhotos.jsx`(theme dark/light, 결과 0이면 섹션 숨김) — `PhotoModal`(3열, 고르면 모달 안에서 그 사진으로 교체 + 패널 맨 위로, 조회 기록도 바뀐 사진 기준)·`PhotoDetailPage`(6열, 이동). `PhotoBrowser` `MoodChips`(장르 탭 아래 색 점 칩 11종, `?mood=` → 서버 `colorMood`). **내 작업**: `MoodboardPage` 공유 패널(만들기·복사·끄기 이중 확인) + `pages/SharedBoardPage.jsx`(`/b/:token`, 공개 Standalone, `<meta name="robots" content="noindex">`). **편집(SCRL)**: `components/editor/ExportModal.jsx` "한 장 | 캐러셀" — `renderEditedCanvas`(보정 적용 캔버스, 기존 `renderExport`는 이걸 감싼다) → `composeCarousel`(1장=cover 채우기, 여러 장=같은 높이 한 줄 이어 붙이기·간격=여백) → `sliceSlide`, 4:5(1080×1350)/1:1, 2~10장, 여백 0~12%, 배경 흰/검정/회색, 미리보기는 사진이 바뀔 때만 900px로 렌더링해 두고 옵션 변경 시 재배치만. 캐러셀 모드에서 "갤러리에 올리고 작업(초안)으로 묶기"(2026-10-21) — 슬라이드 업로드·사진 등록 → 초안 시리즈 생성 → 순서대로 추가. 탐색 사진 탭 무한 스크롤(센티널 + IntersectionObserver, 실패 후엔 버튼 재시도). 모바일은 `PhotoDetailScreen`에 비슷한 사진 가로 줄(`components/SimilarPhotos.js`, `photoApi.getSimilar`)만 반영, 보드 공유는 미반영. **탐색 툴바 정리(같은 날, `PLANNING_explore-toolbar.md`, Unsplash·Pinterest·Behance·Cosmos 공개 패턴 대조)**: 모바일에서 정렬 칩 6개가 3줄로 줄바꿈되고 장르·색감까지 사진 위 약 280px를 차지하던 툴바를 한 줄로 — 정렬은 네이티브 `<select>` pill, 색감은 "🎨 색감" 버튼으로 칩 줄을 펼침(고르면 버튼이 색 점+이름), 보기 방식 4개는 같은 크기·한국어 이름(행 맞춤·벽돌·목록·매거진), 장르 탭 한 줄, 필터가 걸렸을 때만 "적용 중인 필터" 요약 칩(개별 ✕ + 모두 지우기). 390px 기준 첫 사진까지 110px. **버그 수정(검증 중 발견)**: `hooks/useGalleryLayout.js`가 `useRef` + 빈 deps effect로 ResizeObserver를 붙였는데, 탐색 사진 탭은 로딩 스켈레톤을 먼저 그려 컨테이너가 마운트 시점에 없으므로 관찰이 영영 붙지 않고 초기값(창 너비)이 계속 쓰였다 → 정렬(justified) 보기에서 행이 패딩 8px만큼 넘쳐 모바일 가로 스크롤 + 창 크기 변경 무반응. 콜백 ref(`setNode`) + `[node]` effect로 바꿔 390/768/1280px 모두 문서 너비 = 창 너비 확인.
+- **pages/** — Route-level components (Login, SignUp, Gallery(→ `components/explore/PhotoBrowser`로 이동), Explore, List(삭제), PhotoDetail, PhotoForm, **Profile**, **Portfolio**, **KakaoCallback**, **Series**, **InquiryFormPage**, **InquiryInboxPage**, **PhotoSortPage**, **FeedPage**, **ImageEditorPage**, **ClientDeliveryPage**, **DeliveriesPage**, **BookingPage**, **BookingDashboard**, **MeetsPage**, **MeetDetailPage**, **admin/AdminDashboardPage**, **admin/AdminGalleryOrderPage**, **admin/AdminMembersPage**, **admin/AdminPhotosPage**). **ClientDeliveryPage** (`/proof/:token`, 공개, Standalone): 납품 세트 뷰어. 로딩→만료(410)→비밀번호→성공 4단계 상태 처리. 3열 사진 그리드 + 하트 토글(♡/♥). 스티키 하단바: 전체 다운로드 + 최종 승인 버튼. 토큰 localStorage 미저장 보안 준수. **DeliveriesPage** (`/deliveries`, 인증 필요): 납품 세트 목록. 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED). 링크 복사 버튼(토큰 화면 미노출). DeliveryCreateModal. **BookingPage** (`/booking/:profileName`, 공개, Standalone): 3단계 예약 위저드 — 촬영 유형 → 날짜/시간 → 연락처 폼. 과거 날짜 클라이언트 차단. **BookingDashboard** (`/bookings`, 인증 필요): 예약 목록 4탭 필터, 확정/거절/취소 액션, 가용 시간 설정 버튼. **ImageEditorPage** (`/editor` 및 `/photo/new`, `/photo/:id/edit` — ProtectedRoute): useReducer 기반 EditorContext, 3-panel 레이아웃(LeftPanel 썸네일 스트립 + CenterCanvas + RightPanel 탭), 비파괴 편집(EditState per image), Undo/Redo(50단계), 전체 페이지 Drag & Drop 업로드(UploadDropZone), Ctrl+Z/Y/Escape 단축키, `?photoId=` 쿼리로 갤러리 사진 자동 로드, ExportModal(JPG/PNG/WEBP, 품질·크기 설정, 다중 순차 다운로드, Supabase 갤러리 업로드). **버그 수정**: `CenterCanvas.jsx`에서 "이미지 로드" `useEffect`의 의존성 배열이 그 아래에서 `const renderCanvas = useRef(...)`로 선언되는 `renderCanvas`를 선언 전에 참조해 `/photo/new` 진입 시 무조건 `ReferenceError: Cannot access 'renderCanvas' before initialization`로 크래시하던 문제 수정 — 신규 사진 등록 진입점 전체가 막혀있었음. `renderCanvas`(및 이를 참조하는 `editStateRef`/`zoomRef`) 선언부를 "이미지 로드" effect보다 앞으로 이동해 해결. **ProfilePage** (Phase 2-8+28~30): 6탭 구조(내 작품·저장함·시리즈·분석(📊)·예약(📅)·설정), 아바타/커버 이미지 업로드(hover overlay), 6종 통계, 설정 탭에 확장 폼(bio/websiteUrl/location/specialties 체크박스) + `PortfolioLayoutPicker`(grid/magazine/slideshow 3-옵션 카드 선택) + **포트폴리오 템플릿 선택 UI**(7종 카드 그리드, PUT /api/portfolio/{profileName}/template 저장, profileName 없을 때 안내 메시지) + 비밀번호 변경(kakao 유저 숨김). **FeedPage** (Phase 3): 팔로우 유저 최신 사진, 더 보기 페이지네이션, 빈 피드 안내. **PhotoDetailPage** (Phase 4 강화): 컬러 팔레트(useColorExtraction K-means), 전체화면 뷰어(PhotoViewer), 이전/다음 네비게이션(PhotoNavigation), 공유 버튼(ShareButton), 관련 사진(RelatedPhotos), 인쇄 CSS 포함. **PortfolioPage** (Feature 28 — 템플릿 시스템, Feature: 포트폴리오 확장성 개선으로 레지스트리 패턴 리팩토링): GET /api/portfolio/{profileName}/config 로 template 로드 후 `TEMPLATE_REGISTRY` 객체({EDITORIAL/SCRL/MINIMAL/DARK_ROOM: 컴포넌트}) 조회로 렌더링 — 새 템플릿은 이 객체에 한 줄만 추가하면 됨(switch문 아님). 레지스트리에 없는 키(FILM/SPLIT/MOSAIC/MAGAZINE)는 `TemplateComingSoon`(children 감싸는 배너 래퍼, 실제로 호출되는 살아있는 컴포넌트로 재작성됨) + EDITORIAL 폴백으로 처리. 모든 템플릿에 공통 전달되는 `templateProps`(member/photos/series/photoCount/followerCount/followingCount/totalLikes/following/followLoading/onFollow/onOpenFollowModal) 단일 객체로 통합. **components/portfolio/templates/** — TemplateEditorial(기존 PortfolioPage 레이아웃 컴포넌트화, `.portfolio-masonry` 마소닉 그리드는 `constants/breakpoints.js`의 `mq.tablet`/`mq.mobile` 기준 768~1023px 3컬럼/≥1024px 4컬럼 — **버그 수정**: 히어로의 전문분야 배지·소셜링크·팔로우/문의/슬라이드쇼 버튼·통계바 8곳에 남아있던 `backdropFilter: blur()` + 아바타 원의 그라디언트 채움이 CLAUDE.md 플랫 서페이스 규칙 위반이라 전부 제거 — blur 대신 배경 불투명도만 높인 flat rgba, 그라디언트 대신 `COLORS.primary` 단색으로 교체. `PortfolioPage.jsx`의 팔로워 목록 모달 아바타도 동일하게 수정), TemplateScrl(CSS scroll-snap: y mandatory + IntersectionObserver + 우측 도트 인디케이터 + 키보드 ↑↓ 네비), TemplateMinimal(흰 배경 3열 정방형 그리드, 소문자 타이포, hover title overlay — **버그 수정**: `.minimal-grid` 클래스가 실제 그리드 컨테이너에 적용되지 않아 모바일 2컬럼 반응형이 전혀 동작하지 않던 문제 수정, 태블릿 구간 gap 1px 축소 추가), TemplateDarkRoom(#080808 배경 + 마우스 스포트라이트 + 무드 필터 + 클릭 피처 영역). **PortfolioSlideshowPage** (`/portfolio/:profileName/slideshow`, 공개, Header 없음): 풀스크린 슬라이드쇼 — PortfolioCoverPage(커버 슬라이드) + 사진들. 키보드(←/→/Space/Esc), 터치 스와이프(>50px), 자동재생 3s, hover 일시정지, 최대 7개 도트 인디케이터, PDF 인쇄(PrintButton), EmbedCodeModal(3크기 iFrame 코드). **Apple Glass 강화**(DESIGN_PROMPTS/design/DESIGN_PROMPT_apple-glass-slideshow.md): 상단바/하단바/이전·다음 원형 버튼/재생토글/`PrintButton`에 `backdropFilter: blur(20px) saturate(180%)` + 반투명 화이트 틴트 + 얇은 테두리 + 상단 스펙큘러 하이라이트(`inset 0 1px 0 rgba(255,255,255,0.25)`)로 구성된 글라스 머티리얼 적용 — 풀블리드 사진 위에 뜨는 컨트롤 크롬에 한정된 예외이며, 로컬 `glass()` 헬퍼로만 존재(전역 유틸/토큰 변경 없음, 앱 전체 Toss 플랫 디자인 정책은 그대로 유지). `EmbedCodeModal`(콘텐츠 다이얼로그)과 다른 화면은 대상 아님. **Admin Panel** (`/admin/**`, ADMIN 권한): AdminLayout(사이드바 + 상단바), 대시보드, GalleryOrderPage(멤버 선택 + 드래그 정렬), MembersPage(검색 + 권한변경 + 삭제), PhotosPage(검색 + 인라인 장르 팝오버 편집 + 강제삭제), **AdminCategoryPage**(`/admin/categories`, 장르별 분포 통계 테이블 + 분류 현황 요약). **버그 수정**: `GET /api/auth/members`는 다른 대부분의 컨트롤러처럼 `ApiResponse<T>`(`{success, code, message, data, timestamp}`)로 감싸 반환하는데, `AdminDashboardPage`/`AdminMembersPage`/`AdminGalleryOrderPage` 3곳 모두 `res?.data`(= ApiResponse 래퍼 객체 자체)를 회원 배열로 착각해 사용 — 대시보드는 "전체 회원" 통계가 항상 `—`로만 표시되고, 회원 관리·갤러리 순서 페이지는 `members.filter is not a function`으로 완전히 크래시하던 문제. 세 곳 모두 `res?.data?.data`(실제 배열)를 읽도록 수정. (`/api/photos`는 이 앱에서 예외적으로 `{status, data}` 형태의 별도 래퍼를 쓰므로 동일 언래핑 실수를 반복하지 않도록 주의 — 컨트롤러마다 응답 포맷이 다르다.) **AdminTagsPage**(`/admin/tags`): 태그 전체 목록(사진 수·최근 사용일), 태그 삭제(사용 중 경고), 태그 병합(MergeModal — 원본/대상 드롭다운 + 2단계 확인), 미사용 태그 통계. **AdminModerationPage**(`/admin/moderation`): 신고 목록 4탭(전체/대기중/처리완료/무시됨), 무시하기/사진 삭제(2단계 위험 액션 빨간색), 신고 썸네일·사유·신고자·날짜 표시. **MeetsPage** (`/meets`, 인증 필요, Feature 35): 약속 목록 + 상태별 탭 필터(전체/대기중/날짜조율/확정/완료). 상대 아바타·이름·상태배지·장소·메시지 수 카드. `NewMeetModalWrapper` — 회원 검색(이름/@프로필명) → `MeetRequestModal` 3단계 위저드. `useAuthStore(s => s.user)` 사용(AuthContext 아님). **MeetDetailPage** (`/meets/:id`, 인증 필요): 3-탭 레이아웃(📅 날짜/📍 장소/💬 채팅, Cosmos 언더라인 스타일). 달력 탭: `MeetCalendar` 가용일 토글 + NEGOTIATING 시 날짜 확정 폼. 장소 탭: `MeetLocationPicker` readOnly/편집 모드. 채팅 탭: `MeetChat` 460px 컨테이너. PENDING 수신자: 수락/거절 액션 카드. CONFIRMED: 확정 날짜 + 완료 처리 버튼. **GatheringsPage** (`/gatherings`, 공개, Feature 37): 모집중인 모임 카드 그리드(스켈레톤+EmptyState) + 인증 시 "내 모임" 목록 + "모임 만들기" 버튼(로그인 회원 누구나). **GatheringFormPage** (`/gatherings/new`, `/gatherings/:id/edit`, 인증 필요): PhotoForm처럼 생성/수정 공용 컴포넌트, `datetime-local` 입력(외부 날짜 라이브러리 없음), 백엔드와 동일한 클라이언트 사전 검증(제목/장소 필수, 시작<종료, 모집마감<시작). **GatheringDetailPage** (`/gatherings/:id`, 공개): status별 분기 — RECRUITING(참여/미참여 모달, 미참여 사유 라디오+직접입력, 정원 초과 시 대기자 등록 안내, 생성자 전용 참여자관리·모집마감 버튼), RECRUITMENT_CLOSED·SCHEDULED(마감 안내), ONGOING·ENDED(모임 피드 — 참여자만 사진/글 업로드·좋아요·댓글, `myStatus`는 서버에 "내 참여 상태 조회" 전용 엔드포인트가 없어 응답 후 로컬 state로만 추적하는 낙관적 UI, ENDED에는 앨범 링크 추가). **GatheringManagePage** (`/gatherings/:id/manage`, 인증 필요, 생성자 전용): 403 시 접근거부 화면, 참여자·대기자·미참여(사유 포함, 이 페이지에서만 노출) 3섹션, 모집 마감 버튼. **GatheringAlbumPage** (`/gatherings/:id/album`, 공개): 모임 종료 후 사진 모아보기 그리드(제목·참여자수·사진수·게시글수 헤더) + 모임 피드로 돌아가기 링크. **GatheringCalendarPage** (`/gatherings/calendar`, 인증 필요): `MeetCalendar.jsx`와 동일하게 외부 라이브러리 없이 순수 JS Date API로 구현한 월간 달력 — `GET /api/gatherings/my` 데이터를 `startDateTime` 날짜(YYYY-MM-DD)별로 그룹핑해 점(dot) 마커로 표시, 날짜 클릭 시 해당 날짜의 모임 목록(제목·시간·참여인원·상태배지)을 하단에 표시. `GatheringsPage`의 "+ 모임 만들기" 옆에 "📅 달력" 진입 버튼 추가. 별도 백엔드 엔드포인트 없이 기존 `/my` 응답을 클라이언트에서 날짜별로 재구성(모임 개수가 적은 초기 단계에 적합, 추후 규모가 커지면 서버 사이드 월별 필터링 고려 가능). **components/gathering/** — 피드 게시물 작성 모달(사진 다중 업로드는 `uploadApi.uploadImage(file, 'gatherings', onProgress)` 재사용, 캡션/본문/해시태그 입력, 사진 또는 본문 중 하나 이상 필수). **GatheringNotificationsPage** (`/gatherings/notifications`, 인증 필요): 내 알림 목록(최신순 페이징), 미읽음 좌측 파란 accent border+굵은 글씨+닷 표시, 타입별 이모지 아이콘, 클릭 시 읽음 처리(낙관적 업데이트+실패 시 롤백) 후 해당 모임 상세로 이동, "모두 읽음" 버튼. Header 내비게이션에 "모임"(`/gatherings`) 항목 추가 + 기존 `inquiry`/`meets`와 동일한 폴링 배지 패턴(`badge: 'gatherings'`)으로 미읽음 알림 수 표시.
+- **포트폴리오 컨셉 "작업 노트(Work Notes)" P0 (2026-10-20)** — 기획 `DESIGN_PROMPTS/planning/PLANNING_portfolio-work-notes-concept.md`, 디자인 `DESIGN_PROMPTS/design/DESIGN_PROMPT_portfolio-work-notes.md`. 컨셉: 포트폴리오의 단위를 "사진"에서 "작업 1건(케이스)"으로 — 맥락(유형·클라이언트·시기·이야기) + 이어지는 의뢰. **WorkCasePage** (`/portfolio/:profileName/work/:seriesId`, 공개, Standalone — 자체 상단바): `GET /portfolio/:profileName` + `GET /series/:id` 조합(신규 공개 API 없음), `series.memberId !== member.id`면 "작업을 찾을 수 없어요"(남의 시리즈를 다른 작가 주소로 노출 방지, 비공개 포트폴리오 403도 동일 처리). 커버(글 얹지 않음) → WORK NOTE 제목·메타 줄(값 없는 항목 생략) → 작업 이야기(640px 컬럼, `pre-line`) → 사진 세로 전시형(모바일 풀블리드) → CTA "이런 촬영 문의하기"(`/inquiry/:profileName?memberId=&shootType=`) → 다른 작업 가로 스크롤. 링크 복사 버튼, 스켈레톤, 사진 0장 안내. **InquiryFormPage**: `shootType` 쿼리가 유효한 어휘면 촬영 종류 미리 선택(로컬 `SHOOT_TYPES`를 `constants/shootTypes.js`로 이동해 공유). **SeriesPage** 생성/수정 모달에 "작업 노트" fieldset(유형 라디오 칩·클라이언트·작업 시기 형식 검증·이야기 글자 수) + 카드에 "↗ 작업 페이지" 버튼. **TemplateEditorial** 컬렉션 카드 아래 "작업 노트 보기 →" 진입점(기존 펼침 유지). **P1 완료(2026-10-20)**: `components/portfolio/WorkNotesSection.jsx`(신규) — 작업 카드 그리드(3/2/1컬럼) + `WorkTypeFilter`(작업에 실제 쓰인 유형이 2개 이상일 때만 "전체 n / 유형 n" 칩) + `filterWorksByType`, light/dark 테마. Minimal(그리드 아래)·DarkRoom(신뢰 신호 위, dark)·Scrl(마지막 스냅 섹션, dark)에 섹션으로, Editorial은 기존 컬렉션 카드에 필터만 적용. 작업 페이지 CTA가 `seriesId`도 넘기고 `InquiryFormPage`가 `sourceSeriesId`로 전송 → `InquiryInboxPage`에 "📁 작업 보고 문의" 배지 + 펼치면 작업 링크. `utils/pageMeta.js`(신규) `applyPageMeta()` — title/description/og:* 설정 후 원복 함수 반환. **버그 수정**: `PortfolioPage`의 기존 메타 주입이 새 `<meta>`를 만들 때 `property`/`name` 속성을 붙이지 않아 OG 태그가 실제로는 한 번도 설정되지 않고 이름 없는 meta만 쌓였음 → 같은 헬퍼로 교체. **한계**: 클라이언트 주입이라 메신저 링크 미리보기에는 안 보임(서버 측 주입 필요, 기획서 P2). 모바일 `SeriesScreen`에 "✎ 작업 노트" 하단 시트 모달(4개 필드, `PUT /series/:id`) + 카드 메타 줄(유형·클라이언트·시기) — 모바일은 시리즈 생성 화면이 원래 없어 기존 시리즈 편집만. **P2 완료(2026-10-20)**: `FeaturedWorkCard`(`WorkNotesSection.jsx` export, 좌 60% 커버 + 우 텍스트, 모바일 1컬럼) — Editorial(히어로 아래)·Minimal(헤더 아래)·DarkRoom(무드 필터 위)에 대표 작업 1건, `pinnedFirst()`로 작업 목록·컬렉션도 대표 작업 우선 + "📌 대표" 배지. **버그 수정**: P1에서 Minimal의 작업 노트 섹션이 의도(그리드 아래)와 달리 사진 그리드 **위**에 들어가 있었음(같은 Divider 주석이 2개라 첫 번째에 매칭) → 그리드 아래로 이동. `WorkCasePage`: "이 작업의 고객 후기"(연결된 추천사), CTA에 "바로 예약하기"(이번 달·다음 달 `getAvailability`에 예약 가능일이 있을 때만, `constants/shootTypes.js` `BOOKING_CODE_BY_SHOOT_TYPE`로 결혼식→WEDDING·인물/프로필→PROFILE·제품촬영→COMMERCIAL만 프리셋), `WORK_VIEW` 기록. `BookingPage`가 `?shootType=` 유효 코드면 1단계 선택을 미리 채움. `SeriesPage` 카드 "📌 대표로/대표 작업" 토글. `PortfolioContentManager` 추천사 관리: **버그 수정** — 기존 추천사를 불러오는 코드가 비어 있어(주석만) 저장된 추천사가 관리 화면에 한 번도 보이지 않았음 → `useAuth().user.id`로 목록 로드 + 항목별·신규 폼에 "연결할 작업" 선택. 분석 대시보드 `components/analytics/TopWorks.jsx`(신규) "많이 본 작업" 표(조회·문의·전환율). 모바일의 대표 작업 토글·추천사 연결 UI는 미구현. 런타임 검증: H2 dev + dev 서버로 시드 후 Playwright 스크린샷(데스크탑/모바일/메타 없는 작업/타 작가 주소/문의 프리필/포트폴리오 진입점 3개), 페이지 에러 없음.
+- **작업 탐색 & "예약 받는 중" 배지 (2026-10-20)** — Behance 공개 기능 분석(`ANALYSIS_behance-public-features.md`)의 P0. 기획 `PLANNING_work-discovery.md`, 디자인 `DESIGN_PROMPT_work-discovery.md`. `ExplorePage` 상단 **사진 | 작업** 세그먼트(`?tab=works`, 사진 탭일 때만 사진 API 호출). `components/discover/WorkDiscovery.jsx`(신규) — 촬영 유형 칩(`constants/shootTypes.js`) + 지역 입력(디바운스 400ms, 엔터 즉시) + 작업 카드 3/2/1컬럼(커버·사진 수·제목·메타·작가 줄·배지) + "작업 더 보기" + 스켈레톤·빈 상태, 카드 → 작업 노트 페이지. `components/common/AcceptingBadge.jsx`(신규) — 정적 배지(탐색 카드)/링크 배지("예약 받는 중 · 날짜 보기 →", 포트폴리오 4종 템플릿 히어로·헤더와 `WorkCasePage` 제목 아래, 작업 페이지는 유형 프리셋 포함). 신규 토큰 `COLORS.successText`(#007A45, 웹·모바일) — `success`(#00C471)는 `successTonal` 위에서 대비 약 3:1이라 AA 미달. `PortfolioPage` `templateProps`에 `acceptingBookings`. `/explore`는 사용자 승인으로 **비로그인 공개**로 전환(사진 상세 `/photo/:id`는 비로그인 좋아요가 화면만 바뀌는 문제가 있어 보호 유지 — 탐색에서 사진을 누르면 로그인 안내). **버그 수정**: Editorial 히어로의 버튼 줄이 하단 절대 위치 통계 바(약 76px)에 깔리던 기존 레이아웃 문제 — 본문 컨테이너에 하단 패딩 104px. 모바일: `ExploreScreen` 상단 세그먼트 + `components/WorkDiscoveryList.js`(신규, 같은 API, 무한 스크롤·당겨서 새로고침, 카드 탭 → 웹 작업 노트를 시스템 브라우저로).
+- **Feature 38 — 3플랫폼 UI/UX 개선 (P1 8개 + P2 5개 완료)**: `DESIGN_PROMPTS/planning/PLAN_38_MULTIPLATFORM_UX_V2.md` 기획 + `DESIGN_PROMPTS/design/DESIGN_PROMPT_{common-components,desktop-layout,mobile-loading-states,tablet-layouts}.md` 디자인 프롬프트 기반. `Skeleton.jsx` 색상 토큰을 구 Cosmos 팔레트에서 Toss 토큰(`#E5E8EB`/`#F2F4F6`, 다크 `#1A1E22`/`#22262B`)으로 교체. **MeetsPage**·**BookingDashboard** — `useIsDesktop()`(matchMedia 기반 로컬 훅) 도입, ≥1024px에서 좌 목록 패널(320px/360px) + 우 상세 패널 2컬럼 레이아웃 추가, 카드 클릭이 데스크탑에서는 선택만 하고 모바일/태블릿에서는 기존처럼 상세로 바로 이동. **버그 수정**: `bookingApi.getMyBookings()`가 존재하지 않는 `/booking/my` 엔드포인트를 호출해 `BookingDashboard`가 항상 500 에러로 실패하던 문제, `BookingDashboard.jsx`가 응답 필드 `shootDate`/`shootTime` 대신 `date`/`time`을 참조해 날짜가 항상 빈 값으로 보이던 문제 — 배포 이후 이 화면이 사실상 한 번도 정상 동작한 적이 없었음. **FeedPage** — `.feed-grid` className을 추가해 태블릿(768~1023px)에서만 2컬럼 CSS grid로 전환(데스크탑 maxWidth 680px 단일 컬럼·모바일 단일 컬럼은 그대로 유지, 의도적으로 태블릿에서만 2컬럼이었다가 데스크탑에서 다시 1컬럼으로 되돌아가는 비선형 구조 — 데스크탑은 가독성 우선). **ProfilePage** — 768px 이상에서 좌 사이드바(태블릿 260px/데스크탑 300px, 아바타·통계·수직 아이콘 탭 메뉴 중앙정렬) + 우 콘텐츠 2컬럼 레이아웃 추가, 커버 배너는 좁은 사이드바에 안 맞아 태블릿 이상에서 숨김. 탭 바는 동일한 `TABS`/`activeTab` state를 공유하되 className 기반으로 옮겨 모바일 수평 언더라인 ↔ 태블릿+ 수직 아이콘 필 메뉴를 CSS media query만으로 전환(인라인 스타일과 충돌하는 마진만 `!important`로 재정의). `constants/breakpoints.js`에 화면 유형 6종(콘텐츠 목록/사진 갤러리/상세 뷰/폼 입력/대시보드/프로필)별 반응형 전략표를 주석으로 문서화(C-5) — 신규 화면 개발 시 참조 기준. **P2 5개 항목 후속 완료**: (A-5) `MeetsPage` 모바일/태블릿 단일 컬럼 카드 hover를 `GatheringCard`와 동일한 `translateY(-2px)+box-shadow` 패턴으로 통일(데스크탑 2컬럼의 좌측 목록 패널은 리스트 성격이 강해 배경색 전환만 유지), `PhotoCard.jsx`의 무드 배지·저장 버튼 오버레이에 남아있던 `backdropFilter: blur()` 제거(문서화된 예외가 아닌 위반 사례였음, flat rgba로 교체). (A-6) `MeetsPage`/`BookingDashboard`/`InquiryInboxPage`의 플랫 텍스트 빈 상태를 기존 `DotEmptyState` 컴포넌트(theme="light")로 통일. (B-5) 모바일 `GalleryScreen`의 웹 전용 12컬럼 `packRows` 알고리즘을 제거하고 `ExploreScreen`과 동일한 `FlatList numColumns={2}` 패턴으로 교체. (C-4) `GatheringFormPage`에 768px 이상 좌 "기본 정보"+우 "장소·일정·참여 정보·이미지" 2컬럼 폼 레이아웃 추가 — **AC1(PhotoFormPage 태블릿 2컬럼)은 스킵**: `App.jsx` 라우팅 확인 결과 `/photo/new`·`/photo/:id/edit`는 실제로 `ImageEditorPage`가 렌더링되고 `PhotoFormPage`는 import만 될 뿐 어떤 Route에도 연결되지 않은 죽은 코드였음(이미 CLAUDE.md에 문서화돼 있던 사실을 재확인). (B-4) 모바일 `BookingScreen.js`(신규, 상태별 SectionList + 확인/거절 액션, 가용시간 설정은 웹으로 딥링크)·`DeliveryScreen.js`(신규, 납품 세트 목록 + `expo-clipboard`로 링크 복사)·`GatheringNotifBadge.js`(신규, `GatheringsScreen` 헤더 우측 30초 폴링 알림 배지, 웹 알림 페이지로 딥링크) 추가, `ProfileScreen` 메뉴에 "📅 예약 관리"/"📦 납품 관리" 진입점 추가. `mobile/src/api/bookingApi.js`·`deliveryApi.js`(신규) + `gatheringApi.getUnreadCount()` 추가. `expo-clipboard` 신규 의존성(SDK 49 호환 `~4.3.1`).
+- **Feature 39(a) — 통합 일정 캘린더**: `DESIGN_PROMPTS/planning/PLAN_39_PHOTOGRAPHER_WORK_SUPPORT.md` 기획 + `DESIGN_PROMPTS/design/DESIGN_PROMPT_integrated-calendar.md`. **IntegratedCalendarPage** (`/calendar`, 인증 필요, ProtectedRoute): Booking(CONFIRMED)·Meet(CONFIRMED)·Gathering(SCHEDULED/ONGOING) 3개 일정 도메인을 한 달력에서 색상으로 구분해 조회(예약=파랑 `primary`, 약속=초록 `success`, 모임=주황 `#B45309`). `bookingApi.getMyBookings('CONFIRMED')` + `meetApi.list()` + `gatheringApi.getMy()`를 `Promise.allSettled`로 병렬 호출 후 클라이언트에서 날짜별로 병합 — 신규 백엔드 통합 API 없음(3개 응답 중 하나 실패해도 나머지는 정상 표시, 실패한 유형명을 주황 배너로 안내). 날짜 정규화는 `dateKeyOf()`(ISO 문자열 앞 10자 slice)로 통일. `components/calendar/UnifiedCalendar.jsx`(신규 공용 컴포넌트, `dateKeyOf`/`formatDateKo` export) — 월간 달력 그리드(월 이동, 오늘 표시, 날짜당 최대 3색 도트) + 선택 날짜 패널(목록은 `renderItem` prop으로 페이지별 커스텀) 로직을 추출해 `GatheringCalendarPage`(`/gatherings/calendar`, Feature 37, 그대로 유지)와 `IntegratedCalendarPage` 양쪽에서 재사용. `/gatherings/calendar` 경로·기능은 변경하지 않음(Gathering 전용 달력과 통합 캘린더는 관심사 분리, PLAN_39 트레이드오프 결정). Header 내비게이션에 "📅 일정"(`/calendar`) 항목 추가(문의함-약속 사이). **버그 수정(부수 발견)**: 웹 `bookingApi.js`의 `getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate`가 실제 백엔드 컨트롤러 경로(`/booking/availability-settings`, `/booking/blocked-dates`)와 다른 존재하지 않는 `/booking/settings/availability`, `/booking/settings/blocked-dates`를 호출하고 있어 `AvailabilityModal.jsx`("가용 시간 설정" 버튼)가 항상 404로 실패하던 문제, 그리고 `AvailabilityModal.jsx`가 `AvailabilitySettingsDto`의 실제 필드(`weekdays`/`timeSlots` — 콤마CSV 문자열)를 무시하고 존재하지 않는 `enabledDays`(배열)·`blockedDates` 필드를 참조하던 문제까지 함께 수정 — 이 화면도 배포 이후 정상 동작한 적이 없었을 가능성이 높음. `GET /api/booking/blocked-dates`(신규, 내 차단 날짜 목록 조회, `BookingService.getBlockedDates()`) 추가 — 기존에는 목록 조회 엔드포인트 자체가 없어 프론트가 조회할 방법이 없었음. `POST /api/booking/blocked-dates`도 기존 204(no body) 대신 생성된 `BlockedDateResponse`를 반환하도록 변경(프론트가 실제 서버 id를 즉시 받아 씀). **버그 수정(런타임 검증 중 발견)**: 위 수정 직후 실제 브라우저로 "가용 시간 설정" 저장을 끝까지 눌러보니, `AvailabilitySettingsDto`의 필드가 `private boolean isActive`인데 Lombok+Jackson이 getter/setter를 `isActive()`/`setActive(boolean)`(JSON 프로퍼티명은 `active`)으로 생성해 프론트가 보낸 `{"isActive": true}`가 알 수 없는 필드로 조용히 무시되고, `BookingService.saveAvailabilitySettings()`가 `av.setActive(dto.isActive())`를 무조건 실행해 매번 `active=false`로 덮어써버리는 문제를 확인 — 즉 작가가 "가용 시간 설정"을 저장할 때마다 자신의 예약 가능 상태가 통째로 비활성화되어 클라이언트가 그 즉시 아무 날짜도 예약할 수 없게 되는 심각한 회귀였다. 웹 `AvailabilityModal.jsx`·모바일 `AvailabilitySettingsScreen.js` 양쪽 모두 페이로드 키를 `isActive` → `active`로 수정해 해결(`GET /booking/{profileName}/availability`로 저장 후 실제 예약 가능일이 채워지는 것까지 curl로 재확인 완료).
+- **Feature 39(d) — 모바일 가용시간 설정**: `DESIGN_PROMPTS/design/DESIGN_PROMPT_mobile-availability-settings.md`. 신규 `mobile/screens/AvailabilitySettingsScreen.js` + `mobile/src/api/bookingApi.js` 6개 메서드 추가(`cancelBooking`/`getAvailabilitySettings`/`saveAvailabilitySettings`/`getBlockedDates`/`addBlockedDate`/`deleteBlockedDate`, 웹과 동일한 실제 백엔드 경로 사용). `BookingScreen.js`의 "⚙ 설정" 버튼을 (Feature 38 당시의) 웹 딥링크 Alert에서 네이티브 화면 이동으로 교체. `ProfileScreen.js` 메뉴에 "📅 통합 일정"(당시 웹 `/calendar`로 `Linking.openURL` — P1-2에서 네이티브 `ScheduleScreen`으로 교체) 항목 추가 + 기존 "📅 예약 관리"는 "🗓 예약 관리"로 이모지만 조정(통합 일정과 시각적 구분). `AppNavigator.js`에 `AvailabilitySettings` 스택 등록.
+- **Feature 39(b)(c) — 촬영 준비 체크리스트 & 수금 현황**: `DESIGN_PROMPTS/design/DESIGN_PROMPT_booking-checklist-payment.md`. `Booking` 엔티티에 8개 컬럼 추가 — `checklistJson`(TEXT, `[{"id","text","checked"}, ...]` JSON 배열), `deliveryDeadline`(DATE), `depositStatus`/`balanceStatus`(VARCHAR 20, PENDING/RECEIVED, 기본 PENDING) + `depositAmount`/`balanceAmount`(INTEGER, 옵션) + `depositReceivedAt`/`balanceReceivedAt`(TIMESTAMP, RECEIVED 전환 시 자동 기록·PENDING로 되돌리면 null). `PUT /api/booking/{id}/checklist`(`BookingService.updateChecklist`) / `PUT /api/booking/{id}/payment`(`BookingService.updatePayment`, null 필드는 변경하지 않는 부분 업데이트 — 토글 클릭마다 상태 하나만 보내도 되고 금액은 별도로 저장 가능) 신규 엔드포인트, 둘 다 `findByIdAndMemberId` IDOR 검사. **components/booking/ChecklistAccordion.jsx** — 기본 접힘 아코디언(완료 n/m 헤더), 텍스트 입력으로 항목 추가, 체크박스 완료 표시, 항목별 삭제, 납품기한 date input — 모든 조작이 즉시 서버 자동저장. `isDeliveryDeadlineNear()`(export) — 오늘 기준 0~3일 이내면 true, 컴팩트 리스트·풀 카드·상세 패널 3곳 모두에서 주황색 "🚚 납품 임박" 배지로 재사용. **components/booking/PaymentToggle.jsx** — 계약금/잔금 각각 독립 토글(미수령 회색 ↔ 수령완료 초록톤), 금액은 선택 입력(AC-c5, 토글은 금액 없이도 동작). **BookingDashboard.jsx** — 상단 탭에 "미수금" 추가(`CONFIRMED` 예약 중 `depositStatus`/`balanceStatus` 어느 한쪽이라도 PENDING인 것만 클라이언트 필터, 이 탭에서 수령완료로 토글하면 즉시 목록에서 사라짐), CONFIRMED 카드(컴팩트·풀·데스크탑 상세 패널 3곳)에 체크리스트·수금 섹션 추가. 월간 수금 요약 카드(`GET /api/booking/payment-summary`)는 P2로 이번 스코프에서 제외(PLAN_39 AC-c3).
+- **components/layout/Header** — PC 상단 헤더(768px 이상) + 모바일 하단 BottomNav(768px 미만) 분기. **메뉴 통합(2026-10-20, `PLANNING_nav-consolidation.md`)**: 예전 10개(탐색·갤러리·시리즈·목록·등록/편집·문의함·일정·약속·모임·프로필) → `NAV_ITEMS` 4개 **둘러보기(2026-10-21 "탐색"에서 이름 변경, `/explore` 유지) · 내 작업(`/series`) · 업무(`/workspace`) · 모임** + 오른쪽 "＋ 올리기" 버튼(`/photo/new`) + 아바타 메뉴(프로필 · 내 포트폴리오 보기 · 로그아웃). "업무"는 `match: WORKSPACE_PATHS`로 문의·예약·일정·약속·납품 하위 경로 어디서든 활성(`isMenuActive`), 배지 = 새 문의 + 응답 대기 약속(기존 폴링 합산). 비로그인은 탐색·모임 + "로그인" 버튼만(로그인 필요 메뉴는 `auth: true`로 숨김). 로고 → `/explore`. BottomNav: 탐색 · 내 작업 · ＋올리기(원형) · 업무(배지) · 프로필, safe-area 대응. **아이콘 전용 + 설정 기반(2026-10-22, `DESIGN_PROMPT_bottom-nav-icons.md`)**: 9px 글자와 뜻이 모호한 유니코드 기호(⊙✦▤◎) 대신 `components/layout/NavIcon.jsx`(인라인 SVG 선 아이콘 — 이모지는 활성 색을 줄 수 없어 하단 탭만 예외, 이름 레지스트리)만 표시하고, 이름은 `aria-label`(배지 수 포함)·`title`, 현재 탭 `aria-current`(업무 하위 경로 포함). 상단·하단 메뉴 항목은 `components/layout/navConfig.js` 한 곳(`auth`/`guestOnly`/`match`/`badge`/`isCenter`) — 비로그인 하단 탭은 둘러보기·모임·로그인, 배지는 `badges` 객체 키로 연결. **2차(같은 날, Cosmos·Instagram 하단 바 참고)**: 단색 다크 알약(`COLORS.text`, blur 없음 — 참고 화면의 유리 효과만 Toss 플랫 규칙으로 대체) + 선 2.0 아이콘, 활성 탭은 **면 채움 아이콘 + 흰 12% 캡슐 배경**(위 파란 막대 제거), 프로필 탭은 로그인 회원 `avatarUrl`(없거나 깨지면 이름 첫 글자, 활성 시 흰 링 — `avatar: true`), 올리기(`isCenter`)는 **알약 밖 오른쪽 56px 파란 원**. `NavIcon`에 `cut`(바 색) prop — 채운 아이콘 안쪽 선을 바 색으로 그려 구멍처럼 보이게. 챗봇 버튼 모바일 위치를 8px 올려 원과 겹치지 않게. **LangSwitcher** 컴포넌트 — 드롭다운 언어 선택 (🌐 버튼, 국기+원어 레이블, 현재 언어 체크마크)
+- **components/magazine/MagazineViewer** — 풀스크린 오버레이 뷰어: 상단바(닫기/제목/TOC☰/공유↗/인쇄🖨), 슬라이드 전환(translateX+opacity 320ms), ←→키보드+화살표버튼, TOC 사이드패널(240px 슬라이드인), 하단 썸네일 스트립(active 자동스크롤)+도트 인디케이터(≤7개)+페이지 번호, body 스크롤 잠금
+- **components/magazine/MagazineSpread** — panType별 스프레드 라우터 (7종 → spreads/ 하위 컴포넌트 디스패치)
+- **components/magazine/PanSelector** — 7종 판 타입 선택 UI (인라인 SVG 미리보기 그리드, 선택 체크마크)
+- **components/magazine/spreads/** — 7종 스프레드 컴포넌트: FullBleedSpread(전면판 그라디언트 오버레이), SplitSpread(58/42 이미지/텍스트, imageRight 지원), EditorialSpread(70%+30% 사이드바 작가정보/태그/좋아요), TriptychSpread(3장 나란히+프레임 번호), FeatureSpread(대표60%+보조3장), PortraitFocusSpread(중앙 세로+컬러bg), FilmStripSpread(다크bg+필름 천공+수평 스크롤 스냅)
+- **components/photo/GenreBadge** — 클릭 가능한 장르 배지 (primary solid + sub outline), /explore?genre=X 이동
+- **components/common/GenreTabBar** — 수평 스크롤 탭, showAll·counts·genres 프롭, theme(dark/light). dark 테마: Cosmos 언더라인 스타일(활성 탭 bold+2px 흰선, 비활성 rgba(255,255,255,0.45)); light 테마: pill 버튼 스타일 유지
+- **components/photo/GenreSelector** — 4열 그리드 선택 UI (primary/sub/disabled 상태), AI 추천 배너
+- **components/common/Toast** — 타입별(success/error/warning/info) 컬러 바+아이콘, 최대 3개 스택, 오른쪽 슬라이드 애니메이션. `ToastStack` 컴포넌트로 다중 토스트 표시 가능
+- **components/common/GridSpanPicker** — 12-컬럼 너비 선택
+- **components/common/ImageUploader** — 드래그&드롭 + 진행률 + 미리보기
+- **components/common/Button** (Feature 38-A1) — `variant`(primary/secondary/ghost/danger) × `size`(sm/md/lg) 매트릭스, hover/focus-visible/active/disabled/loading 5상태. loading 시 호출 측이 넘긴 label 뒤에 점 3개 펄스 애니메이션을 붙이고 클릭 차단(라벨 자체를 하드코딩 문자열로 교체하지 않음 — 호출 측이 "저장 중"/"삭제 중" 등 상황에 맞는 라벨을 그대로 넘기면 됨).
+- **components/common/Input** (Feature 38-A2) — `Input`/`Textarea`/`FormField` 3종. default/focus/error/disabled 4상태, WCAG 2.1 AA 속성(`aria-invalid`/`aria-describedby`/`role="alert"`) 포함. `FormField`가 label-htmlFor 자동 연결 + 에러/헬퍼텍스트 렌더링을 담당.
+- **components/common/GenreSelector** — 주 장르(1개) + 서브 장르(최대 2개) 선택 컴포넌트 (PhotoForm 사용)
+- **components/common/GenreTabBar** — 장르 필터 수평 스크롤 탭바 (ExplorePage 사용). dark=Cosmos 언더라인, light=pill
+- **components/photo/GenreBadge** — 단일 장르 뱃지 + SubGenreBadges (PhotoDetail 사용)
+- **components/photo/PhotoCard** — 이미지 카드 (색체학 무드 뱃지 포함)
+- **components/photo/PhotoModal** — 갤러리 사진 상세 모달. **버그 수정(2026-10-20)**: 좋아요/저장이 존재하지 않는 `photoApi.like/save`를 호출해 매번 예외 → catch에서 화면 숫자만 올려 실제로는 한 번도 저장되지 않았음 → `photoApi.likePhoto/savePhoto(photoId, user.id)` 사용, 비로그인 시 안내, 실패 시 alert. 카운트 필드도 `likeCount` → 서버 필드 `likesCount`/`savesCount`로 수정(`PhotoDetailPage`도 같은 오타로 좋아요 수가 항상 0부터 시작했음).
+- **무드보드 웹(WORK_QUEUE 5)** — `services/moodboardApi.js`, `components/moodboard/BoardPickerModal.jsx`(사진 하나를 보드들에 넣고 빼는 체크 목록 + "만들고 담기", 낙관적 반영·실패 롤백, Esc는 캡처 단계에서 받아 전파를 끊어 뒤의 `PhotoModal`까지 닫히지 않게), `components/moodboard/BoardList.jsx`(프로필 저장함 탭 상단 "내 보드" 카드 + 새 보드), `pages/MoodboardPage.jsx`(`/boards/:id`, 보호 라우트 — 이름 바꾸기·사진 빼기·보드 삭제 이중 확인). 진입점: `PhotoDetailPage` "📌 보드에 담기", `PhotoModal` "📌 보드에". **버그 수정**: `PhotoDetailPage` 저장 수가 없는 필드 `saveCount`를 읽어 항상 숨겨져 있던 문제 → `savesCount`. 모바일(WORK_QUEUE 9): `components/BoardPickerSheet.js`(같은 동작의 하단 시트) + `src/api/moodboardApi.js`, `PhotoDetailScreen` "📌 보드" 버튼 — 보드 목록·이름 변경·삭제 화면은 모바일 미구현(웹에서).
+- **components/photo/ColorPalette** — 5색 팔레트 표시 컴포넌트 (복사 기능, shimmer 로딩)
+- **components/photo/PhotoViewer** — 전체화면 오버레이 뷰어 (ESC/클릭 닫기, 키보드 네비). **Apple Glass 강화**: 닫기·이전·다음 버튼에 슬라이드쇼(PortfolioSlideshowPage.jsx)와 동일한 `glass()` 레시피 적용 — 풀블리드 사진 위에 뜨는 컨트롤에 한정, 배경/이미지 자체는 변경 없음.
+- **components/photo/PhotoNavigation** — 사진 이전/다음 화살표 오버레이 (키보드 ← →)
+- **components/photo/ShareButton** — Web Share API / clipboard 공유 버튼
+- **components/assistant/ChatWidget** — 플로팅 AI 어시스턴트(Gemini 연동) 위젯. `App.jsx`에서 `!isStandalone`일 때 `Header`와 함께 전역 마운트, 컴포넌트 내부에서 모드를 스스로 결정: 로그인 상태면 `workspace`(회원 전용 앱 사용법 안내, `POST /assistant/chat/workspace`), 비로그인 + `/portfolio/:profileName` 경로면 `portfolio`(방문객 상담, 공개 `POST /assistant/chat`), 그 외에는 렌더링하지 않음. DB 조회 없이 시스템 프롬프트 응답만 하므로 대화 history는 클라이언트 state로만 유지하고 매 요청에 실어 보낸다(서버 미저장). 현재는 웹 프론트엔드에만 적용, mobile(RN)은 별도 작업 필요.
+- **components/photo/RelatedPhotos** — 같은 작가 관련 사진 3열 그리드 (최대 6개)
+- **components/layout/AdminLayout** — 어드민 사이드바+상단바 셸 (모바일 햄버거 지원)
+- **hooks/useColorExtraction** — Canvas K-means(k=5) 대표 색상 추출 훅 (캐싱 포함)
+- **contexts/AuthContext** — 전역 인증 상태 (login/signup/updateProfile/logout + localStorage)
+- **contexts/LanguageContext** — 다국어(ko/en/ja/zh) 상태. `useLang()` → `{ lang, changeLang, t, SUPPORTED_LANGS }`. `t(key, vars)` — `{var}` 치환 지원. `detectLang()` — localStorage > navigator.language > 'ko' 순 감지
+- **i18n/** — `index.js`(TRANSLATIONS, SUPPORTED_LANGS, LANG_META), `ko.js`/`en.js`/`ja.js`/`zh.js` (각 ~150 키)
+- **constants/colors.js** — `GENRE_META`(12 장르, emoji/label/color/description) + `GENRE_LIST` 추가
+- **constants/breakpoints.js** (Feature: 멀티플랫폼 UI/UX 개선 P0/P1) — `BP = { sm:480, md:768, lg:1024, xl:1280 }` + `mq` 미디어쿼리 헬퍼(mobile/tablet/desktop/upToTablet/**tabletUp**). GalleryPage 마소닉 그리드 768~1023px 3컬럼 브레이크포인트에 사용. **`mq.tabletUp`**(`min-width:768px`, Feature: 포트폴리오 확장성 개선에서 추가) — PC헤더/어드민 사이드바처럼 "모바일이냐 아니냐" 2단만 구분하는 곳 전용. **버그 수정**: Header.jsx/AdminLayout.jsx가 원래 `min-width:768px`이어야 할 자리에 `mq.desktop`(`min-width:1024px`)을 잘못 사용해 768~1023px 구간에서 PC 헤더와 모바일 BottomNav가 동시에 렌더링되던 회귀 수정 — `mq.desktop`(3단 그리드용, ≥1024)과 "모바일의 반대"(2단용, ≥768)는 의미가 다르므로 혼용 금지. 이후 Header.jsx(PC/모바일 767·768 분기 + 콘텐츠 maxWidth), AdminLayout.jsx(사이드바 767·768 분기, 기존 768·769에서 Header와 동일 기준으로 통일), EditorShell.jsx(모바일 서랍 768 분기 ×4), PhotoDetailPage.jsx(모바일 768 + 태블릿 1024 분기, 태블릿에서 이미지 섹션 58%→52% 축소 — 기존에 누락돼 있던 AC 항목 반영), ExplorePage.jsx(태블릿 3컬럼 분기를 GalleryPage와 동일하게 1024 경계로 통일), RelatedPhotos.jsx(480 분기)에 순차 적용. GalleryPage의 600px 모바일 분기, ExplorePage의 640px 모바일 분기, TemplateEditorial/TemplateMinimal의 포트폴리오 마소닉 900·600 분기는 `BP` 토큰과 값이 정확히 일치하지 않아(실제 화면 폭 기준이 달라짐) 시각적 회귀 위험 때문에 이번 라운드에서 값 변경 없이 보류 — 해당 파일을 다른 이유로 수정할 때 점진적으로 맞춰나간다.
+- **hooks/usePhotos** — 사진 CRUD + 상태 관리
+- **hooks/useToast** — 다중 토스트 상태 관리 (`toasts[]` 배열 + 타입별 자동 닫힘 시간), 구버전 단일 `toast` 객체 하위 호환 유지
+- **services/api.js** — photoApi + authApi + inquiryApi + seriesApi
+  - `photoApi.search({ keyword, colorMood, memberId, imageRatio, genre, sortBy, order })` — 복합 필터+정렬 (GET /photos)
+  - `photoApi.getGenreStats(memberId?)` — GET /photos/genres/stats (장르별 사진 수 통계)
+  - `photoApi.getAll({ sortBy, order })` — 전체 사진 목록 (정렬 지원)
+  - `photoApi.getByMember(memberId, { sortBy, order })` — 멤버별 사진 목록
+  - `photoApi.reorder(orders)` — 순서 일괄 저장 `[{id, displayOrder}]`
+  - `authApi.kakaoLogin(code)` — POST /auth/oauth/kakao → TokenResponse
+  - `authApi.googleLogin(code)` — POST /auth/oauth/google → TokenResponse
+  - `authApi.naverLogin(code, state)` — POST /auth/oauth/naver → TokenResponse
+  - `authApi.getMember(id)` — GET /auth/member/:id
+  - `authApi.getStats(id)` — GET /auth/member/:id/stats (6종 통계)
+  - `authApi.changePassword(id, data)` — PUT /auth/member/:id/password
+  - `photoApi.getSuggestions(q)` — GET /photos/suggestions (자동완성)
+  - `photoApi.searchByTags(tags, {sortBy, order})` — GET /photos?tags=콤마구분
+  - `photoApi.getFeed(memberId, {page, size})` — GET /feed (팔로우 피드)
+  - `photoApi.autoTag(photoId)` — POST /photos/:id/auto-tags
+  - `followApi.follow/unfollow/isFollowing/getCount/getFollowers/getFollowing` — 팔로우 CRUD
+  - `commentApi.getComments/addComment/deleteComment` — 댓글 CRUD
+  - `inquiryApi.send/getInbox/getUnreadCount/markRead/remove` — 문의 CRUD
+  - `seriesApi.getByMember/getOne/create/update/remove/addPhoto/removePhoto` — 시리즈 CRUD
+- **services/deliveryApi.js** — `create/getMyList/getDetail/markViewed/approve/reject/delete`. `getDetail(token, password)` → `POST /delivery/{token}` 바디 전송 (쿼리 파라미터 금지 — 서버 로그 노출 방지).
+- **services/analyticsApi.js** — `track(data)` raw fetch 사용(JWT 없음, 무음 실패). `getSummary/getDaily/getTopPhotos/getGenreDistribution` — Axios + JWT.
+- **services/bookingApi.js** — `getAvailability/createBooking/getMyBookings/confirmBooking/rejectBooking/cancelBooking/getAvailabilitySettings/saveAvailabilitySettings/addBlockedDate/deleteBlockedDate/getBlockedDates/updateChecklist/updatePayment` (13 메서드, Feature 39(a)에서 `getBlockedDates` 추가 + 나머지 4개 메서드가 호출하던 존재하지 않는 `/booking/settings/**` 경로를 실제 백엔드 경로 `/booking/availability-settings`·`/booking/blocked-dates`로 수정, Feature 39(b)(c)에서 `updateChecklist`/`updatePayment` 추가).
+- **services/meetApi.js** (Feature 35) — `create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage` (13 메서드). import: `apiClient from '../api/apiClient'`. 모든 호출 → `r.data` 자동 언래핑.
+- **services/gatheringApi.js** (Feature 37) — `list/getDetail/getMy/create/update/remove/respond/cancelParticipation/getParticipants/closeRecruitment` (1차 슬라이스) + `createPost/getFeed/deletePost/likePost/unlikePost/addComment/getAlbum` (피드/앨범 슬라이스) + `getNotifications/getUnreadCount/markNotificationRead/markAllNotificationsRead` (알림 슬라이스, 총 21 메서드).
+- **services/api.js `reportApi`** — `list({status,page,size})` → GET /admin/reports (Page&lt;AdminReportResponse&gt;). `update(id,{status,resolutionNote})` → PUT /admin/reports/{id}. `submit(photoId,{reason,detail,evidenceUrl})` → POST /photos/{photoId}/report. `myReports()` → GET /photos/reports/mine. `myUnreadCount()` → GET /photos/reports/mine/unread-count. `markSeen(id)` → PUT /photos/reports/mine/{id}/seen.
+- **services/portfolioApi.js** — `testimonialApi`(list/create/update/remove), `pressApi`(list/createPress/deletePress/createAchievement/deleteAchievement), `pricingApi`(list/myList/create/update/remove), `brandApi`(list/create/update/remove), `newsletterApi`(subscribe/unsubscribe/mySubscribers).
+- **services/assistantApi.js** — `chatPublic(message, history)` → POST /assistant/chat(공개), `chatWorkspace(message, history)` → POST /assistant/chat/workspace(인증). `ChatWidget`에서 사용.
+- **services/api.js `portfolioApi`** — `getConfig(profileName)` → GET /portfolio/{profileName}/config (공개). `updateTemplate(profileName, data)` → PUT /portfolio/{profileName}/template (인증 필요).
+- **components/portfolio/TestimonialsSection** — 별점 5개 + 고객 추천사 카드 (아바타 이니셜, 더 보기 버튼, fadeSlideUp 애니메이션)
+- **components/portfolio/PressAwardsSection** — "As Seen In" 로고 카드 + 수상 타임라인 (AWARD/EXHIBITION/PUBLICATION 배지)
+- **components/portfolio/ClientLogoWall** — 클라이언트 브랜드 로고 격자 (텍스트 fallback)
+- **components/portfolio/PricingSection** — 촬영 패키지 카드 (featured=MOST POPULAR 배너, JSON 피처 파싱, 문의하기 버튼)
+- **components/portfolio/NewsletterSection** — 이메일 구독 폼 (유효성 검사, 재구독·이미구독 상태 처리)
+- **components/portfolio/PortfolioContentManager** — 4탭 관리 UI (추천사/언론수상/패키지/클라이언트), ProfilePage 설정 탭에 내장
+- **components/delivery/** — `DeliveryPasswordGate` (비밀번호 입력 UI), `DeliveryApproveModal` (선택 수·피드백 텍스트영역), `DeliveryCreateModal` (사진 선택·만료일 탭·선택적 비밀번호 4자 이상)
+- **components/analytics/** — `KpiCard` (라벨/값/변화율 화살표), `LineChart` (Canvas 베지어+그라디언트, ResizeObserver), `DonutChart` (Canvas 도넛+범례), `TopPhotos` (메트릭 탭 전환), `AnalyticsDashboard` (전체 조합, 4기간 탭, 스켈레톤)
+- **components/booking/** — `StepWizard` (연결선 단계 표시기), `ShootTypeSelector` (7종 3열 그리드, `SHOOT_TYPES` export하여 다른 컴포넌트에서 코드→라벨 매핑 재사용 가능), `BookingCalendar` (순수 JS Date API 달력), `TimeSlotPicker` (마감 오버레이 필 버튼), `BookingForm` (전화 숫자+하이픈 정제, 이메일 형식 검증), `AvailabilityModal` (요일 토글, 시간 슬롯 관리, 차단 날짜). **버그 수정**: `BookingPage.jsx` 3단계 요약에서 `shootType` 원본 코드(`WEDDING` 등)를 그대로 표시해 한글 UI 중간에 영문 enum이 노출되던 문제 — `ShootTypeSelector`의 `SHOOT_TYPES` 목록에서 라벨을 조회하도록 수정(어드민 쪽 `BookingDashboard.jsx`는 이미 자체 `SHOOT_LABELS`로 정상 처리 중이었음).
+- **components/meet/** (Feature 35) — `MeetCalendar` (3색 날짜 표시: 파랑=내 선택, 보라=상대, 초록=겹침; 월 이동 화살표, 과거 날짜 비활성화), `MeetLocationPicker` (Kakao Maps JS SDK 동적 로드 + 키워드 검색 + 마커; `REACT_APP_KAKAO_MAP_KEY` 없으면 텍스트 입력 fallback; readOnly 시 지도+링크 표시), `MeetChat` (30초 polling setInterval, 날짜 구분선, 우측 파랑=본인/좌측 다크=상대, Enter 전송), `MeetRequestModal` (3단계 위저드: 날짜 선택→장소→메시지+요약)
+- **services/uploadApi.js** — `uploadImage(file, folder, onProgress)` → 공용 `apiClient` multipart 업로드(`Content-Type: multipart/form-data` 명시 — 기본 JSON이면 axios가 FormData를 JSON으로 바꿈, timeout 120초). **버그 수정(2026-10-21)**: 예전 구현이 앱이 저장하지 않는 `localStorage.accessToken`을 읽어 항상 "로그인이 필요합니다."로 끝나고, 주소도 `REACT_APP_API_URL`(이미 `/api`) + `/api/upload/image` = `/api/api/...`라 웹의 이미지 업로드(프로필 아바타·커버, 모임 글 사진, 신고 증거, 에디터 갤러리 업로드, `ImageUploader`) 전부가 동작하지 않았다. 이제 토큰 첨부·401 재발급·재시도가 다른 API와 같다.
+- **services/mockData.js** — (레거시, 현재 미사용)
+
+Routing via React Router DOM v6. No Redux — state managed through Context + local state.
+
+**공개 라우트** (로그인 불필요):
+- `/portfolio/:profileName` — PortfolioPage (작가 공개 포트폴리오, 문의하기 + 촬영 예약 CTA 포함)
+- `/portfolio/:profileName/slideshow` — PortfolioSlideshowPage (풀스크린 슬라이드쇼, 로그인 불필요)
+- `/portfolio/:profileName/work/:seriesId` — WorkCasePage (작업 노트 — 시리즈 1건을 작업 사례로, Standalone)
+- `/explore` — ExplorePage (사진·작업 — 화면 이름은 **"둘러보기"**(2026-10-21 "탐색"→"아카이브"→"둘러보기"로 변경, 경로는 유지 — 남의 사진·작업을 훑어보는 화면이라는 뜻, 모바일 "갤러리"(내 사진) 탭과 겹치지 않게), 2026-10-20 공개 전환)
+- `/inquiry/:profileName?memberId=` — InquiryFormPage (촬영 문의 폼, 헤더 없는 standalone)
+- `/proof/:token` — ClientDeliveryPage (납품 사진 확인, Standalone, Header 없음, BCrypt 비밀번호 보호)
+- `/booking/:profileName` — BookingPage (촬영 예약 3단계 위저드, Standalone, Header 없음)
+- `/oauth/kakao/callback` — KakaoCallbackPage (카카오 OAuth 콜백)
+- `/oauth/google/callback` — GoogleCallbackPage (구글 OAuth 콜백)
+- `/oauth/naver/callback` — NaverCallbackPage (네이버 OAuth 콜백)
+- `/oauth/apple/result` — AppleResultPage (Apple 백엔드 리다이렉트 결과)
+- `/gatherings` — GatheringsPage (사진 모임 목록, Feature 37)
+- `/gatherings/:id` — GatheringDetailPage (모임 상세 — 모집공지/피드, Feature 37)
+- `/gatherings/:id/album` — GatheringAlbumPage (모임 종료 후 앨범, Feature 37)
+- `/b/:token` — SharedBoardPage (무드보드 보기 전용 공유 링크, Standalone)
+- `/find-account` — FindAccountPage (아이디·비밀번호 찾기, Standalone)
+- `/reset-password?token=` — ResetPasswordPage (메일 링크로 새 비밀번호, Standalone)
+
+**보호 라우트** (로그인 필요):
+- `/workspace` — WorkspacePage (업무 "한눈에" 허브 — 처리할 일 카드 5개 + 다가오는 7일)
+- `/calendar` — IntegratedCalendarPage (예약·약속·모임 통합 캘린더, Feature 39)
+- `/inbox` — InquiryInboxPage (문의 수신함)
+- `/series` — SeriesPage (시리즈/컬렉션 관리)
+- `/feed` — FeedPage (팔로우 피드)
+- `/boards/:id` — MoodboardPage (내 무드보드, 본인 전용)
+- `/editor` — ImageEditorPage (이미지 에디터, Standalone — Header 없음)
+- `/deliveries` — DeliveriesPage (납품 세트 목록 + 생성)
+- `/bookings` — BookingDashboard (예약 수신함 + 가용 시간 설정)
+- `/meets` — MeetsPage (약속 목록 + 상태별 탭 필터, Feature 35)
+- `/meets/:id` — MeetDetailPage (약속 상세 — 달력/장소/채팅 3탭, Feature 35)
+- `/gatherings/new`, `/gatherings/:id/edit` — GatheringFormPage (모임 생성/수정, Feature 37)
+- `/gatherings/:id/manage` — GatheringManagePage (참여자 관리, 생성자 전용, Feature 37)
+- `/gatherings/calendar` — GatheringCalendarPage (내 모임 달력, Feature 37)
+- `/gatherings/notifications` — GatheringNotificationsPage (내 알림 목록, Feature 37)
+
+**어드민 라우트** (ADMIN 권한 필요, `ProtectedRoute requiredRoles=['ADMIN']`):
+- `/admin` — AdminDashboardPage (통계 카드 + 장르 도넛 차트 + 미분류 경고)
+- `/admin/gallery-order` — AdminGalleryOrderPage (멤버 선택 + 드래그 순서 관리)
+- `/admin/members` — AdminMembersPage (회원 목록, 권한 변경, 삭제)
+- `/admin/photos` — AdminPhotosPage (전체 사진 목록, 인라인 장르 편집, 강제 삭제)
+- `/admin/categories` — AdminCategoryPage (장르별 분포 통계 테이블, 미분류 경고)
+- `/admin/tags` — AdminTagsPage (태그 목록·사진 수·최근 사용일, 태그 삭제, 태그 병합 MergeModal)
+- `/admin/moderation` — AdminModerationPage (신고 목록 PENDING/RESOLVED/DISMISSED 탭, 2단계 사진 삭제 확인)
+- `/admin/curation` — AdminCurationPage (작업 에디터 추천 올리기·내리기, 이중 확인)
+
+> ⚠️ `/gallery/sort` (PhotoSortPage) 는 일반 사용자 앱에서 **제거**됨.  
+> 사진 표시 순서 관리는 어드민 패널(`/admin/gallery-order`)로 이관. `10_ADMIN_PANEL.md` 참조.
+
+**소셜 OAuth 흐름 (카카오/구글/네이버)**:
+1. LoginPage 버튼 클릭 → OAuth 제공자 인증 페이지로 리다이렉트
+2. 인증 후 `/oauth/{provider}/callback?code=xxx` 리다이렉트
+3. Callback 페이지 → `POST /api/auth/oauth/{provider}` → `TokenResponse(accessToken, refreshToken, member)` 수신 → `authStore.loginSuccess()`
+
+**Apple OAuth 흐름** (form_post 특수 처리):
+1. LoginPage Apple 버튼 → `appleid.apple.com/auth/authorize` (redirect_uri=백엔드 URL)
+2. Apple → `POST /api/auth/oauth/apple/callback` (백엔드)
+3. 백엔드 → id_token 파싱 → 회원 생성/조회 → JWT 발급 → 프론트엔드 `/oauth/apple/result?accessToken=...` 리다이렉트
+4. AppleResultPage → `/auth/member/:id` 호출 → `authStore.loginSuccess()`
+
+**모든 OAuth 엔드포인트** → `TokenResponse` 반환 (accessToken, refreshToken, member 포함)
+- `POST /api/auth/oauth/kakao` — `AuthService.issueTokensForOAuth()` 공통 처리
+- `POST /api/auth/oauth/google` — GoogleOAuthService
+- `POST /api/auth/oauth/naver` — NaverOAuthService
+- `POST /api/auth/oauth/apple/callback` — AppleOAuthService (백엔드 form_post 수신)
+
+**갤러리 12-컬럼 그리드**: `packRows()` 알고리즘으로 `gridColSpan` 합이 12가 되도록 사진을 행으로 묶어 CSS flexbox로 렌더링. 각 사진은 `flex: gridColSpan` 비율로 너비 배분.
+
+#### Frontend 환경변수 파일
+
+```
+frontend/
+├── .env.development    # npm start 시 로드 (localhost)
+└── .env.production     # npm run build 시 로드 (운영 URL)
+```
+
+Vercel 배포 시 실제 값은 Vercel 대시보드 Environment Variables에서 설정.
+
+### Mobile (`mobile/`)
+
+**폴더 구조 규칙:**
+```
+mobile/
+├── assets/       # 앱 아이콘, 스플래시, favicon (placeholder 포함)
+├── components/   # 재사용 가능한 공통 UI 컴포넌트
+│   ├── ImageUploadButton.js  # expo-image-picker 기반 업로드 버튼
+│   ├── SkeletonCard.js  # (Feature 38-B1) RN Animated opacity 펄스(0.4→1→0.4, 1200ms linear) 기반
+│   │                      SkeletonPhotoCard/SkeletonFeedCard/SkeletonGatheringCard 3종, 외부 라이브러리 없음
+│   └── EmptyState.js    # (Feature 38-B3) icon/title/description/actionLabel/onAction 공용 빈 상태 컴포넌트
+├── constants/    # 색상·여백·폰트 상수 (colors.js, layout.js)
+├── hooks/        # 커스텀 훅 (usePhotos, useToast)
+├── screens/      # 페이지 단위 컴포넌트
+│   ├── LoginScreen.js / SignUpScreen.js  # SignUpScreen: 입력란별 blur 검사·중복 확인·키보드 속성 (2026-10-21, utils/signupValidation.js)
+│   ├── ExploreScreen.js     # (작업 탐색) 상단 사진|작업 세그먼트, 작업 탭은 `components/WorkDiscoveryList.js`. 실제 API + 검색바 + 장르필터(GENRES 수평스크롤, 웹 GENRE_LIST와 동일 12종) + 무드필터 + 2컬럼 그리드. SkeletonPhotoCard(6개)/EmptyState 적용(Feature 38)
+│   ├── GalleryScreen.js     # (Feature 38) **버그 수정**: `photos`/`loading`/`onPhotoPress`를 props로 받는 프레젠테이션
+│   │                          컴포넌트였는데 실제 라이브 네비게이터(`App.js`→`src/navigation/AppNavigator.js`)는
+│   │                          `Tab.Screen component={GalleryScreen}`으로 등록해 navigation/route만 넘겨주고 있어
+│   │                          `photos.length`에서 매번 즉시 크래시하던 문제 — 화면이 `photoApi.getByMember(user.id)`로
+│   │                          자기 데이터를 불러오는 자체 상태 관리 화면으로 전환, pull-to-refresh(ScrollView
+│   │                          refreshControl) + SkeletonPhotoCard(4개)/EmptyState 추가. `mobile/navigation/AppNavigator.js`
+│   │                          (구 state 기반, `screen`/`navigate` local state)는 `App.js`가 참조하지 않는 죽은 코드이므로
+│   │                          그 파일 안의 `<GalleryScreen photos={...}/>` 같은 구식 호출부는 무시할 것.
+│   ├── PhotoDetailScreen.js # 댓글/대댓글 + 좋아요/저장 (API 수정)
+│   ├── PhotoFormScreen.js   # expo-image-picker 갤러리/카메라 + 파일업로드
+│   ├── ProfileScreen.js     # bio/location/specialties/아바타업로드/통계 + "메뉴" 섹션(🤝 약속, 🌐 내 포트폴리오 보기 — Linking.openURL로 웹 포트폴리오 페이지를 시스템 브라우저에서 오픈 + 📤 공유하기(Share.share), profileName 없으면 안내 Alert). (Feature 38-B2) **버그 수정**: 통계 로딩이 RN에는 존재하지 않는 웹페이지 origin에 의존해 `fetch('/api/auth/member/:id/stats')` 상대경로로 호출하고 있어 항상 실패 후 조용히 catch되어 통계 섹션이 한 번도 채워진 적이 없었음 — `authMobileApi.getStats(id)`(신규, `GET /auth/member/:id/stats`, apiClient 기반이라 Android/iOS 베이스 URL 분기·Bearer 토큰·401 재발급 자동 적용) 추가 후 교체. ScrollView에 RefreshControl 추가해 pull-to-refresh 시 통계 재조회.
+│   ├── SeriesScreen.js      # 시리즈 목록 + 펼치기/사진 그리드 + SeriesCollage(previewPhotos 1~3장 콜라주 보드 카드, 라이트 테마) + (작업 노트 P1) 카드별 "✎ 작업 노트" 하단 시트 — 촬영 유형 칩·클라이언트·작업 시기(YYYY.MM 검증)·작업 이야기, `constants/shootTypes.js`(웹/백엔드와 같은 값). (WORK_QUEUE 7·9) 작업 노트 시트에 "초안으로 두기" 스위치, 목록은 `seriesApi.getMine()`(초안 포함, 인증). 크레딧 편집은 모바일 미구현(웹에서). (작업 노트 P2 후속) 카드에 "📌 대표로/대표 작업" 토글 — `PUT /series/:id {pinned}`, 성공 시 목록에서 한 건만 고정 상태로 갱신(서버도 작가당 1건 보장). 추천사 연결은 모바일에 추천사 관리 UI 자체가 없어 미구현. 참고: 기존 `seriesDesc`/`seriesMeta`가 쓰는 `FONT.xs`는 `constants/layout.js`에 없는 키(undefined → 기본 크기)라는 기존 결함이 있음(미수정)
+│   ├── FeedScreen.js        # 팔로우 피드 + 무한스크롤 (NEW)
+│   ├── MeetsScreen.js       # 약속 목록 + 상태별 탭 필터(전체/대기중/조율중/확정/완료) + MeetCard + FAB(새 약속 요청 모달: 회원검색→날짜선택→메시지, 라이트 테마)
+│   ├── MeetDetailScreen.js  # 약속 상세 — 커스텀 헤더 + 3탭(💬채팅 기본/📅일정/📍장소), PENDING 수신자 수락·거절 바, CONFIRMED 완료 처리 바, 채팅 30초 polling
+│   ├── PortfolioSlideshowScreen.js  # (신규) 웹 PortfolioSlideshowPage와 동일 기능의 네이티브 슬라이드쇼 — `photoApi.getPortfolio(profileName)` 재사용(신규 백엔드 없음), FlatList 페이징 스와이프 + 자동재생 3s + 도트 인디케이터. 상단/하단 컨트롤바는 `expo-blur`의 `BlurView`(intensity=40, tint="dark") + 반투명 테두리 + 상단 하이라이트 라인으로 애플 Liquid Glass 머티리얼 구현(DESIGN_PROMPTS/design/DESIGN_PROMPT_apple-glass-slideshow.md, 웹과 동일 컨셉이나 이 화면에만 한정). `ProfileScreen.js` 메뉴 섹션의 "🌐 내 포트폴리오 보기"(외부 브라우저) 옆에 "🎞 슬라이드쇼로 보기"(네이티브 이동) 항목 추가. `AppNavigator.js` MainStack에 `PortfolioSlideshow` 등록(headerShown:false).
+│   ├── GatheringsScreen.js  # (신규, Feature 37) 모집중 모임 + 내 모임(FlatList, RefreshControl), 웹 GatheringsPage 대응 — 단 웹과 달리 생성/수정/관리/달력 화면은 모바일 미구현(의도적 범위 축소, Instagram 공유 도달에 필요한 최소 화면만).
+│   ├── GatheringDetailScreen.js  # (신규) 모임 정보 + RECRUITING 참여/미참여(Alert 확인) + ONGOING/ENDED 피드 — (P1-4, 2026-10-07) 로그인 회원에게 좋아요 토글(낙관적 업데이트 + 실패 시 롤백)·댓글 목록·댓글 입력 추가. 내 참여 상태 조회 엔드포인트가 없어 컨트롤은 로그인 여부로만 노출하고, 비참여자는 서버 403을 받아 "모임 참여자만…" Alert로 안내(웹 GatheringDetailPage의 낙관적 UI와 같은 전제). 참여자 게시물마다 "📷 공유" 버튼 → GatheringInstagramShare로 이동.
+│   ├── GatheringInstagramShareScreen.js  # (신규) Instagram Story 공유 화면 — 템플릿 3종(사진중심/사진+참여자/사진+글) 선택, `GET /instagram-candidates`로 받은 참여자 중 기본 전체 체크된 태그 후보 목록(실제 멘션 아님을 명시), `react-native-view-shot`으로 미리보기 View를 이미지로 캡처 후 `react-native-share`의 `shareSingle({social: Social.INSTAGRAM_STORIES, backgroundImage})`로 OS 딥링크 호출. Instagram 미설치·공유 실패 시 Alert로 대체 안내. 공유 시도는 `shareToInstagram()`로 fire-and-forget 로깅(실패해도 공유 자체는 진행).
+│   ├── BookingScreen.js  # (Feature 38-B4 신규 → Feature 39-d 갱신) 예약 조회 — 상태별(대기중/확정됨/완료/취소·거절) SectionList,
+│   │                       REQUESTED 건에 확인/거절 Alert 액션. 우측 상단 "⚙ 설정"은 Feature 38 당시 웹 `/bookings` Linking
+│   │                       딥링크였으나, Feature 39(d)에서 네이티브 `AvailabilitySettingsScreen`으로 직접 이동하도록 교체(P3 보류 해제).
+│   │                       `ProfileScreen` 메뉴 "🗓 예약 관리"에서 진입.
+│                       (P1-3, 2026-10-07) CONFIRMED 카드에 `components/BookingWorkSection.js`(신규)의 `ChecklistSection`
+│                       (접힘 아코디언 — 항목 추가/체크/삭제 + 납품 기한 YYYY-MM-DD 텍스트 입력, 모든 조작 즉시 서버 저장·실패 시
+│                       롤백)·`PaymentSection`(계약금/잔금 독립 토글 + 선택 금액 입력) 추가, 납품 기한 0~3일 이내면 "🚚 납품 임박"
+│                       배지. 웹 `ChecklistAccordion`/`PaymentToggle`과 같은 계약 — `PUT /booking/{id}/checklist`는
+│                       checklistJson·deliveryDeadline을 둘 다 덮어쓰므로 항상 함께 전송, `/payment`는 null=변경 없음(그래서
+│                       금액 "삭제"는 미지원). 저장 응답으로 해당 예약만 교체. 웹의 "미수금" 탭은 모바일 미구현.
+│   ├── AvailabilitySettingsScreen.js # (신규, Feature 39-d) 가용 시간 설정 — 요일 토글 칩(백엔드 `weekdays`는 1=월..7=일
+│   │                       CSV, 화면 표시는 일~토 순서라 `uiIndexToBackend`/`backendToUiIndex`로 매핑), 시간 슬롯(HH:MM 텍스트
+│   │                       입력 + 정규식 검증, 외부 시간 피커 라이브러리 없음), 버퍼 시간, 예약 메모, 차단 날짜 목록 조회·추가·삭제.
+│   │                       `bookingApi.getAvailabilitySettings/saveAvailabilitySettings/getBlockedDates/addBlockedDate/
+│   │                       deleteBlockedDate` 사용. `BookingScreen`의 "⚙ 설정"에서 진입. `AppNavigator.js`에 `AvailabilitySettings`
+│   │                       스택 등록.
+│   ├── ScheduleScreen.js # (신규, P1-2 / AC-M1, 2026-10-07) 통합 일정 — 웹 `/calendar`와 같은 규칙(예약 CONFIRMED·약속
+│   │                       CONFIRMED·모임 SCHEDULED/ONGOING)으로 3개 API를 `Promise.allSettled` 병합, 달력 그리드 대신 "오늘/이번 주
+│   │                       (내일~6일 뒤)/이후" SectionList(지난 일정 제외), 유형별 색 스트라이프 카드, 부분 실패 배너, pull-to-refresh.
+│   │                       카드 탭 → Booking/MeetDetail/GatheringDetail. `ProfileScreen` 메뉴 "📅 통합 일정"이 기존 웹 `/calendar`
+│   │                       외부 브라우저 오픈 대신 이 화면으로 이동. 디자인: `DESIGN_PROMPTS/design/DESIGN_PROMPT_mobile-schedule.md`.
+│   └── DeliveryScreen.js # (신규, Feature 38-B4) 납품 세트 목록 — 상태 배지(PENDING/REVIEWED/APPROVED/REJECTED),
+│                           `expo-clipboard`로 `/proof/:token` 링크 복사. 세트 생성(사진 선택 UI)은 범위 밖.
+│                           `ProfileScreen` 메뉴 "📦 납품 관리"에서 진입.
+├── services/     # API 호출 (api.js — photoApi/followApi/commentApi/seriesApi/meetApi re-export)
+├── src/
+│   ├── api/
+│   │   ├── apiClient.js     # Axios + JWT 자동 첨부 + 토큰 재발급
+│   │   ├── photoApi.js      # getAll/search/getFeed/uploadFile 추가
+│   │   ├── followApi.js     # follow/unfollow/check/count/list (NEW)
+│   │   ├── commentApi.js    # getComments/addComment/deleteComment (NEW)
+│   │   ├── seriesApi.js     # getByMember/getOne/CRUD (NEW)
+│   │   ├── meetApi.js       # create/list/getPendingCount/getDetail/respond/submitAvailability/getAvailability/confirmDate/updateLocation/cancel/complete/getMessages/sendMessage/searchMembers (웹 meetApi.js와 동일 엔드포인트)
+│   │   ├── gatheringApi.js  # (신규, Feature 37) list/getMy/getDetail/respond/cancelParticipation/getFeed/getAlbum/getInstagramCandidates/shareToInstagram/likePost/unlikePost/addComment(P1-4) — 웹 gatheringApi.js의 부분집합(생성/수정/참여자관리/앨범페이지 없음, 모바일 범위 축소). getUnreadCount(신규, Feature 38-B4) 추가.
+│   │   ├── bookingApi.js    # (Feature 38-B4: getMyBookings/confirmBooking/rejectBooking → Feature 39-d 확장) cancelBooking/
+│   │   │                      getAvailabilitySettings/saveAvailabilitySettings/getBlockedDates/addBlockedDate/deleteBlockedDate
+│   │   │                      6개 추가 + (P1-3) updateChecklist/updatePayment(총 10 메서드) — 웹 bookingApi.js와 동일 엔드포인트 계약 사용
+│   │   └── deliveryApi.js   # (신규, Feature 38-B4) getMyList만 (세트 생성·상세·승인/거절은 범위 밖)
+│   ├── navigation/
+│   │   └── AppNavigator.js  # BottomTabNavigator(탐색/갤러리/등록/피드/프로필) + Stack(PhotoForm/Series/Meets/MeetDetail/Legal/Gatherings/GatheringDetail/GatheringInstagramShare)
+│   ├── storage/secureStorage.js
+│   ├── store/authStore.js
+│   ├── utils/instagramShare.js / instagramShare.web.js  # (신규) `react-native-view-shot`/`react-native-share`(네이티브 전용 모듈) 래퍼 — **버그 회피**: 처음에 metro.config.js의 커스텀 `resolver.resolveRequest`로 웹 번들 시 이 두 패키지를 mock으로 리다이렉트하려 했으나 이 프로젝트의 Expo/Metro 조합에서 커스텀 리졸버가 전혀 호출되지 않는 것을 디버그 로그로 확인(원인 불명, 더 파고들지 않음) — Metro의 표준 플랫폼별 확장자 해석(`.web.js`)으로 전환해 해결. 새 네이티브 모듈을 웹 번들에서 제외해야 할 때는 이 파일 쌍 패턴을 그대로 재사용할 것(metro.config.js 커스텀 리졸버 방식은 이 프로젝트에서 작동하지 않는 것으로 확인됨).
+│   └── utils/portfolioUrl.js  # getPortfolioUrl(profileName) — 운영 https://app.example.com, 개발 http://localhost:3000
+├── store/
+│   └── AuthContext.js       # useAuth() 인터페이스 (SecureStore 기반). **`App.js`에서 `<AuthProvider>`로 `<AppNavigator/>`를 감싸야 동작함** — 누락 시 useAuth() 사용하는 모든 화면에서 즉시 throw(버그 수정 완료)
+└── utils/
+    └── uploadImage.js
+```
+
+**앱 심사 대응(2026-10-21, `PLANNING_app-store-review.md`)**: (1) **서버 주소는 `constants/config.js` 한 곳** — `__DEV__`면 로컬(Android 10.0.2.2), 배포 빌드는 `https://api.happiness.io.kr`·`https://happiness.io.kr`, `SUPPORT_EMAIL`. **버그 수정**: 예전엔 `apiClient`·`authMobileApi`·`uploadImage`가 빌드 종류와 무관하게 localhost를, 포트폴리오·납품·알림 링크가 `app.example.com`을 써서 배포 빌드가 아무것도 불러오지 못했다(Hermes 번들에서 `localhost:8080` 0건 확인). (2) 로그인 화면의 동작하지 않던 소셜 버튼 4개 제거(다시 붙일 땐 Apple 로그인 포함). (3) `ProfileScreen` 맨 아래 "회원 탈퇴"(2단계 확인 → `DELETE /auth/member/{id}` → 로그아웃) + "🚫 차단한 사용자"(`screens/BlockedUsersScreen.js`). (4) `components/ReportSheet.js` — 사진·댓글 신고(사유 5종, 기타는 메모 필수) + 작성자 차단, `PhotoDetailScreen` 상단 "🚩 신고"·남의 댓글 "신고". `hooks/useBlockedMembers.js`(모듈 캐시+구독, 로그아웃 시 `resetBlockedMembers`)로 둘러보기·피드·비슷한 사진·작업 탐색·댓글·모임 게시물/댓글에서 차단 회원 숨김. 모임 게시물은 신고 API가 없어 "🚩 신고" → 운영팀 `mailto:` + 작성자 차단. (5) `LegalScreen` 약관 무관용 조항·제3조의2 신고와 차단(24시간 내 확인)·탈퇴 위치·연락처 `support@happiness.io.kr`, 프로필의 가짜 주소 `○○.happiness.app` → `happiness.io.kr/portfolio/○○`. (6) `app.json`: 실제 아이콘·스플래시(브랜드 블루 + 흰 프레임 미소, 생성 스크립트는 세션 스크래치에만), image-picker 플러그인(한국어 설명, `microphonePermission:false`), `blockedPermissions`(READ_MEDIA_IMAGES/VIDEO·READ_EXTERNAL_STORAGE·RECORD_AUDIO·SYSTEM_ALERT_WINDOW — 사진은 권한 없는 시스템 선택기라 Android에선 `ensureLibraryAccess()`가 권한을 묻지 않음), `NSAllowsArbitraryLoads:false`, `ITSAppUsesNonExemptEncryption:false`. **남은 것(사용자)**: Expo SDK 49 → 최신 업그레이드(스토어 targetSdk·Xcode 요구), 데모 계정, 개인정보처리방침 공개 URL, 콘솔 개인정보 항목, 지원 메일함 확인.
+
+**UI/UX 정리(2026-10-21, `DESIGN_PROMPTS/design/DESIGN_PROMPT_mobile-ux-polish.md`)**: 헤더·탭바를 흰 Toss 서페이스로 통일(`AppNavigator.js` 공통 `HEADER` — 스택 화면은 `options={{ ...HEADER, title }}`), 상태바는 로그인 전 light/후 dark(슬라이드쇼는 화면 안에서 light), 탭 라벨 한 줄, `FONT.xs`(12) 추가, 갤러리 홀수 카드 폭, 약속 칩 높이, 예약·납품·통합 일정은 공통 헤더로(뒤로 가기·노치), 자체 상단바(사진 상세·약속 상세·가용 시간)에 safe-area, 사진 상세 작성자 줄, 비슷한 사진 여백, 취소 버튼 대비, 프로필 메뉴 "📁 내 작업(시리즈)"(이전엔 시리즈 화면 진입점이 없었다), 차단 시 "사진 n장"도 보이는 수 기준. **웹 번들로 로그인 후 화면 검증 가능**: `src/storage/secureStorage.web.js`(웹 번들 전용 sessionStorage 대체, Android 번들에는 포함 안 됨 확인) — `npx expo export --platform web --dev`(→ `__DEV__`라 localhost:8080 API) + `dist`를 3000 포트로 서빙 + 로컬 bootRun. 한계: `Alert.alert`는 react-native-web에서 아무것도 하지 않아 확인 대화상자가 필요한 동작(차단 확정·탈퇴·로그아웃)은 웹 번들로 끝까지 못 누른다.
+
+**규칙:**
+- 화면(페이지) 단위 컴포넌트 → `screens/`
+- 여러 화면에서 쓰는 UI 조각 → `components/`
+- API 호출은 반드시 `services/api.js` 또는 `src/api/` 경유
+- 색상·간격 하드코딩 금지 → `constants/colors.js`, `constants/layout.js` 상수 사용
+- 상태 로직 재사용 → `hooks/`에 커스텀 훅으로 분리
+- 이미지 선택: `expo-image-picker` (갤러리/카메라), 업로드: `POST /api/upload/image`
+
+**네비게이션 구조 (AppNavigator.js):**
+```
+Root Stack
+ ├── [미인증] AuthStack: Login → SignUp
+ └── [인증] MainStack
+      ├── Main (BottomTabNavigator)
+      │    ├── ExploreTab   — 탐색 (🔍)
+      │    ├── GalleryTab   — 갤러리 (🖼️)
+      │    ├── PhotoFormTab — 등록 (＋, 원형 강조)
+      │    ├── FeedTab      — 피드 (📰)
+      │    └── ProfileTab   — 프로필 (👤)
+      ├── PhotoDetail — 사진 상세 (modal, headerShown:false)
+      ├── PhotoForm   — 사진 등록/수정 (Stack)
+      ├── Series      — 시리즈 (Stack)
+      ├── Meets       — 약속 목록 (Stack, ProfileScreen "메뉴" 섹션에서 진입)
+      └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
+```
+
+**주요 의존성 (mobile/package.json):**
+```
+expo: ~49.0.14
+expo-image-picker: ~14.3.2      # 갤러리/카메라 이미지 선택
+expo-file-system: ~15.4.5       # 파일 시스템 접근
+expo-blur: ~12.4.1              # PortfolioSlideshowScreen 글라스 컨트롤바(BlurView)
+react-native-view-shot: ^3.8.0  # (신규, Feature 37) Instagram 공유용 미리보기 View → 이미지 캡처, 네이티브 전용(웹은 instagramShare.web.js 스텁)
+react-native-share: ^9.4.1      # (신규, Feature 37) Instagram Stories 딥링크 공유, 네이티브 전용(웹은 instagramShare.web.js 스텁)
+expo-clipboard: ~4.3.1          # (신규, Feature 38-B4) DeliveryScreen 납품 링크 복사 — 웹/네이티브 모두 지원되는 공식 Expo 모듈
+@react-navigation/bottom-tabs: ^6.5.20  # 하단 탭 네비게이션
+react-dom / react-native-web    # 웹 export 지원
+```
+
+API base URL:
+- Android 에뮬레이터: `http://10.0.2.2:8080`
+- iOS 시뮬레이터: `http://localhost:8080`
+- 운영: `https://api.example.com`
+
+### MCP 서버 (`mcp-server/`)
+
+`happiness-mcp-server` — 백엔드의 **공개·인증불필요 GET 엔드포인트만** 감싸는 읽기 전용 MCP(Model Context Protocol) 서버. Claude Desktop 등 MCP 클라이언트가 로그인 없이 사진/포트폴리오를 탐색할 수 있게 해준다. 쓰기/삭제/인증 필요 엔드포인트는 절대 노출하지 않음(`services/apiClient.ts`가 GET만 지원하도록 구조적으로 제한).
+
+- **스택**: Node/TypeScript, `@modelcontextprotocol/sdk`, Zod, stdio transport(로컬 실행 전용)
+- **도구 5종**: `happiness_search_photos`(`GET /photos`), `happiness_get_photo`(`GET /photos/:id`), `happiness_get_portfolio`(`GET /portfolio/:profileName`), `happiness_get_portfolio_config`(`GET /portfolio/:profileName/config`), `happiness_list_series`(`GET /series?memberId=`). 모든 사진/작가 응답에 `author_member_id`/`member.member_id`를 포함시켜 `happiness_list_series`가 요구하는 numeric member_id를 다른 도구 결과만으로 실제로 발견할 수 있도록 함(초기 설계 시 이 값이 어디에도 노출되지 않아 해당 도구가 사실상 도달 불가능했던 문제를 mcp-builder 평가셋 설계 중 발견해 수정).
+- **의도적으로 제외**: `GET /photos/genres/stats` — 문서상 공개처럼 보이지만 실제로는 JWT 인증이 필요함을 curl로 직접 확인 후 제외(추측 금지 원칙)
+- **설정**: `HAPPINESS_API_URL` 환경변수(기본 `http://localhost:8080/api`)
+- **실행**: `cd mcp-server && npm install && npm run build && npm start`
+- **평가셋**(`mcp-server/eval/`): `seed.mjs`(2명의 작가·사진 7장·시리즈 1개로 구성된 고정 시드 데이터 생성) + `evaluation.xml`(mcp-builder 스킬 가이드 형식의 QA 10쌍, 실제 도구 호출로 정답 검증 완료)
+- 상세 사용법·Claude Desktop 연동 예시는 `mcp-server/README.md` 참고
+
+### Claude Code 개발 도구 MCP 서버 (`.mcp.json`)
+
 **주의**: 위 `mcp-server/`(`happiness-mcp-server`)는 이 앱의 제품 기능(공개 GET API를 감싸는 읽기 전용
 서버)이고, 이 섹션의 `.mcp.json`은 완전히 별개로 **Claude Code로 이 저장소를 개발할 때 쓰는 외부
 개발도구 MCP 서버 4종**을 프로젝트 스코프로 등록해둔 것이다. 저장소 루트 `.mcp.json`에 실제 API 키가
