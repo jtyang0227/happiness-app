@@ -500,6 +500,13 @@ MAIL_PASSWORD=<앱 비밀번호>
 MAIL_FROM=noreply@happiness.io.kr
 FRONTEND_URL=https://happiness.io.kr
 
+# Firebase Analytics (웹 행동 분석 — Vercel 환경 변수, 없으면 꺼짐)
+REACT_APP_FIREBASE_API_KEY=
+REACT_APP_FIREBASE_AUTH_DOMAIN=
+REACT_APP_FIREBASE_PROJECT_ID=
+REACT_APP_FIREBASE_APP_ID=
+REACT_APP_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
+
 # Gemini (AI 어시스턴트 챗봇 — 백엔드 전용, aistudio.google.com/apikey 에서 발급)
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.0-flash  # 선택, 미설정 시 기본값
@@ -1241,6 +1248,7 @@ Response: { "url": "https://...supabase.co/storage/v1/object/public/images/photo
 
 ### Frontend (`src/`)
 
+- **Firebase Analytics (2026-11-04)** — 사용자 행동 분석(운영자용, 작가용 자체 통계 `utils/trackView.js`와 별개). `utils/analytics.js`: `REACT_APP_FIREBASE_API_KEY/_AUTH_DOMAIN/_PROJECT_ID/_APP_ID/_MEASUREMENT_ID`가 없으면 아무것도 안 함(빌드 시 코드 제거), 있으면 SDK를 별도 청크로 지연 로드. `trackPageView`(App.jsx 라우트 변경마다) — 자동 page_view는 끄고(`send_page_view:false`) **쿼리 제거 + 비밀 링크 경로 가림**(`/proof/:token`, `/b/:token`, `/reset-password`), `setDefaultEventParameters`로 이후 이벤트 주소도 덮어씀. `trackEvent` — `login`·`sign_up`(AuthContext), `inquiry_submit`, `booking_request`, `photo_upload`(에디터·내보내기·캐러셀). 이메일·이름·회원 id는 보내지 않음, 실패해도 앱 동작에 영향 없음. 모바일 앱은 미적용. 확인: 가짜 설정 빌드 + Playwright — `/proof/SECRET…?pw=1` 방문 시 요청·dataLayer에 토큰 없음, `?genre=` 제거. **사용자 할 일**: Firebase 웹 앱 생성 → Vercel 환경 변수 5개 → 재배포, GA4 › 데이터 스트림 › 향상된 측정 › "브라우저 기록 이벤트 기반 페이지 변경" 끄기(중복·원 주소 수집 방지). 개인정보처리방침(`LegalScreen`) 1절에 문구 추가.
 - **로그인 실패 안내 (2026-10-22)** — **버그 수정**: 틀린 비밀번호(서버 401)에 `api/apiClient.js` 응답 인터셉터가 토큰 만료로 보고 재발급 → refresh 토큰 없음 → `logout()` → `/login` 전체 새로고침을 돌려, **안내 문구 없이 화면만 새로 고쳐졌다**(사용자 체감 "로그인이 안 됨"). 인증 요청(`/auth/login|signup|refresh|oauth|find-email|password-reset`)의 401은 재발급·로그아웃 대상에서 뺐다. `AuthContext.login`은 axios 오류를 `loginErrorMessage()`로 바꿔 서버 사유(401 문구·429 잠금 안내)를, 연결 실패·5xx는 한국어 안내를 보인다(이전엔 "Request failed with status code 401"). 모바일 `store/AuthContext.js`도 같은 처리. 확인: 로컬 Playwright — 틀린 비밀번호 새로고침 0회·문구 표시, 5회 실패 후 429 문구, 정상 로그인 이동.
 - **웹 화면 깨짐·위치 정리 (2026-10-21, `DESIGN_PROMPTS/design/DESIGN_PROMPT_web-layout-polish.md`)** — 21개 화면 390/1280px 캡처 + 가로 넘침 자동 검사. 사진 상세 가로 스크롤·화살표 위치(`PhotoNavigation` 안쪽 12px)·액션 버튼 잘림·흰색 팔레트 칩(`ColorPalette` 안쪽 테두리, 중복 key), `WorkspaceTabs` 가운데 정렬(첫·마지막 탭 auto 여백), `LoginPage` 빈 모자이크를 최근 공개 사진으로, `GatheringsPage`·`SeriesPage` 머리말 줄바꿈, 모임 해시태그 콤마 분리, Editorial 컬렉션 카드 가운데. 재검사 결과 390·1280 모두 가로 넘침 0건.
 - **아이디·비밀번호 찾기 웹 (2026-10-21)** — `pages/FindAccountPage.jsx`(`/find-account?tab=email|password`, 공개 Standalone — 세그먼트 탭, 이름+휴대폰으로 가린 이메일·가입 방식 표시 / 이메일로 재설정 메일 요청 → "메일을 확인해 주세요"·다시 보내기), `pages/ResetPasswordPage.jsx`(`/reset-password?token=`, 공개 Standalone — 열 때 토큰 확인(스켈레톤) → 새 비밀번호·확인(회원가입과 같은 blur 검사) → 완료/만료 화면). 공통 `Button`·`FormField`/`Input` 사용, 규칙은 `utils/signupValidation.js` 재사용. `LoginPage` 비밀번호 아래 "아이디 찾기 · 비밀번호 찾기" 링크. `authApi.findEmail/requestPasswordReset/verifyResetToken/confirmPasswordReset`. 모바일: `screens/FindAccountScreen.js`(AuthStack `FindAccount`, 같은 두 탭, 재설정 링크는 메일에서 웹으로 열림 — 딥링크 범위 밖), `LoginScreen` 링크, `authMobileApi.findEmail/requestPasswordReset`.

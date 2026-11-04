@@ -7,6 +7,7 @@ import ShootTypeSelector, { SHOOT_TYPES } from '../components/booking/ShootTypeS
 import BookingCalendar from '../components/booking/BookingCalendar';
 import TimeSlotPicker from '../components/booking/TimeSlotPicker';
 import BookingForm from '../components/booking/BookingForm';
+import { trackEvent } from '../utils/analytics';
 
 const STEPS = ['촬영 종류', '날짜 · 시간', '정보 입력'];
 
@@ -86,6 +87,7 @@ export default function BookingPage() {
         time: selectedTime,
         ...formData,
       });
+      trackEvent('booking_request', { shoot_type: shootType });
       setSuccess(true);
     } catch (err) {
       setError(err?.response?.data?.message || '예약 요청에 실패했습니다. 다시 시도해주세요.');

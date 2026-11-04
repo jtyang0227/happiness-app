@@ -5,6 +5,7 @@ import { COLORS } from '../../constants/colors';
 import { buildChannelLUTs, renderWithChannelLUTs, applyEffects, generateGrainTile } from '../../hooks/useImageAdjustments';
 import { uploadImage } from '../../services/uploadApi';
 import { photoApi, seriesApi } from '../../services/api';
+import { trackEvent } from '../../utils/analytics';
 
 const FORMATS  = ['JPG', 'PNG', 'WEBP'];
 const SIZES    = [
@@ -288,6 +289,7 @@ export default function ExportModal({ onClose }) {
         setProgress('작업으로 묶는 중...');
         const series = await seriesApi.create({ memberId: user?.id, title: filename, draft: true });
         for (let i = 0; i < photoIds.length; i++) await seriesApi.addPhoto(series.id, photoIds[i], i);
+        trackEvent('photo_upload', { source: 'carousel', count: slideCount });
         setProgress(`✅ ${slideCount}장을 올리고 작업 초안 "${filename}"으로 묶었어요. 내 작업에서 확인하세요.`);
         setDone(true);
         return;
@@ -318,6 +320,7 @@ export default function ExportModal({ onClose }) {
         setProgress('업로드 중...');
         const url = await uploadImage(blob, 'photos');
         await photoApi.create({ imageUrl: url, title: filename, memberId: user?.id });
+        trackEvent('photo_upload', { source: 'export', count: 1 });
         setProgress('✅ 갤러리에 업로드 완료!');
       } else {
         downloadBlob(blob, `${filename}.${ext}`);

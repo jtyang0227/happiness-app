@@ -7,6 +7,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import ChatWidget from './components/assistant/ChatWidget';
 import useAuthStore from './store/authStore';
 import { GLOBAL_KEYFRAMES } from './constants/animations';
+import { trackPageView } from './utils/analytics';
 
 import LoginPage    from './pages/LoginPage';
 import SignUpPage   from './pages/SignUpPage';
@@ -73,6 +74,9 @@ const STANDALONE_PATHS = [
 
 function AppShell() {
   const location = useLocation();
+
+  // Firebase Analytics 페이지 조회 — 경로만(쿼리 제외, 비밀 토큰 경로는 가림)
+  useEffect(() => { trackPageView(location.pathname); }, [location.pathname]);
   const isStandalone = STANDALONE_PATHS.includes(location.pathname)
     || location.pathname.startsWith('/inquiry/')
     || location.pathname.startsWith('/proof/')

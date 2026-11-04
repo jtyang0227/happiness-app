@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { inquiryApi } from '../services/api';
 import { COLORS } from '../constants/colors';
 import { SHOOT_TYPES } from '../constants/shootTypes';
+import { trackEvent } from '../utils/analytics';
 
 
 const INITIAL = {
@@ -53,6 +54,7 @@ export default function InquiryFormPage() {
         // 작업 노트 페이지에서 온 경우 출처 작업 — 서버가 수신 작가의 작업인지 다시 확인한다
         ...(/^\d+$/.test(sourceSeriesId || '') ? { sourceSeriesId: Number(sourceSeriesId) } : {}),
       });
+      trackEvent('inquiry_submit', { from_work: Boolean(sourceSeriesId) });
       setDone(true);
     } catch (err) {
       setErrors({ _api: err?.response?.data?.message || '전송에 실패했습니다. 다시 시도해주세요.' });

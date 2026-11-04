@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback } from 'react';
 import { authApi } from '../services/api';
 import useAuthStore from '../store/authStore';
+import { trackEvent } from '../utils/analytics';
 
 /*
  * AuthContext는 자체 상태를 갖지 않고 authStore(Zustand)를 그대로 비춘다.
@@ -41,6 +42,7 @@ export function AuthProvider({ children }) {
     }
     const { accessToken, refreshToken, member } = res.data;
     useAuthStore.getState().loginSuccess(accessToken, refreshToken, member);
+    trackEvent('login', { method: 'email' });
     return member;
   }, []);
 
@@ -51,6 +53,7 @@ export function AuthProvider({ children }) {
     if (!res || !res.success) {
       throw new Error(res?.message || '회원가입에 실패했습니다.');
     }
+    trackEvent('sign_up', { method: 'email' });
     return login(data.email, data.password);
   }, [login]);
 

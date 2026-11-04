@@ -9,6 +9,7 @@ import {
 } from '../../../hooks/useImageAdjustments';
 import { uploadImage } from '../../../services/uploadApi';
 import { photoApi } from '../../../services/api';
+import { trackEvent } from '../../../utils/analytics';
 
 const PAN_TYPES = [
   { value: '', label: '기본 (EDITORIAL)' },
@@ -165,6 +166,7 @@ export default function GalleryPanel() {
         await photoApi.update(editId, payload);
       } else {
         await photoApi.create(payload);
+        trackEvent('photo_upload', { source: 'editor', count: 1 });
       }
 
       setProgress('✅ 갤러리에 저장됐습니다!');

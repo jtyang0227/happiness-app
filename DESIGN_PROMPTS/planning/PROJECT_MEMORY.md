@@ -18,7 +18,7 @@
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
 | 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
-| 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
+| 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **52개** 통과: `CoreFlowIntegrationTest` 50 + `JwtTokenProviderTest` 2).
@@ -57,6 +57,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
 - Railway: `JWT_SECRET` 설정 확인(없으면 재시작마다 로그인 풀림), 멈춘 배포 원인 확인 후 재배포, 메일(`MAIL_*`)·`FRONTEND_URL`.
 - 앱 스토어: Expo SDK 49 → 최신 업그레이드(Play targetSdk 35·최신 Xcode), 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
@@ -64,7 +65,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 10-22 | (이 커밋) | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |
+| 11-04 | (이 커밋) | Firebase Analytics(웹 page_view + 가입·로그인·문의·예약·업로드, 토큰 경로 가림) | CLAUDE.md Frontend 절 |
+| 10-22 | ce63791 | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |
 | 10-22 | 2dc0f60 | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |
 | 10-22 | 8dfe427 | 보안 점검 8건(JWT 기본값, 납품 비밀번호, 팔로우·피드·태그·공유·AI 태그 IDOR) | `planning/SECURITY_AUDIT_2026-10-22.md` |
 | 10-21 | 0131220 | 웹 화면 깨짐·위치 정리(390/1280 가로 넘침 0) | `design/DESIGN_PROMPT_web-layout-polish.md` |
