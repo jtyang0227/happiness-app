@@ -254,3 +254,77 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: frontend
           vercel-args: '--prod'
+
+  # ────────────────────────────────────────────────────────────────────
+  # 6. Frontend — Cloudflare Pages (무료 + 상업적 사용 가능, Vercel Hobby 대체)
+  #
+  # Secrets: CLOUDFLARE_API_TOKEN(권한: Account › Cloudflare Pages › Edit), CLOUDFLARE_ACCOUNT_ID
+  # Variables(선택): CF_PAGES_PROJECT(기본 happiness-app), REACT_APP_API_URL, REACT_APP_FIREBASE_*
+  # 없으면 경고만 남기고 건너뛴다. SPA 라우팅·보안 헤더는 frontend/public/_redirects·_headers.
+  # ────────────────────────────────────────────────────────────────────
+  deploy-frontend-cloudflare:
+    name: Deploy Frontend (Cloudflare Pages)
+    runs-on: ubuntu-latest
+    needs: frontend-ci
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'happiness-app' }}
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check Cloudflare secrets
+        id: cf-check
+        working-directory: .
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::CLOUDFLARE_API_TOKEN·CLOUDFLARE_ACCOUNT_ID가 없어 Cloudflare Pages 배포를 건너뜁니다."
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cf-check.outputs.configured == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.cf-check.outputs.configured == 'true'
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        if: steps.cf-check.outputs.configured == 'true'
+
+      # 값이 있는 변수만 .env.production.local에 쓴다 — 빈 값을 env로 넘기면 .env.production의 운영 API 주소를 덮어쓰기 때문
+      - name: Build
+        if: steps.cf-check.outputs.configured == 'true'
+        env:
+          REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
+          REACT_APP_FIREBASE_API_KEY: ${{ vars.REACT_APP_FIREBASE_API_KEY }}
+          REACT_APP_FIREBASE_AUTH_DOMAIN: ${{ vars.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+          REACT_APP_FIREBASE_PROJECT_ID: ${{ vars.REACT_APP_FIREBASE_PROJECT_ID }}
+          REACT_APP_FIREBASE_APP_ID: ${{ vars.REACT_APP_FIREBASE_APP_ID }}
+          REACT_APP_FIREBASE_MEASUREMENT_ID: ${{ vars.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+        run: |
+          : > .env.production.local
+          for v in REACT_APP_API_URL REACT_APP_FIREBASE_API_KEY REACT_APP_FIREBASE_AUTH_DOMAIN \
+                   REACT_APP_FIREBASE_PROJECT_ID REACT_APP_FIREBASE_APP_ID REACT_APP_FIREBASE_MEASUREMENT_ID; do
+            val="${!v}"
+            if [ -n "$val" ]; then echo "$v=$val" >> .env.production.local; fi
+            unset "$v"
+          done
+          CI=true npm run build
+
+      # 첫 배포 때 프로젝트가 없으면 만든다(이미 있으면 실패 메시지만 남고 다음 단계 진행)
+      - name: Ensure Pages project
+        if: steps.cf-check.outputs.configured == 'true'
+        run: npx --yes wrangler@3.114.0 pages project create "$CF_PAGES_PROJECT" --production-branch=master || echo "프로젝트가 이미 있음"
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.cf-check.outputs.configured == 'true'
+        run: npx --yes wrangler@3.114.0 pages deploy build --project-name="$CF_PAGES_PROJECT" --branch=master --commit-hash="$GITHUB_SHA"

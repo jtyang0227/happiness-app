@@ -1,0 +1,23 @@
+name: Keep-alive (무료 호스팅 잠들기 방지)
+
+# Render 무료 플랜은 15분 무요청 시 잠들고, Supabase 무료 DB는 7일 무사용 시 일시정지된다.
+# 10분마다 API health를 한 번 불러 둘 다 깨어 있게 한다. 공개 저장소라 Actions 시간은 무료.
+# 저장소 Variable KEEPALIVE_URL(예: https://happiness-api.onrender.com/actuator/health)이 있을 때만 동작.
+# 참고: GitHub는 60일간 커밋이 없으면 예약 워크플로를 멈춘다(Actions 탭에서 다시 켜기).
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    if: vars.KEEPALIVE_URL != ''
+    steps:
+      - name: Ping health
+        env:
+          URL: ${{ vars.KEEPALIVE_URL }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$URL" || echo 000)
+          echo "health: $code"
+          [ "$code" = "200" ] || echo "::warning::health 응답 $code (잠에서 깨는 중이면 다음 회차에 정상)"

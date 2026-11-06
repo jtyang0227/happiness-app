@@ -2862,6 +2862,7 @@ PR 시: 1, 2번(CI)만 실행
   (빌드 실패해도 성공)로 토큰이 있어도 실패·오탐했을 것. **사용자가 할 일**: Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰, production 환경) 등록,
   서비스 이름이 다르면 Variable `RAILWAY_SERVICE`. 토큰이 없으면 지금처럼 경고만 남기고 건너뛴다. Railway GitHub 연동이 다시 살아나면 같은 커밋이
   두 번 배포될 수 있으니 한쪽(대시보드 Settings › Source의 자동 배포)을 끈다.
+- **무료 호스팅 전환 준비(2026-11-06, `DESIGN_PROMPTS/planning/PLANNING_free-hosting.md`)**: 상업적 사용이 되는 무료 플랜으로 — 웹 **Cloudflare Pages**(`deploy-frontend-cloudflare` job: Secrets `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`, Variable `CF_PAGES_PROJECT`(기본 happiness-app)·`REACT_APP_*`, 값 있는 변수만 `.env.production.local`에 써서 빌드 — 빈 env가 `.env.production`의 API 주소를 덮어쓰지 않게, 프로젝트 없으면 생성 후 `wrangler pages deploy`; SPA·보안 헤더는 `frontend/public/_redirects`·`_headers`), API **Render Free**(루트 `render.yaml` Blueprint, rootDir backend·Dockerfile 그대로, 싱가포르, `JWT_SECRET` 자동 생성), `.github/workflows/keepalive.yml`(Variable `KEEPALIVE_URL` 있을 때 10분마다 health — Render 잠들기·Supabase 7일 일시정지 방지, 공개 저장소라 Actions 무료). prod CORS 기본값에 `https://happiness-app.pages.dev` 추가. 시크릿이 없으면 전부 건너뛰므로 기존 Vercel·Railway 경로는 그대로 동작. 계정 연결·DNS 전환은 사용자 몫(문서 참고). Next.js 전환은 비용과 무관해 하지 않음.
 - 클라우드 개발 세션에서는 egress 정책으로 `*.happiness.io.kr`·`*.vercel.app`에 직접 접속할 수 없어, 운영 상태는 GitHub API
   (`gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`, `.../deployments`)로만 확인할 수 있다.
 

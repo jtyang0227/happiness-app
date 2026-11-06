@@ -1,0 +1,8 @@
+# Cloudflare Pages 응답 헤더 — vercel.json의 headers와 같은 내용(호스팅을 옮겨도 보안 헤더가 그대로 붙게)
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block

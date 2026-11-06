@@ -54,9 +54,11 @@
 - Vercel: GitHub 앱 연동으로 master push마다 Production — 정상.
 - Railway: GitHub 앱 연동, `backend/` 변경 시에만 배포. **2026-10-20 13:49(256718e) 이후 배포가 멈춰 있음(⏸ 사용자 대시보드 확인 필요)** — 그 뒤 백엔드 수정(비슷한 사진, 보드 공유, 계정 찾기, 개인정보, 신고·차단, 보안 점검)은 운영 API에 미반영. 재배포 관례: `backend/railway.toml`의 `# redeploy-trigger-N` 숫자 올리기.
 - GitHub Actions: 백엔드는 `deploy-backend`가 테스트 통과 후 `backend/` 변경 시 `railway up --ci` + health 확인(2026-10-28). **Secret `RAILWAY_TOKEN` 없으면 건너뜀** — 등록 필요. 수동 배포는 Actions › CI/CD — Deploy › Run workflow.
+- **무료 전환 준비됨(11-06)**: 웹 Cloudflare Pages(`deploy-frontend-cloudflare`, Secrets `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`), API Render Free(`render.yaml`), `keepalive.yml`(Variable `KEEPALIVE_URL`). 순서·되돌리기는 `planning/PLANNING_free-hosting.md`.
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
 - Railway: `JWT_SECRET` 설정 확인(없으면 재시작마다 로그인 풀림), 멈춘 배포 원인 확인 후 재배포, 메일(`MAIL_*`)·`FRONTEND_URL`.
@@ -65,7 +67,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-04 | (이 커밋) | Firebase Analytics(웹 page_view + 가입·로그인·문의·예약·업로드, 토큰 경로 가림) | CLAUDE.md Frontend 절 |
+| 11-06 | (이 커밋) | 무료 호스팅 전환 준비 — Cloudflare Pages 배포 job, Render Free Blueprint, keepalive | `planning/PLANNING_free-hosting.md` |
+| 11-04 | 9220c3c | Firebase Analytics(웹 page_view + 가입·로그인·문의·예약·업로드, 토큰 경로 가림) | CLAUDE.md Frontend 절 |
 | 10-22 | ce63791 | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |
 | 10-22 | 2dc0f60 | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |
 | 10-22 | 8dfe427 | 보안 점검 8건(JWT 기본값, 납품 비밀번호, 팔로우·피드·태그·공유·AI 태그 IDOR) | `planning/SECURITY_AUDIT_2026-10-22.md` |
