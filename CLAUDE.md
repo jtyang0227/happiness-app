@@ -2814,6 +2814,20 @@ skills.sh 레지스트리에서 스택에 맞춰 고른 11개를 원본 저장�
 
 ---
 
+## Claude Code 플러그인·가드 규칙 (2026-11-12)
+
+`.claude/settings.json`에 공식 마켓플레이스 `claude-plugins-official`(GitHub `anthropics/claude-plugins-official`)을 등록하고 4개를 project scope로 켰다(저장소를 신뢰하면 자동 설치).
+
+- **claude-code-setup** — `claude-automation-recommender` 스킬(이 저장소에 맞는 훅·스킬·MCP 추천, 읽기 전용).
+- **hookify** — `.claude/hookify.<이름>.local.md` 규칙을 훅으로 실행(python3 필요). 규칙 5개: `block-force-push`(`--force`·`-f` 차단, `--force-with-lease`는 허용), `block-env-commit`(`git add .env`·`.env.local` 차단 — `frontend/.env.production`·`.env.example`은 허용), `warn-secret-literal`(GitHub·AWS·JWT·개인키 모양 문자열), `warn-pkill-pattern`(`pkill -f` → 포트로 종료), `warn-blur-in-web`(`frontend/src`의 backdrop-filter). **함정**: hookify의 frontmatter 파서가 단순해 패턴에 `-----`가 들어가면 잘리고, Write 도구 내용은 `field: content` 조건이어야 잡힌다(단순 `pattern:`은 Edit만).
+- **commit-commands** — `/commit`, `/commit-push-pr`, `/clean_gone`. 이 저장소 규칙이 우선: PR은 요청 시에만, master는 fast-forward.
+- **ralph-loop** — `/ralph-loop`·`/cancel-ralph`(끝날 때까지 같은 프롬프트 반복). "기획" 요청은 기존대로 `/loop`.
+- **Playwright** — 플러그인으로 켜지 않음: 같은 서버(`@playwright/mcp`)가 `.mcp.json`에 이미 있어 중복 등록이 된다.
+- **편집 훅 교체**: `PostToolUse(Write|Edit)`가 한 사람 PC 절대 경로(`/Users/...`)에서 전체 `npm run build`를 돌리던 것 → `.claude/hooks/lint-frontend-file.sh`(고친 `frontend/src` 파일 하나만 CRA 규칙으로 ESLint, 오류면 exit 2로 Claude에게 전달, 의존성 없으면 통과). 전체 빌드는 커밋 전에 따로.
+- **검증**: 규칙 12가지 입력을 hookify 훅 스크립트에 파이프(차단·경고·통과 확인), 린트 훅 정상/오류/비대상 파일 exit 0/2/0, `claude plugin install … --scope project` 4개 성공·enabled.
+
+---
+
 ## Claude Code 자동화 — 화면 변경 스크린샷 이메일 알림 (Stop hook)
 
 happiness-admin 저장소(`.claude/hooks/notify-page-change.sh`, 별도 프로젝트)에서 이미 검증된 방식을 이 프로젝트에도

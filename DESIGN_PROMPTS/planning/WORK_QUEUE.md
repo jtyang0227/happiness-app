@@ -131,6 +131,18 @@
 | 4 | ✅ | 헤더·하단 내비 재구성 | 데스크탑·모바일·비로그인 확인 |
 | 5 | ✅ | 검증·문서·커밋 | 백엔드 32개 통과, 웹 빌드 통과 |
 
+## 현재 묶음 — Claude Code 플러그인 적용 + 스킬 기반 프로젝트 개선 (2026-11-12)
+
+요청: "다 적용해주고, 끝나면 스킬을 사용해서 프로젝트 개선해줘" (플러그인 5개: claude-code-setup·hookify·commit-commands·Playwright·Ralph Loop).
+
+| # | 상태 | 항목 | 메모 (마지막으로 한 일 / 다음 할 일) |
+|---|---|---|---|
+| 1 | ✅ | 플러그인 적용 — 공식 마켓플레이스 등록·활성화, hookify 규칙, 깨진 빌드 훅 수정 | 4개 project scope 활성화, 규칙 5개, 편집 훅을 파일 단위 ESLint로. Playwright는 `.mcp.json`에 이미 있어 플러그인 중복 등록 안 함 |
+| 2 | 🔄 | 백엔드 점검·수정 — `springboot-security`·`java-springboot` 스킬 | |
+| 3 | ⏳ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | |
+| 4 | ⏳ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | |
+| 5 | ⏳ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | |
+
 ## 이전 묶음 — Behance 분석 후속 (완료)
 
 출처: `ANALYSIS_behance-public-features.md` 4절 우선순위 + `PLANNING_work-discovery.md` 6절 남은 것.

@@ -17,14 +17,6 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "extraKnownMarketplaces": {
-    "happiness-app-plugins": {
-      "source": { "source": "directory", "path": "." }
-    }
-  },
-  "enabledPlugins": {
-    "claude-md-management@happiness-app-plugins": true
-  },
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -42,10 +34,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // \"\"' | { read -r f; echo \"$f\" | grep -qE 'frontend/src/.*\\.(jsx|js)$' && cd /Users/yangjongtae/workspace/happiness-app/frontend && PATH=\"$HOME/.nvm/versions/node/v17.4.0/bin:$PATH\" npm run build 2>&1 | tail -5; } 2>/dev/null || true",
-            "statusMessage": "프론트엔드 빌드 확인 중...",
-            "timeout": 120,
-            "async": true
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-frontend-file.sh\"",
+            "timeout": 60,
+            "statusMessage": "웹 소스 ESLint 확인 중..."
           }
         ]
       },
@@ -54,8 +45,8 @@
         "hooks": [
           {
             "type": "command",
+            "command": "echo '{\"systemMessage\": \"\\u2705 커밋 완료 — 작업 브랜치에 push한 뒤 master는 fast-forward로만 올리세요 (강제 push 금지)\"}'",
             "if": "Bash(git commit *)",
-            "command": "echo '{\"systemMessage\": \"\\u2705 커밋 완료 — git push origin master 로 푸시하세요\"}'",
             "statusMessage": "커밋 후 안내"
           }
         ]
@@ -72,5 +63,26 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@happiness-app-plugins": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "happiness-app-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "."
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
   }
 }
