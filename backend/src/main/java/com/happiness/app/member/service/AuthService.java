@@ -1,5 +1,6 @@
 package com.happiness.app.member.service;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.audit.service.AuditLogService;
 import com.happiness.app.exception.ErrorCode;
 import com.happiness.app.exception.SecurityException;
@@ -194,7 +195,6 @@ public class AuthService {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isBlank()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

@@ -1,5 +1,6 @@
 package com.happiness.app.security.handler;
 
+import com.happiness.app.common.web.ClientIp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.exception.ErrorCode;
@@ -34,7 +35,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isEmpty()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

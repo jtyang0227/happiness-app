@@ -1,5 +1,7 @@
 package com.happiness.app.inquiry.service;
 
+import com.happiness.app.privacy.PrivacyMasker;
+import org.springframework.web.util.HtmlUtils;
 import com.happiness.app.inquiry.dto.InquiryRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,20 +34,22 @@ public class InquiryEmailService {
             var helper = new MimeMessageHelper(message, false, "UTF-8");
             helper.setFrom(fromAddress);
             helper.setTo(artistEmail);
-            helper.setSubject("[Happiness] 새 문의가 도착했습니다 — " + req.getSenderName());
+            // 제목은 한 줄이어야 한다 — 이름에 섞인 줄바꿈을 지운다
+            helper.setSubject("[Happiness] 새 문의가 도착했습니다 — "
+                    + String.valueOf(req.getSenderName()).replaceAll("[\\r\\n]+", " "));
             helper.setText(buildHtml(req), true);
             mailSender.send(message);
-            log.info("Inquiry notification sent to {}", artistEmail);
+            log.info("Inquiry notification sent to {}", PrivacyMasker.email(artistEmail));
         } catch (Exception e) {
             log.warn("Failed to send inquiry email: {}", e.getMessage());
         }
     }
 
-    private String buildHtml(InquiryRequest req) {
+    static String buildHtml(InquiryRequest req) {
         return String.format("""
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:12px;">
               <h2 style="color:#5b6ef5;">✦ 새 촬영 문의</h2>
-              <table style="width:100%%border-collapse:collapse;">
+              <table style="width:100%%;border-collapse:collapse;">
                 <tr><td style="padding:8px 0;color:#666;width:100px;">보내는 분</td><td style="padding:8px 0;font-weight:700;">%s</td></tr>
                 <tr><td style="padding:8px 0;color:#666;">이메일</td><td style="padding:8px 0;">%s</td></tr>
                 <tr><td style="padding:8px 0;color:#666;">촬영 종류</td><td style="padding:8px 0;">%s</td></tr>
@@ -58,12 +62,17 @@ public class InquiryEmailService {
               <p style="color:#999;font-size:12px;margin-top:16px;">Happiness 포트폴리오 갤러리에서 발송된 문의입니다.</p>
             </div>
             """,
-            req.getSenderName(),
-            req.getSenderEmail(),
-            req.getShootType() != null ? req.getShootType() : "—",
-            req.getShootDate() != null ? req.getShootDate() : "—",
-            req.getBudget() != null ? req.getBudget() : "—",
-            req.getMessage().replace("\n", "<br>")
+            esc(req.getSenderName()),
+            esc(req.getSenderEmail()),
+            req.getShootType() != null ? esc(req.getShootType()) : "—",
+            req.getShootDate() != null ? esc(req.getShootDate()) : "—",
+            req.getBudget() != null ? esc(req.getBudget()) : "—",
+            esc(req.getMessage()).replace("\n", "<br>")
         );
+    }
+
+    /** 문의는 비로그인 공개 입력이다 — 메일 본문(HTML)에 넣기 전에 태그·따옴표를 문자 그대로 바꾼다. */
+    private static String esc(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
     }
 }

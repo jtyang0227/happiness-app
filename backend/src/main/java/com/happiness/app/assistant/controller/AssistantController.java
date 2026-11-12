@@ -1,5 +1,6 @@
 package com.happiness.app.assistant.controller;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.assistant.AssistantException;
 import com.happiness.app.assistant.dto.ChatRequest;
 import com.happiness.app.assistant.service.AssistantService;
@@ -61,9 +62,7 @@ public class AssistantController {
     }
 
     private String clientIp(HttpServletRequest req) {
-        return Optional.ofNullable(req.getHeader("X-Forwarded-For"))
-                .map(h -> h.split(",")[0].trim())
-                .orElse(req.getRemoteAddr());
+        return ClientIp.resolve(req);
     }
 
     private <K> boolean checkRateLimit(ConcurrentHashMap<K, long[]> map, K key, int limit) {

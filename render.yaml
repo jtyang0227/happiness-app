@@ -33,6 +33,9 @@ services:
         value: https://happiness.io.kr,https://www.happiness.io.kr,https://happiness-app.pages.dev
       - key: FRONTEND_URL
         value: https://happiness.io.kr
+      # 속도 제한·IP 차단이 믿을 클라이언트 IP 헤더 — api 도메인이 Cloudflare 프록시를 거친 뒤부터 유효 (없으면 X-Forwarded-For 첫 값)
+      - key: APP_CLIENT_IP_HEADER
+        value: CF-Connecting-IP
       - key: GEMINI_API_KEY
         sync: false
       - key: MAIL_HOST

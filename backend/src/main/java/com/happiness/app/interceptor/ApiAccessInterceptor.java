@@ -1,5 +1,6 @@
 package com.happiness.app.interceptor;
 
+import com.happiness.app.common.web.ClientIp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.exception.ErrorCode;
@@ -53,7 +54,6 @@ public class ApiAccessInterceptor implements HandlerInterceptor {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isBlank()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

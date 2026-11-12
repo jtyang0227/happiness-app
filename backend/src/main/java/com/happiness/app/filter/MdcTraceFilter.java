@@ -1,5 +1,6 @@
 package com.happiness.app.filter;
 
+import com.happiness.app.common.web.ClientIp;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
@@ -37,7 +38,6 @@ public class MdcTraceFilter implements Filter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isBlank()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

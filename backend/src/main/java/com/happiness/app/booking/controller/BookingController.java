@@ -1,5 +1,6 @@
 package com.happiness.app.booking.controller;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.booking.dto.*;
 import com.happiness.app.booking.service.BookingService;
 import com.happiness.app.common.SecurityUtil;
@@ -157,15 +158,9 @@ public class BookingController {
     // ── HELPER ────────────────────────────────────────────────────────────────
 
     private String extractClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            String firstIp = forwarded.split(",")[0].trim();
-            // Reject private/reserved ranges — fall back to REMOTE_ADDR
-            if (!isPrivateIp(firstIp)) {
-                return firstIp;
-            }
-        }
-        return request.getRemoteAddr();
+        String ip = ClientIp.resolve(request);
+        // Reject private/reserved ranges — fall back to REMOTE_ADDR
+        return isPrivateIp(ip) ? request.getRemoteAddr() : ip;
     }
 
     private boolean isPrivateIp(String ip) {

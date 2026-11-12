@@ -1,5 +1,6 @@
 package com.happiness.app.interceptor;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.audit.service.AuditLogService;
 import com.happiness.app.security.auth.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +41,6 @@ public class AdminAuditInterceptor implements HandlerInterceptor {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isBlank()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

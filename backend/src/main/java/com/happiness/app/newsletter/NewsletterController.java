@@ -1,5 +1,6 @@
 package com.happiness.app.newsletter;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.common.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -27,8 +28,7 @@ public class NewsletterController {
             @RequestBody Map<String, Object> body,
             jakarta.servlet.http.HttpServletRequest req) {
 
-        String ip = Optional.ofNullable(req.getHeader("X-Forwarded-For"))
-            .map(h -> h.split(",")[0].trim()).orElse(req.getRemoteAddr());
+        String ip = ClientIp.resolve(req);
 
         if (!checkRateLimit(ip)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

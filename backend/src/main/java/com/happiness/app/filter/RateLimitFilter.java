@@ -1,5 +1,6 @@
 package com.happiness.app.filter;
 
+import com.happiness.app.common.web.ClientIp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.exception.ErrorCode;
@@ -75,8 +76,6 @@ public class RateLimitFilter implements Filter {
     }
 
     private String resolveKey(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isBlank()) return ip.split(",")[0].trim();
-        return request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }

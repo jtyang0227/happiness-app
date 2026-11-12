@@ -1,5 +1,6 @@
 package com.happiness.app.member.controller;
 
+import com.happiness.app.common.web.ClientIp;
 import com.happiness.app.exception.ApiResponse;
 import com.happiness.app.member.service.AccountRecoveryService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,7 +54,6 @@ public class AccountRecoveryController {
     }
 
     private static String clientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        return (ip != null && !ip.isBlank()) ? ip.split(",")[0].trim() : request.getRemoteAddr();
+        return ClientIp.resolve(request);
     }
 }
