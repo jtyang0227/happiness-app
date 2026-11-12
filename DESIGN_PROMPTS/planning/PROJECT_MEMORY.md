@@ -67,7 +67,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-06 | (이 커밋) | 무료 호스팅 전환 준비 — Cloudflare Pages 배포 job, Render Free Blueprint, keepalive | `planning/PLANNING_free-hosting.md` |
+| 11-12 | (이 커밋) | Claude Code 스킬 11개 추가(React·RN·Expo 업그레이드/스토어·Supabase/Postgres·Spring Boot·보안·접근성·웹 테스트) | CLAUDE.md "외부 스킬" 절 |
+| 11-06 | 6b957c2 | 무료 호스팅 전환 준비 — Cloudflare Pages 배포 job, Render Free Blueprint, keepalive | `planning/PLANNING_free-hosting.md` |
 | 11-04 | 9220c3c | Firebase Analytics(웹 page_view + 가입·로그인·문의·예약·업로드, 토큰 경로 가림) | CLAUDE.md Frontend 절 |
 | 10-22 | ce63791 | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |
 | 10-22 | 2dc0f60 | 포트폴리오 "직접 구성" 블록 빌더(`/portfolio-builder`, 블록 12종, 서버 검증) | `planning/PLANNING_portfolio-blocks.md` |

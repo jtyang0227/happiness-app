@@ -2800,6 +2800,20 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 
 ---
 
+## Claude Code 외부 스킬 (`.claude/skills/`, 2026-11-12 추가)
+
+skills.sh 레지스트리에서 스택에 맞춰 고른 11개를 원본 저장소에서 그대로 복사해 커밋했다(내용 훑어 위험 지시 없음 확인, `.zip`·`agents/openai.yaml` 제외).
+**이 저장소의 규칙(CLAUDE.md — inline style, Toss 디자인, JPA+JPQL 등)이 스킬 권고보다 우선한다.**
+
+- 웹: `vercel-react-best-practices`(Next.js 전용 규칙은 해당 없음), `web-design-guidelines`(실행 시 GitHub raw에서 규칙을 받아옴 — 클라우드 세션에선 차단될 수 있음), `accessibility`(WCAG 2.2)
+- 모바일: `vercel-react-native-skills`, `expo-upgrade`(SDK 49 → 최신, 레지스트리 이름 upgrading-expo), `eas-app-stores`(EAS 빌드·스토어 제출, 레지스트리 이름 expo-deployment)
+- 백엔드·DB: `java-springboot`, `springboot-security`(개인 저자 affaan-m/ecc), `supabase-postgres-best-practices`, `supabase`
+- 테스트: `webapp-testing`(Playwright Python 스크립트 — 이 환경엔 Node Playwright가 기본이라 예제는 참고용)
+- 출처(커밋): vercel-labs/agent-skills 1a2c79d · addyosmani/web-quality-skills afa8da9 · supabase/agent-skills c9be0e9 · github/awesome-copilot 30a0d74 · affaan-m/ecc d2ef268 · anthropics/skills 2c5958e · expo/skills acc0b21
+- **함정**: `npx skills find`는 클라우드 세션에서 프록시를 타지 못해 항상 "No skills found" → `curl "https://skills.sh/api/search?q=…"`로 검색하고, 설치는 원본 저장소 `git clone` 후 복사.
+
+---
+
 ## Claude Code 자동화 — 화면 변경 스크린샷 이메일 알림 (Stop hook)
 
 happiness-admin 저장소(`.claude/hooks/notify-page-change.sh`, 별도 프로젝트)에서 이미 검증된 방식을 이 프로젝트에도
