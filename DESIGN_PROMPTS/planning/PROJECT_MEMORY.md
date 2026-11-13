@@ -63,7 +63,7 @@
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
 - Railway: `JWT_SECRET` 설정 확인(없으면 재시작마다 로그인 풀림), 멈춘 배포 원인 확인 후 재배포, 메일(`MAIL_*`)·`FRONTEND_URL`.
-- 앱 스토어: Expo SDK 49 → 최신 업그레이드(Play targetSdk 35·최신 Xcode), 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
+- 앱 스토어: Expo SDK 49 → 58 업그레이드(Play targetSdk 35·최신 Xcode — 계획 `PLANNING_expo-sdk-upgrade.md`, EAS 빌드·실기기 확인은 사용자), 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
 
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |

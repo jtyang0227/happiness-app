@@ -142,6 +142,7 @@
 | 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `backend/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
 | 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
 | 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
+| 6 | ✅ | Expo SDK 49 → 58 업그레이드 계획 — `expo-upgrade` 스킬 | `PLANNING_expo-sdk-upgrade.md`. 실행은 ⏸ — 1~3단계는 요청 시 클라우드에서 가능, 4단계부터 Expo 계정·실기기 필요 |
 
 ## 이전 묶음 — Behance 분석 후속 (완료)
 
