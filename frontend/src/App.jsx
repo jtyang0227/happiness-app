@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -9,54 +9,68 @@ import useAuthStore from './store/authStore';
 import { GLOBAL_KEYFRAMES } from './constants/animations';
 import { trackPageView } from './utils/analytics';
 
-import LoginPage    from './pages/LoginPage';
-import SignUpPage   from './pages/SignUpPage';
-import FindAccountPage   from './pages/FindAccountPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import ExplorePage  from './pages/ExplorePage';
-import PhotoDetailPage from './pages/PhotoDetailPage';
-import PhotoFormPage   from './pages/PhotoFormPage';
-import ProfilePage  from './pages/ProfilePage';
-import UnauthorizedPage from './pages/UnauthorizedPage';
-import PortfolioPage from './pages/PortfolioPage';
-import KakaoCallbackPage from './pages/KakaoCallbackPage';
-import GoogleCallbackPage from './pages/GoogleCallbackPage';
-import NaverCallbackPage from './pages/NaverCallbackPage';
-import AppleResultPage from './pages/AppleResultPage';
-import SeriesPage from './pages/SeriesPage';
-import InquiryFormPage from './pages/InquiryFormPage';
-import InquiryInboxPage from './pages/InquiryInboxPage';
-import FeedPage from './pages/FeedPage';
-import ImageEditorPage from './pages/ImageEditorPage';
-import PortfolioSlideshowPage from './pages/PortfolioSlideshowPage';
-import WorkCasePage from './pages/WorkCasePage';
-import AdminDashboardPage    from './pages/admin/AdminDashboardPage';
-import AdminGalleryOrderPage from './pages/admin/AdminGalleryOrderPage';
-import AdminMembersPage      from './pages/admin/AdminMembersPage';
-import AdminPhotosPage       from './pages/admin/AdminPhotosPage';
-import AdminCategoryPage     from './pages/admin/AdminCategoryPage';
-import AdminTagsPage         from './pages/admin/AdminTagsPage';
-import AdminModerationPage   from './pages/admin/AdminModerationPage';
-import AdminCurationPage     from './pages/admin/AdminCurationPage';
-import ClientDeliveryPage    from './pages/ClientDeliveryPage';
-import DeliveriesPage        from './pages/DeliveriesPage';
-import BookingPage           from './pages/BookingPage';
-import BookingDashboard      from './pages/BookingDashboard';
-import MeetsPage             from './pages/MeetsPage';
-import MeetDetailPage        from './pages/MeetDetailPage';
-import MyReportsPage         from './pages/MyReportsPage';
-import GatheringsPage        from './pages/GatheringsPage';
-import GatheringFormPage     from './pages/GatheringFormPage';
-import GatheringDetailPage   from './pages/GatheringDetailPage';
-import GatheringManagePage   from './pages/GatheringManagePage';
-import GatheringAlbumPage    from './pages/GatheringAlbumPage';
-import GatheringCalendarPage from './pages/GatheringCalendarPage';
-import IntegratedCalendarPage from './pages/IntegratedCalendarPage';
-import GatheringNotificationsPage from './pages/GatheringNotificationsPage';
-import MoodboardPage from './pages/MoodboardPage';
-import SharedBoardPage from './pages/SharedBoardPage';
-import WorkspacePage from './pages/WorkspacePage';
-import PortfolioBuilderPage from './pages/PortfolioBuilderPage';
+import LoginPage from './pages/LoginPage';
+import ExplorePage from './pages/ExplorePage';
+
+// 배포 직후 열려 있던 탭은 지워진 옛 chunk를 요청해 실패한다 — 한 번만 새로고침해 새 index.html을 받는다.
+function lazyPage(load) {
+  return lazy(() => load().then(
+    (mod) => { try { sessionStorage.removeItem('chunk_reloaded'); } catch (_) {} return mod; },
+    (err) => {
+      let reloaded = true;
+      try { reloaded = sessionStorage.getItem('chunk_reloaded') === '1'; sessionStorage.setItem('chunk_reloaded', '1'); } catch (_) {}
+      if (!reloaded) { window.location.reload(); return new Promise(() => {}); }
+      throw err;
+    },
+  ));
+}
+
+// 첫 화면(둘러보기·로그인)만 바로 싣고, 나머지 화면은 들어갈 때 내려받는다 — 에디터·어드민·분석 차트가 첫 로딩에 실리지 않게.
+const SignUpPage = lazyPage(() => import('./pages/SignUpPage'));
+const FindAccountPage = lazyPage(() => import('./pages/FindAccountPage'));
+const ResetPasswordPage = lazyPage(() => import('./pages/ResetPasswordPage'));
+const PhotoDetailPage = lazyPage(() => import('./pages/PhotoDetailPage'));
+const ProfilePage = lazyPage(() => import('./pages/ProfilePage'));
+const UnauthorizedPage = lazyPage(() => import('./pages/UnauthorizedPage'));
+const PortfolioPage = lazyPage(() => import('./pages/PortfolioPage'));
+const KakaoCallbackPage = lazyPage(() => import('./pages/KakaoCallbackPage'));
+const GoogleCallbackPage = lazyPage(() => import('./pages/GoogleCallbackPage'));
+const NaverCallbackPage = lazyPage(() => import('./pages/NaverCallbackPage'));
+const AppleResultPage = lazyPage(() => import('./pages/AppleResultPage'));
+const SeriesPage = lazyPage(() => import('./pages/SeriesPage'));
+const InquiryFormPage = lazyPage(() => import('./pages/InquiryFormPage'));
+const InquiryInboxPage = lazyPage(() => import('./pages/InquiryInboxPage'));
+const FeedPage = lazyPage(() => import('./pages/FeedPage'));
+const ImageEditorPage = lazyPage(() => import('./pages/ImageEditorPage'));
+const PortfolioSlideshowPage = lazyPage(() => import('./pages/PortfolioSlideshowPage'));
+const WorkCasePage = lazyPage(() => import('./pages/WorkCasePage'));
+const AdminDashboardPage = lazyPage(() => import('./pages/admin/AdminDashboardPage'));
+const AdminGalleryOrderPage = lazyPage(() => import('./pages/admin/AdminGalleryOrderPage'));
+const AdminMembersPage = lazyPage(() => import('./pages/admin/AdminMembersPage'));
+const AdminPhotosPage = lazyPage(() => import('./pages/admin/AdminPhotosPage'));
+const AdminCategoryPage = lazyPage(() => import('./pages/admin/AdminCategoryPage'));
+const AdminTagsPage = lazyPage(() => import('./pages/admin/AdminTagsPage'));
+const AdminModerationPage = lazyPage(() => import('./pages/admin/AdminModerationPage'));
+const AdminCurationPage = lazyPage(() => import('./pages/admin/AdminCurationPage'));
+const ClientDeliveryPage = lazyPage(() => import('./pages/ClientDeliveryPage'));
+const DeliveriesPage = lazyPage(() => import('./pages/DeliveriesPage'));
+const BookingPage = lazyPage(() => import('./pages/BookingPage'));
+const BookingDashboard = lazyPage(() => import('./pages/BookingDashboard'));
+const MeetsPage = lazyPage(() => import('./pages/MeetsPage'));
+const MeetDetailPage = lazyPage(() => import('./pages/MeetDetailPage'));
+const MyReportsPage = lazyPage(() => import('./pages/MyReportsPage'));
+const GatheringsPage = lazyPage(() => import('./pages/GatheringsPage'));
+const GatheringFormPage = lazyPage(() => import('./pages/GatheringFormPage'));
+const GatheringDetailPage = lazyPage(() => import('./pages/GatheringDetailPage'));
+const GatheringManagePage = lazyPage(() => import('./pages/GatheringManagePage'));
+const GatheringAlbumPage = lazyPage(() => import('./pages/GatheringAlbumPage'));
+const GatheringCalendarPage = lazyPage(() => import('./pages/GatheringCalendarPage'));
+const IntegratedCalendarPage = lazyPage(() => import('./pages/IntegratedCalendarPage'));
+const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotificationsPage'));
+const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
+const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
+const WorkspacePage = lazyPage(() => import('./pages/WorkspacePage'));
+const PortfolioBuilderPage = lazyPage(() => import('./pages/PortfolioBuilderPage'));
 
 const DARK_PATHS = ['/login', '/signup'];
 const STANDALONE_PATHS = [
@@ -71,6 +85,16 @@ const STANDALONE_PATHS = [
   '/photo/new',
   '/portfolio-builder',
 ];
+
+// 화면 코드를 내려받는 동안 — 0.2초 안에 끝나면 아무것도 보이지 않게 늦게 나타난다
+function RouteFallback() {
+  return (
+    <div role="status" aria-live="polite" className="route-fallback">
+      <span className="route-fallback-spinner" aria-hidden="true" />
+      <span className="sr-only">화면을 불러오는 중</span>
+    </div>
+  );
+}
 
 function AppShell() {
   const location = useLocation();
@@ -102,9 +126,11 @@ function AppShell() {
         }
       `}</style>
 
+      <a href="#main-content" className="skip-link">본문으로 건너뛰기</a>
       {!isStandalone && <Header />}
       {!isStandalone && <ChatWidget />}
-      <main className="happiness-main" style={{ paddingBottom: 40 }}>
+      <main id="main-content" tabIndex={-1} className="happiness-main" style={{ paddingBottom: 40, outline: 'none' }}>
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Standalone */}
           <Route path="/login"  element={<LoginPage />} />
@@ -182,6 +208,7 @@ function AppShell() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<Navigate to="/explore" replace />} />
         </Routes>
+        </Suspense>
       </main>
     </div>
   );
