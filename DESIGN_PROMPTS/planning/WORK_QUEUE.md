@@ -143,6 +143,7 @@
 | 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
 | 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
 | 6 | ✅ | Expo SDK 49 → 58 업그레이드 계획 — `expo-upgrade` 스킬 | `PLANNING_expo-sdk-upgrade.md`. 실행은 ⏸ — 1~3단계는 요청 시 클라우드에서 가능, 4단계부터 Expo 계정·실기기 필요 |
+| 7 | ⏳ | Expo SDK 58 업그레이드 1~3단계 실행 (`PLANNING_expo-sdk-upgrade.md` 4절) — 의존성·코드모드·`uploadImage`·`app.json` → 웹 export·웹 번들 화면 확인 | **작업 브랜치에만 `wip:` push, master에는 실기기 확인 전까지 올리지 않음**. 4단계(EAS 빌드)부터는 사용자 |
 
 ## 이전 묶음 — Behance 분석 후속 (완료)
 
