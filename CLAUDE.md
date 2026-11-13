@@ -2828,6 +2828,17 @@ skills.sh 레지스트리에서 스택에 맞춰 고른 11개를 원본 저장�
 
 ---
 
+## 스킬 기반 점검 (2026-11-12~13)
+
+설치한 스킬로 네 영역을 훑고 고친 것. 스킬 권고 중 저장소 규칙과 어긋나는 것(Tailwind·Next.js 전용 등)은 적용하지 않았다.
+
+- **백엔드**(`springboot-security`·`java-springboot`, 9820fbe): 공개 문의 폼 → 작가 알림 메일(`InquiryEmailService.buildHtml`)이 보낸 사람 이름·메시지를 HTML에 그대로 넣던 것 → `HtmlUtils.htmlEscape`, 제목의 줄바꿈 제거, 로그 이메일 마스킹. 12곳에 복사돼 있던 `X-Forwarded-For` 첫 값 읽기를 `common/web/ClientIp.resolve()` 한 곳으로 — 환경 변수 `APP_CLIENT_IP_HEADER`(예: `CF-Connecting-IP`, `render.yaml`에 설정)가 있으면 그 헤더를 우선 신뢰(없으면 동작 그대로). 테스트 `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 → 전체 **57개**.
+- **DB**(`supabase-postgres-best-practices`·`supabase`): Hibernate가 만든 `public` 테이블은 RLS가 꺼져 있어, 웹 번들에 들어가는 Supabase anon 키로 PostgREST(`/rest/v1/members` 등)를 직접 읽고 쓸 수 있는 구조다(앱은 JDBC로만 접근). `backend/db/supabase-lockdown.sql` — 모든 테이블 RLS 켜기 + `anon`·`authenticated` 권한 회수 + 새 테이블 자동 RLS 이벤트 트리거, 멱등. 로컬 PostgreSQL 16에서 전(anon 조회 성공)·후(permission denied, 소유자 조회 정상) 확인. **운영에는 실행하지 않았다 — 사용자가 Supabase SQL Editor에서 실행**(happiness-admin이 anon/authenticated 키로 REST 조회를 한다면 먼저 확인).
+- **웹**(`vercel-react-best-practices`·`accessibility`, e99a6bc): `App.jsx`가 46개 화면을 전부 첫 번들에 싣던 것 → 둘러보기·로그인만 바로, 나머지는 `lazyPage()`(React.lazy + 배포 직후 옛 chunk 실패 시 1회 새로고침) + `Suspense`(`RouteFallback`, 0.2초 뒤에만 보임). 첫 JS gzip **267.6 → 119.8 kB**. `.skip-link`("본문으로 건너뛰기" → `main#main-content`), `.sr-only`(global.css), `theme-color` 폐기 색 → 흰색. **새 화면을 추가할 때는 `lazyPage(() => import('./pages/…'))`로 등록한다.** 남긴 것: `PhotoFormPage.jsx`(어디에도 연결 안 된 파일, `setGenre` 미정의 lint 오류)는 import만 뺐고 파일은 그대로.
+- **모바일**(`vercel-react-native-skills`): `FeedScreen` — 더 불러오기가 실패하면 오래된 클로저의 빈 배열로 목록을 덮어써 **피드가 통째로 사라지던 것**, 페이지 사이에 새 사진이 올라오면 같은 id가 두 번 들어가던 것 수정, 행을 `memo(FeedCard)` + 안정된 콜백으로, `{mood && …}` → 삼항(빈 문자열 렌더 방지). Expo SDK 업그레이드(`expo-upgrade`)는 실기기 빌드 확인이 필요해 실행하지 않음.
+
+---
+
 ## Claude Code 자동화 — 화면 변경 스크린샷 이메일 알림 (Stop hook)
 
 happiness-admin 저장소(`.claude/hooks/notify-page-change.sh`, 별도 프로젝트)에서 이미 검증된 방식을 이 프로젝트에도

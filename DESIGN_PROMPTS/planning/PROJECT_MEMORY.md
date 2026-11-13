@@ -21,8 +21,8 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **52개** 통과: `CoreFlowIntegrationTest` 50 + `JwtTokenProviderTest` 2).
-- 웹: `cd frontend && CI=true npm run build` → "Compiled successfully."
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **57개** 통과: `CoreFlowIntegrationTest` 50 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
+- 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
 - 클라우드 세션은 egress 정책상 `*.happiness.io.kr`·`*.vercel.app`에 못 붙는다 → 운영 상태는 `gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`·`/deployments`로만 본다.
@@ -58,6 +58,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
 - 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
@@ -67,7 +68,9 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-12 | (이 커밋) | Claude Code 스킬 11개 추가(React·RN·Expo 업그레이드/스토어·Supabase/Postgres·Spring Boot·보안·접근성·웹 테스트) | CLAUDE.md "외부 스킬" 절 |
+| 11-13 | 9820fbe·e99a6bc | 스킬 기반 점검 — 문의 메일 이스케이프·`ClientIp`, Supabase 잠금 SQL, 웹 화면별 코드 분할(268→120kB), 모바일 피드 버그 | CLAUDE.md "스킬 기반 점검" 절 |
+| 11-12 | d5a6ebc | 공식 플러그인 4개(hookify·commit-commands·ralph-loop·claude-code-setup) + 가드 규칙 5개 + 편집 훅 교체 | CLAUDE.md "플러그인·가드 규칙" 절 |
+| 11-12 | 9f0cd12 | Claude Code 스킬 11개 추가(React·RN·Expo 업그레이드/스토어·Supabase/Postgres·Spring Boot·보안·접근성·웹 테스트) | CLAUDE.md "외부 스킬" 절 |
 | 11-06 | 6b957c2 | 무료 호스팅 전환 준비 — Cloudflare Pages 배포 job, Render Free Blueprint, keepalive | `planning/PLANNING_free-hosting.md` |
 | 11-04 | 9220c3c | Firebase Analytics(웹 page_view + 가입·로그인·문의·예약·업로드, 토큰 경로 가림) | CLAUDE.md Frontend 절 |
 | 10-22 | ce63791 | 모바일 웹 하단 탭 2차 — 다크 알약·활성 캡슐·프로필 사진·알약 밖 ＋ 원(Cosmos·Instagram 참고) | `design/DESIGN_PROMPT_bottom-nav-icons.md` |

@@ -140,8 +140,8 @@
 | 1 | ✅ | 플러그인 적용 — 공식 마켓플레이스 등록·활성화, hookify 규칙, 깨진 빌드 훅 수정 | 4개 project scope 활성화, 규칙 5개, 편집 훅을 파일 단위 ESLint로. Playwright는 `.mcp.json`에 이미 있어 플러그인 중복 등록 안 함 |
 | 2 | ✅ | 백엔드 점검·수정 — `springboot-security`·`java-springboot` 스킬 | 9820fbe — 문의 알림 메일 HTML 이스케이프, `common/web/ClientIp`(12곳 통합, `APP_CLIENT_IP_HEADER`), 로그 이메일 마스킹. 테스트 57개 |
 | 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `backend/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
-| 4 | 🔄 | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | |
-| 5 | ⏳ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | |
+| 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
+| 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
 
 ## 이전 묶음 — Behance 분석 후속 (완료)
 
