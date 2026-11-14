@@ -4,8 +4,6 @@
     "slug": "happiness-gallery",
     "version": "1.0.0",
     "orientation": "portrait",
-    "privacy": "public",
-    "sdkVersion": "49.0.0",
     "platforms": [
       "ios",
       "android",
@@ -45,8 +43,6 @@
     "android": {
       "package": "com.happiness.gallery",
       "versionCode": 1,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3182F6"

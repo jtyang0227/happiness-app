@@ -37,7 +37,7 @@ Claude Code는 단순 코드 생성기가 아니라 스스로 계획·실행·�
    같은 명령을 상상해서 실행하지 않는다). 상세 절차는 `기능 구현 테스트 규칙` 섹션 참고:
    - 백엔드: `./gradlew clean build -x test` + `./gradlew test`
    - 프론트엔드: `npm run build` ("Compiled successfully." 확인)
-   - 모바일: `npx expo export --platform web` ("Finished saving JS Bundles" 확인)
+   - 모바일: `npx expo export --platform web` ("Exported: dist" 확인 — SDK 49 시절 문구는 "Finished saving JS Bundles")
    실행한 정확한 명령과 결과("통과"/"X로 실패"/"Y라서 미실행")를 있는 그대로 보고하고, 구체적인 검증
    근거 없이 "완료"·"고쳤다"·"동작한다"라고 말하지 않는다. 사용자가 "끝났어?"라고 묻기 전에 먼저
    실행한다.
@@ -1535,14 +1535,14 @@ Root Stack
 
 **주요 의존성 (mobile/package.json):**
 ```
-expo: ~49.0.14
+expo: ~58.0.25                  # (2026-11-14, 작업 브랜치) SDK 49 → 58, RN 0.88.1·React 19.3 — 실기기 확인 전 master 미반영
 expo-image-picker: ~14.3.2      # 갤러리/카메라 이미지 선택
 expo-file-system: ~15.4.5       # 파일 시스템 접근
-expo-blur: ~12.4.1              # PortfolioSlideshowScreen 글라스 컨트롤바(BlurView)
+expo-blur: ~58.0.6              # PortfolioSlideshowScreen 글라스 컨트롤바(BlurView)
 react-native-view-shot: ^3.8.0  # (신규, Feature 37) Instagram 공유용 미리보기 View → 이미지 캡처, 네이티브 전용(웹은 instagramShare.web.js 스텁)
 react-native-share: ^9.4.1      # (신규, Feature 37) Instagram Stories 딥링크 공유, 네이티브 전용(웹은 instagramShare.web.js 스텁)
 expo-clipboard: ~4.3.1          # (신규, Feature 38-B4) DeliveryScreen 납품 링크 복사 — 웹/네이티브 모두 지원되는 공식 Expo 모듈
-@react-navigation/bottom-tabs: ^6.5.20  # 하단 탭 네비게이션
+@react-navigation/bottom-tabs: ^7.21.0  # 하단 탭 네비게이션 (v7, expo-router 없이 직접 사용)
 react-dom / react-native-web    # 웹 export 지원
 ```
 
@@ -2696,14 +2696,14 @@ Root Stack
 
 **주요 의존성 (mobile/package.json):**
 ```
-expo: ~49.0.14
+expo: ~58.0.25                  # (2026-11-14, 작업 브랜치) SDK 49 → 58, RN 0.88.1·React 19.3 — 실기기 확인 전 master 미반영
 expo-image-picker: ~14.3.2      # 갤러리/카메라 이미지 선택
 expo-file-system: ~15.4.5       # 파일 시스템 접근
-expo-blur: ~12.4.1              # PortfolioSlideshowScreen 글라스 컨트롤바(BlurView)
+expo-blur: ~58.0.6              # PortfolioSlideshowScreen 글라스 컨트롤바(BlurView)
 react-native-view-shot: ^3.8.0  # (신규, Feature 37) Instagram 공유용 미리보기 View → 이미지 캡처, 네이티브 전용(웹은 instagramShare.web.js 스텁)
 react-native-share: ^9.4.1      # (신규, Feature 37) Instagram Stories 딥링크 공유, 네이티브 전용(웹은 instagramShare.web.js 스텁)
 expo-clipboard: ~4.3.1          # (신규, Feature 38-B4) DeliveryScreen 납품 링크 복사 — 웹/네이티브 모두 지원되는 공식 Expo 모듈
-@react-navigation/bottom-tabs: ^6.5.20  # 하단 탭 네비게이션
+@react-navigation/bottom-tabs: ^7.21.0  # 하단 탭 네비게이션 (v7, expo-router 없이 직접 사용)
 react-dom / react-native-web    # 웹 export 지원
 ```
 
@@ -3084,7 +3084,7 @@ npm test -- --watchAll=false
 cd mobile
 npm install --legacy-peer-deps
 npx expo export --platform web 2>&1 | grep -E "Finished|Error"
-# "Finished saving JS Bundles" 확인 (아이콘 CRC 경고는 무시 가능)
+# "Exported: dist" 확인 (SDK 49 시절 문구는 "Finished saving JS Bundles")
 
 # 수동 테스트 체크리스트 (에뮬레이터/실기기):
 #   - 로그인/회원가입 정상 동작

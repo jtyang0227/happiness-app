@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+// SDK 54부터 uploadAsync는 legacy 진입점으로 옮겨졌다.
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { API_ORIGIN as API_URL } from '../constants/config';
 

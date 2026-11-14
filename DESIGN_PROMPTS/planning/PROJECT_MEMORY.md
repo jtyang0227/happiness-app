@@ -16,14 +16,14 @@
 |---|---|---|
 | 백엔드 | Spring Boot 3.4.5, Java 21 빌드, JPA+JPQL, feature 패키지 | `backend/src/main/java/com/happiness/app/<feature>/` |
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
-| 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
+| 모바일 | React Native 0.72 + **Expo SDK 49** (작업 브랜치는 SDK 58·RN 0.88 — 실기기 확인 대기) | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **57개** 통과: `CoreFlowIntegrationTest` 50 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
-- 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
+- 모바일: `cd mobile && npx expo export --platform web` → "Exported: dist". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
 - 클라우드 세션은 egress 정책상 `*.happiness.io.kr`·`*.vercel.app`에 못 붙는다 → 운영 상태는 `gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`·`/deployments`로만 본다.
 
@@ -63,7 +63,7 @@
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
 - Railway: `JWT_SECRET` 설정 확인(없으면 재시작마다 로그인 풀림), 멈춘 배포 원인 확인 후 재배포, 메일(`MAIL_*`)·`FRONTEND_URL`.
-- 앱 스토어: Expo SDK 49 → 58 업그레이드(Play targetSdk 35·최신 Xcode — 계획 `PLANNING_expo-sdk-upgrade.md`, EAS 빌드·실기기 확인은 사용자), 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
+- 앱 스토어: Expo SDK 58 업그레이드 코드는 작업 브랜치에 있음(1~3단계 완료) → `eas build --profile development`로 Android 실기기 확인(계획 `PLANNING_expo-sdk-upgrade.md` 4~6단계) 후 master 반영, 심사용 데모 계정, 개인정보처리방침 공개 URL, App Privacy/데이터 안전 항목, `support@happiness.io.kr` 수신 확인.
 
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |

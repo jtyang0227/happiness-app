@@ -70,6 +70,21 @@
 - 내비게이션 동작 차이로 화면 이동이 깨지는 경우 → 3단계 웹 번들에서 대부분 드러난다.
 - 되돌리기: 브랜치를 버리면 끝. master·운영 웹·API에는 영향이 없다(모바일 앱은 아직 스토어에 없다).
 
+## 5-1. 1~3단계 실행 결과 (2026-11-14, 작업 브랜치 `wip:` 커밋 — master 미반영)
+
+- **의존성**: `npx expo install expo@latest`는 npm peer 충돌로 실패 → `package.json`에 2절 표의 버전을 직접 적고 `npm install --legacy-peer-deps`.
+  `react-native-share`는 12.3.1. `@babel/core`·`babel-preset-expo` devDependency는 expo에 포함돼 삭제.
+- **내비게이션 — 계획과 다르게 처리**: 코드모드가 `@react-navigation/native-stack`을 "대응 경로 없음(expo-router `Stack` 레이아웃을 써라)"으로 건너뛰었다.
+  파일 기반 라우팅 전환은 6절대로 범위 밖이라, **expo-router를 넣지 않고 React Navigation v7(`native` 7.5·`native-stack`/`bottom-tabs` 7.21)을 직접 쓴다.**
+  "앱 코드에서 `@react-navigation/*`를 import하지 말라"는 SDK 56 지침은 expo-router가 자체 사본을 들고 있을 때의 중복 문제라, expo-router가 없는 이 앱엔 해당하지 않는다고 판단했다.
+  `src/navigation/AppNavigator.js` 코드는 그대로(v6 → v7 API 차이 없이 번들·화면 이동 정상). 나중에 expo-router로 옮길 때 다시 본다.
+- **코드**: `utils/uploadImage.js` import만 `expo-file-system/legacy`로. `ImagePicker.MediaTypeOptions`는 지원 중단 예고지만 SDK 58에도 있어 그대로.
+  `app.json`에서 `sdkVersion`·`privacy`·Android `compileSdkVersion`/`targetSdkVersion` 삭제, `babel.config.js` 삭제.
+- **검증**: `npx expo export --platform web`·`--platform android`(Hermes 번들) 통과(완료 문구가 "Exported: dist"로 바뀜).
+  `npx expo config --type introspect` — `blockedPermissions` 5개가 `tools:node="remove"`로 유지, 남는 권한 INTERNET·VIBRATE·CAMERA·WRITE_EXTERNAL_STORAGE(maxSdk 32).
+  dev 웹 번들 + 로컬 bootRun + Playwright(390px)로 로그인 → 둘러보기·갤러리·피드·프로필 탭 → 예약 관리·통합 일정·납품 관리·약속·내 작업 열고 뒤로 가기: 페이지 오류 0건(개발 서버 HMR WebSocket 경고만).
+- **확인 못 한 것**: `npx expo-doctor`·`expo install --check`는 expo.dev 접속이 막혀 실행 불가. 네이티브 빌드·New Architecture에서의 `react-native-share`·`view-shot`·edge-to-edge·AsyncStorage 2 로그인 유지는 4~5단계(사용자, EAS)에서.
+
 ## 6. 하지 않는 것
 
 - 화면을 expo-router 파일 기반 라우팅으로 옮기는 것(import 경로만 바꾼다).
