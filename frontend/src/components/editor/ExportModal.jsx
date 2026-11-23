@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useEditor } from '../../contexts/EditorContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS } from '../../constants/colors';
@@ -178,6 +179,7 @@ export default function ExportModal({ onClose }) {
   const [progress,  setProgress]  = useState('');
   const [working,   setWorking]   = useState(false);
   const [done,      setDone]      = useState(false);
+  const [uploadedPhotoId, setUploadedPhotoId] = useState(null);   // 한 장 업로드 직후 "스팟 붙이기" 링크용
   const [mode, setMode] = useState('single');   // single | carousel
   const [ratioKey, setRatioKey] = useState('4:5');
   const [slideCount, setSlideCount] = useState(3);
@@ -311,7 +313,7 @@ export default function ExportModal({ onClose }) {
 
   const handleSingle = async () => {
     if (!currentImage) return;
-    setWorking(true); setProgress('처리 중...');
+    setWorking(true); setProgress('처리 중...'); setUploadedPhotoId(null);
     try {
       const img  = await loadImg(currentImage.objectUrl);
       const blob = await renderExport(img, currentEditState, { size: exportSize, format, quality });
@@ -319,8 +321,9 @@ export default function ExportModal({ onClose }) {
       if (uploadToGallery) {
         setProgress('업로드 중...');
         const url = await uploadImage(blob, 'photos');
-        await photoApi.create({ imageUrl: url, title: filename, memberId: user?.id });
+        const created = await photoApi.create({ imageUrl: url, title: filename, memberId: user?.id });
         trackEvent('photo_upload', { source: 'export', count: 1 });
+        setUploadedPhotoId(created?.data?.id ?? null);
         setProgress('✅ 갤러리에 업로드 완료!');
       } else {
         downloadBlob(blob, `${filename}.${ext}`);
@@ -514,6 +517,13 @@ export default function ExportModal({ onClose }) {
           <div style={{ textAlign: 'center', fontSize: 12, color: done ? '#48bb78' : COLORS.darkTextSub, marginBottom: 12 }}>
             {working && <span style={{ marginRight: 6 }}>⏳</span>}
             {progress}
+            {done && uploadedPhotoId && (
+              <div style={{ marginTop: 8 }}>
+                <Link to={`/photo/${uploadedPhotoId}?spot=1`} style={{ color: COLORS.primaryTonal, fontSize: 13, fontWeight: 600 }}>
+                  📍 이 사진에 출사 스팟 붙이기 →
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { photoApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { MOOD_COLORS, COLORS } from '../constants/colors';
@@ -17,6 +17,7 @@ import useColorExtraction from '../hooks/useColorExtraction';
 import { trackView } from '../utils/trackView';
 import MagazineViewer from '../components/magazine/MagazineViewer';
 import BoardPickerModal from '../components/moodboard/BoardPickerModal';
+import PhotoSpotSection from '../components/spot/PhotoSpotSection';
 
 function buildAdjSummary(adj, effects) {
   const items = [];
@@ -37,6 +38,7 @@ function buildAdjSummary(adj, effects) {
 export default function PhotoDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [photo, setPhoto] = useState(null);
@@ -384,6 +386,9 @@ export default function PhotoDetailPage() {
           ))}
         </div>
       )}
+
+      {/* 출사 스팟 — 내보내기 직후 ?spot=1 로 들어오면 고르기 시트를 바로 연다 */}
+      <PhotoSpotSection photoId={photo.id} isOwner={!!isOwner} autoOpen={searchParams.get('spot') === '1'} />
 
       {/* 대표 컬러 팔레트 */}
       <div style={{ marginBottom: 20 }}>

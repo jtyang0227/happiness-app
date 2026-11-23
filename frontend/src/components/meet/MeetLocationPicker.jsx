@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { COLORS } from '../../constants/colors';
+import { KAKAO_MAP_KEY as KAKAO_KEY, loadKakaoMaps } from '../../utils/kakaoMap';
 
-const KAKAO_KEY = process.env.REACT_APP_KAKAO_MAP_KEY || '';
 const GOOGLE_MAPS_KEY = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
 
 function GoogleMapsLinks({ locationName, locationAddress, locationLat, locationLng }) {
@@ -30,20 +30,6 @@ function GoogleMapsLinks({ locationName, locationAddress, locationLat, locationL
       </a>
     </div>
   );
-}
-
-function loadKakaoMaps() {
-  if (window.kakao && window.kakao.maps && window.kakao.maps.Map) return Promise.resolve();
-  if (window.__kakaoMapsLoading) return window.__kakaoMapsLoading;
-  window.__kakaoMapsLoading = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services&autoload=false`;
-    script.async = true;
-    script.onload = () => { window.kakao.maps.load(resolve); };
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-  return window.__kakaoMapsLoading;
 }
 
 export default function MeetLocationPicker({ value, onChange, readOnly = false }) {

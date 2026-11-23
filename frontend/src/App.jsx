@@ -69,6 +69,7 @@ const IntegratedCalendarPage = lazyPage(() => import('./pages/IntegratedCalendar
 const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotificationsPage'));
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
+const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
 const WorkspacePage = lazyPage(() => import('./pages/WorkspacePage'));
 const PortfolioBuilderPage = lazyPage(() => import('./pages/PortfolioBuilderPage'));
 
@@ -149,6 +150,7 @@ function AppShell() {
           <Route path="/inquiry/:profileName" element={<InquiryFormPage />} />
           {/* 탐색 — 의뢰인이 로그인 없이 작가·작업을 찾을 수 있게 공개 (PLANNING_work-discovery.md) */}
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/spots/:id" element={<SpotDetailPage />} />
 
           {/* Protected */}
           {/* 예전 갤러리(/)·목록(/list)은 탐색 사진 탭으로 합쳤다 — 북마크·외부 링크 보존용 리다이렉트 */}
