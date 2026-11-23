@@ -5,6 +5,8 @@ import { EASE_OUT } from '../constants/animations';
 import gatheringApi from '../services/gatheringApi';
 import useAuthStore from '../store/authStore';
 import GatheringFeed from '../components/gathering/GatheringFeed';
+import PlacePollCard from '../components/gathering/PlacePollCard';
+import { kakaoDirectionsUrl } from '../utils/kakaoMap';
 
 /* ── 모달 등장 애니메이션 — 배경 페이드 + 카드 스케일업(scale(0)로 시작하지 않음) ── */
 const MODAL_KEYFRAMES = `
@@ -455,6 +457,11 @@ export default function GatheringDetailPage() {
             }}>
               {statusMeta.label}
             </span>
+            {gathering.beginnerFriendly && (
+              <span style={{ marginLeft: 6, padding: '4px 10px', borderRadius: 99, background: COLORS.successTonal, color: COLORS.successText, fontSize: 12, fontWeight: 700 }}>
+                🌱 초보 환영
+              </span>
+            )}
           </div>
 
           <h1 style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 700, color: COLORS.text, lineHeight: 1.35 }}>
@@ -467,6 +474,15 @@ export default function GatheringDetailPage() {
             </InfoRow>
             <InfoRow icon="📍" label="장소">
               {gathering.location}
+              {gathering.spotId && (
+                <span style={{ display: 'inline-flex', gap: 10, marginLeft: 8, flexWrap: 'wrap' }}>
+                  <Link to={`/spots/${gathering.spotId}`} style={{ fontSize: 13, fontWeight: 600, color: COLORS.primary }}>스팟 보기 →</Link>
+                  {gathering.spotLat != null && (
+                    <a href={kakaoDirectionsUrl(gathering.spotName, gathering.spotLat, gathering.spotLng)} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 13, fontWeight: 600, color: COLORS.textSecondary }}>길찾기 ↗</a>
+                  )}
+                </span>
+              )}
             </InfoRow>
             <InfoRow icon="👥" label="참여 인원">
               <strong>{gathering.participantCount}</strong> / {gathering.maxParticipants}명
@@ -487,6 +503,22 @@ export default function GatheringDetailPage() {
             )}
           </div>
         </div>
+
+        {/* 인물 촬영 동의 안내 (고정) */}
+        {gathering.portraitConsentRule && (
+          <div role="note" style={{
+            display: 'flex', gap: 10, alignItems: 'flex-start', padding: '14px 16px', marginBottom: 20,
+            borderRadius: 14, background: COLORS.surfaceDim, border: `1px solid ${COLORS.border}`,
+          }}>
+            <span aria-hidden="true" style={{ fontSize: 18 }}>🤝</span>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: COLORS.textSecondary }}>
+              <strong style={{ color: COLORS.text }}>사람을 찍을 땐 먼저 동의를 받아 주세요.</strong> 모델이 아닌 행인·참여자도 마찬가지예요.
+              얼굴이 나온 사진을 올리기 전에 한 번 더 물어봐 주세요.
+            </p>
+          </div>
+        )}
+
+        <PlacePollCard gatheringId={gathering.id} canVote={!!user} />
 
         {/* 소개글 */}
         {gathering.description && (

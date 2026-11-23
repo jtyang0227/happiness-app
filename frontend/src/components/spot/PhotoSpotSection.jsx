@@ -7,7 +7,7 @@ import SpotFormModal from './SpotFormModal';
 import { spotApi, spotErrorMessage } from '../../services/spotApi';
 
 /** 기존 스팟 검색 → 고르기, 없으면 새로 만들기 (사진 주인 전용 시트) */
-function SpotPickerSheet({ onClose, onPick }) {
+export function SpotPickerSheet({ onClose, onPick }) {
   const [q, setQ] = useState('');
   const [items, setItems] = useState(null);
   const [error, setError] = useState('');

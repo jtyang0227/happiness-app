@@ -15,6 +15,7 @@ import { uploadImage } from '../../services/uploadApi';
 export default function GatheringPostComposerModal({ gatheringId, onClose, onSuccess }) {
   const [content, setContent] = useState('');
   const [hashtags, setHashtags] = useState('');
+  const [wantsFeedback, setWantsFeedback] = useState(false);
   // photos: [{file, preview, progress, caption}]
   const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -77,6 +78,7 @@ export default function GatheringPostComposerModal({ gatheringId, onClose, onSuc
       const body = {};
       if (content.trim()) body.content = content.trim();
       if (hashtags.trim()) body.hashtags = hashtags.trim();
+      if (wantsFeedback) body.wantsFeedback = true;
       if (uploadedPhotos.length > 0) body.photos = uploadedPhotos;
 
       await gatheringApi.createPost(gatheringId, body);
@@ -165,9 +167,15 @@ export default function GatheringPostComposerModal({ gatheringId, onClose, onSuc
             width: '100%', padding: '10px 12px', boxSizing: 'border-box',
             border: `1px solid ${COLORS.border}`, borderRadius: 10,
             fontSize: 13, color: COLORS.text, background: COLORS.surface,
-            marginBottom: 16, outline: 'none',
+            marginBottom: 12, outline: 'none',
           }}
         />
+
+        {/* ── 피드백 요청 (출사 후기·크리틱) ───────── */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 14, color: COLORS.text, cursor: 'pointer' }}>
+          <input type="checkbox" checked={wantsFeedback} onChange={e => setWantsFeedback(e.target.checked)} disabled={submitting} style={{ width: 18, height: 18 }} />
+          💬 피드백 원해요 <span style={{ fontSize: 12, color: COLORS.textMuted }}>— 다른 참여자에게 의견을 부탁해요</span>
+        </label>
 
         {/* ── 사진 미리보기 그리드 ─────────────────── */}
         {photos.length > 0 && (

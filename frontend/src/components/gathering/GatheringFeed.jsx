@@ -220,6 +220,14 @@ function PostCard({ post, currentUserId, isParticipating, onDelete, index = 0 })
         )}
       </div>
 
+      {post.wantsFeedback && (
+        <div style={{ padding: '8px 16px 0' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 999, background: COLORS.primaryLight, color: COLORS.primaryDark, fontSize: 12, fontWeight: 700 }}>
+            💬 피드백 원해요
+          </span>
+        </div>
+      )}
+
       {/* ── 게시글 텍스트 ────────────────────────── */}
       {post.content && (
         <div style={{
@@ -447,6 +455,7 @@ export default function GatheringFeed({ gatheringId, status, isParticipating, cu
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [showComposer, setShowComposer] = useState(false);
+  const [feedbackOnly, setFeedbackOnly] = useState(false);   // 불러온 게시물 중 "피드백 원해요"만
 
   const isOngoing = status === 'ONGOING';
 
@@ -577,7 +586,17 @@ export default function GatheringFeed({ gatheringId, status, isParticipating, cu
         />
       ) : (
         <>
-          {posts.map((post, i) => (
+          {posts.some(p => p.wantsFeedback) && (
+            <div style={{ marginBottom: 12 }}>
+              <button type="button" aria-pressed={feedbackOnly} onClick={() => setFeedbackOnly(v => !v)} style={{
+                height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                border: `1px solid ${feedbackOnly ? COLORS.primary : COLORS.border}`,
+                background: feedbackOnly ? COLORS.primaryLight : COLORS.surface,
+                color: feedbackOnly ? COLORS.primaryDark : COLORS.textSecondary,
+              }}>💬 피드백 원해요만 보기</button>
+            </div>
+          )}
+          {(feedbackOnly ? posts.filter(p => p.wantsFeedback) : posts).map((post, i) => (
             <PostCard
               key={post.id}
               post={post}

@@ -7,7 +7,7 @@ import { gatheringApi } from '../src/api/gatheringApi';
 import { useAuth } from '../store/AuthContext';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS, SPACING } from '../constants/layout';
-import { SUPPORT_EMAIL } from '../constants/config';
+import { SUPPORT_EMAIL, WEB_ORIGIN } from '../constants/config';
 import useBlockedMembers, { blockMember } from '../hooks/useBlockedMembers';
 
 const STATUS_STYLE = {
@@ -50,6 +50,11 @@ function GatheringInfoCard({ gathering }) {
           <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
             <Text style={[styles.badgeText, { color: statusStyle.color }]}>{statusStyle.label}</Text>
           </View>
+          {gathering.beginnerFriendly ? (
+            <View style={[styles.badge, { backgroundColor: COLORS.successTonal, marginLeft: 6 }]}>
+              <Text style={[styles.badgeText, { color: COLORS.successText }]}>🌱 초보 환영</Text>
+            </View>
+          ) : null}
         </View>
         <Text style={styles.infoTitle}>{gathering.title}</Text>
         {gathering.description ? (
@@ -57,6 +62,13 @@ function GatheringInfoCard({ gathering }) {
         ) : null}
         <View style={styles.infoMetaList}>
           <Text style={styles.infoMeta}>📍 {gathering.location}</Text>
+          {gathering.spotId ? (
+            <TouchableOpacity accessibilityRole="link" accessibilityLabel={`${gathering.spotName || '출사 스팟'} 스팟 보기`}
+              onPress={() => Linking.openURL(`${WEB_ORIGIN}/spots/${gathering.spotId}`).catch(() => {})}
+              style={styles.spotLink}>
+              <Text style={styles.spotLinkText}>출사 스팟 「{gathering.spotName}」 보기 →</Text>
+            </TouchableOpacity>
+          ) : null}
           <Text style={styles.infoMeta}>🗓 {formatDateTime(gathering.startDateTime)}</Text>
           {gathering.endDateTime && (
             <Text style={styles.infoMeta}>    ~ {formatDateTime(gathering.endDateTime)}</Text>
@@ -70,7 +82,66 @@ function GatheringInfoCard({ gathering }) {
             <Text style={styles.infoHashtags}>{gathering.hashtags}</Text>
           )}
         </View>
+        {gathering.portraitConsentRule ? (
+          <View style={styles.consentNote} accessibilityRole="text">
+            <Text style={styles.consentText}>🤝 사람을 찍을 땐 먼저 동의를 받아 주세요. 모델이 아닌 행인·참여자도 마찬가지예요.</Text>
+          </View>
+        ) : null}
       </View>
+    </View>
+  );
+}
+
+// ── 장소 투표 (후보가 있을 때만) ──────────────────────────────────────
+function PlacePollSection({ gatheringId, canVote }) {
+  const [poll, setPoll] = useState(null);
+  const [voting, setVoting] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    gatheringApi.getPlacePoll(gatheringId).then(p => { if (alive) setPoll(p); }).catch(() => {});
+    return () => { alive = false; };
+  }, [gatheringId]);
+
+  if (!poll || !poll.options || poll.options.length === 0) return null;
+  const total = poll.totalVotes || 0;
+  const interactive = poll.open && canVote;
+
+  const vote = async (optionId) => {
+    if (voting || optionId === poll.myOptionId) return;
+    setVoting(optionId);
+    try {
+      setPoll(await gatheringApi.votePlace(gatheringId, optionId));
+    } catch (e) {
+      Alert.alert('투표하지 못했어요', e.response?.data?.message || '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setVoting(null);
+    }
+  };
+
+  return (
+    <View style={styles.pollCard}>
+      <Text style={styles.pollTitle}>🗳 장소 투표</Text>
+      <Text style={styles.pollSub}>
+        {poll.open ? `참여 신청한 사람이 골라요 · ${total}표` : poll.winnerOptionId ? `투표가 끝났어요 · ${total}표` : '투표가 끝났어요 · 장소는 그대로예요'}
+      </Text>
+      {poll.options.map(o => {
+        const pct = total ? Math.round((o.voteCount / total) * 100) : 0;
+        const mine = poll.myOptionId === o.id;
+        const won = poll.winnerOptionId === o.id;
+        return (
+          <TouchableOpacity key={o.id} disabled={!interactive || voting !== null} onPress={() => vote(o.id)}
+            accessibilityRole="button" accessibilityState={{ selected: mine, disabled: !interactive }}
+            accessibilityLabel={`${o.label}, ${o.voteCount}표${mine ? ', 내가 고른 곳' : ''}${won ? ', 정해진 장소' : ''}`}
+            style={[styles.pollOption, (mine || won) && styles.pollOptionActive]}>
+            <View style={[styles.pollBar, { width: `${pct}%` }]} />
+            <Text style={[styles.pollLabel, (mine || won) && { fontWeight: '700' }]} numberOfLines={1}>
+              {won ? '✓ ' : ''}{o.spotId ? '📍 ' : ''}{o.label}{mine ? ' · 내 선택' : ''}
+            </Text>
+            <Text style={styles.pollCount}>{voting === o.id ? '…' : `${o.voteCount}표`}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -263,6 +334,7 @@ function PostCard({ post, gatheringId, myStatus, navigation, canInteract, isMine
       </View>
 
       {/* 내용 */}
+      {post.wantsFeedback ? <Text style={styles.feedbackChip}>💬 피드백 원해요</Text> : null}
       {post.content ? <Text style={styles.postContent}>{post.content}</Text> : null}
       {post.hashtags ? <Text style={styles.postHashtags}>{post.hashtags}</Text> : null}
 
@@ -473,6 +545,9 @@ export default function GatheringDetailScreen({ route, navigation }) {
           {/* 모임 정보 카드 */}
           <GatheringInfoCard gathering={gathering} />
 
+          {/* 장소 투표 */}
+          <PlacePollSection gatheringId={gatheringId} canVote={!!user} />
+
           {/* 참여 신청 바 (모집중) */}
           {isRecruiting && user && (
             <ParticipationBar
@@ -607,6 +682,78 @@ const styles = StyleSheet.create({
   infoMeta: {
     fontSize: FONT.sm,
     color: COLORS.textSecondary,
+  },
+  spotLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  spotLinkText: {
+    fontSize: FONT.sm,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  consentNote: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  consentText: {
+    fontSize: FONT.sm,
+    lineHeight: 20,
+    color: COLORS.textSecondary,
+  },
+  pollCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  pollTitle: {
+    fontSize: FONT.md,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  pollSub: {
+    fontSize: FONT.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  pollOption: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    backgroundColor: COLORS.white,
+  },
+  pollOptionActive: {
+    borderColor: COLORS.primary,
+  },
+  pollBar: {
+    position: 'absolute',
+    left: 0, top: 0, bottom: 0,
+    backgroundColor: COLORS.tagBg,
+  },
+  pollLabel: {
+    flex: 1,
+    fontSize: FONT.sm,
+    color: COLORS.textPrimary,
+  },
+  pollCount: {
+    fontSize: FONT.xs,
+    color: COLORS.textSecondary,
+    marginLeft: 8,
   },
   infoHashtags: {
     fontSize: FONT.sm,
@@ -772,6 +919,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#A855F7',
+  },
+  feedbackChip: {
+    alignSelf: 'flex-start',
+    marginHorizontal: SPACING.md,
+    marginTop: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: COLORS.tagBg,
+    color: COLORS.primaryDark,
+    fontSize: FONT.xs,
+    fontWeight: '700',
   },
   postContent: {
     fontSize: FONT.sm,

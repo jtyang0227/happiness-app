@@ -7,6 +7,14 @@ export const gatheringApi = {
   list: (params = {}) =>
     apiClient.get(BASE, { params }).then(r => r.data),
 
+  // 장소 투표 (ANALYSIS_chulsa P1) — 조회 공개, 후보 설정(만든 사람)·투표(참여 신청자)는 인증. 래퍼 없는 JSON
+  getPlacePoll: (id) =>
+    apiClient.get(`${BASE}/${id}/place-poll`).then(r => r.data),
+  setPlacePoll: (id, options) =>
+    apiClient.put(`${BASE}/${id}/place-poll`, { options }).then(r => r.data),
+  votePlace: (id, optionId) =>
+    apiClient.post(`${BASE}/${id}/place-poll/vote`, { optionId }).then(r => r.data),
+
   // Public — single gathering detail
   getDetail: (id) =>
     apiClient.get(`${BASE}/${id}`).then(r => r.data),

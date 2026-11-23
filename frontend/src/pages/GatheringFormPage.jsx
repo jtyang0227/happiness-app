@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { COLORS } from '../constants/colors';
 import gatheringApi from '../services/gatheringApi';
+import { spotApi } from '../services/spotApi';
+import { SpotPickerSheet } from '../components/spot/PhotoSpotSection';
 
 /* 태블릿(768px) 이상에서 좌: 기본 정보 / 우: 장소·일정·참여 정보·이미지
  * 2컬럼으로 전환 (DESIGN_PROMPT_tablet-layouts.md C-4). 모바일은 기존
@@ -15,6 +17,10 @@ const GFORM_LAYOUT_CSS = `
     .gform-columns { flex-direction: row; align-items: flex-start; }
     .gform-left, .gform-right { flex: 1; min-width: 0; }
   }
+  .gform-chip-btn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid ${COLORS.border};
+    background: ${COLORS.surface}; color: ${COLORS.textSecondary}; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .gform-chip-btn:hover { background: ${COLORS.surfaceDim}; }
+  .gform-chip-btn:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
 `;
 
 /* ── 유틸: ISO LocalDateTime ↔ datetime-local input ───────
@@ -109,11 +115,24 @@ export default function GatheringFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const [searchParams] = useSearchParams();
+  const routerLocation = useLocation();
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState('');
+  const [apiError, setApiError] = useState(routerLocation.state?.pollError || '');
+
+  // 출사 스팟 + 배지 + 장소 투표 (ANALYSIS_chulsa P1)
+  const [spot, setSpot] = useState(null);             // { id, name, region }
+  const [picker, setPicker] = useState(null);         // 'spot' | 'poll' | null
+  const [beginnerFriendly, setBeginnerFriendly] = useState(false);
+  const [portraitConsentRule, setPortraitConsentRule] = useState(true);
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollOptions, setPollOptions] = useState([{ label: '' }, { label: '' }]);   // [{ label, spotId? }]
+  const [pollLocked, setPollLocked] = useState(false);  // 이미 표가 있으면 후보를 바꿀 수 없다
+  const [hadPoll, setHadPoll] = useState(false);
+  const initialPollRef = useRef('[]');   // 바뀌었을 때만 저장(마감된 모임 수정 시 불필요한 400 방지)
 
   // 폼 상태
   const [form, setForm] = useState({
@@ -157,12 +176,48 @@ export default function GatheringFormPage() {
           referenceImageUrl: g.referenceImageUrl || '',
           hashtags: g.hashtags || '',
         });
+        setBeginnerFriendly(!!g.beginnerFriendly);
+        setPortraitConsentRule(!!g.portraitConsentRule);
+        if (g.spotId) setSpot({ id: g.spotId, name: g.spotName, region: g.spotRegion });
+        return gatheringApi.getPlacePoll(id).then(poll => {
+          if (poll?.options?.length) {
+            setPollEnabled(true); setHadPoll(true);
+            setPollOptions(poll.options.map(o => ({ label: o.label, spotId: o.spotId })));
+            initialPollRef.current = JSON.stringify(poll.options.map(o => ({ label: o.label, spotId: o.spotId || null })));
+            setPollLocked(poll.totalVotes > 0);
+          }
+        }).catch(() => {});
       })
       .catch(() => setApiError('모임 정보를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
 
   const setField = (key) => (val) => setForm(prev => ({ ...prev, [key]: val }));
+
+  // 스팟 상세의 "이 스팟으로 모임 만들기"(?spotId=)로 들어오면 스팟·장소를 미리 채운다
+  useEffect(() => {
+    const sid = searchParams.get('spotId');
+    if (isEdit || !sid) return;
+    spotApi.get(sid).then(sp => {
+      setSpot({ id: sp.id, name: sp.name, region: sp.region });
+      setForm(prev => ({ ...prev, location: prev.location || sp.name, locationIntro: prev.locationIntro || sp.tips || '' }));
+    }).catch(() => {});
+  }, [isEdit, searchParams]);
+
+  const pickSpot = (sp) => {
+    setPicker(null);
+    if (picker === 'poll') {
+      setPollOptions(prev => {
+        const empty = prev.findIndex(o => !o.label.trim() && !o.spotId);
+        const row = { label: sp.name, spotId: sp.id };
+        if (empty >= 0) return prev.map((o, i) => (i === empty ? row : o));
+        return prev.length < 5 ? [...prev, row] : prev;
+      });
+      return;
+    }
+    setSpot({ id: sp.id, name: sp.name, region: sp.region });
+    setForm(prev => ({ ...prev, location: prev.location.trim() ? prev.location : sp.name }));
+  };
 
   /* ── 유효성 검사 ──────────────────────────────────── */
   function validate() {
@@ -186,6 +241,10 @@ export default function GatheringFormPage() {
       if (new Date(form.recruitmentEndDateTime) >= new Date(form.startDateTime)) {
         errs.recruitmentEndDateTime = '모집 마감 일시는 시작 일시보다 앞서야 합니다.';
       }
+    }
+    if (pollEnabled && !pollLocked) {
+      const filled = pollOptions.filter(o => o.label.trim() || o.spotId);
+      if (filled.length < 2 || filled.length > 5) errs.poll = '장소 후보는 2~5개를 채워 주세요.';
     }
     return errs;
   }
@@ -214,6 +273,9 @@ export default function GatheringFormPage() {
       thumbnailUrl: form.thumbnailUrl.trim() || undefined,
       referenceImageUrl: form.referenceImageUrl.trim() || undefined,
       hashtags: form.hashtags.trim() || undefined,
+      spotId: spot ? spot.id : (isEdit ? 0 : undefined),   // 수정에서 0 = 스팟 연결 해제
+      beginnerFriendly,
+      portraitConsentRule,
     };
 
     setSaving(true);
@@ -225,6 +287,20 @@ export default function GatheringFormPage() {
         result = await gatheringApi.create(payload);
       }
       const newId = result?.id || result?.data?.id || id;
+      // 장소 투표는 모임 저장 뒤 따로 저장한다 — 실패하면 수정 화면에서 다시 시도할 수 있게 남긴다
+      const opts = pollEnabled
+        ? pollOptions.filter(o => o.label.trim() || o.spotId).map(o => ({ label: o.label.trim(), spotId: o.spotId || null }))
+        : [];
+      if (newId && !pollLocked && (pollEnabled || hadPoll) && JSON.stringify(opts) !== initialPollRef.current) {
+        try {
+          await gatheringApi.setPlacePoll(newId, opts);
+        } catch (pollErr) {
+          const msg = `모임은 저장됐지만 장소 투표를 저장하지 못했어요: ${pollErr?.response?.data?.message || '잠시 후 다시 시도해 주세요.'}`;
+          if (isEdit) { setApiError(msg); return; }
+          navigate(`/gatherings/${newId}/edit`, { replace: true, state: { pollError: msg } });
+          return;
+        }
+      }
       navigate(newId ? `/gatherings/${newId}` : '/gatherings');
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || '저장 중 오류가 발생했습니다.';
@@ -305,6 +381,52 @@ export default function GatheringFormPage() {
                 <Field label="장소 소개">
                   <TextareaInput value={form.locationIntro} onChange={setField('locationIntro')} placeholder="장소의 특징이나 접근 방법을 알려주세요" rows={2} />
                 </Field>
+                <Field label="출사 스팟 (선택)">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {spot ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, background: COLORS.primaryLight, color: COLORS.primaryDark, fontSize: 14, fontWeight: 600 }}>
+                        📍 {spot.name}{spot.region ? ` · ${spot.region}` : ''}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 13, color: COLORS.textMuted }}>스팟을 고르면 지도와 길찾기가 모임에 함께 보여요</span>
+                    )}
+                    <button type="button" className="gform-chip-btn" onClick={() => setPicker('spot')}>{spot ? '바꾸기' : '스팟 고르기'}</button>
+                    {spot && <button type="button" className="gform-chip-btn" onClick={() => setSpot(null)}>빼기</button>}
+                  </div>
+                </Field>
+                <div style={{ borderTop: `1px solid ${COLORS.borderLight}`, paddingTop: 14 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: COLORS.text, cursor: pollLocked ? 'default' : 'pointer' }}>
+                    <input type="checkbox" checked={pollEnabled} disabled={pollLocked} onChange={e => setPollEnabled(e.target.checked)} style={{ width: 18, height: 18 }} />
+                    장소 투표 열기
+                  </label>
+                  <p style={{ margin: '4px 0 0 26px', fontSize: 12, color: COLORS.textMuted }}>
+                    참여 신청한 사람이 후보 중에서 골라요. 모집이 마감되면 표를 가장 많이 받은 곳이 장소가 돼요.
+                  </p>
+                  {pollEnabled && (
+                    <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                      {pollLocked && <div role="status" style={{ fontSize: 13, color: COLORS.textSecondary }}>이미 투표가 시작돼 후보를 바꿀 수 없어요.</div>}
+                      {pollOptions.map((o, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span aria-hidden="true" style={{ width: 20, fontSize: 13, color: COLORS.textMuted }}>{o.spotId ? '📍' : `${i + 1}.`}</span>
+                          <input aria-label={`장소 후보 ${i + 1}`} value={o.label} disabled={pollLocked} maxLength={100}
+                            onChange={e => setPollOptions(prev => prev.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+                            placeholder="예: 응봉산 팔각정" style={{ ...inputStyle, flex: 1 }} />
+                          {!pollLocked && pollOptions.length > 2 && (
+                            <button type="button" className="gform-chip-btn" aria-label={`후보 ${i + 1} 빼기`}
+                              onClick={() => setPollOptions(prev => prev.filter((_, j) => j !== i))}>✕</button>
+                          )}
+                        </div>
+                      ))}
+                      {!pollLocked && pollOptions.length < 5 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button type="button" className="gform-chip-btn" onClick={() => setPollOptions(prev => [...prev, { label: '' }])}>＋ 후보 추가</button>
+                          <button type="button" className="gform-chip-btn" onClick={() => setPicker('poll')}>📍 스팟에서 추가</button>
+                        </div>
+                      )}
+                      {errors.poll && <span role="alert" style={{ fontSize: 12, color: COLORS.danger }}>{errors.poll}</span>}
+                    </div>
+                  )}
+                </div>
               </SectionCard>
 
               <SectionCard title="일정">
@@ -330,6 +452,14 @@ export default function GatheringFormPage() {
                 <Field label="준비 안내">
                   <TextareaInput value={form.preparationNote} onChange={setField('preparationNote')} placeholder="참가자가 준비해야 할 사항을 알려주세요" rows={2} />
                 </Field>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: COLORS.text, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={beginnerFriendly} onChange={e => setBeginnerFriendly(e.target.checked)} style={{ width: 18, height: 18 }} />
+                  🌱 초보 환영
+                </label>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, color: COLORS.text, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={portraitConsentRule} onChange={e => setPortraitConsentRule(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1 }} />
+                  <span>🤝 인물 촬영 동의 안내 표시<br /><span style={{ fontSize: 12, color: COLORS.textMuted }}>"사람을 찍을 땐 먼저 동의를 받아 주세요" 문구가 모임에 고정돼요</span></span>
+                </label>
               </SectionCard>
 
               <SectionCard title="이미지">
@@ -345,6 +475,8 @@ export default function GatheringFormPage() {
               </SectionCard>
             </div>
           </div>
+
+          {picker && <SpotPickerSheet onClose={() => setPicker(null)} onPick={pickSpot} />}
 
           {/* 저장 버튼 */}
           <div style={{ marginTop: 20 }}>

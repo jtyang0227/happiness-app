@@ -12,6 +12,12 @@ export const gatheringApi = {
     apiClient.get(`${BASE}/my`).then(r => r.data),
 
   /** 모임 상세 */
+  // 장소 투표 (웹과 같은 API, 래퍼 없는 JSON) — 조회 공개, 투표는 참여 신청자만
+  getPlacePoll: (id) =>
+    apiClient.get(`${BASE}/${id}/place-poll`).then(r => r.data),
+  votePlace: (id, optionId) =>
+    apiClient.post(`${BASE}/${id}/place-poll/vote`, { optionId }).then(r => r.data),
+
   getDetail: (id) =>
     apiClient.get(`${BASE}/${id}`).then(r => r.data),
 
