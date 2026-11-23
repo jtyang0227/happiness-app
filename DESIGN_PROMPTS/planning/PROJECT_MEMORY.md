@@ -8,7 +8,7 @@
 - **사진작가 포트폴리오 + 업무 앱.** "보여주기(포트폴리오·작업 노트) → 일 받기(문의·예약) → 일 처리하기(일정·약속·납품·수금)".
 - 운영 주소: 웹 `https://happiness.io.kr`(Vercel), API `https://api.happiness.io.kr`(Railway). 별도 저장소 **happiness-admin**(운영자용)과 DB를 공유한다.
 - 포트폴리오: 템플릿 4종 + **직접 구성(BLOCKS)** — 새 블록은 서버 `PortfolioLayoutValidator.BLOCK_PROPS` + 웹 `blocks/blockRegistry.js` 두 곳에 추가.
-- 웹 메뉴 4개: **둘러보기**(`/explore`, 공개 — 사진|작업 탭) · **내 작업**(`/series`) · **업무**(`/workspace` 허브 + 문의·예약·일정·약속·납품 탭) · **모임**(`/gatherings`) + "＋ 올리기"(`/photo/new` = 이미지 에디터).
+- 웹 메뉴 4개: **둘러보기**(`/explore`, 공개 — 사진|작업|스팟 탭) · **내 작업**(`/series`) · **업무**(`/workspace` 허브 + 문의·예약·일정·약속·납품 탭) · **모임**(`/gatherings`) + "＋ 올리기"(`/photo/new` = 이미지 에디터).
 - 모바일(Expo) 탭: 탐색 · 갤러리(내 사진) · 등록 · 피드 · 프로필(나머지 기능은 프로필 메뉴에서 진입).
 
 ## 2. 스택·구조
@@ -21,7 +21,7 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **57개** 통과: `CoreFlowIntegrationTest` 50 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
@@ -68,6 +68,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-23 | 2cca51e~ | 출사 스팟(지도·목록·상세·사진 연결·중복 제안) + 모임 강화(스팟·초보 환영·인물 동의·장소 투표·피드백 요청) | `planning/ANALYSIS_chulsa-app-public-features.md` |
 | 11-13 | 9820fbe·e99a6bc | 스킬 기반 점검 — 문의 메일 이스케이프·`ClientIp`, Supabase 잠금 SQL, 웹 화면별 코드 분할(268→120kB), 모바일 피드 버그 | CLAUDE.md "스킬 기반 점검" 절 |
 | 11-12 | d5a6ebc | 공식 플러그인 4개(hookify·commit-commands·ralph-loop·claude-code-setup) + 가드 규칙 5개 + 편집 훅 교체 | CLAUDE.md "플러그인·가드 규칙" 절 |
 | 11-12 | 9f0cd12 | Claude Code 스킬 11개 추가(React·RN·Expo 업그레이드/스토어·Supabase/Postgres·Spring Boot·보안·접근성·웹 테스트) | CLAUDE.md "외부 스킬" 절 |
@@ -84,6 +85,6 @@
 | 10-20 | — | 메뉴 4개 통합, 작업 노트·작업 탐색·감상·초안·크레딧·에디터 추천, 무드보드·공유, 비슷한 사진, 캐러셀 내보내기 | `planning/WORK_QUEUE.md`, `PLANNING_nav-consolidation.md` 등 |
 
 ## 10. 알려진 갭 (손대지 않은 것)
-- 모바일 미구현: 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
+- 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
 - rate limit·로그인 잠금이 전부 인메모리(인스턴스 여러 개면 따로 셈), access token은 비밀번호 변경 후에도 30분 유효.
 - `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 모임 피드 `likedByMe` 새로고침 문제, `AdminTagsPage`는 mock.

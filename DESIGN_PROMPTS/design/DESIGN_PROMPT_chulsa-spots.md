@@ -111,9 +111,9 @@ ANALYSIS_chulsa-app-public-features.md 의 P1을 구현해줘(P0 스팟이 먼�
 
 ---
 
-## 3. 체크리스트
-- [ ] 스팟 없는 기존 사진·모임이 그대로 동작
-- [ ] EXIF GPS 미수집, 위치 권한은 버튼 클릭 시 1회
-- [ ] 지도 키 없을 때 목록 fallback
-- [ ] 응답 래퍼 `ApiResponse` → 프론트 `res.data.data`
-- [ ] IDOR(남의 스팟·사진 연결) 403, 4xx는 `ResponseStatusException`
+## 3. 체크리스트 (2026-11-23 구현·확인 완료)
+- [x] 스팟 없는 기존 사진·모임이 그대로 동작
+- [x] EXIF GPS 미수집, 위치 권한은 버튼 클릭 시 1회
+- [x] 지도 키 없을 때 목록 fallback
+- [x] 응답 래퍼 `ApiResponse` → 프론트 `res.data.data`
+- [x] IDOR(남의 스팟·사진 연결) 403, 4xx는 `ResponseStatusException`

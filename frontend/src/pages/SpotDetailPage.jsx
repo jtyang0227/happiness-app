@@ -120,21 +120,21 @@ export default function SpotDetailPage() {
     <div style={{ background: '#ffffff', minHeight: '100vh' }}>
       <style>{`
         .spot-hero { height: 360px; }
-        @media (max-width: 767px) { .spot-hero { height: 240px; } .spot-photo-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; } }
+        @media (max-width: 767px) { .spot-hero { height: 240px; } .spot-photo-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; } .spot-wrap { padding-bottom: 200px !important; } }
         .spot-photo { position: relative; padding: 0; border: none; cursor: pointer; aspect-ratio: 1 / 1; overflow: hidden; background: ${COLORS.bg}; border-radius: 10px; }
         .spot-photo .cap { position: absolute; inset: auto 0 0 0; padding: 18px 10px 8px; color: #fff; font-size: 12px; text-align: left;
           background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.15s ease; }
         .spot-photo:hover .cap, .spot-photo:focus-visible .cap { opacity: 1; }
         .spot-photo:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
       `}</style>
-      <div style={wrap}>
+      <div style={wrap} className="spot-wrap">
         <Link to="/explore?tab=spots" style={{ display: 'inline-block', marginBottom: 12, fontSize: 14, color: COLORS.textSecondary, textDecoration: 'none' }}>← 스팟 둘러보기</Link>
         <HeroCollage photos={spot.previewPhotos || []} />
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginTop: 18, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.text, wordBreak: 'keep-all' }}>{spot.name}</h1>
-            <div style={{ marginTop: 4, fontSize: 14, color: COLORS.textSecondary }}>{[spot.region, spot.address].filter(Boolean).join(' · ')}</div>
+            <div style={{ marginTop: 4, fontSize: 14, color: COLORS.textSecondary }}>{spot.address && spot.region && spot.address.startsWith(spot.region) ? spot.address : [spot.region, spot.address].filter(Boolean).join(' · ')}</div>
             <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
               {spot.bestTime && <TimeChip>🌅 {spot.bestTime}</TimeChip>}
               <TimeChip>📷 사진 {spot.photoCount}장</TimeChip>
