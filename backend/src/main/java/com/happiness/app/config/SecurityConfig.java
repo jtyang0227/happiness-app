@@ -138,6 +138,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/*/posts").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/*/album").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/gatherings/*/place-poll").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // 관리자 전용

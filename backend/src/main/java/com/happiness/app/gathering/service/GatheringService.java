@@ -5,6 +5,8 @@ import com.happiness.app.gathering.entity.Gathering;
 import com.happiness.app.gathering.entity.GatheringParticipant;
 import com.happiness.app.gathering.repository.GatheringParticipantRepository;
 import com.happiness.app.gathering.repository.GatheringRepository;
+import com.happiness.app.spot.Spot;
+import com.happiness.app.spot.SpotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,8 @@ public class GatheringService {
     private final GatheringRepository gatheringRepository;
     private final GatheringParticipantRepository participantRepository;
     private final GatheringNotificationService notificationService;
+    private final SpotRepository spotRepository;
+    private final GatheringPlacePollService placePollService;
 
     // ── XSS 방지 ──────────────────────────────────────────────────────────────
 
@@ -37,6 +41,7 @@ public class GatheringService {
     @Transactional
     public GatheringResponse createGathering(Long memberId, GatheringCreateRequest req) {
         validateCreateRequest(req);
+        Spot spot = resolveSpot(req.getSpotId());
 
         Gathering gathering = Gathering.builder()
                 .title(sanitize(req.getTitle()))
@@ -56,6 +61,9 @@ public class GatheringService {
                 .referenceImageUrl(sanitize(req.getReferenceImageUrl()))
                 .hashtags(sanitize(req.getHashtags()))
                 .createdBy(memberId)
+                .spotId(spot != null ? spot.getId() : null)
+                .beginnerFriendly(Boolean.TRUE.equals(req.getBeginnerFriendly()) ? Boolean.TRUE : null)
+                .portraitConsentRule(Boolean.TRUE.equals(req.getPortraitConsentRule()) ? Boolean.TRUE : null)
                 .build();
 
         gathering = gatheringRepository.save(gathering);
@@ -150,6 +158,15 @@ public class GatheringService {
         if (req.getHashtags() != null) {
             gathering.setHashtags(sanitize(req.getHashtags()));
         }
+        if (req.getSpotId() != null) {
+            gathering.setSpotId(req.getSpotId() == 0 ? null : resolveSpot(req.getSpotId()).getId());
+        }
+        if (req.getBeginnerFriendly() != null) {
+            gathering.setBeginnerFriendly(req.getBeginnerFriendly() ? Boolean.TRUE : null);
+        }
+        if (req.getPortraitConsentRule() != null) {
+            gathering.setPortraitConsentRule(req.getPortraitConsentRule() ? Boolean.TRUE : null);
+        }
 
         gathering = gatheringRepository.save(gathering);
         return toResponse(gathering);
@@ -164,6 +181,7 @@ public class GatheringService {
                         "모임을 찾을 수 없거나 삭제 권한이 없습니다."));
 
         participantRepository.deleteByGatheringId(id);
+        placePollService.deleteForGathering(id);
         gatheringRepository.delete(gathering);
         log.info("[GATHERING] 모임 삭제: id={}, deletedBy={}", id, memberId);
     }
@@ -176,7 +194,8 @@ public class GatheringService {
                 ? gatheringRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
                 : gatheringRepository.findAllByOrderByCreatedAtDesc(pageable);
 
-        return page.map(this::toResponse);
+        Map<Long, Spot> spots = spotMap(page.getContent());
+        return page.map(g -> toResponse(g, spots));
     }
 
     // ── DETAIL (공개) ────────────────────────────────────────────────────────
@@ -217,7 +236,8 @@ public class GatheringService {
         all.addAll(participated);
         all.sort(Comparator.comparing(Gathering::getCreatedAt).reversed());
 
-        return all.stream().map(this::toResponse).collect(Collectors.toList());
+        Map<Long, Spot> spots = spotMap(all);
+        return all.stream().map(g -> toResponse(g, spots)).collect(Collectors.toList());
     }
 
     // ── PARTICIPATION ────────────────────────────────────────────────────────
@@ -355,6 +375,7 @@ public class GatheringService {
         }
 
         gathering.setStatus("RECRUITMENT_CLOSED");
+        placePollService.applyWinner(gathering);   // 장소 투표가 있으면 최다 득표 후보를 장소로
         gathering = gatheringRepository.save(gathering);
         log.info("[GATHERING] 모집 마감: id={}, closedBy={}", gatheringId, memberId);
 
@@ -424,7 +445,26 @@ public class GatheringService {
 
     // ── 내부 헬퍼 ─────────────────────────────────────────────────────────────
 
+    /** 출사 스팟 존재 확인 — 없는 id면 400 */
+    private Spot resolveSpot(Long spotId) {
+        if (spotId == null || spotId == 0) return null;
+        return spotRepository.findById(spotId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "출사 스팟을 찾을 수 없습니다."));
+    }
+
+    /** 목록 응답용 스팟 배치 조회 */
+    private Map<Long, Spot> spotMap(Collection<Gathering> gatherings) {
+        Set<Long> ids = gatherings.stream().map(Gathering::getSpotId).filter(Objects::nonNull).collect(Collectors.toSet());
+        if (ids.isEmpty()) return Map.of();
+        return spotRepository.findAllById(ids).stream().collect(Collectors.toMap(Spot::getId, sp -> sp));
+    }
+
     private GatheringResponse toResponse(Gathering g) {
+        return toResponse(g, spotMap(List.of(g)));
+    }
+
+    private GatheringResponse toResponse(Gathering g, Map<Long, Spot> spots) {
+        Spot spot = g.getSpotId() != null ? spots.get(g.getSpotId()) : null;
         long participantCount = participantRepository.countByGatheringIdAndStatus(g.getId(), "PARTICIPATING");
         long waitingCount = participantRepository.countByGatheringIdAndStatus(g.getId(), "WAITING");
         return GatheringResponse.builder()
@@ -447,6 +487,13 @@ public class GatheringService {
                 .hashtags(g.getHashtags())
                 .createdBy(g.getCreatedBy())
                 .createdAt(g.getCreatedAt())
+                .spotId(spot != null ? spot.getId() : null)
+                .spotName(spot != null ? spot.getName() : null)
+                .spotRegion(spot != null ? spot.getRegion() : null)
+                .spotLat(spot != null ? spot.getLat() : null)
+                .spotLng(spot != null ? spot.getLng() : null)
+                .beginnerFriendly(Boolean.TRUE.equals(g.getBeginnerFriendly()))
+                .portraitConsentRule(Boolean.TRUE.equals(g.getPortraitConsentRule()))
                 .participantCount(participantCount)
                 .waitingCount(waitingCount)
                 .build();

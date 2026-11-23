@@ -23,6 +23,7 @@ public class GatheringBatchService {
     private final GatheringRepository gatheringRepository;
     private final GatheringParticipantRepository participantRepository;
     private final GatheringNotificationService notificationService;
+    private final GatheringPlacePollService placePollService;
 
     /**
      * 5분마다 실행 — 모임 상태 자동 전환(모집중 → 모집종료 → 모임예정 → 모임진행중 → 모임종료).
@@ -47,6 +48,15 @@ public class GatheringBatchService {
                     .findIdsByRecruitingAndRecruitmentEndBefore(now);
 
             int closedCount = gatheringRepository.closeExpiredRecruitments(now);
+
+            // 장소 투표가 있던 모임은 최다 득표 후보를 장소로 확정 (실패해도 상태 전환은 유지)
+            for (Long gid : toCloseIds) {
+                try {
+                    placePollService.decideAfterClose(gid);
+                } catch (Exception e) {
+                    log.error("[GATHERING] 장소 투표 확정 실패: gatheringId={}: {}", gid, e.getMessage());
+                }
+            }
 
             if (!toCloseIds.isEmpty()) {
                 sendBatchNotifications(toCloseIds, "RECRUITMENT_CLOSED",

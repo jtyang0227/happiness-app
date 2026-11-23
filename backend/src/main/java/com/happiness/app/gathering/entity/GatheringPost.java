@@ -48,6 +48,10 @@ public class GatheringPost {
     @Column(length = 300)
     private String hashtags;
 
+    /** "피드백 원해요" — 출사 후기·크리틱 요청 표시 (nullable = false) */
+    @Column(name = "wants_feedback")
+    private Boolean wantsFeedback;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -22,4 +22,9 @@ public class GatheringCreateRequest {
     private String locationIntro;
     private String referenceImageUrl;
     private String hashtags;
+
+    /** 출사 스팟 id — 수정 시 null이면 변경 없음, 0이면 연결 해제 */
+    private Long spotId;
+    private Boolean beginnerFriendly;
+    private Boolean portraitConsentRule;
 }

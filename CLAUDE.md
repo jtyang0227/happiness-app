@@ -1089,6 +1089,28 @@ CREATE TABLE IF NOT EXISTS photo_spots (
   CONSTRAINT uk_photo_spots_photo UNIQUE (photo_id)
 );
 CREATE INDEX IF NOT EXISTS idx_photo_spots_spot ON photo_spots(spot_id);
+-- 출사 모임 강화 (2026-11-23, ANALYSIS_chulsa P1) — 모임 ↔ 스팟·배지, 장소 투표, 게시물 피드백 요청
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS spot_id BIGINT;
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS beginner_friendly BOOLEAN;
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS portrait_consent_rule BOOLEAN;
+ALTER TABLE gathering_posts ADD COLUMN IF NOT EXISTS wants_feedback BOOLEAN;
+CREATE TABLE IF NOT EXISTS gathering_place_options (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  spot_id       BIGINT,
+  label         VARCHAR(100) NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gpo_gathering ON gathering_place_options(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_place_votes (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  option_id     BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  voted_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -2276,6 +2298,28 @@ CREATE TABLE IF NOT EXISTS photo_spots (
   CONSTRAINT uk_photo_spots_photo UNIQUE (photo_id)
 );
 CREATE INDEX IF NOT EXISTS idx_photo_spots_spot ON photo_spots(spot_id);
+-- 출사 모임 강화 (2026-11-23, ANALYSIS_chulsa P1) — 모임 ↔ 스팟·배지, 장소 투표, 게시물 피드백 요청
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS spot_id BIGINT;
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS beginner_friendly BOOLEAN;
+ALTER TABLE gatherings ADD COLUMN IF NOT EXISTS portrait_consent_rule BOOLEAN;
+ALTER TABLE gathering_posts ADD COLUMN IF NOT EXISTS wants_feedback BOOLEAN;
+CREATE TABLE IF NOT EXISTS gathering_place_options (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  spot_id       BIGINT,
+  label         VARCHAR(100) NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gpo_gathering ON gathering_place_options(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_place_votes (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  option_id     BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  voted_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)

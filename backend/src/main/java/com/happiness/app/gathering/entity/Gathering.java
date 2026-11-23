@@ -87,6 +87,18 @@ public class Gathering {
     @Column(nullable = false)
     private Long createdBy;
 
+    /** 출사 스팟 연결 (nullable, ANALYSIS_chulsa P1) — 장소 투표가 끝나면 이긴 후보의 스팟으로 바뀔 수 있다 */
+    @Column(name = "spot_id")
+    private Long spotId;
+
+    /** "초보 환영" 표시 (nullable = false로 취급) */
+    @Column(name = "beginner_friendly")
+    private Boolean beginnerFriendly;
+
+    /** 인물 촬영 동의 규칙 고정 안내 (nullable = false로 취급) */
+    @Column(name = "portrait_consent_rule")
+    private Boolean portraitConsentRule;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

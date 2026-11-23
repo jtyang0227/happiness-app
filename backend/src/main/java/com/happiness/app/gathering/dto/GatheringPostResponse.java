@@ -16,6 +16,7 @@ public class GatheringPostResponse {
     private String memberAvatarUrl;
     private String content;
     private String hashtags;
+    private boolean wantsFeedback;
     private List<GatheringPhotoResponse> photos;
     private long likeCount;
     private long commentCount;

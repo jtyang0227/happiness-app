@@ -95,6 +95,7 @@ public class GatheringPostService {
                 .memberAvatarUrl(member.getAvatarUrl())
                 .content(sanitize(req.getContent()))
                 .hashtags(sanitize(req.getHashtags()))
+                .wantsFeedback(Boolean.TRUE.equals(req.getWantsFeedback()) ? Boolean.TRUE : null)
                 .build();
         post = postRepository.save(post);
         final Long postId = post.getId();
@@ -401,6 +402,7 @@ public class GatheringPostService {
                 .memberAvatarUrl(post.getMemberAvatarUrl())
                 .content(post.getContent())
                 .hashtags(post.getHashtags())
+                .wantsFeedback(Boolean.TRUE.equals(post.getWantsFeedback()))
                 .photos(photoResponses)
                 .likeCount(likeCount)
                 .commentCount(commentResponses.size())

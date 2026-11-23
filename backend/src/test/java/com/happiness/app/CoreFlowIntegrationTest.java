@@ -47,6 +47,7 @@ class CoreFlowIntegrationTest {
     @Autowired ObjectMapper om;
     @Autowired MemberRepository memberRepository;
     @Autowired PasswordResetTokenRepository passwordResetTokenRepository;
+    @Autowired com.happiness.app.gathering.repository.GatheringRepository gatheringRepository;
 
     private record User(long id, String email, String profileName, String token) {}
 
@@ -1568,5 +1569,137 @@ class CoreFlowIntegrationTest {
         mvc.perform(delete("/api/spots/" + spotId).header("Authorization", bearer(admin)))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/spots/" + spotId)).andExpect(status().isNotFound());
+    }
+
+    // ── 출사 모임 강화 (ANALYSIS_chulsa P1) ─────────────────────────────
+
+    private long createGathering(User owner, Map<String, Object> extra) throws Exception {
+        LocalDateTime start = LocalDateTime.now().plusDays(3).withNano(0);
+        Map<String, Object> body = new HashMap<>(Map.of(
+                "title", "주말 출사", "location", "서울숲", "maxParticipants", 10,
+                "startDateTime", start.toString(), "endDateTime", start.plusHours(3).toString(),
+                "recruitmentEndDateTime", start.minusDays(1).toString()));
+        body.putAll(extra);
+        MvcResult r = mvc.perform(post("/api/gatherings").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(body)))
+                .andExpect(status().isCreated()).andReturn();
+        return ((Number) JsonPath.read(r.getResponse().getContentAsString(), "$.id")).longValue();
+    }
+
+    private void joinGathering(User u, long gid) throws Exception {
+        mvc.perform(post("/api/gatherings/" + gid + "/participation").header("Authorization", bearer(u))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PARTICIPATING\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void gathering_spot_badges_andInvalidSpot() throws Exception {
+        User owner = signupAndLogin();
+        long spotId = createSpot(owner, "뚝섬 한강공원", 37.53 + Math.random() * 0.01, 127.06);
+        long gid = createGathering(owner, Map.of("spotId", spotId, "beginnerFriendly", true, "portraitConsentRule", true));
+        mvc.perform(get("/api/gatherings/" + gid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spotId").value(spotId))
+                .andExpect(jsonPath("$.spotName").value("뚝섬 한강공원"))
+                .andExpect(jsonPath("$.beginnerFriendly").value(true))
+                .andExpect(jsonPath("$.portraitConsentRule").value(true));
+        // 목록에도 스팟 이름(배치 조회)
+        String list = mvc.perform(get("/api/gatherings").param("size", "50")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<String> names = JsonPath.read(list, "$.content[?(@.id == " + gid + ")].spotName");
+        assertThat(names).containsExactly("뚝섬 한강공원");
+        // 수정: 0이면 연결 해제, 배지 끄기
+        mvc.perform(put("/api/gatherings/" + gid).header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"spotId\":0,\"beginnerFriendly\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spotId").doesNotExist())
+                .andExpect(jsonPath("$.beginnerFriendly").value(false));
+        // 없는 스팟 → 400
+        LocalDateTime start = LocalDateTime.now().plusDays(3).withNano(0);
+        mvc.perform(post("/api/gatherings").header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("title", "x", "location", "y", "maxParticipants", 3,
+                                "startDateTime", start.toString(), "endDateTime", start.plusHours(1).toString(),
+                                "recruitmentEndDateTime", start.minusDays(1).toString(), "spotId", 99999999))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void gathering_placePoll_vote_andDecideOnClose() throws Exception {
+        User owner = signupAndLogin();
+        long spotId = createSpot(owner, "서울숲 거울연못", 37.54 + Math.random() * 0.01, 127.04);
+        long gid = createGathering(owner, Map.of());
+        String path = "/api/gatherings/" + gid + "/place-poll";
+        String options = om.writeValueAsString(Map.of("options", List.of(Map.of("label", "응봉산"), Map.of("spotId", spotId))));
+
+        User a = signupAndLogin(), b = signupAndLogin(), c = signupAndLogin(), stranger = signupAndLogin();
+        // 만든 사람만 후보 설정, 후보 1개는 400
+        mvc.perform(put(path).header("Authorization", bearer(a)).contentType(MediaType.APPLICATION_JSON).content(options))
+                .andExpect(status().isForbidden());
+        mvc.perform(put(path).header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"options\":[{\"label\":\"하나\"}]}"))
+                .andExpect(status().isBadRequest());
+        String poll = mvc.perform(put(path).header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON).content(options))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.options[1].label").value("서울숲 거울연못"))   // 스팟 이름이 기본 라벨
+                .andReturn().getResponse().getContentAsString();
+        long opt1 = ((Number) JsonPath.read(poll, "$.options[0].id")).longValue();
+        long opt2 = ((Number) JsonPath.read(poll, "$.options[1].id")).longValue();
+
+        joinGathering(a, gid); joinGathering(b, gid); joinGathering(c, gid);
+        // 참여 안 한 사람 → 403, 다른 모임 후보 id → 404
+        mvc.perform(post(path + "/vote").header("Authorization", bearer(stranger)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"optionId\":" + opt1 + "}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post(path + "/vote").header("Authorization", bearer(a)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"optionId\":99999999}"))
+                .andExpect(status().isNotFound());
+        for (User u : List.of(a, b)) {
+            mvc.perform(post(path + "/vote").header("Authorization", bearer(u)).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"optionId\":" + opt2 + "}")).andExpect(status().isOk());
+        }
+        // 같은 후보 다시 → 멱등, c는 opt1
+        mvc.perform(post(path + "/vote").header("Authorization", bearer(a)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"optionId\":" + opt2 + "}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalVotes").value(2))
+                .andExpect(jsonPath("$.myOptionId").value(opt2));
+        mvc.perform(post(path + "/vote").header("Authorization", bearer(c)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"optionId\":" + opt1 + "}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalVotes").value(3));
+        // 투표 시작 후 후보 변경 → 409
+        mvc.perform(put(path).header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON).content(options))
+                .andExpect(status().isConflict());
+
+        // 마감 → 최다 득표(opt2, 스팟)가 장소로
+        mvc.perform(post("/api/gatherings/" + gid + "/close-recruitment").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.location").value("서울숲 거울연못"))
+                .andExpect(jsonPath("$.spotId").value(spotId));
+        mvc.perform(get(path)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.open").value(false)).andExpect(jsonPath("$.winnerOptionId").value(opt2));
+        mvc.perform(post(path + "/vote").header("Authorization", bearer(c)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"optionId\":" + opt2 + "}"))
+                .andExpect(status().isBadRequest());
+        String notes = mvc.perform(get("/api/gatherings/notifications").header("Authorization", bearer(a)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<String> types = JsonPath.read(notes, "$.content[*].type");
+        assertThat(types).contains("PLACE_DECIDED");
+    }
+
+    @Test
+    void gathering_post_wantsFeedback() throws Exception {
+        User owner = signupAndLogin();
+        long gid = createGathering(owner, Map.of());
+        User a = signupAndLogin();
+        joinGathering(a, gid);
+        var g = gatheringRepository.findById(gid).orElseThrow();
+        g.setStatus("ONGOING");
+        gatheringRepository.save(g);
+        mvc.perform(post("/api/gatherings/" + gid + "/posts").header("Authorization", bearer(a)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"역광 어떻게 잡을까요\",\"wantsFeedback\":true}"))
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.wantsFeedback").value(true));
+        mvc.perform(get("/api/gatherings/" + gid + "/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].wantsFeedback").value(true));
     }
 }

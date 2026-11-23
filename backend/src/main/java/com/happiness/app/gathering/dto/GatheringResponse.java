@@ -29,6 +29,15 @@ public class GatheringResponse {
     private Long createdBy;
     private LocalDateTime createdAt;
 
+    /** 출사 스팟 (없으면 null) */
+    private Long spotId;
+    private String spotName;
+    private String spotRegion;
+    private Double spotLat;
+    private Double spotLng;
+    private boolean beginnerFriendly;
+    private boolean portraitConsentRule;
+
     /** 현재 PARTICIPATING 인원 */
     private long participantCount;
 

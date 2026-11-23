@@ -17,6 +17,9 @@ public class GatheringPostRequest {
     /** 해시태그 (콤마 구분, VARCHAR 300) */
     private String hashtags;
 
+    /** "피드백 원해요" 표시 */
+    private Boolean wantsFeedback;
+
     /** 첨부 사진 목록 — null 또는 빈 리스트 허용 */
     private List<PhotoItem> photos;
 
