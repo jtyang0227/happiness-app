@@ -11,6 +11,7 @@ import com.happiness.app.member.repository.MemberRepository;
 import com.happiness.app.member.repository.PasswordResetTokenRepository;
 import com.happiness.app.photo.repository.*;
 import com.happiness.app.moodboard.MoodboardItemRepository;
+import com.happiness.app.spot.PhotoSpotRepository;
 import com.happiness.app.moodboard.MoodboardRepository;
 import com.happiness.app.series.repository.SeriesAppreciationRepository;
 import com.happiness.app.series.repository.SeriesPhotoRepository;
@@ -41,6 +42,7 @@ public class MemberService {
     private final SeriesAppreciationRepository seriesAppreciationRepository;
     private final MoodboardRepository moodboardRepository;
     private final MoodboardItemRepository moodboardItemRepository;
+    private final PhotoSpotRepository photoSpotRepository;
     private final SeriesRepository seriesRepository;
     private final InquiryRepository inquiryRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -168,6 +170,9 @@ public class MemberService {
             seriesPhotoRepository.deleteByPhotoId(photoId);
             commentRepository.deleteByPhotoId(photoId);          // 내 사진에 달린 댓글
         }
+
+        // 내 사진의 출사 스팟 연결 (스팟 자체는 공공 장소라 남긴다 — 이후 수정·삭제는 관리자)
+        photoSpotRepository.deleteByPhotoOwner(memberId);
 
         // 3. 멤버가 다른 사진에 남긴 좋아요/저장 삭제
         photoLikeRepository.deleteByMemberId(memberId);

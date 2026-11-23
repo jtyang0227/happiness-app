@@ -2,6 +2,7 @@ package com.happiness.app.photo.controller;
 
 import com.happiness.app.analytics.repository.AnalyticsEventRepository;
 import com.happiness.app.moodboard.MoodboardItemRepository;
+import com.happiness.app.spot.PhotoSpotRepository;
 import com.happiness.app.common.SecurityUtil;
 import com.happiness.app.common.util.ImageProcessingUtil;
 import com.happiness.app.common.util.ImageVariantUtil;
@@ -46,6 +47,7 @@ public class PhotoController {
     private final PhotoRepository photoRepository;
     private final AnalyticsEventRepository analyticsEventRepository;
     private final MoodboardItemRepository moodboardItemRepository;
+    private final PhotoSpotRepository photoSpotRepository;
     private final PhotoTagRepository photoTagRepository;
     private final PhotoLikeRepository photoLikeRepository;
     private final PhotoShareRepository photoShareRepository;
@@ -457,6 +459,7 @@ public class PhotoController {
                     photoLikeRepository.deleteByPhotoId(id);
                     photoSaveRepository.deleteByPhotoId(id);
                     moodboardItemRepository.deleteByPhotoId(id);
+                    photoSpotRepository.deleteByPhotoId(id);
                     photoShareRepository.deleteByPhotoId(id);
                     photoTagRepository.deleteByPhotoId(id);
 

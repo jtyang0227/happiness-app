@@ -1064,6 +1064,31 @@ CREATE INDEX IF NOT EXISTS idx_member_blocks_blocked_id ON member_blocks(blocked
 ALTER TABLE reports ADD COLUMN IF NOT EXISTS comment_id BIGINT;   -- 댓글 신고 (사진 신고는 null)
 -- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
 CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
+-- 출사 스팟 (2026-11-23, ANALYSIS_chulsa-app-public-features.md P0)
+CREATE TABLE IF NOT EXISTS spots (
+  id          BIGSERIAL PRIMARY KEY,
+  name        VARCHAR(50) NOT NULL,
+  lat         DOUBLE PRECISION NOT NULL,
+  lng         DOUBLE PRECISION NOT NULL,
+  address     VARCHAR(200),
+  region      VARCHAR(30),
+  best_time   VARCHAR(30),
+  tips        TEXT,
+  created_by  BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_spots_lat_lng    ON spots(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_spots_region     ON spots(region);
+CREATE INDEX IF NOT EXISTS idx_spots_created_by ON spots(created_by);
+CREATE TABLE IF NOT EXISTS photo_spots (
+  id          BIGSERIAL PRIMARY KEY,
+  photo_id    BIGINT NOT NULL,
+  spot_id     BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_photo_spots_photo UNIQUE (photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_photo_spots_spot ON photo_spots(spot_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -2226,6 +2251,31 @@ CREATE INDEX IF NOT EXISTS idx_member_blocks_blocked_id ON member_blocks(blocked
 ALTER TABLE reports ADD COLUMN IF NOT EXISTS comment_id BIGINT;   -- 댓글 신고 (사진 신고는 null)
 -- DB 튜닝 2차 — AnalyticsService 일별 조회수/기간 통계 쿼리용 복합 인덱스 (기존 idx_analytics_member_type는 유지, 순수 추가)
 CREATE INDEX IF NOT EXISTS idx_analytics_member_type_created ON analytics_events(member_id, event_type, created_at);
+-- 출사 스팟 (2026-11-23, ANALYSIS_chulsa-app-public-features.md P0)
+CREATE TABLE IF NOT EXISTS spots (
+  id          BIGSERIAL PRIMARY KEY,
+  name        VARCHAR(50) NOT NULL,
+  lat         DOUBLE PRECISION NOT NULL,
+  lng         DOUBLE PRECISION NOT NULL,
+  address     VARCHAR(200),
+  region      VARCHAR(30),
+  best_time   VARCHAR(30),
+  tips        TEXT,
+  created_by  BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_spots_lat_lng    ON spots(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_spots_region     ON spots(region);
+CREATE INDEX IF NOT EXISTS idx_spots_created_by ON spots(created_by);
+CREATE TABLE IF NOT EXISTS photo_spots (
+  id          BIGSERIAL PRIMARY KEY,
+  photo_id    BIGINT NOT NULL,
+  spot_id     BIGINT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_photo_spots_photo UNIQUE (photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_photo_spots_spot ON photo_spots(spot_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)

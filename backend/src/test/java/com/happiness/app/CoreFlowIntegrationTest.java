@@ -1462,4 +1462,111 @@ class CoreFlowIntegrationTest {
                         .content(body.apply("{\"blocks\":[]}")))
                 .andExpect(status().isForbidden());
     }
+
+    // ── 출사 스팟 (ANALYSIS_chulsa-app-public-features.md P0) ─────────────────
+
+    private long createSpot(User u, String name, double lat, double lng) throws Exception {
+        MvcResult r = mvc.perform(post("/api/spots").header("Authorization", bearer(u))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", name, "lat", lat, "lng", lng,
+                                "region", "서울 성동구", "bestTime", "일몰 30분 전", "tips", "<b>주차</b> 어려움"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return ((Number) JsonPath.read(r.getResponse().getContentAsString(), "$.id")).longValue();
+    }
+
+    @Test
+    void spot_create_link_publicRead_andPrivateAuthorHidden() throws Exception {
+        User owner = signupAndLogin();
+        double lat = 37.5 + Math.random() * 0.01, lng = 127.0 + Math.random() * 0.01;
+        long spotId = createSpot(owner, "서울숲 은행나무길", lat, lng);
+        long photoId = createPhoto(owner);
+
+        // 무토큰 생성은 401
+        mvc.perform(post("/api/spots").contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", "x", "lat", 1, "lng", 1))))
+                .andExpect(status().isUnauthorized());
+
+        // 사진 연결 — 주인만
+        User other = signupAndLogin();
+        mvc.perform(put("/api/photos/" + photoId + "/spot").header("Authorization", bearer(other))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"spotId\":" + spotId + "}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/photos/" + photoId + "/spot").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"spotId\":" + spotId + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(spotId));
+
+        // 공개 조회: 상세(태그 제거된 팁·사진 1장·작성자 이름), 사진의 스팟, 지도 범위 목록
+        mvc.perform(get("/api/spots/" + spotId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tips").value("주차 어려움"))
+                .andExpect(jsonPath("$.photoCount").value(1))
+                .andExpect(jsonPath("$.photos[0].id").value(photoId))
+                .andExpect(jsonPath("$.photos[0].memberName").value("테스터"))
+                .andExpect(jsonPath("$.canEdit").value(false));
+        mvc.perform(get("/api/photos/" + photoId + "/spot"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(spotId));
+        String list = mvc.perform(get("/api/spots").param("minLat", String.valueOf(lat - 0.001))
+                        .param("maxLat", String.valueOf(lat + 0.001)).param("minLng", String.valueOf(lng - 0.001))
+                        .param("maxLng", String.valueOf(lng + 0.001)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<Number> ids = JsonPath.read(list, "$.data[*].id");
+        assertThat(ids.stream().map(Number::longValue)).contains(spotId);
+        List<Number> counts = JsonPath.read(list, "$.data[?(@.id == " + spotId + ")].photoCount");
+        assertThat(counts.get(0).intValue()).isEqualTo(1);
+
+        // 비공개 프로필로 바꾸면 사진이 스팟에서 빠진다
+        updateProfile(owner, Map.of("publicProfile", false));
+        mvc.perform(get("/api/spots/" + spotId))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.photoCount").value(0));
+
+        // 연결 해제
+        mvc.perform(put("/api/photos/" + photoId + "/spot").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"spotId\":null}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/photos/" + photoId + "/spot")).andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void spot_validation_duplicates_andIdor() throws Exception {
+        User owner = signupAndLogin();
+        double lat = 35.1 + Math.random() * 0.01, lng = 129.0 + Math.random() * 0.01;
+        long spotId = createSpot(owner, "광안리 해변", lat, lng);
+
+        // 범위 밖 좌표·이름 없음 → 400
+        mvc.perform(post("/api/spots").header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", "x", "lat", 91, "lng", 10))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/spots").header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("name", " ", "lat", 10, "lng", 10))))
+                .andExpect(status().isBadRequest());
+
+        // 중복 후보: 약 100m 떨어진 비슷한 이름 → 후보, 같은 거리 다른 이름 → 없음, 약 30m는 이름 무관 후보
+        double lat100 = lat + 0.0009;
+        mvc.perform(get("/api/spots/nearby-duplicate").param("name", "광안리").param("lat", String.valueOf(lat100))
+                        .param("lng", String.valueOf(lng)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(spotId));
+        mvc.perform(get("/api/spots/nearby-duplicate").param("name", "전혀다른곳").param("lat", String.valueOf(lat100))
+                        .param("lng", String.valueOf(lng)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[?(@.id == " + spotId + ")]").isEmpty());
+        mvc.perform(get("/api/spots/nearby-duplicate").param("name", "전혀다른곳")
+                        .param("lat", String.valueOf(lat + 0.0003)).param("lng", String.valueOf(lng)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(spotId));
+
+        // 남의 스팟 수정·삭제 → 403, 본인 수정 → 200, 관리자 삭제 → 204
+        User other = signupAndLogin();
+        mvc.perform(put("/api/spots/" + spotId).header("Authorization", bearer(other)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bestTime\":\"새벽\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/spots/" + spotId).header("Authorization", bearer(other)))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/spots/" + spotId).header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bestTime\":\"새벽\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.bestTime").value("새벽"));
+        User admin = promoteToAdmin(signupAndLogin());
+        mvc.perform(delete("/api/spots/" + spotId).header("Authorization", bearer(admin)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/spots/" + spotId)).andExpect(status().isNotFound());
+    }
 }

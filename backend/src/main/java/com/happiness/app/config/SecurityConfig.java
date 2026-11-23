@@ -96,6 +96,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/photos/{id}/similar").permitAll()
                 // 무드보드 보기 전용 공유 링크 (토큰 기반, 나머지 /api/moodboards/** 는 인증)
                 .requestMatchers(HttpMethod.GET, "/api/moodboards/shared/*").permitAll()
+                // 출사 스팟 조회(목록·상세·중복 후보)와 사진의 스팟은 공개, 생성·수정·연결은 인증
+                .requestMatchers(HttpMethod.GET, "/api/spots", "/api/spots/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/photos/{id}/spot").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/portfolio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/series/discover").permitAll()
