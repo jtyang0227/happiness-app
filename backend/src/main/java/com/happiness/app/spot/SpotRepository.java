@@ -18,8 +18,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     @Query("SELECT s FROM Spot s WHERE "
             + "(:minLat IS NULL OR s.lat >= :minLat) AND (:maxLat IS NULL OR s.lat <= :maxLat) AND "
             + "(:minLng IS NULL OR s.lng >= :minLng) AND (:maxLng IS NULL OR s.lng <= :maxLng) AND "
-            + "(:region IS NULL OR LOWER(s.region) LIKE CONCAT('%', :region, '%') OR LOWER(s.address) LIKE CONCAT('%', :region, '%')) AND "
-            + "(:q IS NULL OR LOWER(s.name) LIKE CONCAT('%', :q, '%')) "
+            + "(CAST(:region AS String) IS NULL OR LOWER(s.region) LIKE CONCAT('%', CAST(:region AS String), '%') OR LOWER(s.address) LIKE CONCAT('%', CAST(:region AS String), '%')) AND "
+            + "(CAST(:q AS String) IS NULL OR LOWER(s.name) LIKE CONCAT('%', CAST(:q AS String), '%')) "
             + "ORDER BY s.updatedAt DESC, s.id DESC")
     Slice<Spot> search(@Param("minLat") Double minLat, @Param("maxLat") Double maxLat,
                        @Param("minLng") Double minLng, @Param("maxLng") Double maxLng,

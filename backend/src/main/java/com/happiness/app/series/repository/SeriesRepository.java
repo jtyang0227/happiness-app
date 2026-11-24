@@ -29,8 +29,8 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
      * shootType/location이 null이면 해당 조건을 건너뛴다(location은 작가 위치 부분 일치, 대소문자 무시).
      */
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
-           "AND (:shootType IS NULL OR s.shootType = :shootType) " +
-           "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (CAST(:shootType AS String) IS NULL OR s.shootType = CAST(:shootType AS String)) " +
+           "AND (CAST(:location AS String) IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(CAST(:location AS String)), '%')) " +
            "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY s.updatedAt DESC, s.id DESC")
@@ -40,8 +40,8 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
 
     /** discover()와 같은 조건, 감상 많은 순 */
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
-           "AND (:shootType IS NULL OR s.shootType = :shootType) " +
-           "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (CAST(:shootType AS String) IS NULL OR s.shootType = CAST(:shootType AS String)) " +
+           "AND (CAST(:location AS String) IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(CAST(:location AS String)), '%')) " +
            "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY (SELECT COUNT(a) FROM SeriesAppreciation a WHERE a.seriesId = s.id) DESC, s.updatedAt DESC, s.id DESC")
@@ -51,8 +51,8 @@ public interface SeriesRepository extends JpaRepository<Series, Long> {
 
     /** discover()와 같은 조건, 작업 노트 조회(WORK_VIEW) 많은 순 */
     @Query("SELECT s FROM Series s, Member m WHERE s.memberId = m.id AND m.publicProfile = true " +
-           "AND (:shootType IS NULL OR s.shootType = :shootType) " +
-           "AND (:location IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(:location), '%')) " +
+           "AND (CAST(:shootType AS String) IS NULL OR s.shootType = CAST(:shootType AS String)) " +
+           "AND (CAST(:location AS String) IS NULL OR LOWER(m.location) LIKE CONCAT('%', LOWER(CAST(:location AS String)), '%')) " +
            "AND (s.draft IS NULL OR s.draft = false) " +
            "AND EXISTS (SELECT 1 FROM SeriesPhoto sp WHERE sp.seriesId = s.id) " +
            "ORDER BY (SELECT COUNT(e) FROM AnalyticsEvent e WHERE e.eventType = 'WORK_VIEW' " +

@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb, makeAdmin } from './db.js';
-import { IS_SPRING, LOCAL_DATE_TIME, call, createPhoto, signupAndLogin, uniq } from './helpers.js';
+import { LOCAL_DATE_TIME, call, createPhoto, signupAndLogin, uniq } from './helpers.js';
 
 afterAll(closeDb);
 
@@ -131,11 +131,9 @@ describe('시리즈(작업 노트)', () => {
 
     expect((await call('PUT', `/api/admin/series/${w2}/featured`, { token: admin.token, body: { featured: 'yes' } })).body.message).toBe('featured(true/false)가 필요합니다.');
     expect((await call('PUT', `/api/admin/series/${w2}/featured`, { token: admin.token, body: { featured: true } })).body).toEqual({ id: w2, featured: true });
-    // 지역 없이(탐색 '작업' 탭의 기본 화면) — Spring은 PostgreSQL에서 null 문자열을 bytea로 묶어 lower(bytea) 오류 500이 날 수 있다
-    // (스팟 목록과 같은 유형, 프로세스마다 다를 수 있어 Spring 쪽은 둘 다 허용 — 의도적 차이, README)
+    // 지역 없이(둘러보기 '작업' 탭 기본 화면) — Spring도 2026-11-24 CAST 수정 뒤 PostgreSQL에서 정상(이전엔 lower(bytea) 500)
     const noLoc = await call('GET', '/api/series/discover?size=1');
-    if (IS_SPRING) expect([200, 500]).toContain(noLoc.status);
-    else expect(noLoc.status === 200 && Array.isArray(noLoc.body.data)).toBe(true);
+    expect(noLoc.status === 200 && Array.isArray(noLoc.body.data)).toBe(true);
     const feat = await call('GET', '/api/series/discover?featured=true&size=60');
     expect(feat.body.data[0]).toMatchObject({ id: w2, featured: true });
     expect((await call('PUT', `/api/admin/series/${w2}/featured`, { token: fan.token, body: { featured: false } })).status).toBe(403);

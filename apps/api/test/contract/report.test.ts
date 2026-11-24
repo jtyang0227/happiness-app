@@ -26,7 +26,8 @@ describe('신고', () => {
 
     const page = await call('GET', '/api/admin/reports?status=pending&size=200', { token: admin.token });
     expect(page.status).toBe(200);
-    expect(Object.keys(page.body)).toEqual(['content', 'pageable', 'totalPages', 'totalElements', 'last', 'size', 'number', 'sort', 'numberOfElements', 'first', 'empty']);
+    // Spring PageImpl 키 순서는 JVM 리플렉션 순서라 프로세스마다 다를 수 있어 집합으로 비교
+    expect(Object.keys(page.body).sort()).toEqual(['content', 'pageable', 'totalPages', 'totalElements', 'last', 'size', 'number', 'sort', 'numberOfElements', 'first', 'empty'].sort());
     const row = page.body.content.find((x: any) => x.id === r.body.id);
     expect(row).toMatchObject({ photo: { id: pid }, reason: 'SPAM', reporterName: '신고자', reporterEmail: reporter.email, status: 'PENDING', commentId: null, commentContent: null });
 
