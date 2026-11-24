@@ -58,3 +58,6 @@ export async function createPhoto(u: User, extra: Record<string, unknown> = {}):
   if (r.status !== 200 && r.status !== 201) throw new Error(`photo ${r.status} ${JSON.stringify(r.body)}`);
   return r.body.data.id;
 }
+
+/** 기존 Spring 서버(8080)를 검사 중인지 — Spring 버그를 TS에서 고친 "의도적 차이"를 확인할 때만 쓴다(README 참고) */
+export const IS_SPRING = /:8080(\/|$)/.test(BASE);

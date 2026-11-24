@@ -54,7 +54,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `/api/analytics/**`(`track`만 공개 — 작업·사진은 실제 작가 소유일 때만 기록, visitorToken 분당 60회) | `analytics.test.ts` — 저장 실패 시 Spring은 예외를 잡지만 트랜잭션이 rollback-only라 500, 여기서도 500 |
 | `/api/gatherings`(목록·상세 공개, CRUD·참여/대기자·취소 시 승격·모집 마감·참여자), `/api/gatherings/notifications/**`, `/api/gatherings/{id}/place-poll/**` | `gathering.test.ts` — 알림 응답의 읽음 키는 Lombok 규칙대로 `read` |
 | `/api/gatherings/{id}/posts·album`(공개), 게시물 작성·삭제·좋아요·댓글, `instagram-candidates·instagram-share` | `gathering-post.test.ts` |
-| 아직 Spring: 스팟, 배치, 7단계(추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/spots/**`(목록·상세·근처 중복 공개, 생성 하루 20개), `GET·PUT /api/photos/{id}/spot` | `spot.test.ts` — 미리보기·사진 수는 공개 프로필 작가 사진만 |
+| 아직 Spring: 배치, 7단계(추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
@@ -64,6 +65,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 
 ## Spring과 의도적으로 다른 점
 - **WebP 사진 업로드**(`/api/photos/upload`): Spring은 허용 형식에 WebP를 넣었지만 ImageIO에 WebP 리더가 없어 항상 500 "이미지를 읽을 수 없습니다". 여기서는 sharp로 읽어 jpg로 저장한다.
+- **스팟 목록**(`GET /api/spots`): Spring은 PostgreSQL에서 null 문자열 파라미터를 `bytea`로 묶어 `region`·`q` 중 하나라도 없으면 **500**(`operator does not exist: text ~~ bytea`) — 웹 둘러보기 스팟 탭(지도·내 주변)이 운영에서 동작하지 않았을 것. H2(dev 테스트)에서는 재현되지 않는다. 여기서는 정상 동작, 계약 테스트는 `IS_SPRING`으로 이 차이만 따로 확인한다.
 - 사진 업로드의 리사이즈 결과 바이트·대표색은 Thumbnailator와 sharp가 달라 한두 단계 차이 날 수 있다(단색 이미지는 같음). EXIF 회전은 양쪽 모두 적용하지 않는다.
 - 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
