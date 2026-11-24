@@ -41,6 +41,9 @@ import { GatheringService } from './gathering/gathering.service.js';
 import { SpotController } from './spot/spot.controller.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BatchService } from './batch/batch.service.js';
+import { ClientBrandController, PressController, PricingController, TestimonialController } from './showcase/showcase.controllers.js';
+import { NewsletterController } from './showcase/newsletter.controller.js';
+import { AssistantController } from './assistant/assistant.controller.js';
 import { InquiryController } from './inquiry/inquiry.controller.js';
 import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
@@ -52,7 +55,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController],
   providers: [
     PrismaService,
     JwtService,

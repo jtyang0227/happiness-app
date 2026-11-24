@@ -33,3 +33,8 @@ export async function setGatheringStatus(gatheringId: number, status: string) {
 export async function setInstagramId(memberId: number, instagramId: string | null) {
   await pool.query('UPDATE members SET instagram_id = $2 WHERE id = $1', [memberId, instagramId]);
 }
+
+export async function newsletterToken(memberId: number, email: string): Promise<string> {
+  const r = await pool.query('SELECT token FROM newsletter_subscribers WHERE member_id = $1 AND email = $2', [memberId, email]);
+  return r.rows[0].token;
+}

@@ -56,7 +56,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `/api/gatherings/{id}/posts·album`(공개), 게시물 작성·삭제·좋아요·댓글, `instagram-candidates·instagram-share` | `gathering-post.test.ts` |
 | `/api/spots/**`(목록·상세·근처 중복 공개, 생성 하루 20개), `GET·PUT /api/photos/{id}/spot` | `spot.test.ts` — 미리보기·사진 수는 공개 프로필 작가 사진만 |
 | 배치 4개(`batch/batch.service.ts`, Spring과 같은 cron — 납품 만료 매시, 예약 02:00, 약속 03:00, 모임 5분) | `LEGACY_API_URL`이 있으면 기본 꺼짐(중복 알림 방지), `BATCH_ENABLED=true`로 켬. `node scripts/run-batch.mjs <이름|all>`로 즉시 실행 — 시드 데이터로 4개 모두 확인 |
-| 아직 Spring: 7단계(추천사·언론·패키지·브랜드·뉴스레터·AI 어시스턴트·회원 탈퇴), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/testimonials·press·pricing·brands/**`(공개 GET `/member/{id}`), `/api/newsletter/**`, `/api/assistant/chat·chat/workspace`(Gemini) | `showcase.test.ts` — 숫자 칸에 글자를 넣으면 Spring `Integer.parseInt` 예외 그대로 400 C002 `For input string: "…"`, 패키지·브랜드 수정 대상이 없으면 500(`RuntimeException`) |
+| 아직 Spring: 회원 탈퇴 `DELETE /api/auth/member/{id}`, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 

@@ -1,3 +1,4 @@
+import { AppError } from './app-error.js';
 /**
  * Jackson이 JSON 본문을 DTO 필드에 넣을 때의 기본 변환. 변환할 수 없으면 Spring은
  * HttpMessageNotReadableException(처리 안 된 예외 → 500)이라 일반 Error를 던진다.
@@ -140,4 +141,28 @@ export function jsonBool(v: unknown, name: string): boolean | null {
   if (v === undefined || v === null) return null;
   if (typeof v === 'string' && v.trim() === '') return null;
   return jsonPrimitiveBool(v, name);
+}
+
+/** Map<String,Object> 값의 Java toString — 문자열 그대로, 숫자·불리언 글자, 객체 {k=v, …}, 배열 [a, b] */
+export function javaToString(v: unknown): string {
+  if (v === null || v === undefined) return 'null';
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return `[${v.map(javaToString).join(', ')}]`;
+  if (typeof v === 'object') return `{${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}=${javaToString(x)}`).join(', ')}}`;
+  return String(v);
+}
+
+/** 컨트롤러의 `num()` — Number면 intValue(Long은 하위 32비트, 실수는 버림·포화), 아니면 Integer.parseInt(실패 시 400 C002) */
+export function javaIntValue(v: unknown): number {
+  if (typeof v === 'number') {
+    if (Number.isNaN(v)) return 0;
+    if (!Number.isInteger(v)) return Math.max(-2147483648, Math.min(2147483647, Math.trunc(v)));
+    if (v >= -2147483648 && v <= 2147483647) return v;
+    return Number(BigInt.asIntN(32, BigInt(v)));
+  }
+  const s = javaToString(v);
+  if (!/^[+-]?\d+$/.test(s) || Number(s) > 2147483647 || Number(s) < -2147483648) {
+    throw new AppError(400, 'C002', `For input string: "${s}"`);
+  }
+  return Number(s);
 }
