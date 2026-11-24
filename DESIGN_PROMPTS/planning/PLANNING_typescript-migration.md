@@ -44,6 +44,24 @@ happiness-app/
 | 10 | 모바일 TypeScript | expo export web·android |
 | 11 | 컷오버 — 배포를 Nest로, Spring 끄기, Prisma baseline, `backend/` 삭제 | 운영 health·스모크 |
 
+## 4-1. 9단계 어드민 이관 설계 (2026-11-24)
+
+**원본**: happiness-admin `origin/claude/admin-planning-doc-120dha`(cfecd55, 2026-11-06) — `master`(c35e964, 07-03)보다 61커밋 앞선 최신 작업(개인정보 34984ce·보안 40c78d4 포함). Spring Boot 3.5.16, 컨트롤러 27개·경로 117개, 서버 약 9.5천 줄 + 프론트 약 7.9천 줄(CRA, React Router 7, recharts, lucide-react).
+
+**발견 — 어드민은 앱과 같은 테이블을 보지 않는다.** `application-prod.properties`가 `DB_SCHEMA`(기본 `admin`)로 `search_path`와 `hibernate.default_schema`를 바꿔, 같은 PostgreSQL 인스턴스 안의 **별도 스키마 `admin`**에 `members`·`photos` 등 자기 테이블을 따로 만든다(주석: "happiness-app은 public 사용", railway.toml·deploy.yml도 `DB_SCHEMA=admin`). 어드민 `Member`에는 앱에 없는 `is_verified boolean NOT NULL`·`suspend_*` 컬럼이 있어 `public`을 가리키면 `ddl-auto=update`가 행이 있는 표에 NOT NULL 컬럼을 못 붙여 깨진다 — 즉 지금 설정대로면 운영 어드민은 앱 데이터가 아니라 자기 스키마의 데이터만 본다. 앱 문서의 "어드민과 DB 공유"는 의도였고 실제 설정과 다르다. **이관은 1:1**: Nest 어드민도 `ADMIN_DB_SCHEMA`(기본 `admin`)를 따르고, 어드민 전용 Prisma 스키마(`prisma/admin/schema.prisma`, 어드민 Spring이 로컬 PG `admin` 스키마에 만든 표를 `db pull`)를 쓴다. 운영 어드민이 실제로 어느 스키마를 쓰는지(Railway 변수 `DB_SCHEMA`)와, 앱 데이터를 보게 합칠지는 **사용자 확인 사항**(컷오버 11단계에서 결정 — 합치려면 `members.is_verified` 등 SQL 필요).
+
+**구조 — 별도 진입점.** `apps/api/src/admin-main.ts` + `AdminAppModule`(자체 포트, 기본 8091). 앱과 경로가 겹치고(아래 표) 오류 형식(`{error}` / `{message}`)·JWT(subject=이메일, 비밀 `ADMIN_JWT_SECRET`, 8시간)·인증(매 요청 DB 재검증)이 전부 달라 한 프로세스에 섞지 않는다. Prisma·시간 형식·HTML 이스케이프 같은 공통 코드는 공유. 어드민 프론트의 API 경로는 바뀌지 않는다.
+
+| 경로 | 앱(Nest/Spring) | 어드민 | 처리 |
+|---|---|---|---|
+| `POST /api/auth/login` | 회원 로그인(`ApiResponse`+refresh) | 관리자 로그인(`{token,memberId,…}`, 401 `{message}`) | 별도 진입점이라 충돌 없음 |
+| `GET /api/admin/reports` | 앱 신고 목록(`Page`) | 어드민 신고 목록(`PageResponse`, 다른 필드) | 〃 |
+| `PUT /api/admin/series/{id}/featured` | 에디터 추천(`series.featured_at`) | 같은 경로 — 어드민 스키마 `series` | 〃 (스키마가 달라 데이터도 다름) |
+| `GET /api/popups/active` | 없음 | 공개 팝업 | 어드민 진입점에만 |
+| 나머지 `/api/admin/**` 114개 | 없음 | 어드민 | 어드민 진입점 |
+
+**검증**: 어드민 Spring(prod 프로필, 로컬 PG, `DB_SCHEMA=admin`, 8081) ↔ Nest 어드민(8091)에 같은 계약 테스트(`test/contract-admin/*`, `ADMIN_API_BASE_URL`). prod 프로필엔 시드가 없어 테스트가 SQL로 관리자·데이터를 넣는다. 웹은 `apps/admin`(Next.js Pages Router·정적 내보내기, 8단계와 같은 방식) — CRA 빌드와 화면 픽셀 비교.
+
 ## 5. 배포 전환 (사용자 확인 필요한 단계)
 - 2단계가 끝나면 `apps/api`를 Render/Railway 새 서비스로 띄우고 `LEGACY_API_URL=기존 API 주소`. `api.happiness.io.kr`을 새 서비스로 돌리면 옮긴 기능만 Nest, 나머지는 Spring으로 간다. 되돌리기는 DNS만 다시 돌리면 된다.
 - 운영 DB 스키마는 이 계획 동안 바꾸지 않는다.

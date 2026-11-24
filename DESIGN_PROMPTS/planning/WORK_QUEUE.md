@@ -19,7 +19,13 @@
 | 6 | ✅ | 모임·스팟·알림·배치 | 모임 CRUD·참여·알림·장소 투표·피드·앨범·Instagram·스팟 + 배치 4개(run-batch.mjs로 확인), 계약 85개 양쪽. 커밋 78de64b·01e8c02·d61c6ae·3e7a67a. 발견: Spring 스팟 목록 PG 500(README) |
 | 7 | ✅ | 추천사·언론·패키지·브랜드·뉴스레터·AI 어시스턴트 + 회원 탈퇴 | Spring 경로 0개(정적 대조 194/194), 프록시 끈 Nest에서 계약 92개 전부 통과·Spring 92개 통과. 커밋 2a32d07·b85ca30 |
 | 8 | ✅ | 웹 → TypeScript → Next.js | 8a 40737e8 Next.js 셸 · 8b 3f1bb3f 전 파일 TS(tsc 0·vitest 13·빌드, CRA와 화면 46장 동일) · 8c 241d730 CI(api-ci·web-ci) + 컷오버 체크리스트(PLANNING 5-1). 운영 배포 전환은 11번 |
-| 9 | 🔄 | 어드민 이관 (happiness-admin → `apps/api` admin 모듈 + `apps/admin`) | 실행 프롬프트 B절. 앱 2~8 뒤 |
+| 9 | 🔄 | 어드민 이관 (happiness-admin → `apps/api` 어드민 진입점 + `apps/admin`) | 설계·충돌 표: PLANNING 4-1. **발견**: 어드민은 별도 스키마 `admin`(DB_SCHEMA) — 앱 테이블을 안 봄, 1:1로 옮기고 합칠지는 사용자 확인(11번). 하위 9a~9f |
+| 9a | ⏳ | 기반 — 어드민 Spring을 로컬 PG(`admin` 스키마)로 기동, 어드민 Prisma 스키마 pull, `admin-main.ts` 진입점(오류 `{error}`·JWT·DB 재검증 가드·로그인 잠금), 로그인·hello·공개 팝업, 계약 하네스 | |
+| 9b | ⏳ | 회원(목록·상세·요약·역할·정지·삭제·메모·이력·원문 열람·내보내기) + 개인정보 접속기록·보안 감사(암호화 `PRIVACY_ENCRYPTION_KEY`) | |
+| 9c | ⏳ | 콘텐츠 — 사진·시리즈·포트폴리오·카테고리·정렬·댓글·프로필 콘텐츠·추천·배너·팝업·공지 | |
+| 9d | ⏳ | 업무·운영 — 문의·예약·거래·모임·뉴스레터·인증·신고(+AI 분류)·통계·시스템·콘텐츠 정책 | |
+| 9e | ⏳ | 웹 `apps/admin`(Next.js TS, Cosmos×Pinterest CSS 변수 유지) — CRA와 화면 비교 | |
+| 9f | ⏳ | 문서·CI·happiness-admin 저장소 처리 질문(README만 남길지 — 사용자 결정) | |
 | 10 | ✅ | 모바일 TypeScript | 전 파일 .ts/.tsx(73개, babel.config.js만 JS), TypeScript ~5.1(Expo 49 권장), tsc 0. expo export web·android 통과, 안드로이드 번들 크기 같음·.web.ts 스텁은 웹에만, 웹 번들 화면 3개 픽셀 동일. 커밋 190a06c |
 | 11 | ⏸ | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
