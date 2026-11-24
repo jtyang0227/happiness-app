@@ -39,6 +39,8 @@ import { GatheringNotificationService } from './gathering/gathering-notification
 import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
 import { GatheringService } from './gathering/gathering.service.js';
 import { SpotController } from './spot/spot.controller.js';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BatchService } from './batch/batch.service.js';
 import { InquiryController } from './inquiry/inquiry.controller.js';
 import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
@@ -49,6 +51,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
+  imports: [ScheduleModule.forRoot()],
   controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController],
   providers: [
     PrismaService,
@@ -73,6 +76,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     GatheringNotificationService,
     GatheringPlacePollService,
     GatheringService,
+    BatchService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
