@@ -8,6 +8,7 @@ import { photoError, toPhotoResponse } from './photo.mapper.js';
 import { randomUUID } from 'node:crypto';
 import { StorageService } from '../storage/storage.service.js';
 import { SIZES, VariantInputError, prepareVariants } from './image-variants.js';
+import { AutoTagService } from './auto-tag.service.js';
 
 export interface PhotoRequest {
   memberId?: number | null; title?: string | null; imageUrl?: string | null; description?: string | null; imageRatio?: string | null;
@@ -29,7 +30,7 @@ const blank = (s?: string | null) => s == null || s.trim() === '';
 /** Spring PhotoController 쓰기 경로 1:1 (삭제·업로드·AI 태그 제외) */
 @Injectable()
 export class PhotoCommandService {
-  constructor(private readonly prisma: PrismaService, private readonly storage: StorageService) {}
+  constructor(private readonly prisma: PrismaService, private readonly storage: StorageService, private readonly autoTags: AutoTagService) {}
 
   private selfOrAdmin(user: AuthUser, ownerId: number | bigint) {
     return user.id === Number(ownerId) || isAdmin(user);
@@ -182,6 +183,33 @@ export class PhotoCommandService {
       const msg = e instanceof VariantInputError ? e.message : (e as Error).message;
       throw new PhotoHttpError(500, `사진 업로드 중 오류: ${msg}`);
     }
+  }
+
+  /**
+   * Spring deletePhoto — 좋아요·저장·무드보드 항목·스팟 연결·공유·태그를 지우고 저장소 변형(4단계)을 지운 뒤 사진 삭제.
+   * 댓글·신고는 Spring처럼 남긴다(알려진 갭). 예전 로컬 디스크 파일 삭제는 이 서버에 해당 파일이 없어 하지 않는다.
+   */
+  async remove(id: number, user: AuthUser) {
+    const p = await this.photoOr404(id);
+    if (!this.selfOrAdmin(user, p.member_id)) throw new PhotoHttpError(403, '본인 사진만 삭제할 수 있습니다.');
+    const where = { photo_id: p.id };
+    await this.prisma.$transaction([
+      this.prisma.photo_likes.deleteMany({ where }),
+      this.prisma.photo_saves.deleteMany({ where }),
+      this.prisma.moodboard_items.deleteMany({ where }),
+      this.prisma.photo_spots.deleteMany({ where }),
+      this.prisma.photo_shares.deleteMany({ where }),
+      this.prisma.photo_tags.deleteMany({ where }),
+    ]);
+    await this.storage.deletePhotoVariants(p.image_url);
+    await this.prisma.photos.delete({ where: { id: p.id } });
+    return ok('사진이 삭제되었습니다.');
+  }
+
+  async suggestTags(id: number, user: AuthUser) {
+    const p = await this.photoOr404(id);
+    if (!this.selfOrAdmin(user, p.member_id)) throw new PhotoHttpError(403, '내 사진에만 쓸 수 있습니다.');
+    return { data: await this.autoTags.suggestWithVision(p.title, p.description, p.color_mood, p.image_url), status: 'success' };
   }
 }
 

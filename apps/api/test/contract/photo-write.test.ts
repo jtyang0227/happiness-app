@@ -112,3 +112,32 @@ describe('피드 (ApiResponse 래퍼)', () => {
     expect(denied.body).toMatchObject({ code: '403', message: '본인 피드만 볼 수 있습니다.' });
   });
 });
+
+describe('사진 삭제·AI 태그', () => {
+  it('삭제 — 남의 사진 403, 연관 기록 정리, 업로드한 사진은 저장소 변형 4개 삭제 요청, 없는 사진 404', async () => {
+    const owner = await signupAndLogin();
+    const fan = await signupAndLogin();
+    const id = await createPhoto(owner, { imageUrl: 'http://localhost:54321/storage/v1/object/public/images/photos/abc_1024.jpg' });
+    await call('POST', `/api/photos/${id}/likes?memberId=${fan.id}`, { token: fan.token });
+    await call('POST', `/api/photos/${id}/saves?memberId=${fan.id}`, { token: fan.token });
+    expect((await call('DELETE', `/api/photos/${id}`, { token: fan.token })).body).toEqual(err('본인 사진만 삭제할 수 있습니다.'));
+    await fetch('http://localhost:54321/__log', { method: 'DELETE' });
+    const r = await call('DELETE', `/api/photos/${id}`, { token: owner.token });
+    expect(r.body).toEqual({ status: 'success', message: '사진이 삭제되었습니다.' });
+    const log = await (await fetch('http://localhost:54321/__log')).json();
+    expect(log.map((x: any) => JSON.parse(x.body).prefixes[0])).toEqual(['photos/abc_1024.jpg', 'photos/abc_512.jpg', 'photos/abc_256.jpg', 'photos/abc_128.jpg']);
+    expect((await call('GET', `/api/photos/${id}`)).status).toBe(404);
+    expect((await call('GET', `/api/photos/saves/${fan.id}`, { token: fan.token })).body.data).toEqual([]);
+    const missing = await call('DELETE', `/api/photos/${id}`, { token: owner.token });
+    expect(missing.status).toBe(404);
+  });
+
+  it('AI 태그 — 키워드(최대 6, 불용어 제외) + 색 분위기 태그, 남의 사진 403', async () => {
+    const owner = await signupAndLogin();
+    const other = await signupAndLogin();
+    const id = await createPhoto(owner, { title: '서울 야경 the 한강', description: '여름밤 산책', colorMood: 'WARM' });
+    const r = await call('POST', `/api/photos/${id}/auto-tags`, { token: owner.token });
+    expect(r.body).toEqual({ status: 'success', data: ['서울', '야경', '한강', '여름밤', '산책', '따뜻한', '황금빛', '노을', '여름', '일몰'] });
+    expect((await call('POST', `/api/photos/${id}/auto-tags`, { token: other.token })).body).toEqual(err('내 사진에만 쓸 수 있습니다.'));
+  });
+});

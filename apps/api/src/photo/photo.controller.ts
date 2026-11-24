@@ -12,7 +12,6 @@ import { PhotoQueryService } from './photo-query.service.js';
 /**
  * Spring PhotoController 조회 경로. 응답은 {status, data} 래퍼(ApiResponse 아님), 오류는 {status:'error', message}.
  * 공개: 목록·단건·비슷한 사진, 그리고 `/{id}` 패턴에 걸리는 `/suggestions`(Spring SecurityConfig와 같은 결과).
- * 쓰기 중 삭제·업로드·AI 태그는 아직 Spring(저장소 파일 삭제·리사이즈·외부 API가 걸려 있음).
  */
 @Controller('api/photos')
 export class PhotoController {
@@ -78,6 +77,17 @@ export class PhotoController {
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: PhotoRequest | undefined, @CurrentUser() user: AuthUser) {
     return this.commands.update(id, body ?? {}, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.commands.remove(id, user);
+  }
+
+  @Post(':id/auto-tags')
+  @HttpCode(200)
+  autoTags(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.commands.suggestTags(id, user);
   }
 
   @Post(':photoId/tags')
