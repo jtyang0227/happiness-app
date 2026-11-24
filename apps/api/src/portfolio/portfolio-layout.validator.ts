@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../common/app-error.js';
+import { javaStrip as strip } from '../common/json-body.js';
 
 /**
  * Spring PortfolioLayoutValidator — "직접 구성"(BLOCKS) sectionsJson·styleJson 검증·정규화.
@@ -50,16 +51,6 @@ const STYLE_PROPS: Record<string, Prop> = {
 
 const bad = (reason: string) => AppError.status(400, reason);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-
-/** Java String.strip — Character.isWhitespace 기준(NBSP 등은 남긴다) */
-const JAVA_WS = new RegExp('[\\t\\n\\u000B\\f\\r\\u001C-\\u001F \\u1680\\u2000-\\u2006\\u2008-\\u200A\\u2028\\u2029\\u205F\\u3000]');
-function strip(s: string): string {
-  let a = 0;
-  let b = s.length;
-  while (a < b && JAVA_WS.test(s[a])) a++;
-  while (b > a && JAVA_WS.test(s[b - 1])) b--;
-  return s.slice(a, b);
-}
 
 /** JsonNode.asText(def) — 문자열·숫자·불리언은 글자로, 객체·배열은 "", null/없음은 def */
 function asText(v: unknown, def: string): string {

@@ -47,7 +47,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `/api/moodboards/**`(공유 보기 `GET /shared/{token}`만 공개) | `moodboard.test.ts` |
 | `/api/series/**`(목록·탐색·상세 공개, 초안은 본인·관리자만), `PUT /api/admin/series/{id}/featured` | `series.test.ts` — 없는 작업·권한 거부 등은 Spring처럼 본문 없는 404/403/400(`EmptyResponseError`) |
 | `GET /api/portfolio/{p}`·`/{p}/config`(공개), `PUT /{p}/template`(본인·WM/SA, 블록·스타일 검증기 `portfolio-layout.validator.ts`) | `portfolio.test.ts` — 정규화 결과의 설정 키 순서는 Spring(`Map.of`)이 실행마다 달라 JSON 비교만 의미 있음 |
-| 아직 Spring: 문의·예약·납품·약속·분석 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `POST /api/inquiry`(공개, 작가 알림 메일 + `INQUIRY_SENT` 분석), `GET inbox·inbox/unread-count`, `PUT {id}/read`, `DELETE {id}` | `inquiry.test.ts` |
+| 아직 Spring: 예약·납품·약속·분석 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
