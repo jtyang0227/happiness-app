@@ -19,9 +19,10 @@
 | 6 | ⏳ | 모임·스팟·알림·배치 | |
 | 7 | ⏳ | 추천사·언론·패키지·브랜드·뉴스레터·AI 어시스턴트 | |
 | 8 | ⏳ | 웹 → TypeScript → Next.js | |
-| 9 | ⏳ | 어드민 이관 | |
+| 9 | ⏳ | 어드민 이관 (happiness-admin → `apps/api` admin 모듈 + `apps/admin`) | 실행 프롬프트 B절. 앱 2~8 뒤 |
 | 10 | ⏳ | 모바일 TypeScript | |
 | 11 | ⏸ | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후 |
+| 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
 ## 이전 묶음 — 출사 스팟 + 출사 모임 강화 (요청: "프롬프트 읽어서 작업 진행하고 에러 검증까지", 2026-11-23)
 

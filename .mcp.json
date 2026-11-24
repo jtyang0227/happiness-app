@@ -9,7 +9,11 @@
     },
     "jenkins": {
       "command": "uvx",
-      "args": ["--with", "mcp<2", "jenkins-mcp"],
+      "args": [
+        "--with",
+        "mcp<2",
+        "jenkins-mcp"
+      ],
       "env": {
         "JENKINS_URL": "${JENKINS_URL}",
         "JENKINS_USERNAME": "${JENKINS_USERNAME}",
@@ -19,7 +23,27 @@
     },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "photoshop": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@alisaitteke/photoshop-mcp@1.7.38"
+      ],
+      "env": {
+        "LOG_LEVEL": "1"
+      }
+    },
+    "lightroom": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mskalski/lightroom-mcp@0.27.0"
+      ]
     }
   }
 }
