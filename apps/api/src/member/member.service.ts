@@ -213,6 +213,46 @@ export class MemberService {
     return toMemberResponse(await this.saveIfChanged(m, { authority }));
   }
 
+  /**
+   * Spring MemberService.deleteAccount — 한 트랜잭션. 지우는 범위도 Spring과 같다(팔로우·예약·납품·약속·모임 등은 남는다 — README).
+   * 없는 회원이면 아무것도 안 하고 성공(Spring deleteById와 같음).
+   */
+  async deleteAccount(memberId: number): Promise<void> {
+    const id = BigInt(memberId);
+    await this.prisma.$transaction(async (tx) => {
+      const photoIds = (await tx.photos.findMany({ where: { member_id: id }, select: { id: true } })).map((p) => p.id);
+      if (photoIds.length) {
+        const byPhoto = { photo_id: { in: photoIds } };
+        await tx.photo_likes.deleteMany({ where: byPhoto });
+        await tx.photo_saves.deleteMany({ where: byPhoto });
+        await tx.moodboard_items.deleteMany({ where: byPhoto });   // 남의 보드에 담긴 내 사진
+        await tx.photo_shares.deleteMany({ where: byPhoto });
+        await tx.photo_tags.deleteMany({ where: byPhoto });
+        await tx.series_photos.deleteMany({ where: byPhoto });
+        await tx.comments.deleteMany({ where: byPhoto });          // 내 사진에 달린 댓글
+        await tx.photo_spots.deleteMany({ where: byPhoto });       // 스팟 자체는 남긴다
+      }
+      await tx.photo_likes.deleteMany({ where: { member_id: id } });
+      await tx.photo_saves.deleteMany({ where: { member_id: id } });
+      const seriesIds = (await tx.series.findMany({ where: { member_id: id }, select: { id: true } })).map((s) => s.id);
+      if (seriesIds.length) {
+        await tx.series_photos.deleteMany({ where: { series_id: { in: seriesIds } } });
+        await tx.series_appreciations.deleteMany({ where: { series_id: { in: seriesIds } } });
+      }
+      await tx.series_appreciations.deleteMany({ where: { member_id: id } });   // 남의 작업에 남긴 감상
+      const boardIds = (await tx.moodboards.findMany({ where: { member_id: id }, select: { id: true } })).map((b) => b.id);
+      if (boardIds.length) await tx.moodboard_items.deleteMany({ where: { moodboard_id: { in: boardIds } } });
+      await tx.moodboards.deleteMany({ where: { member_id: id } });
+      await tx.series.deleteMany({ where: { member_id: id } });
+      await tx.photos.deleteMany({ where: { member_id: id } });
+      await tx.inquiries.deleteMany({ where: { receiver_member_id: id } });
+      await tx.password_reset_tokens.deleteMany({ where: { member_id: id } });
+      await tx.comments.deleteMany({ where: { member_id: id } });            // 남의 사진에 남긴 내 댓글
+      await tx.member_blocks.deleteMany({ where: { OR: [{ blocker_id: id }, { blocked_id: id }] } });
+      await tx.members.deleteMany({ where: { id } });
+    });
+  }
+
   private async findOrThrow(id: number) {
     const m = await this.prisma.members.findUnique({ where: { id: BigInt(id) } });
     if (!m) throw AppError.badInput('회원을 찾을 수 없습니다.');

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Post, Put, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { ok } from '../common/api-response.js';
 import { header } from '../common/xss-query.middleware.js';
@@ -84,6 +84,13 @@ export class AuthController {
   ) {
     verifySelfOrAdmin(user, id);
     await this.members.changePassword(id, body?.currentPassword, body?.newPassword);
+    return ok();
+  }
+
+  @Delete('member/:id')
+  async deleteAccount(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    verifySelfOrAdmin(user, id);
+    await this.members.deleteAccount(id);
     return ok();
   }
 
