@@ -1,0 +1,19 @@
+/* VerificationListPage */
+
+.verification-tabs { margin-bottom: var(--space-4); }
+
+.portfolio-link {
+  color: var(--color-brand-500); font-size: var(--text-sm); font-weight: 600;
+  text-decoration: none;
+}
+.portfolio-link:hover { text-decoration: underline; }
+
+.bio-cell {
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--text-xs); color: var(--color-text-secondary);
+}
+
+.reject-reason-tip {
+  font-size: 11px; color: var(--color-danger); margin-top: 4px;
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

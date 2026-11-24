@@ -1,0 +1,114 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ConfirmProvider } from './context/ConfirmContext';
+import AdminLayout from './components/layout/AdminLayout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import BookingListPage from './pages/BookingListPage';
+import MemberListPage from './pages/MemberListPage';
+import MemberDetailPage from './pages/MemberDetailPage';
+import PhotoListPage from './pages/PhotoListPage';
+import InquiryListPage from './pages/InquiryListPage';
+import SeriesListPage from './pages/SeriesListPage';
+import PortfolioListPage from './pages/PortfolioListPage';
+import SortPhotosPage from './pages/SortPhotosPage';
+import SortSeriesPage from './pages/SortSeriesPage';
+import SortSeriesDetailPage from './pages/SortSeriesDetailPage';
+import SortPortfolioPage from './pages/SortPortfolioPage';
+import StatsPage from './pages/StatsPage';
+import SystemPage from './pages/SystemPage';
+import CurationPage from './pages/CurationPage';
+import CommentListPage from './pages/CommentListPage';
+import GatheringListPage from './pages/GatheringListPage';
+import SecurityAuditPage from './pages/SecurityAuditPage';
+import ProfileContentPage from './pages/ProfileContentPage';
+import NewsletterPage from './pages/NewsletterPage';
+import TransactionsPage from './pages/TransactionsPage';
+import PrivacyLogPage from './pages/PrivacyLogPage';
+import NotFoundPage from './pages/NotFoundPage';
+import NoticePage from './pages/NoticePage';
+import BannerPage from './pages/BannerPage';
+import ReportListPage from './pages/ReportListPage';
+import VerificationListPage from './pages/VerificationListPage';
+import FeaturedPage from './pages/FeaturedPage';
+import ContentPolicyPage from './pages/ContentPolicyPage';
+import PopupPage from './pages/PopupPage';
+const ProtectedRoute = ({ children }) => {
+  const { user } = useAuth();
+  return user ? <AdminLayout>{children}</AdminLayout> : <Navigate to="/login" replace />;
+};
+
+const AppRoutes = () => {
+  const { user } = useAuth();
+  return (
+    <Routes>
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/bookings" element={<ProtectedRoute><BookingListPage /></ProtectedRoute>} />
+      <Route path="/members" element={<ProtectedRoute><MemberListPage /></ProtectedRoute>} />
+      <Route path="/members/:id" element={<ProtectedRoute><MemberDetailPage /></ProtectedRoute>} />
+      <Route path="/photos" element={<ProtectedRoute><PhotoListPage /></ProtectedRoute>} />
+      <Route path="/inquiries" element={<ProtectedRoute><InquiryListPage /></ProtectedRoute>} />
+      <Route path="/portfolios" element={<ProtectedRoute><PortfolioListPage /></ProtectedRoute>} />
+      <Route path="/series" element={<ProtectedRoute><SeriesListPage /></ProtectedRoute>} />
+      <Route path="/sort/photos" element={<ProtectedRoute><SortPhotosPage /></ProtectedRoute>} />
+      <Route path="/sort/series" element={<ProtectedRoute><SortSeriesPage /></ProtectedRoute>} />
+      <Route path="/sort/series/:id" element={<ProtectedRoute><SortSeriesDetailPage /></ProtectedRoute>} />
+      <Route path="/sort/portfolios/:id" element={<ProtectedRoute><SortPortfolioPage /></ProtectedRoute>} />
+      <Route path="/stats" element={<ProtectedRoute><StatsPage /></ProtectedRoute>} />
+      <Route path="/system" element={<ProtectedRoute><SystemPage /></ProtectedRoute>} />
+      <Route path="/notices" element={<ProtectedRoute><NoticePage /></ProtectedRoute>} />
+      <Route path="/banners" element={<ProtectedRoute><BannerPage /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><ReportListPage /></ProtectedRoute>} />
+      <Route path="/verifications" element={<ProtectedRoute><VerificationListPage /></ProtectedRoute>} />
+      <Route path="/featured" element={<ProtectedRoute><FeaturedPage /></ProtectedRoute>} />
+      <Route path="/content-policy" element={<ProtectedRoute><ContentPolicyPage /></ProtectedRoute>} />
+      <Route path="/curation" element={<ProtectedRoute><CurationPage /></ProtectedRoute>} />
+      <Route path="/comments" element={<ProtectedRoute><CommentListPage /></ProtectedRoute>} />
+      <Route path="/gatherings" element={<ProtectedRoute><GatheringListPage /></ProtectedRoute>} />
+      <Route path="/security-audit" element={<ProtectedRoute><SecurityAuditPage /></ProtectedRoute>} />
+      <Route path="/profile-content" element={<ProtectedRoute><ProfileContentPage /></ProtectedRoute>} />
+      <Route path="/newsletter" element={<ProtectedRoute><NewsletterPage /></ProtectedRoute>} />
+      <Route path="/transactions" element={<ProtectedRoute><TransactionsPage /></ProtectedRoute>} />
+      <Route path="/privacy-logs" element={<ProtectedRoute><PrivacyLogPage /></ProtectedRoute>} />
+      <Route path="/popups" element={<ProtectedRoute><PopupPage /></ProtectedRoute>} />
+      <Route path="*" element={<ProtectedRoute><NotFoundPage /></ProtectedRoute>} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ConfirmProvider>
+          <AppRoutes />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#16283B',
+                color: '#F1E9D8',
+                fontSize: '13px',
+                borderRadius: '0px',
+                border: '2px solid #F1E9D8',
+                boxShadow: '0 0 0 3px #0F1B2A, 0 0 0 5px #F1E9D8',
+              },
+              success: { iconTheme: { primary: '#6BBF82', secondary: '#16283B' } },
+              error: {
+                duration: 5000,
+                style: { background: '#16283B', color: '#E0454C' },
+                iconTheme: { primary: '#E0454C', secondary: '#16283B' },
+              },
+            }}
+          />
+        </ConfirmProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

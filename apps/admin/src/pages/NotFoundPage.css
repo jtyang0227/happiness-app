@@ -1,0 +1,59 @@
+.not-found-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.not-found-container {
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 3rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-ring);
+  max-width: 500px;
+}
+
+.not-found-container h1 {
+  font-family: var(--font-pixel);
+  font-size: 2.5rem;
+  color: var(--color-brand);
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+.not-found-container h2 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.not-found-container p {
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+}
+
+.home-link {
+  display: inline-block;
+  background-color: var(--color-ink);
+  color: var(--color-ink-text);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform var(--dur-fast) var(--ease-out), filter var(--dur-fast);
+
+  &:hover {
+    filter: brightness(1.25);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
