@@ -28,6 +28,7 @@ import { PhotoQueryService } from './photo/photo-query.service.js';
 import { FeedController } from './feed/feed.controller.js';
 import { StorageController } from './storage/storage.controller.js';
 import { StorageService } from './storage/storage.service.js';
+import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
 import { AdminSeriesController, SeriesController } from './series/series.controller.js';
 import { SeriesService } from './series/series.service.js';
@@ -36,7 +37,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController],
   providers: [
     PrismaService,
     JwtService,

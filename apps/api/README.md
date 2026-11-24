@@ -46,7 +46,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `DELETE /api/photos/{id}`(연관 기록 + 저장소 변형 4개), `POST /api/photos/{id}/auto-tags`(키워드 + Google Vision `GOOGLE_VISION_API_KEY`) | `photo-write.test.ts` — 사진 삭제 시 댓글·신고는 Spring처럼 남는다 |
 | `/api/moodboards/**`(공유 보기 `GET /shared/{token}`만 공개) | `moodboard.test.ts` |
 | `/api/series/**`(목록·탐색·상세 공개, 초안은 본인·관리자만), `PUT /api/admin/series/{id}/featured` | `series.test.ts` — 없는 작업·권한 거부 등은 Spring처럼 본문 없는 404/403/400(`EmptyResponseError`) |
-| 아직 Spring: 포트폴리오 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `GET /api/portfolio/{p}`·`/{p}/config`(공개), `PUT /{p}/template`(본인·WM/SA, 블록·스타일 검증기 `portfolio-layout.validator.ts`) | `portfolio.test.ts` — 정규화 결과의 설정 키 순서는 Spring(`Map.of`)이 실행마다 달라 JSON 비교만 의미 있음 |
+| 아직 Spring: 문의·예약·납품·약속·분석 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
@@ -61,4 +62,5 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
 - 로그아웃 때 Redis가 죽어 있으면 Spring은 500(`TokenBlacklistService`에 예외 처리 없음), 여기서는 다른 Redis 사용처처럼 통과.
 - `@PreAuthorize`(WM/SA) 거부: Spring은 `AuthorizationDeniedException`을 전역 핸들러가 못 잡아 **500 C001**, 여기서는 403 B001. 계약 테스트는 "거부됨"만 공통으로 확인한다.
+- 포트폴리오 구성 JSON: Jackson `readTree`는 뒤에 붙은 쓰레기(`{"blocks":[]} xyz`)를 무시하고 받아들이지만 여기서는 형식 오류 400. `1.0` 같은 실수는 Jackson이 텍스트 설정에 "1.0"으로, 여기서는 "1"로 넣는다.
 - 필수 쿼리 파라미터 누락(`members/search`의 `q`, `password-reset/verify`의 `token`)은 Spring처럼 500으로 둔다.
