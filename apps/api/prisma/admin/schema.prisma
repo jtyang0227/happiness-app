@@ -1,0 +1,512 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../../src/generated/admin-prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model achievements {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  location      String?  @db.VarChar(100)
+  member_id     BigInt
+  organizer     String?  @db.VarChar(100)
+  title         String   @db.VarChar(200)
+  type          String   @db.VarChar(20)
+  url           String?  @db.VarChar(500)
+  year_month    String?  @db.VarChar(7)
+}
+
+model admin_activity_logs {
+  id          BigInt   @id @default(autoincrement())
+  action      String   @db.VarChar(100)
+  admin_id    BigInt?
+  admin_name  String?  @db.VarChar(100)
+  created_at  DateTime @db.Timestamp(6)
+  details     String?
+  target_id   BigInt?
+  target_type String?  @db.VarChar(50)
+
+  @@index([created_at], map: "idx_admin_activity_logs_created_at")
+}
+
+model admin_member_notes {
+  id         BigInt   @id @default(autoincrement())
+  admin_id   BigInt?
+  admin_name String?  @db.VarChar(100)
+  content    String
+  created_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+
+  @@index([member_id], map: "idx_admin_member_notes_member")
+}
+
+model admin_privacy_access_logs {
+  id                BigInt   @id @default(autoincrement())
+  accessed_at       DateTime @db.Timestamp(6)
+  action            String   @db.VarChar(20)
+  admin_id          BigInt?
+  admin_name        String?  @db.VarChar(100)
+  detail            String?  @db.VarChar(500)
+  hash              String   @db.VarChar(64)
+  ip_address        String?  @db.VarChar(45)
+  prev_hash         String?  @db.VarChar(64)
+  reason            String?  @db.VarChar(300)
+  subject_count     Int?
+  subject_member_id BigInt?
+
+  @@index([accessed_at], map: "idx_privacy_logs_accessed_at")
+  @@index([subject_member_id], map: "idx_privacy_logs_subject")
+}
+
+model banners {
+  id            BigInt    @id @default(autoincrement())
+  created_at    DateTime  @db.Timestamp(6)
+  display_order Int
+  ends_at       DateTime? @db.Timestamp(6)
+  image_url     String    @db.VarChar(500)
+  is_active     Boolean
+  link_url      String?   @db.VarChar(500)
+  starts_at     DateTime? @db.Timestamp(6)
+  title         String    @db.VarChar(100)
+  updated_at    DateTime  @db.Timestamp(6)
+}
+
+model boards {
+  id         BigInt   @id @default(autoincrement())
+  count      Int
+  created_at DateTime @db.Timestamp(6)
+  title      String   @db.VarChar(255)
+  updated_at DateTime @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bookings {
+  id                                        BigInt   @id @default(autoincrement())
+  budget                                    String?  @db.VarChar(255)
+  client_name                               String?  @db.VarChar(50)
+  created_at                                DateTime @db.Timestamp(6)
+  message                                   String?
+  rejected_reason                           String?
+  shoot_date                                DateTime @db.Date
+  shoot_location                            String?  @db.VarChar(200)
+  shoot_type                                String?  @db.VarChar(50)
+  status                                    String   @db.VarChar(20)
+  updated_at                                DateTime @db.Timestamp(6)
+  client_id                                 BigInt?
+  photographer_id                           BigInt?
+  members_bookings_photographer_idTomembers members? @relation("bookings_photographer_idTomembers", fields: [photographer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk5xoo2fato6truo0dig4bijdqg")
+  members_bookings_client_idTomembers       members? @relation("bookings_client_idTomembers", fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkdrd192k5f0i7qirf0dg71s9yy")
+
+  @@index([shoot_date, status], map: "idx_bookings_shoot_date_status")
+}
+
+model client_brands {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  logo_url      String?  @db.VarChar(500)
+  member_id     BigInt
+  name          String   @db.VarChar(100)
+}
+
+model comments {
+  id                BigInt   @id @default(autoincrement())
+  content           String
+  created_at        DateTime @db.Timestamp(6)
+  member_avatar_url String?  @db.VarChar(500)
+  member_id         BigInt
+  member_name       String   @db.VarChar(100)
+  parent_id         BigInt?
+  photo_id          BigInt
+
+  @@index([parent_id], map: "idx_comments_parent_id")
+  @@index([photo_id], map: "idx_comments_photo_id")
+}
+
+model contents {
+  id         BigInt   @id @default(autoincrement())
+  content    String
+  count      Int
+  created_at DateTime @db.Timestamp(6)
+  likes      Int
+  subtitle   String?  @db.VarChar(255)
+  title      String   @db.VarChar(255)
+  updated_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  members    members  @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk4fuvkrhbvpt87m2028pb9e03c")
+}
+
+model delivery_sets {
+  id          BigInt    @id @default(autoincrement())
+  approved_at DateTime? @db.Timestamp(6)
+  client_name String?   @db.VarChar(100)
+  created_at  DateTime  @db.Timestamp(6)
+  expires_at  DateTime  @db.Timestamp(6)
+  member_id   BigInt
+  status      String?   @db.VarChar(20)
+  title       String    @db.VarChar(200)
+  viewed_at   DateTime? @db.Timestamp(6)
+}
+
+model featured_items {
+  id            BigInt    @id @default(autoincrement())
+  added_at      DateTime  @db.Timestamp(6)
+  added_by_id   BigInt?
+  display_order Int
+  ends_at       DateTime? @db.Date
+  starts_at     DateTime? @db.Date
+  photo_id      BigInt
+  photos        photos    @relation(fields: [photo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkfdwhf25ya34rerf6hidexdnap")
+}
+
+model gathering_participants {
+  id           BigInt   @id @default(autoincrement())
+  gathering_id BigInt
+  joined_at    DateTime @db.Timestamp(6)
+  member_id    BigInt
+  status       String   @db.VarChar(20)
+}
+
+model gathering_photos {
+  id                BigInt   @id @default(autoincrement())
+  created_at        DateTime @db.Timestamp(6)
+  gathering_post_id BigInt
+  image_url         String   @db.VarChar(500)
+  sort_order        Int
+}
+
+model gathering_post_comments {
+  id                BigInt @id @default(autoincrement())
+  gathering_post_id BigInt
+  member_id         BigInt
+}
+
+model gathering_post_likes {
+  id                BigInt @id @default(autoincrement())
+  gathering_post_id BigInt
+  member_id         BigInt
+}
+
+model gathering_posts {
+  id           BigInt   @id @default(autoincrement())
+  content      String?
+  created_at   DateTime @db.Timestamp(6)
+  gathering_id BigInt
+  hashtags     String?  @db.VarChar(300)
+  member_id    BigInt
+  member_name  String   @db.VarChar(100)
+}
+
+model gatherings {
+  id                        BigInt   @id @default(autoincrement())
+  created_at                DateTime @db.Timestamp(6)
+  created_by                BigInt
+  description               String?
+  end_date_time             DateTime @db.Timestamp(6)
+  location                  String   @db.VarChar(300)
+  max_participants          Int
+  recruitment_end_date_time DateTime @db.Timestamp(6)
+  shoot_theme               String?  @db.VarChar(200)
+  start_date_time           DateTime @db.Timestamp(6)
+  status                    String   @db.VarChar(20)
+  thumbnail_url             String?  @db.VarChar(500)
+  title                     String   @db.VarChar(200)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model inquiries {
+  id                                     BigInt    @id @default(autoincrement())
+  budget                                 String?   @db.VarChar(255)
+  created_at                             DateTime  @db.Timestamp(6)
+  is_read                                Boolean
+  message                                String?
+  process_status                         String    @db.VarChar(255)
+  sender_email                           String?   @db.VarChar(255)
+  sender_name                            String?   @db.VarChar(255)
+  shoot_date                             DateTime? @db.Date
+  shoot_type                             String?   @db.VarChar(255)
+  receiver_id                            BigInt?
+  sender_id                              BigInt?
+  members_inquiries_receiver_idTomembers members?  @relation("inquiries_receiver_idTomembers", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk1mxm0wst1aowtt77wrn7paw8v")
+  members_inquiries_sender_idTomembers   members?  @relation("inquiries_sender_idTomembers", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkpp19cx6vcp4hv4ye1p4laotul")
+}
+
+model meets {
+  id             BigInt    @id @default(autoincrement())
+  confirmed_date DateTime? @db.Date
+  created_at     DateTime  @db.Timestamp(6)
+  receiver_id    BigInt
+  requester_id   BigInt
+  status         String    @db.VarChar(20)
+  updated_at     DateTime  @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model members {
+  id                                         BigInt                  @id @default(autoincrement())
+  authority                                  String                  @db.VarChar(255)
+  created_at                                 DateTime                @db.Timestamp(6)
+  email                                      String                  @unique(map: "uk9d30a9u1qpg8eou0otgkwrp5d") @db.VarChar(255)
+  is_verified                                Boolean
+  name                                       String                  @db.VarChar(255)
+  password                                   String?                 @db.VarChar(255)
+  profile_name                               String?                 @unique(map: "uksc7nu0i3lec93dlnsrdjejp4u") @db.VarChar(255)
+  provider                                   String?                 @db.VarChar(255)
+  provider_id                                String?                 @db.VarChar(255)
+  status                                     String                  @db.VarChar(255)
+  suspend_reason                             String?                 @db.VarChar(500)
+  suspend_until                              DateTime?               @db.Timestamp(6)
+  suspended_at                               DateTime?               @db.Timestamp(6)
+  suspended_by_id                            BigInt?
+  tel                                        String                  @db.VarChar(255)
+  updated_at                                 DateTime                @db.Timestamp(6)
+  verified_at                                DateTime?               @db.Timestamp(6)
+  bookings_bookings_photographer_idTomembers bookings[]              @relation("bookings_photographer_idTomembers")
+  bookings_bookings_client_idTomembers       bookings[]              @relation("bookings_client_idTomembers")
+  contents                                   contents[]
+  inquiries_inquiries_receiver_idTomembers   inquiries[]             @relation("inquiries_receiver_idTomembers")
+  inquiries_inquiries_sender_idTomembers     inquiries[]             @relation("inquiries_sender_idTomembers")
+  photos                                     photos[]
+  portfolios_portfolios_reviewed_byTomembers portfolios[]            @relation("portfolios_reviewed_byTomembers")
+  portfolios_portfolios_member_idTomembers   portfolios[]            @relation("portfolios_member_idTomembers")
+  reports                                    reports[]
+  series                                     series[]
+  verification_requests                      verification_requests[]
+}
+
+model newsletter_subscribers {
+  id              BigInt    @id @default(autoincrement())
+  email           String    @db.VarChar(255)
+  member_id       BigInt
+  subscribed_at   DateTime  @db.Timestamp(6)
+  token           String    @unique(map: "ukh0onykosbrrffkms10ckkt6hs") @db.VarChar(64)
+  unsubscribed_at DateTime? @db.Timestamp(6)
+}
+
+model notices {
+  id           BigInt    @id @default(autoincrement())
+  author_id    BigInt?
+  content      String
+  created_at   DateTime  @db.Timestamp(6)
+  expires_at   DateTime? @db.Timestamp(6)
+  is_pinned    Boolean
+  published_at DateTime? @db.Timestamp(6)
+  status       String    @db.VarChar(20)
+  title        String    @db.VarChar(200)
+  type         String    @db.VarChar(50)
+  updated_at   DateTime  @db.Timestamp(6)
+}
+
+model photo_categories {
+  id         BigInt   @id @default(autoincrement())
+  is_active  Boolean?
+  code       String   @db.VarChar(2)
+  level      Int
+  name_en    String?  @db.VarChar(20)
+  name_ko    String   @db.VarChar(20)
+  sort_order Int?
+
+  @@unique([level, code], map: "uk4k0umvo30800jaow1n678ahlj")
+}
+
+model photos {
+  id              BigInt            @id @default(autoincrement())
+  category_code   String?           @db.VarChar(10)
+  color_mood      String?           @db.VarChar(255)
+  created_at      DateTime          @db.Timestamp(6)
+  description     String?
+  display_order   Int
+  image_url       String?           @db.VarChar(255)
+  likes_count     Int
+  saves_count     Int
+  shares_count    Int
+  thumbnail_url   String?           @db.VarChar(255)
+  title           String            @db.VarChar(255)
+  updated_at      DateTime          @db.Timestamp(6)
+  member_id       BigInt
+  featured_items  featured_items[]
+  members         members           @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk61ogpnl4cfrqebg7bqdi2vtjf")
+  portfolio_items portfolio_items[]
+  series_photos   series_photos[]
+}
+
+model popups {
+  id            BigInt    @id @default(autoincrement())
+  content       String
+  created_at    DateTime  @db.Timestamp(6)
+  display_order Int
+  ends_at       DateTime? @db.Timestamp(6)
+  image_url     String?   @db.VarChar(500)
+  is_active     Boolean
+  link_url      String?   @db.VarChar(500)
+  show_once     Boolean
+  starts_at     DateTime? @db.Timestamp(6)
+  target_screen String    @db.VarChar(20)
+  title         String    @db.VarChar(100)
+  updated_at    DateTime  @db.Timestamp(6)
+}
+
+model portfolio_items {
+  id            BigInt     @id @default(autoincrement())
+  display_order Int?
+  is_featured   Boolean?
+  item_type     String     @db.VarChar(10)
+  section_name  String?    @db.VarChar(50)
+  photo_id      BigInt?
+  portfolio_id  BigInt
+  series_id     BigInt?
+  series        series?    @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk2n7qvibau84oje8if0xlfmfrh")
+  photos        photos?    @relation(fields: [photo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkdgqo4wge6ujhp6gl7bx9mhekf")
+  portfolios    portfolios @relation(fields: [portfolio_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkmkd3xsfvbvnj0k7akoleedr40")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model portfolios {
+  id                                      BigInt            @id @default(autoincrement())
+  admin_note                              String?
+  category_code                           String?           @db.VarChar(10)
+  cover_image_url                         String?           @db.VarChar(255)
+  created_at                              DateTime          @db.Timestamp(6)
+  description                             String?
+  likes_count                             Int?
+  is_pinned                               Boolean?
+  published_at                            DateTime?         @db.Timestamp(6)
+  reviewed_at                             DateTime?         @db.Timestamp(6)
+  status                                  String            @db.VarChar(255)
+  subtitle                                String?           @db.VarChar(200)
+  tags                                    String?           @db.VarChar(500)
+  title                                   String            @db.VarChar(255)
+  updated_at                              DateTime          @db.Timestamp(6)
+  view_count                              Int?
+  visibility                              String            @db.VarChar(255)
+  member_id                               BigInt
+  reviewed_by                             BigInt?
+  portfolio_items                         portfolio_items[]
+  members_portfolios_reviewed_byTomembers members?          @relation("portfolios_reviewed_byTomembers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkfptn2etfhsob5raqmuhg03xw9")
+  members_portfolios_member_idTomembers   members           @relation("portfolios_member_idTomembers", fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkonyc71oyvfe6f7u5ut93hwfbf")
+}
+
+model press_features {
+  id             BigInt   @id @default(autoincrement())
+  created_at     DateTime @db.Timestamp(6)
+  display_order  Int
+  logo_url       String?  @db.VarChar(500)
+  member_id      BigInt
+  publication    String   @db.VarChar(100)
+  published_date String?  @db.VarChar(20)
+  title          String?  @db.VarChar(200)
+  url            String?  @db.VarChar(500)
+}
+
+model pricing_packages {
+  id            BigInt   @id @default(autoincrement())
+  active        Boolean
+  created_at    DateTime @db.Timestamp(6)
+  description   String?
+  display_order Int
+  featured      Boolean
+  features      String?
+  member_id     BigInt
+  name          String   @db.VarChar(100)
+  price         Int?
+  price_label   String?  @db.VarChar(50)
+}
+
+model reports {
+  id                  BigInt    @id @default(autoincrement())
+  ai_analyzed_at      DateTime? @db.Timestamp(6)
+  ai_severity         String?   @db.VarChar(20)
+  ai_suggested_action String?   @db.VarChar(20)
+  ai_summary          String?   @db.VarChar(500)
+  created_at          DateTime  @db.Timestamp(6)
+  details             String?   @db.VarChar(500)
+  process_memo        String?   @db.VarChar(500)
+  processed_at        DateTime? @db.Timestamp(6)
+  processed_by_id     BigInt?
+  reason              String    @db.VarChar(100)
+  status              String    @db.VarChar(20)
+  target_id           BigInt
+  target_type         String    @db.VarChar(20)
+  reporter_id         BigInt?
+  members             members?  @relation(fields: [reporter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkstudkqwdqpfvo0xkc8kg8e5fb")
+}
+
+model security_audit_log {
+  id            BigInt   @id @default(autoincrement())
+  action_detail String?  @db.VarChar(500)
+  action_type   String   @db.VarChar(100)
+  created_at    DateTime @db.Timestamp(6)
+  error_message String?  @db.VarChar(500)
+  ip_address    String?  @db.VarChar(45)
+  member_id     BigInt?
+  role          String?  @db.VarChar(10)
+  success       Boolean
+
+  @@index([member_id], map: "idx_audit_member")
+}
+
+model series {
+  id              BigInt            @id @default(autoincrement())
+  cover_image_url String?           @db.VarChar(255)
+  created_at      DateTime          @db.Timestamp(6)
+  description     String?
+  display_order   Int
+  draft           Boolean?
+  featured_at     DateTime?         @db.Timestamp(6)
+  likes_count     Int
+  shoot_type      String?           @db.VarChar(30)
+  title           String            @db.VarChar(255)
+  updated_at      DateTime          @db.Timestamp(6)
+  view_count      Int
+  member_id       BigInt
+  portfolio_items portfolio_items[]
+  members         members           @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk9vdt246k8t9ba8jvqf3cnh3c6")
+  series_photos   series_photos[]
+}
+
+model series_photos {
+  id            BigInt @id @default(autoincrement())
+  display_order Int
+  photo_id      BigInt
+  series_id     BigInt
+  photos        photos @relation(fields: [photo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkj8y1prauf5udy0j8yaevxv39i")
+  series        series @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fknklmqtvt03g6krta3equah8uq")
+}
+
+model system_configs {
+  config_key   String    @id @db.VarChar(100)
+  description  String?   @db.VarChar(200)
+  updated_at   DateTime? @db.Timestamp(6)
+  config_value String
+}
+
+model testimonials {
+  id            BigInt   @id @default(autoincrement())
+  client_name   String   @db.VarChar(100)
+  client_role   String?  @db.VarChar(100)
+  content       String
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  featured      Boolean
+  member_id     BigInt
+  series_id     BigInt?
+  shoot_date    String?  @db.VarChar(20)
+}
+
+model verification_requests {
+  id             BigInt    @id @default(autoincrement())
+  bio            String?   @db.VarChar(500)
+  created_at     DateTime  @db.Timestamp(6)
+  portfolio_url  String?   @db.VarChar(500)
+  reject_reason  String?   @db.VarChar(500)
+  reviewed_at    DateTime? @db.Timestamp(6)
+  reviewed_by_id BigInt?
+  status         String    @db.VarChar(20)
+  member_id      BigInt
+  members        members   @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkpl9i82b89jot1rgtjhyfh0xth")
+}
