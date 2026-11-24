@@ -24,3 +24,12 @@ export async function insertResetToken(memberId: number, raw: string, minutes = 
 export async function closeDb() {
   await pool.end();
 }
+
+/** 모임 상태를 바로 바꾼다(배치가 시간에 따라 바꾸는 ONGOING·ENDED를 테스트에서 만들 때) */
+export async function setGatheringStatus(gatheringId: number, status: string) {
+  await pool.query('UPDATE gatherings SET status = $2 WHERE id = $1', [gatheringId, status]);
+}
+
+export async function setInstagramId(memberId: number, instagramId: string | null) {
+  await pool.query('UPDATE members SET instagram_id = $2 WHERE id = $1', [memberId, instagramId]);
+}

@@ -34,6 +34,7 @@ import { DeliveryController } from './delivery/delivery.controller.js';
 import { MeetController } from './meet/meet.controller.js';
 import { AnalyticsController } from './analytics/analytics.controller.js';
 import { GatheringController, GatheringNotificationController, GatheringPlacePollController } from './gathering/gathering.controller.js';
+import { GatheringPostController } from './gathering/gathering-post.controller.js';
 import { GatheringNotificationService } from './gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
 import { GatheringService } from './gathering/gathering.service.js';
@@ -47,7 +48,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController],
   providers: [
     PrismaService,
     JwtService,

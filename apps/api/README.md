@@ -53,7 +53,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `/api/meets/**`(전부 인증, 요청자·수신자 외 403) | `meet.test.ts` — `updated_at`은 Hibernate처럼 값이 바뀔 때만 갱신. 좌표는 Jackson이 `37.0`, 여기선 `37`로 직렬화(값은 같음) |
 | `/api/analytics/**`(`track`만 공개 — 작업·사진은 실제 작가 소유일 때만 기록, visitorToken 분당 60회) | `analytics.test.ts` — 저장 실패 시 Spring은 예외를 잡지만 트랜잭션이 rollback-only라 500, 여기서도 500 |
 | `/api/gatherings`(목록·상세 공개, CRUD·참여/대기자·취소 시 승격·모집 마감·참여자), `/api/gatherings/notifications/**`, `/api/gatherings/{id}/place-poll/**` | `gathering.test.ts` — 알림 응답의 읽음 키는 Lombok 규칙대로 `read` |
-| 아직 Spring: 모임 피드·앨범·Instagram, 스팟, 배치, 7단계(추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/gatherings/{id}/posts·album`(공개), 게시물 작성·삭제·좋아요·댓글, `instagram-candidates·instagram-share` | `gathering-post.test.ts` |
+| 아직 Spring: 스팟, 배치, 7단계(추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
