@@ -16,3 +16,7 @@ function toLong(value: string, name: string): number {
   if (!/^[+-]?\d+$/.test(v)) throw new Error(`Failed to convert ${name}: ${value}`);
   return Number(v);
 }
+
+export function optionalLong(value: string | undefined, name: string): number | undefined {
+  return value == null ? undefined : toLong(value, name);
+}

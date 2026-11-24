@@ -38,7 +38,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `POST /api/auth/oauth/kakao·google·naver`, `POST oauth/apple/callback`(폼 → 302) | `oauth.test.ts` — Apple만 오프라인 확인, 나머지 3개는 외부 공급자 호출이라 실패 응답 모양만 |
 | `GET·POST /api/photos/{id}/comments`(읽기 공개), `DELETE /api/comments/{id}`, `/api/follows/**`, `/api/blocks/**` | `social.test.ts` |
 | `POST /api/photos/{id}/report`·`/api/comments/{id}/report`(201), `/api/photos/reports/mine/**`, `/api/admin/reports/**`(WM/SA, Spring `PageImpl` 모양 그대로) | `report.test.ts` — 관리자 경로는 `AdminAuditInterceptor`가 `security_audit_log`(ADMIN_API)에 기록 |
-| 아직 Spring: `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| 사진 조회: `GET /api/photos`(필터·정렬·키워드 pg_trgm→LIKE·태그·조회순·page opt-in), `/suggestions`, `/{id}`, `/{id}/similar`, `/{id}/tags·likes·shares`, `/saves/{memberId}`, `/genres/stats` | `photo-read.test.ts` — `{status,data}` 래퍼, 키 `liked`·`saved` |
+| 아직 Spring: 사진 쓰기(등록·수정·삭제·좋아요·저장·공유·태그·순서·업로드·AI 태그), 피드, 업로드, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
@@ -47,6 +48,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 - Apple `id_token`은 서명을 검증하지 않고 페이로드만 읽는다(Spring과 같음 — 보안상 위험, 별도 작업으로 고칠 것).
 
 ## Spring과 의도적으로 다른 점
+- 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
 - 로그아웃 때 Redis가 죽어 있으면 Spring은 500(`TokenBlacklistService`에 예외 처리 없음), 여기서는 다른 Redis 사용처처럼 통과.
 - `@PreAuthorize`(WM/SA) 거부: Spring은 `AuthorizationDeniedException`을 전역 핸들러가 못 잡아 **500 C001**, 여기서는 403 B001. 계약 테스트는 "거부됨"만 공통으로 확인한다.

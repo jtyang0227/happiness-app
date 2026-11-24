@@ -21,12 +21,14 @@ import { FollowService } from './follow/follow.service.js';
 import { AdminAuditInterceptor } from './common/admin-audit.interceptor.js';
 import { ReportController } from './report/report.controller.js';
 import { ReportService } from './report/report.service.js';
+import { PhotoController } from './photo/photo.controller.js';
+import { PhotoQueryService } from './photo/photo-query.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController],
   providers: [
     PrismaService,
     JwtService,
@@ -41,6 +43,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     CommentService,
     FollowService,
     ReportService,
+    PhotoQueryService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
