@@ -2910,6 +2910,7 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - 발견(고치지 않고 기록): Spring `TokenBlacklistService.blacklist`는 Redis 예외를 안 잡아 Redis 장애 시 로그아웃이 500(다른 Redis 사용처는 fail-open). `@PreAuthorize` 거부(`AuthorizationDeniedException`)를 전역 핸들러가 못 잡아 일반 회원이 관리자 경로를 부르면 **500 C001**(Nest는 403 B001). Apple `id_token` 서명 미검증.
 - **Spring `XssProtectionFilter`가 모든 쿼리·폼 파라미터·헤더 값을 `escapeHtml4`로 바꾼다**(JSON 본문 제외) — Nest도 같은 표로 적용(`common/escape-html4.ts`·`xss-query.middleware.ts`). 쿼리 값을 쓰는 경로를 옮길 때 이 전제를 잊지 말 것.
 - 1~7단계 완료(2026-11-24) — Spring 컨트롤러 194개 경로 전부 + 배치 4개(같은 cron, `LEGACY_API_URL`이 있으면 기본 꺼짐 → `BATCH_ENABLED`). 계약 테스트 92개, 준비용 DB 조작은 `test/contract/db.ts`, Spring 버그를 고친 의도적 차이는 `IS_SPRING`으로만 분기. 응답 `LocalDateTime`은 Jackson처럼 소수 끝 0 제거.
+- 8·10단계(2026-11-24): 웹 `apps/web`(Next.js 16 Pages Router·React 18·정적 내보내기, 전 파일 TS — `apps/web/README.md`), 모바일 `mobile/` 전 파일 TS(`npm run typecheck`). 둘 다 `strict: false`로 시작, 화면 회귀는 스크린샷 픽셀 비교로 0. 운영 웹 배포는 컷오버 전까지 `frontend/`.
 - Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
 ---

@@ -1,0 +1,113 @@
+/**
+ * AuthContext.js — 모바일 인증 컨텍스트
+ *
+ * useAuth() 인터페이스를 유지하면서 내부를 보안 강화:
+ * - AccessToken: 메모리 (Zustand authStore)
+ * - RefreshToken + User: expo-secure-store (OS 암호화)
+ * - AsyncStorage에 토큰/사용자 정보 저장 금지
+ */
+
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import useAuthStore, { getAuthStore } from '../src/store/authStore';
+import { authMobileApi } from '../src/api/authMobileApi';
+import { secureStorage } from '../src/storage/secureStorage';
+import apiClient from '../src/api/apiClient';
+import { resetBlockedMembers } from '../hooks/useBlockedMembers';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
+  const store = useAuthStore();
+
+  // 앱 시작 시 SecureStore에서 토큰·사용자 복구
+  useEffect(() => {
+    store.initialize();
+  }, []);
+
+  // ── 로그인: JWT 응답 처리 + SecureStore 저장 ─────────────────────
+  const login = useCallback(async (email, password) => {
+    let res;
+    try {
+      res = await authMobileApi.login(email, password);
+    } catch (err) {
+      // axios 기본 문구("Request failed with status code 401") 대신 서버 사유를 보여 준다
+      const msg = err?.response?.data?.message;
+      if (msg) throw new Error(msg);
+      if (!err?.response) throw new Error('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해 주세요.');
+      if (err.response.status === 429) throw new Error('로그인 시도가 너무 많아요. 잠시 후 다시 시도해 주세요.');
+      if (err.response.status >= 500) throw new Error('서버에 일시적인 문제가 있어요. 잠시 후 다시 시도해 주세요.');
+      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
+    const payload = res.data;
+
+    if (!payload.success) {
+      throw new Error(payload.message || '로그인에 실패했습니다.');
+    }
+
+    const { accessToken, refreshToken, member } = payload.data;
+    await store.loginSuccess(accessToken, refreshToken, member);
+    return member;
+  }, [store]);
+
+  // ── 회원가입 ─────────────────────────────────────────────────────
+  const signup = useCallback(async (data) => {
+    const res = await authMobileApi.signup(data);
+    const payload = res.data;
+
+    if (!payload.success) {
+      throw new Error(payload.message || '회원가입에 실패했습니다.');
+    }
+    return payload.data;
+  }, []);
+
+  // ── 프로필 수정 ───────────────────────────────────────────────────
+  const updateProfile = useCallback(async (data) => {
+    const currentUser = getAuthStore().user;
+    if (!currentUser?.id) throw new Error('로그인이 필요합니다.');
+
+    const res = await apiClient.put(`/auth/member/${currentUser.id}/profile`, data);
+    const payload = res.data;
+
+    if (!payload.success) {
+      throw new Error(payload.message || '프로필 수정에 실패했습니다.');
+    }
+    const updated = payload.data;
+    await secureStorage.saveUser(updated);
+    // authStore user 갱신
+    useAuthStore.setState({ user: updated });
+    return updated;
+  }, []);
+
+  // ── 로그아웃: 서버 토큰 무효화 + SecureStore 삭제 ────────────────
+  const logout = useCallback(async (allDevices = false) => {
+    try {
+      const deviceId = await secureStorage.getOrCreateDeviceId();
+      await apiClient.post('/auth/logout', { deviceId, allDevices });
+    } catch {
+      // 서버 오류와 무관하게 로컬 로그아웃 진행
+    } finally {
+      resetBlockedMembers();   // 다음 로그인 회원에게 이전 회원의 차단 목록이 남지 않게
+      await store.logout();
+    }
+  }, [store]);
+
+  return (
+    <AuthContext.Provider value={{
+      user:            store.user,
+      isAuthenticated: store.isAuthenticated,
+      loading:         !store.isInitialized,
+      login,
+      signup,
+      updateProfile,
+      logout,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth는 AuthProvider 내부에서 사용해야 합니다.');
+  return ctx;
+};

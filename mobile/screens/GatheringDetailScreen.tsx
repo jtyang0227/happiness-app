@@ -1,0 +1,1014 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert, FlatList, Image, Linking, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import { gatheringApi } from '../src/api/gatheringApi';
+import { useAuth } from '../store/AuthContext';
+import { COLORS } from '../constants/colors';
+import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { SUPPORT_EMAIL, WEB_ORIGIN } from '../constants/config';
+import useBlockedMembers, { blockMember } from '../hooks/useBlockedMembers';
+
+const STATUS_STYLE = {
+  RECRUITING:         { label: '모집중',    bg: 'rgba(0,196,113,0.12)',  color: '#00C471' },
+  RECRUITMENT_CLOSED: { label: '모집마감',  bg: 'rgba(255,184,0,0.12)',  color: '#E6A800' },
+  SCHEDULED:          { label: '진행예정',  bg: 'rgba(49,130,246,0.12)', color: COLORS.primary },
+  ONGOING:            { label: '진행중',    bg: 'rgba(168,85,247,0.12)', color: '#A855F7' },
+  ENDED:              { label: '종료',      bg: 'rgba(144,144,176,0.15)', color: COLORS.textMuted },
+};
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function formatDateTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function relativeTime(dateStr) {
+  if (!dateStr) return '';
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return '방금';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return `${Math.floor(diff / 86400)}일 전`;
+}
+
+// ── 모임 정보 카드 ────────────────────────────────────────────────────
+function GatheringInfoCard({ gathering }: { gathering?: any }) {
+  const statusStyle = STATUS_STYLE[gathering.status] || STATUS_STYLE.RECRUITING;
+  return (
+    <View style={styles.infoCard}>
+      {gathering.thumbnailUrl ? (
+        <Image source={{ uri: gathering.thumbnailUrl }} style={styles.coverImage} />
+      ) : (
+        <View style={[styles.coverImage, styles.coverPlaceholder]}>
+          <Text style={styles.coverIcon}>📷</Text>
+        </View>
+      )}
+      <View style={styles.infoBody}>
+        <View style={styles.infoTopRow}>
+          <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
+            <Text style={[styles.badgeText, { color: statusStyle.color }]}>{statusStyle.label}</Text>
+          </View>
+          {gathering.beginnerFriendly ? (
+            <View style={[styles.badge, { backgroundColor: COLORS.successTonal, marginLeft: 6 }]}>
+              <Text style={[styles.badgeText, { color: COLORS.successText }]}>🌱 초보 환영</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.infoTitle}>{gathering.title}</Text>
+        {gathering.description ? (
+          <Text style={styles.infoDesc} numberOfLines={3}>{gathering.description}</Text>
+        ) : null}
+        <View style={styles.infoMetaList}>
+          <Text style={styles.infoMeta}>📍 {gathering.location}</Text>
+          {gathering.spotId ? (
+            <TouchableOpacity accessibilityRole="link" accessibilityLabel={`${gathering.spotName || '출사 스팟'} 스팟 보기`}
+              onPress={() => Linking.openURL(`${WEB_ORIGIN}/spots/${gathering.spotId}`).catch(() => {})}
+              style={styles.spotLink}>
+              <Text style={styles.spotLinkText}>출사 스팟 「{gathering.spotName}」 보기 →</Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={styles.infoMeta}>🗓 {formatDateTime(gathering.startDateTime)}</Text>
+          {gathering.endDateTime && (
+            <Text style={styles.infoMeta}>    ~ {formatDateTime(gathering.endDateTime)}</Text>
+          )}
+          <Text style={styles.infoMeta}>
+            👥 참여자 {gathering.participantCount}/{gathering.maxParticipants}명
+            {gathering.waitingCount > 0 ? ` (대기 ${gathering.waitingCount}명)` : ''}
+          </Text>
+          {gathering.fee && <Text style={styles.infoMeta}>💰 {gathering.fee}</Text>}
+          {gathering.hashtags && (
+            <Text style={styles.infoHashtags}>{gathering.hashtags}</Text>
+          )}
+        </View>
+        {gathering.portraitConsentRule ? (
+          <View style={styles.consentNote} accessibilityRole="text">
+            <Text style={styles.consentText}>🤝 사람을 찍을 땐 먼저 동의를 받아 주세요. 모델이 아닌 행인·참여자도 마찬가지예요.</Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+// ── 장소 투표 (후보가 있을 때만) ──────────────────────────────────────
+function PlacePollSection({ gatheringId, canVote }: { gatheringId?: any; canVote?: any }) {
+  const [poll, setPoll] = useState(null);
+  const [voting, setVoting] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    gatheringApi.getPlacePoll(gatheringId).then(p => { if (alive) setPoll(p); }).catch(() => {});
+    return () => { alive = false; };
+  }, [gatheringId]);
+
+  if (!poll || !poll.options || poll.options.length === 0) return null;
+  const total = poll.totalVotes || 0;
+  const interactive = poll.open && canVote;
+
+  const vote = async (optionId) => {
+    if (voting || optionId === poll.myOptionId) return;
+    setVoting(optionId);
+    try {
+      setPoll(await gatheringApi.votePlace(gatheringId, optionId));
+    } catch (e) {
+      Alert.alert('투표하지 못했어요', e.response?.data?.message || '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setVoting(null);
+    }
+  };
+
+  return (
+    <View style={styles.pollCard}>
+      <Text style={styles.pollTitle}>🗳 장소 투표</Text>
+      <Text style={styles.pollSub}>
+        {poll.open ? `참여 신청한 사람이 골라요 · ${total}표` : poll.winnerOptionId ? `투표가 끝났어요 · ${total}표` : '투표가 끝났어요 · 장소는 그대로예요'}
+      </Text>
+      {poll.options.map(o => {
+        const pct = total ? Math.round((o.voteCount / total) * 100) : 0;
+        const mine = poll.myOptionId === o.id;
+        const won = poll.winnerOptionId === o.id;
+        return (
+          <TouchableOpacity key={o.id} disabled={!interactive || voting !== null} onPress={() => vote(o.id)}
+            accessibilityRole="button" accessibilityState={{ selected: mine, disabled: !interactive }}
+            accessibilityLabel={`${o.label}, ${o.voteCount}표${mine ? ', 내가 고른 곳' : ''}${won ? ', 정해진 장소' : ''}`}
+            style={[styles.pollOption, (mine || won) && styles.pollOptionActive]}>
+            <View style={[styles.pollBar, { width: `${pct}%` }]} />
+            <Text style={[styles.pollLabel, (mine || won) && { fontWeight: '700' }]} numberOfLines={1}>
+              {won ? '✓ ' : ''}{o.spotId ? '📍 ' : ''}{o.label}{mine ? ' · 내 선택' : ''}
+            </Text>
+            <Text style={styles.pollCount}>{voting === o.id ? '…' : `${o.voteCount}표`}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+// ── 참여 버튼 (RECRUITING) ────────────────────────────────────────────
+function ParticipationBar({ gatheringId, myStatus, onStatusChange }: { gatheringId?: any; myStatus?: any; onStatusChange?: (...args: any[]) => any }) {
+  const [loading, setLoading] = useState(false);
+  const isParticipating = myStatus === 'PARTICIPATING' || myStatus === 'WAITING';
+
+  const handleRespond = async (status) => {
+    const confirmMsg = status === 'PARTICIPATING'
+      ? '이 모임에 참여 신청할까요?'
+      : '참여 신청을 취소할까요?';
+    Alert.alert(
+      status === 'PARTICIPATING' ? '참여 신청' : '참여 취소',
+      confirmMsg,
+      [
+        { text: '아니오', style: 'cancel' },
+        {
+          text: '예',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              if (status === 'NOT_PARTICIPATING') {
+                await gatheringApi.cancelParticipation(gatheringId);
+                onStatusChange('CANCELLED');
+              } else {
+                const res = await gatheringApi.respond(gatheringId, status);
+                // 정원 초과 시 서버가 WAITING 반환
+                const resultStatus = res?.status || status;
+                if (resultStatus === 'WAITING') {
+                  Alert.alert('대기자 등록', '정원이 꽉 찼어요. 대기자로 등록되었습니다. 자리가 생기면 자동으로 참여 확정돼요.');
+                }
+                onStatusChange(resultStatus);
+              }
+            } catch (e) {
+              Alert.alert('오류', e.response?.data?.message || '요청에 실패했습니다. 다시 시도해주세요.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (myStatus === 'CANCELLED' || myStatus === null) {
+    return (
+      <View style={styles.participationBar}>
+        <TouchableOpacity
+          style={[styles.participateBtn, loading && styles.btnDisabled]}
+          onPress={() => handleRespond('PARTICIPATING')}
+          disabled={loading}
+        >
+          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.participateBtnText}>참여 신청하기 ✓</Text>}
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isParticipating) {
+    return (
+      <View style={styles.participationBar}>
+        <View style={styles.participatingLabel}>
+          <Text style={styles.participatingText}>
+            {myStatus === 'WAITING' ? '⏳ 대기자로 등록되어 있어요.' : '✓ 참여 신청 완료'}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.cancelBtn, loading && styles.btnDisabled]}
+          onPress={() => handleRespond('NOT_PARTICIPATING')}
+          disabled={loading}
+        >
+          <Text style={styles.cancelBtnText}>취소</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return null;
+}
+
+// ── 피드 게시물 카드 ──────────────────────────────────────────────────
+// 좋아요/댓글은 서버가 PARTICIPATING 참여자만 허용한다. 내 참여 상태를 조회하는 엔드포인트가 없어
+// 로그인 회원에게 컨트롤을 보여주고, 서버 거절(403) 시 안내 Alert로 대응한다.
+function interactionErrorMessage(e) {
+  if (e?.response?.status === 403) return '모임 참여자만 좋아요와 댓글을 남길 수 있어요.';
+  return e?.response?.data?.message || '잠시 후 다시 시도해주세요.';
+}
+
+/** 모임 게시물 신고·작성자 차단 — 모임 게시물은 신고 API가 없어 신고는 운영팀 메일로 받는다 */
+function openPostSafetyMenu(post, gatheringId) {
+  Alert.alert('게시물 신고·차단', `${post.memberName || '작성자'}님의 게시물`, [
+    {
+      text: '신고하기',
+      onPress: () => {
+        const subject = encodeURIComponent(`[게시물 신고] 모임 ${gatheringId} / 게시물 ${post.id}`);
+        const body = encodeURIComponent('신고 사유를 적어 주세요:\n\n');
+        Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`)
+          .catch(() => Alert.alert('메일 앱을 열 수 없어요', `${SUPPORT_EMAIL}로 게시물 번호 ${post.id}와 사유를 보내 주세요.`));
+      },
+    },
+    {
+      text: '작성자 차단', style: 'destructive',
+      onPress: () => blockMember(post.memberId)
+        .then(() => Alert.alert('차단했어요', '이 회원의 게시물과 댓글이 더 이상 보이지 않아요.'))
+        .catch(e => Alert.alert('차단하지 못했어요', e.response?.data?.message || '잠시 후 다시 시도해 주세요.')),
+    },
+    { text: '취소', style: 'cancel' },
+  ]);
+}
+
+function PostCard({ post, gatheringId, myStatus, navigation, canInteract, isMine, isBlocked }: { post?: any; gatheringId?: any; myStatus?: any; navigation?: any; canInteract?: any; isMine?: any; isBlocked?: any }) {
+  const hasPhotos = post.photos && post.photos.length > 0;
+  const canShare = hasPhotos && (myStatus === 'PARTICIPATING' || myStatus === 'WAITING');
+
+  const [liked, setLiked] = useState(!!post.likedByMe);
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [liking, setLiking] = useState(false);
+  const [comments, setComments] = useState(post.comments || []);
+  const [commentText, setCommentText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const toggleLike = async () => {
+    if (liking) return;
+    const next = !liked;
+    setLiked(next);
+    setLikeCount(c => c + (next ? 1 : -1));
+    setLiking(true);
+    try {
+      if (next) await gatheringApi.likePost(post.id);
+      else await gatheringApi.unlikePost(post.id);
+    } catch (e) {
+      setLiked(!next);
+      setLikeCount(c => c + (next ? -1 : 1));
+      Alert.alert('좋아요 실패', interactionErrorMessage(e));
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const submitComment = async () => {
+    const content = commentText.trim();
+    if (!content || sending) return;
+    setSending(true);
+    try {
+      const created = await gatheringApi.addComment(post.id, content);
+      setComments(prev => [...prev, created]);
+      setCommentText('');
+    } catch (e) {
+      Alert.alert('댓글 작성 실패', interactionErrorMessage(e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <View style={styles.postCard}>
+      {/* 작성자 정보 */}
+      <View style={styles.postAuthorRow}>
+        <View style={styles.postAvatar}>
+          {post.memberAvatarUrl ? (
+            <Image source={{ uri: post.memberAvatarUrl }} style={styles.postAvatarImg} />
+          ) : (
+            <Text style={styles.postAvatarText}>{(post.memberName || '?').charAt(0)}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.postAuthorName}>{post.memberName}</Text>
+          <Text style={styles.postTime}>{relativeTime(post.createdAt)}</Text>
+        </View>
+        {canInteract && !isMine && (
+          <TouchableOpacity onPress={() => openPostSafetyMenu(post, gatheringId)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel="게시물 신고 또는 작성자 차단">
+            <Text style={styles.postTime}>🚩 신고</Text>
+          </TouchableOpacity>
+        )}
+        {canShare && (
+          <TouchableOpacity
+            style={styles.igShareBtn}
+            onPress={() => navigation.navigate('GatheringInstagramShare', {
+              gatheringId: gatheringId,
+              photoUrl: post.photos[0].imageUrl,
+              postId: post.id,
+            })}
+          >
+            <Text style={styles.igShareBtnText}>📷 공유</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* 내용 */}
+      {post.wantsFeedback ? <Text style={styles.feedbackChip}>💬 피드백 원해요</Text> : null}
+      {post.content ? <Text style={styles.postContent}>{post.content}</Text> : null}
+      {post.hashtags ? <Text style={styles.postHashtags}>{post.hashtags}</Text> : null}
+
+      {/* 사진들 (가로 스크롤) */}
+      {hasPhotos && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.photoScrollWrap}
+          contentContainerStyle={styles.photoScrollContent}
+        >
+          {post.photos.map((photo) => (
+            <Image key={photo.id} source={{ uri: photo.imageUrl }} style={styles.postPhoto} />
+          ))}
+        </ScrollView>
+      )}
+
+      {/* 좋아요 / 댓글 수 */}
+      <View style={styles.postMetaRow}>
+        {canInteract ? (
+          <TouchableOpacity
+            onPress={toggleLike}
+            disabled={liking}
+            accessibilityRole="button"
+            accessibilityLabel={liked ? '좋아요 취소' : '좋아요'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.postMetaText, liked && styles.postMetaLiked]}>
+              {liked ? '❤️' : '🤍'} {likeCount}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.postMetaText}>❤️ {likeCount}</Text>
+        )}
+        <Text style={styles.postMetaText}>💬 {comments.length}</Text>
+      </View>
+
+      {/* 댓글 목록 */}
+      {comments.length > 0 && (
+        <View style={styles.commentList}>
+          {comments.filter(c => !isBlocked(c.memberId)).map(c => (
+            <Text key={c.id} style={styles.commentText}>
+              <Text style={styles.commentAuthor}>{c.memberName} </Text>
+              {c.content}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* 댓글 입력 */}
+      {canInteract && (
+        <View style={styles.commentInputRow}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="댓글 달기..."
+            placeholderTextColor={COLORS.textMuted}
+            value={commentText}
+            onChangeText={setCommentText}
+            maxLength={500}
+            onSubmitEditing={submitComment}
+            returnKeyType="send"
+            editable={!sending}
+          />
+          <TouchableOpacity
+            onPress={submitComment}
+            disabled={!commentText.trim() || sending}
+            accessibilityRole="button"
+            accessibilityLabel="댓글 등록"
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Text style={[styles.commentSend, !commentText.trim() && { color: COLORS.textMuted }]}>등록</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── 마감/예정 상태 배너 ────────────────────────────────────────────────
+function StatusBanner({ status }: { status?: any }) {
+  if (status === 'RECRUITMENT_CLOSED') {
+    return (
+      <View style={[styles.statusBanner, { backgroundColor: 'rgba(255,184,0,0.10)' }]}>
+        <Text style={[styles.statusBannerText, { color: '#E6A800' }]}>
+          모집이 마감되었어요. 모임 시작을 기다려주세요.
+        </Text>
+      </View>
+    );
+  }
+  if (status === 'SCHEDULED') {
+    return (
+      <View style={[styles.statusBanner, { backgroundColor: 'rgba(49,130,246,0.10)' }]}>
+        <Text style={[styles.statusBannerText, { color: COLORS.primary }]}>
+          모집이 완료됐어요! 모임 날짜를 기다려주세요.
+        </Text>
+      </View>
+    );
+  }
+  return null;
+}
+
+// ── 메인 스크린 ───────────────────────────────────────────────────────
+export default function GatheringDetailScreen({ route, navigation }: { route?: any; navigation?: any }) {
+  const { gatheringId } = route.params;
+  const { user } = useAuth();
+  const { isBlocked } = useBlockedMembers(!!user);   // 차단한 회원의 게시물·댓글은 숨김
+
+  const [gathering, setGathering] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const [feed, setFeed] = useState([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedPage, setFeedPage] = useState(0);
+  const [feedHasMore, setFeedHasMore] = useState(true);
+
+  // 내 참여 상태를 로컬 state로 추적 (별도 조회 엔드포인트 없음)
+  const [myStatus, setMyStatus] = useState(null); // null = unknown
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(false);
+    try {
+      const res = await gatheringApi.getDetail(gatheringId);
+      const g = res?.data || res;
+      setGathering(g);
+
+      if (g.status === 'ONGOING' || g.status === 'ENDED') {
+        loadFeed(g, 0, true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [gatheringId]);
+
+  const loadFeed = useCallback(async (g, page, reset = false) => {
+    if (!g && !gathering) return;
+    setFeedLoading(true);
+    try {
+      const res = await gatheringApi.getFeed(gatheringId, page, 20);
+      const items = res?.content || res?.data?.content || (Array.isArray(res) ? res : []);
+      setFeed(prev => reset ? items : [...prev, ...items]);
+      setFeedHasMore(items.length === 20);
+      setFeedPage(page);
+    } catch {
+      // 400: 아직 ONGOING/ENDED가 아닌 경우 — 무음 처리
+    } finally {
+      setFeedLoading(false);
+    }
+  }, [gatheringId, gathering]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleLoadMoreFeed = () => {
+    if (feedLoading || !feedHasMore || !gathering) return;
+    loadFeed(gathering, feedPage + 1);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (error || !gathering) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>모임 정보를 불러오지 못했어요.</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryBtnText}>다시 시도</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const isOngoingOrEnded = gathering.status === 'ONGOING' || gathering.status === 'ENDED';
+  const isRecruiting = gathering.status === 'RECRUITING';
+
+  const renderFeedItem = ({ item }: { item?: any }) => (
+    <PostCard
+      post={item}
+      gatheringId={gatheringId}
+      myStatus={myStatus}
+      navigation={navigation}
+      canInteract={!!user}
+      isMine={!!user && item.memberId === user.id}
+      isBlocked={isBlocked}
+    />
+  );
+
+  return (
+    <FlatList
+      style={styles.container}
+      data={isOngoingOrEnded ? feed.filter(p => !isBlocked(p.memberId)) : []}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={renderFeedItem}
+      onEndReached={handleLoadMoreFeed}
+      onEndReachedThreshold={0.3}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={
+        <>
+          {/* 모임 정보 카드 */}
+          <GatheringInfoCard gathering={gathering} />
+
+          {/* 장소 투표 */}
+          <PlacePollSection gatheringId={gatheringId} canVote={!!user} />
+
+          {/* 참여 신청 바 (모집중) */}
+          {isRecruiting && user && (
+            <ParticipationBar
+              gatheringId={gatheringId}
+              myStatus={myStatus}
+              onStatusChange={setMyStatus}
+            />
+          )}
+
+          {/* 마감/예정 배너 */}
+          <StatusBanner status={gathering.status} />
+
+          {/* 피드 섹션 헤더 */}
+          {isOngoingOrEnded && (
+            <View style={styles.feedHeader}>
+              <Text style={styles.feedHeaderTitle}>
+                {gathering.status === 'ENDED' ? '📸 모임 피드' : '📸 실시간 피드'}
+              </Text>
+              {!user && (
+                <Text style={styles.feedLoginHint}>공유하려면 로그인하세요.</Text>
+              )}
+            </View>
+          )}
+
+          {feedLoading && feed.length === 0 && (
+            <View style={styles.feedLoadingWrap}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            </View>
+          )}
+        </>
+      }
+      ListEmptyComponent={
+        isOngoingOrEnded && !feedLoading ? (
+          <View style={styles.feedEmpty}>
+            <Text style={styles.feedEmptyIcon}>🌅</Text>
+            <Text style={styles.feedEmptyText}>아직 게시물이 없어요.</Text>
+          </View>
+        ) : null
+      }
+      ListFooterComponent={
+        feedLoading && feed.length > 0 ? (
+          <ActivityIndicator size="small" color={COLORS.primary} style={styles.footerLoader} />
+        ) : null
+      }
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  listContent: {
+    paddingBottom: 80,
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.bg,
+    gap: 12,
+  },
+  errorText: {
+    fontSize: FONT.base,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  retryBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+
+  // Info Card
+  infoCard: {
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    marginBottom: SPACING.md,
+  },
+  coverImage: {
+    width: '100%',
+    height: 200,
+  },
+  coverPlaceholder: {
+    backgroundColor: COLORS.inputBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverIcon: {
+    fontSize: 52,
+  },
+  infoBody: {
+    padding: SPACING.lg,
+  },
+  infoTopRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  infoTitle: {
+    fontSize: FONT.xl,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  infoDesc: {
+    fontSize: FONT.sm,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  infoMetaList: {
+    gap: 5,
+  },
+  infoMeta: {
+    fontSize: FONT.sm,
+    color: COLORS.textSecondary,
+  },
+  spotLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  spotLinkText: {
+    fontSize: FONT.sm,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  consentNote: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  consentText: {
+    fontSize: FONT.sm,
+    lineHeight: 20,
+    color: COLORS.textSecondary,
+  },
+  pollCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  pollTitle: {
+    fontSize: FONT.md,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  pollSub: {
+    fontSize: FONT.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  pollOption: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    backgroundColor: COLORS.white,
+  },
+  pollOptionActive: {
+    borderColor: COLORS.primary,
+  },
+  pollBar: {
+    position: 'absolute',
+    left: 0, top: 0, bottom: 0,
+    backgroundColor: COLORS.tagBg,
+  },
+  pollLabel: {
+    flex: 1,
+    fontSize: FONT.sm,
+    color: COLORS.textPrimary,
+  },
+  pollCount: {
+    fontSize: FONT.xs,
+    color: COLORS.textSecondary,
+    marginLeft: 8,
+  },
+  infoHashtags: {
+    fontSize: FONT.sm,
+    color: COLORS.primary,
+    marginTop: 4,
+  },
+
+  // Participation Bar
+  participationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.md,
+    gap: 10,
+  },
+  participateBtn: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  participateBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: FONT.base,
+  },
+  participatingLabel: {
+    flex: 1,
+  },
+  participatingText: {
+    fontSize: FONT.sm,
+    color: '#00C471',
+    fontWeight: '600',
+  },
+  cancelBtn: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  cancelBtnText: {
+    fontSize: FONT.sm,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+
+  // Status Banner
+  statusBanner: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
+  statusBannerText: {
+    fontSize: FONT.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Feed
+  feedHeader: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.bg,
+  },
+  feedHeaderTitle: {
+    fontSize: FONT.md,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  feedLoginHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  feedLoadingWrap: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  feedEmpty: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  feedEmptyIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  feedEmptyText: {
+    fontSize: FONT.md,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
+  footerLoader: {
+    padding: SPACING.lg,
+  },
+
+  // Post Card
+  postCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.md,
+    marginBottom: 10,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  postAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.md,
+    gap: 10,
+  },
+  postAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  postAvatarImg: {
+    width: 36,
+    height: 36,
+  },
+  postAvatarText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  postAuthorName: {
+    fontSize: FONT.sm,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  postTime: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  igShareBtn: {
+    backgroundColor: 'rgba(168,85,247,0.10)',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.25)',
+  },
+  igShareBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#A855F7',
+  },
+  feedbackChip: {
+    alignSelf: 'flex-start',
+    marginHorizontal: SPACING.md,
+    marginTop: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: COLORS.tagBg,
+    color: COLORS.primaryDark,
+    fontSize: FONT.xs,
+    fontWeight: '700',
+  },
+  postContent: {
+    fontSize: FONT.sm,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  postHashtags: {
+    fontSize: 12,
+    color: COLORS.primary,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  photoScrollWrap: {
+    marginBottom: SPACING.sm,
+  },
+  photoScrollContent: {
+    paddingHorizontal: SPACING.md,
+    gap: 8,
+  },
+  postPhoto: {
+    width: 200,
+    height: 200,
+    borderRadius: RADIUS.md,
+  },
+  postMetaRow: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  postMetaText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  postMetaLiked: {
+    color: COLORS.danger,
+    fontWeight: '600',
+  },
+  commentList: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    gap: 4,
+  },
+  commentText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
+  },
+  commentAuthor: {
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 6,
+  },
+  commentSend: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+});

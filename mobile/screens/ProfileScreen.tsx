@@ -1,0 +1,580 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, Alert, ActivityIndicator, Image, Linking, Share, RefreshControl,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../store/AuthContext';
+import { photoApi, authApi } from '../services/api';
+import { COLORS } from '../constants/colors';
+import { FONT, RADIUS, SPACING } from '../constants/layout';
+import { getPortfolioUrl } from '../src/utils/portfolioUrl';
+import { ensureLibraryAccess } from '../utils/uploadImage';
+
+const PROFILE_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$|^[a-z0-9]{1,2}$/;
+const SPECIALTIES_OPTIONS = ['웨딩', '포트레이트', '풍경', '제품', '음식', '건축', '스트릿', '패션', '스포츠', '반려동물'];
+
+export default function ProfileScreen({ navigation = {} }: { navigation?: Record<string, any> }) {
+  const { user, updateProfile, logout } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [form, setForm] = useState({
+    name:        user?.name        || '',
+    tel:         user?.tel         || '',
+    profileName: user?.profileName || '',
+    instagramId: user?.instagramId || '',
+    bio:         user?.bio         || '',
+    websiteUrl:  user?.websiteUrl  || '',
+    location:    user?.location    || '',
+    specialties: user?.specialties ? user.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
+  });
+  const [avatarUri, setAvatarUri] = useState(user?.avatarUrl || null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadStats = React.useCallback(() => {
+    if (!user?.id) return Promise.resolve();
+    return authApi.getStats(user.id)
+      .then(res => setStats(res.data?.data || res.data))
+      .catch(() => {});
+  }, [user?.id]);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadStats().finally(() => setRefreshing(false));
+  };
+
+  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const toggleSpecialty = (s) => {
+    setForm(f => {
+      const cur = f.specialties || [];
+      return { ...f, specialties: cur.includes(s) ? cur.filter(x => x !== s) : [...cur, s] };
+    });
+  };
+
+  const initials = (user?.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const handleAvatarPick = async () => {
+    if (!(await ensureLibraryAccess())) { Alert.alert('권한 필요', '사진 라이브러리 접근 권한이 필요합니다.'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      setAvatarUploading(true);
+      try {
+        const formData = new FormData();
+        const filename = asset.uri.split('/').pop();
+        formData.append('file', { uri: asset.uri, name: filename, type: 'image/jpeg' } as any);
+        const res = await photoApi.uploadFile(formData);
+        const url = res.url || res.data?.url;
+        if (url) {
+          await updateProfile({ avatarUrl: url });
+        }
+      } catch { Alert.alert('오류', '아바타 업로드에 실패했습니다.'); }
+      finally { setAvatarUploading(false); }
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { Alert.alert('오류', '이름은 필수입니다.'); return; }
+    if (form.profileName && !PROFILE_NAME_REGEX.test(form.profileName.toLowerCase())) {
+      Alert.alert('오류', '포트폴리오 이름은 소문자·숫자·하이픈(3-30자)만 사용 가능합니다.'); return;
+    }
+    const instagram = form.instagramId.replace(/^@/, '');
+    setSaving(true);
+    try {
+      await updateProfile({
+        name:        form.name.trim(),
+        tel:         form.tel.trim(),
+        profileName: form.profileName.trim().toLowerCase() || undefined,
+        instagramId: instagram || undefined,
+        bio:         form.bio.trim() || undefined,
+        websiteUrl:  form.websiteUrl.trim() || undefined,
+        location:    form.location.trim() || undefined,
+        specialties: form.specialties.join(',') || undefined,
+      });
+      setEditing(false);
+      Alert.alert('완료', '프로필이 저장되었습니다.');
+    } catch (err) {
+      Alert.alert('오류', err.message || '저장 중 오류가 발생했습니다.');
+    } finally { setSaving(false); }
+  };
+
+  // 회원 탈퇴 — 앱 안에서 바로 (Apple 5.1.1(v)·Google Play 계정 삭제 정책). 되돌릴 수 없어 두 번 확인한다.
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteAccount = () => {
+    Alert.alert('회원 탈퇴',
+      '탈퇴하면 계정과 함께 올린 사진·시리즈·댓글·보드가 모두 삭제되고 되돌릴 수 없어요.', [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '계속', style: 'destructive',
+          onPress: () => Alert.alert('정말 탈퇴할까요?', '이 작업은 취소할 수 없습니다.', [
+            { text: '취소', style: 'cancel' },
+            {
+              text: '탈퇴하기', style: 'destructive',
+              onPress: async () => {
+                setDeleting(true);
+                try {
+                  await authApi.deleteAccount(user.id);
+                  await logout();
+                  Alert.alert('탈퇴가 완료됐어요', '그동안 Happiness를 이용해 주셔서 감사합니다.');
+                } catch (err) {
+                  setDeleting(false);
+                  Alert.alert('탈퇴하지 못했어요', err.response?.data?.message || '잠시 후 다시 시도해 주세요.');
+                }
+              },
+            },
+          ]),
+        },
+      ]);
+  };
+
+  const handleLogout = () => {
+    Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '로그아웃', style: 'destructive', onPress: logout },
+    ]);
+  };
+
+  const handleOpenPortfolio = () => {
+    const url = getPortfolioUrl(user?.profileName);
+    if (!url) {
+      Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+      return;
+    }
+    Linking.openURL(url).catch(() => {
+      Alert.alert('열기 실패', '브라우저를 열 수 없습니다.');
+    });
+  };
+
+  const handleSharePortfolio = () => {
+    const url = getPortfolioUrl(user?.profileName);
+    if (!url) {
+      Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+      return;
+    }
+    Share.share({ message: `${user?.name || '작가'}님의 포트폴리오를 확인해보세요\n${url}`, url }).catch(() => {});
+  };
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+      }
+    >
+      {/* 아바타 */}
+      <View style={styles.avatarSection}>
+        <TouchableOpacity onPress={editing ? handleAvatarPick : undefined} style={styles.avatarWrap}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
+          {avatarUploading && (
+            <View style={styles.avatarOverlay}>
+              <ActivityIndicator color="#fff" />
+            </View>
+          )}
+          {editing && !avatarUploading && (
+            <View style={styles.avatarEditBadge}>
+              <Text style={styles.avatarEditIcon}>📷</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.userName}>{user?.name}</Text>
+        {user?.profileName && (
+          <View style={styles.subdomainBadge}>
+            <Text style={styles.subdomainText}>✦ happiness.io.kr/portfolio/{user.profileName}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* 통계 */}
+      {stats && (
+        <View style={styles.statsRow}>
+          <StatItem label="작품" value={stats.photoCount ?? 0} />
+          <StatItem label="좋아요" value={stats.totalLikes ?? 0} />
+          <StatItem label="저장" value={stats.totalSaves ?? 0} />
+          <StatItem label="문의" value={stats.inquiryCount ?? 0} />
+        </View>
+      )}
+
+      {/* 이메일 */}
+      <View style={styles.emailRow}>
+        <Text style={styles.emailLabel}>이메일</Text>
+        <Text style={styles.emailValue}>{user?.email}</Text>
+      </View>
+
+      {/* 프로필 카드 */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>프로필 정보</Text>
+          {!editing && (
+            <TouchableOpacity onPress={() => setEditing(true)}>
+              <Text style={styles.editBtn}>편집</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <InfoRow label="이름 *" editing={editing} value={form.name} onChangeText={v => set('name', v)} placeholder="홍길동" />
+        <InfoRow label="전화번호" editing={editing} value={form.tel} onChangeText={v => set('tel', v)}
+          placeholder="010-0000-0000" keyboardType="phone-pad" />
+
+        {/* 포트폴리오 이름 */}
+        <View style={styles.group}>
+          <Text style={styles.fieldLabel}>포트폴리오 이름</Text>
+          {editing ? (
+            <>
+              <Text style={styles.fieldHint}>소문자·숫자·하이픈, 3-30자</Text>
+              <View style={styles.profileNameRow}>
+                <Text style={styles.domainSuffix}>/portfolio/</Text>
+                <TextInput
+                  style={[styles.input, styles.profileNameInput]}
+                  value={form.profileName}
+                  onChangeText={v => set('profileName', v.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="my-portfolio"
+                  placeholderTextColor={COLORS.textHint}
+                  autoCapitalize="none" autoCorrect={false}
+                />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.fieldValue}>
+              {user?.profileName ? `happiness.io.kr/portfolio/${user.profileName}` : '미설정'}
+            </Text>
+          )}
+        </View>
+
+        {/* 인스타그램 */}
+        <View style={styles.group}>
+          <Text style={styles.fieldLabel}>인스타그램</Text>
+          {editing ? (
+            <View style={styles.instagramRow}>
+              <Text style={styles.atPrefix}>@</Text>
+              <TextInput
+                style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
+                value={form.instagramId.replace(/^@/, '')}
+                onChangeText={v => set('instagramId', v.replace(/^@/, ''))}
+                placeholder="your_instagram"
+                placeholderTextColor={COLORS.textHint}
+                autoCapitalize="none" autoCorrect={false}
+              />
+            </View>
+          ) : (
+            <Text style={styles.fieldValue}>
+              {user?.instagramId ? `@${user.instagramId}` : '미설정'}
+            </Text>
+          )}
+        </View>
+
+        {/* 소개 */}
+        <View style={styles.group}>
+          <Text style={styles.fieldLabel}>소개</Text>
+          {editing ? (
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              value={form.bio}
+              onChangeText={v => set('bio', v)}
+              placeholder="간단한 소개를 입력하세요"
+              placeholderTextColor={COLORS.textHint}
+              multiline
+            />
+          ) : (
+            <Text style={styles.fieldValue}>{form.bio || '미설정'}</Text>
+          )}
+        </View>
+
+        {/* 웹사이트 */}
+        <InfoRow label="웹사이트" editing={editing} value={form.websiteUrl}
+          onChangeText={v => set('websiteUrl', v)} placeholder="https://..." keyboardType="url" />
+
+        {/* 위치 */}
+        <InfoRow label="위치" editing={editing} value={form.location}
+          onChangeText={v => set('location', v)} placeholder="서울, 대한민국" />
+
+        {/* 전문 분야 */}
+        {editing && (
+          <View style={styles.group}>
+            <Text style={styles.fieldLabel}>전문 분야</Text>
+            <View style={styles.specialtyWrap}>
+              {SPECIALTIES_OPTIONS.map(s => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.specialtyChip, form.specialties.includes(s) && styles.specialtyChipActive]}
+                  onPress={() => toggleSpecialty(s)}
+                >
+                  <Text style={[styles.specialtyText, form.specialties.includes(s) && styles.specialtyTextActive]}>
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {!editing && form.specialties.length > 0 && (
+          <View style={styles.group}>
+            <Text style={styles.fieldLabel}>전문 분야</Text>
+            <View style={styles.specialtyWrap}>
+              {form.specialties.map(s => (
+                <View key={s} style={styles.specialtyChipActive}>
+                  <Text style={styles.specialtyTextActive}>{s}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {editing && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.btnText}>저장</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btn, styles.btnCancel]}
+              onPress={() => {
+                setForm({
+                  name:        user?.name        || '',
+                  tel:         user?.tel         || '',
+                  profileName: user?.profileName || '',
+                  instagramId: user?.instagramId || '',
+                  bio:         user?.bio         || '',
+                  websiteUrl:  user?.websiteUrl  || '',
+                  location:    user?.location    || '',
+                  specialties: user?.specialties ? user.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
+                });
+                setEditing(false);
+              }}
+            >
+              <Text style={[styles.btnText, styles.btnCancelText]}>취소</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* 메뉴 */}
+      <View style={styles.legalSection}>
+        <Text style={styles.legalTitle}>메뉴</Text>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Series')}>
+          <Text style={styles.legalItemText}>📁 내 작업(시리즈)</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Gatherings')}>
+          <Text style={styles.legalItemText}>📷 사진 모임</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Meets')}>
+          <Text style={styles.legalItemText}>🤝 약속</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem} 
+          onPress={() => navigation.navigate && navigation.navigate('Schedule')}>
+          <Text style={styles.legalItemText}>📅 통합 일정</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Booking')}>
+          <Text style={styles.legalItemText}>🗓 예약 관리</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Delivery')}>
+          <Text style={styles.legalItemText}>📦 납품 관리</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.legalItem}>
+          <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={handleOpenPortfolio}>
+            <Text style={styles.legalItemText}>🌐 내 포트폴리오 보기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSharePortfolio} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginRight: 14 }}>
+            <Text style={{ fontSize: 15 }}>📤</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleOpenPortfolio} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.legalChevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => {
+            if (!user?.profileName) {
+              Alert.alert('프로필명이 없어요', '설정에서 프로필명을 먼저 등록해주세요.');
+              return;
+            }
+            navigation.navigate && navigation.navigate('PortfolioSlideshow', { profileName: user.profileName });
+          }}>
+          <Text style={styles.legalItemText}>🎞 슬라이드쇼로 보기</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 법적 고지 */}
+      <View style={styles.legalSection}>
+        <Text style={styles.legalTitle}>법적 고지</Text>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Legal', { tab: 'privacy' })}>
+          <Text style={styles.legalItemText}>개인정보처리방침</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('Legal', { tab: 'terms' })}>
+          <Text style={styles.legalItemText}>이용약관</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('BlockedUsers')}>
+          <Text style={styles.legalItemText}>🚫 차단한 사용자</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.appVersionRow}>
+          <Text style={styles.appVersion}>Happiness v1.0.0</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <Text style={styles.logoutText}>로그아웃</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount} disabled={deleting}
+        accessibilityRole="button" accessibilityLabel="회원 탈퇴">
+        {deleting
+          ? <ActivityIndicator color={COLORS.textMuted} />
+          : <Text style={styles.deleteAccountText}>회원 탈퇴</Text>}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+function InfoRow({ label, value, editing, onChangeText, placeholder, keyboardType }: { label?: any; value?: any; editing?: any; onChangeText?: (...args: any[]) => any; placeholder?: any; keyboardType?: any }) {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {editing ? (
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.textHint}
+          keyboardType={keyboardType}
+        />
+      ) : (
+        <Text style={styles.fieldValue}>{value || '미설정'}</Text>
+      )}
+    </View>
+  );
+}
+
+function StatItem({ label, value }: { label?: any; value?: any }) {
+  return (
+    <View style={styles.statItem}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: SPACING.lg, paddingBottom: 40, backgroundColor: COLORS.bg, flexGrow: 1 },
+
+  avatarSection: { alignItems: 'center', marginBottom: SPACING.lg },
+  avatarWrap: { position: 'relative', marginBottom: SPACING.sm },
+  avatarImg:  { width: 88, height: 88, borderRadius: 44 },
+  avatarFallback: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontSize: 30, fontWeight: '800' },
+  avatarOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 44,
+    backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  avatarEditBadge: { position: 'absolute', bottom: 0, right: 0, width: 26, height: 26,
+    borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#fff' },
+  avatarEditIcon: { fontSize: 12 },
+  userName: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary },
+  subdomainBadge: { backgroundColor: '#eef0fd', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginTop: 4 },
+  subdomainText: { color: COLORS.primary, fontSize: FONT.sm, fontWeight: '600' },
+
+  statsRow: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: RADIUS.card,
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  statItem: { flex: 1, alignItems: 'center', paddingVertical: 14,
+    borderRightWidth: 1, borderRightColor: COLORS.border },
+  statValue: { fontSize: FONT.xl, fontWeight: '800', color: COLORS.textPrimary },
+  statLabel: { fontSize: FONT.xs, color: COLORS.textMuted, marginTop: 2 },
+
+  emailRow: { backgroundColor: COLORS.white, borderRadius: RADIUS.card, padding: SPACING.md,
+    marginBottom: SPACING.md, flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  emailLabel: { color: COLORS.textMuted, fontSize: FONT.sm, fontWeight: '600' },
+  emailValue: { color: COLORS.textPrimary, fontSize: FONT.sm, fontWeight: '500' },
+
+  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.card, padding: SPACING.lg,
+    marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.border },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
+  cardTitle: { fontSize: FONT.lg, fontWeight: '700', color: COLORS.textPrimary },
+  editBtn: { color: COLORS.primary, fontWeight: '700', fontSize: FONT.sm },
+
+  group: { marginBottom: SPACING.md },
+  fieldLabel: { color: COLORS.textMuted, fontSize: FONT.sm, fontWeight: '600', marginBottom: 4 },
+  fieldHint:  { color: COLORS.textHint, fontSize: 11, marginBottom: 6 },
+  fieldValue: { color: COLORS.textPrimary, fontSize: FONT.base, fontWeight: '500' },
+  input: {
+    borderWidth: 1, borderColor: COLORS.borderLight, borderRadius: RADIUS.md,
+    paddingHorizontal: 12, paddingVertical: 10, color: COLORS.textPrimary,
+    backgroundColor: COLORS.bg, fontSize: FONT.base,
+  },
+  profileNameRow: { flexDirection: 'row', alignItems: 'center' },
+  profileNameInput: { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeftWidth: 0 },
+  domainSuffix: { borderWidth: 1, borderColor: COLORS.borderLight,   // 주소 앞부분(/portfolio/) — 입력란 왼쪽에 붙는다
+    borderTopLeftRadius: RADIUS.md, borderBottomLeftRadius: RADIUS.md,
+    paddingHorizontal: 10, paddingVertical: 10,
+    color: COLORS.textMuted, fontSize: FONT.sm, backgroundColor: COLORS.bg },
+  instagramRow: { flexDirection: 'row', alignItems: 'center' },
+  atPrefix: { borderWidth: 1, borderColor: COLORS.borderLight,
+    borderTopLeftRadius: RADIUS.md, borderBottomLeftRadius: RADIUS.md,
+    borderRightWidth: 0, paddingHorizontal: 12, paddingVertical: 10,
+    color: COLORS.primary, fontWeight: '700', backgroundColor: COLORS.bg },
+
+  specialtyWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  specialtyChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
+  specialtyChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  specialtyText: { color: COLORS.textSecondary, fontSize: FONT.xs, fontWeight: '600' },
+  specialtyTextActive: { color: '#fff', fontSize: FONT.xs, fontWeight: '600' },
+
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  btn: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, alignItems: 'center' },
+  btnSave:   { backgroundColor: COLORS.primary },
+  btnCancel: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },   // 흰 글자+연회색은 대비 부족
+  btnCancelText: { color: COLORS.textPrimary },
+  btnText:   { color: '#fff', fontWeight: '700' },
+
+  legalSection: { backgroundColor: COLORS.white, borderRadius: RADIUS.card,
+    marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  legalTitle: { color: COLORS.textMuted, fontSize: FONT.xs, fontWeight: '700',
+    paddingHorizontal: SPACING.md, paddingTop: 12, paddingBottom: 4, letterSpacing: 0.5 },
+  legalItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.md, paddingVertical: 14,
+    borderTopWidth: 1, borderTopColor: COLORS.border },
+  legalItemText: { color: COLORS.textPrimary, fontSize: FONT.base },
+  legalChevron: { color: COLORS.textHint, fontSize: 18 },
+  appVersionRow: { paddingHorizontal: SPACING.md, paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: COLORS.border },
+  appVersion: { color: COLORS.textHint, fontSize: FONT.xs, textAlign: 'center' },
+
+  logoutBtn: { backgroundColor: '#fff', borderRadius: RADIUS.md, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#ff3b30' },
+  logoutText: { color: '#ff3b30', fontWeight: '700', fontSize: FONT.base },
+  deleteAccountBtn: { alignItems: 'center', paddingVertical: 16, marginTop: SPACING.sm, marginBottom: SPACING.lg },
+  deleteAccountText: { color: COLORS.textMuted, fontSize: FONT.sm, textDecorationLine: 'underline' },
+});

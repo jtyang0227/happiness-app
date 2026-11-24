@@ -19,8 +19,8 @@
 | 6 | ✅ | 모임·스팟·알림·배치 | 모임 CRUD·참여·알림·장소 투표·피드·앨범·Instagram·스팟 + 배치 4개(run-batch.mjs로 확인), 계약 85개 양쪽. 커밋 78de64b·01e8c02·d61c6ae·3e7a67a. 발견: Spring 스팟 목록 PG 500(README) |
 | 7 | ✅ | 추천사·언론·패키지·브랜드·뉴스레터·AI 어시스턴트 + 회원 탈퇴 | Spring 경로 0개(정적 대조 194/194), 프록시 끈 Nest에서 계약 92개 전부 통과·Spring 92개 통과. 커밋 2a32d07·b85ca30 |
 | 8 | ✅ | 웹 → TypeScript → Next.js | 8a 40737e8 Next.js 셸 · 8b 3f1bb3f 전 파일 TS(tsc 0·vitest 13·빌드, CRA와 화면 46장 동일) · 8c 241d730 CI(api-ci·web-ci) + 컷오버 체크리스트(PLANNING 5-1). 운영 배포 전환은 11번 |
-| 9 | ⏳ | 어드민 이관 (happiness-admin → `apps/api` admin 모듈 + `apps/admin`) | 실행 프롬프트 B절. 앱 2~8 뒤 |
-| 10 | 🔄 | 모바일 TypeScript | 시작 — expo export web·android 기준 |
+| 9 | 🔄 | 어드민 이관 (happiness-admin → `apps/api` admin 모듈 + `apps/admin`) | 실행 프롬프트 B절. 앱 2~8 뒤 |
+| 10 | ✅ | 모바일 TypeScript | 전 파일 .ts/.tsx(73개, babel.config.js만 JS), TypeScript ~5.1(Expo 49 권장), tsc 0. expo export web·android 통과, 안드로이드 번들 크기 같음·.web.ts 스텁은 웹에만, 웹 번들 화면 3개 픽셀 동일. 커밋 HASH10 |
 | 11 | ⏸ | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
