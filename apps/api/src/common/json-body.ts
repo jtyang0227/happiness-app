@@ -90,3 +90,30 @@ export function jsonLocalDate(v: unknown, name: string): Date | null {
   }
   throw new Error(`Cannot deserialize ${name}`);
 }
+
+/** Double(래퍼) 필드 — 숫자 또는 숫자 문자열 */
+export function jsonDouble(v: unknown, name: string): number | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (s === '') return null;
+    const n = Number(s);
+    if (Number.isFinite(n)) return n;
+  }
+  throw new Error(`Cannot deserialize ${name}`);
+}
+
+/** List<String> DTO 필드 — 숫자·불리언 요소는 글자로 */
+export function jsonStringList(v: unknown, name: string): string[] | null {
+  if (v === undefined || v === null) return null;
+  if (!Array.isArray(v)) throw new Error(`Cannot deserialize ${name}`);
+  return v.map((x) => jsonString(x, name) as string);
+}
+
+/** Java String.split(",") — 끝의 빈 문자열은 버린다 */
+export function javaSplit(s: string, sep: string): string[] {
+  const parts = s.split(sep);
+  while (parts.length > 1 && parts[parts.length - 1] === '') parts.pop();
+  return parts.length === 1 && parts[0] === '' && s !== '' ? [] : parts;
+}

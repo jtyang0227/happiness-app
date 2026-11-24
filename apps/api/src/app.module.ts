@@ -31,6 +31,7 @@ import { StorageService } from './storage/storage.service.js';
 import { BookingController } from './booking/booking.controller.js';
 import { BookingService } from './booking/booking.service.js';
 import { DeliveryController } from './delivery/delivery.controller.js';
+import { MeetController } from './meet/meet.controller.js';
 import { InquiryController } from './inquiry/inquiry.controller.js';
 import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
@@ -41,7 +42,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController],
   providers: [
     PrismaService,
     JwtService,
