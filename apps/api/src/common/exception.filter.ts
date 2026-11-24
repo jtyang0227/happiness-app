@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger, NotFoundException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { fail } from './api-response.js';
+import { RawBodyError } from './raw-body-error.js';
 import { AppError, ErrorCode } from './app-error.js';
 import { forwardToLegacy } from './legacy-proxy.js';
 
@@ -20,6 +21,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof NotFoundException && !(req as Request & { route?: unknown }).route) {
       if (forwardToLegacy(req, res)) return;
       res.status(404).json(fail(ErrorCode.NOT_FOUND.code, `${req.originalUrl.split('?')[0]} 경로를 찾을 수 없습니다.`));
+      return;
+    }
+    if (exception instanceof RawBodyError) {
+      // PhotoController처럼 ApiResponse가 아닌 고유 오류 본문을 쓰는 컨트롤러 — 본문 그대로
+      res.status(exception.getStatus()).json(exception.getResponse());
       return;
     }
     if (exception instanceof AppError) {

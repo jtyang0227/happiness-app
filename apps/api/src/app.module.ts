@@ -22,6 +22,7 @@ import { AdminAuditInterceptor } from './common/admin-audit.interceptor.js';
 import { ReportController } from './report/report.controller.js';
 import { ReportService } from './report/report.service.js';
 import { PhotoController } from './photo/photo.controller.js';
+import { PhotoCommandService } from './photo/photo-command.service.js';
 import { PhotoQueryService } from './photo/photo-query.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
@@ -44,6 +45,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     FollowService,
     ReportService,
     PhotoQueryService,
+    PhotoCommandService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
