@@ -29,6 +29,16 @@
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
 - 클라우드 세션은 egress 정책상 `*.happiness.io.kr`·`*.vercel.app`에 못 붙는다 → 운영 상태는 `gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`·`/deployments`로만 본다.
 
+## 3-1. 개발 환경 (새 컨테이너에서 다시 만들기)
+- 클라우드 컨테이너: Node 22, Java 21(Gradle 9.5 wrapper), PostgreSQL 16(`pg_ctlcluster 16 main`), redis-server, Chromium+Playwright 기본 설치.
+- **TS 전환 로컬 환경 한 번에**: `apps/api/scripts/dev-env.sh up > /tmp/happiness-dev/up.log 2>&1` → PG 역할·DB `happy/happy@localhost:5432/happiness`,
+  Redis 6379, Spring 8080(같은 PG, `ddl-auto=update`로 스키마 생성), Nest 8090(`LEGACY_API_URL=http://localhost:8080`). `status`·`down` 지원, 로그 `/tmp/happiness-dev/*.log`.
+  파이프(`| tail`)로 받으면 백그라운드 서버가 파이프를 잡아 명령이 안 끝난다 → 파일로 받을 것.
+- `apps/api/.env`(커밋 금지)는 스크립트가 `.env.example`에서 로컬 DB 주소로 만든다. `JWT_SECRET`은 비워 두면 Spring과 같은 개발 기본값.
+- 계약 테스트의 준비용 DB 조작(`test/contract/db.ts`)은 `DATABASE_URL`(기본 로컬 PG)을 쓴다.
+- 외부 사이트(`*.happiness.io.kr`, 카카오·구글·네이버 API 등)는 egress 정책으로 막혀 있다 — OAuth 성공 경로는 로컬에서 확인 불가.
+- **토큰 만료 후 재개**: `DESIGN_PROMPTS/planning/PROMPT_resume.md`("WORK_QUEUE 이어서 진행해줘. PROMPT_resume.md 절차대로.").
+
 ## 4. 작업 방식 (사용자 고정 규칙)
 - 브랜치 `claude/photo-sorting-algorithm-mv383n`에서 작업 → push → `git push origin <branch>:master`(fast-forward, 강제 push 금지). PR은 요청 시에만.
 - 커밋 끝에 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` + `Claude-Session:` 줄. 커밋·코드에 모델 ID 쓰지 않음.
