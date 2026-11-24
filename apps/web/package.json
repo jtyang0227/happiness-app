@@ -1,0 +1,26 @@
+{
+  "name": "happiness-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "npx serve out -l 3000 -s",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "1.7.2",
+    "firebase": "13.1.0",
+    "next": "16.4.6",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.3",
+    "zustand": "4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "6.0.3"
+  }
+}
