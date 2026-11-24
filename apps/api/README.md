@@ -49,7 +49,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `GET /api/portfolio/{p}`·`/{p}/config`(공개), `PUT /{p}/template`(본인·WM/SA, 블록·스타일 검증기 `portfolio-layout.validator.ts`) | `portfolio.test.ts` — 정규화 결과의 설정 키 순서는 Spring(`Map.of`)이 실행마다 달라 JSON 비교만 의미 있음 |
 | `POST /api/inquiry`(공개, 작가 알림 메일 + `INQUIRY_SENT` 분석), `GET inbox·inbox/unread-count`, `PUT {id}/read`, `DELETE {id}` | `inquiry.test.ts` |
 | `/api/booking/**`(달력·예약 생성 공개, IP당 분당 10회 — 사설 IP는 소켓 주소로 묶음), 설정(JSON 키 `active`)·차단 날짜·확정/거절/취소·체크리스트·수금 | `booking.test.ts` — 차단 날짜 저장 실패는 Spring처럼 사유 무관 409 |
-| 아직 Spring: 납품·약속·분석 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/delivery/**`(토큰 경로 공개 — 비밀번호 세트는 본문 password, 토큰당 5회 실패 시 15분 429) | `delivery.test.ts` — 같은 사진을 두 번 보내면 Spring(Hibernate merge)처럼 한 행·마지막 순서, 응답 photoCount는 보낸 개수. 만료 세트 정리 배치(매시)는 6단계에서 |
+| 아직 Spring: 약속·분석 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
