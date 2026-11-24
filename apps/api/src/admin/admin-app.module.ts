@@ -14,6 +14,9 @@ import { MemberSuspensionScheduler } from './member/member-suspension.scheduler.
 import { AdminPrivacyLogController } from './audit/admin-privacy-log.controller.js';
 import { AdminSecurityAuditController } from './audit/admin-security-audit.controller.js';
 import { FieldEncryptor } from './privacy/field-encryptor.js';
+import { AdminBookingController, AdminGatheringController, AdminInquiryController, AdminNewsletterController, AdminTransactionController, AdminVerificationController } from './ops/admin-business.controllers.js';
+import { AdminReportController, ReportAiTriageService } from './ops/admin-report.controller.js';
+import { AdminContentPolicyController, AdminStatsController, AdminSystemController } from './ops/admin-stats-system.controllers.js';
 import { AdminCategoryController, AdminPhotoController } from './content/admin-photo.controller.js';
 import { AdminSeriesController } from './content/admin-series.controller.js';
 import { AdminPortfolioController } from './content/admin-portfolio.controller.js';
@@ -31,8 +34,10 @@ import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
 @Module({
   controllers: [AdminHelloController, AdminAuthController, AdminMemberController, AdminPrivacyLogController, AdminSecurityAuditController,
     AdminPhotoController, AdminCategoryController, AdminSeriesController, AdminPortfolioController, AdminSortController, AdminCommentController,
-    AdminFeaturedController, AdminProfileContentController, AdminBannerController, AdminPopupController, PopupApiController, AdminNoticeController],
-  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
+    AdminFeaturedController, AdminProfileContentController, AdminBannerController, AdminPopupController, PopupApiController, AdminNoticeController,
+    AdminInquiryController, AdminBookingController, AdminTransactionController, AdminGatheringController, AdminNewsletterController, AdminVerificationController,
+    AdminReportController, AdminStatsController, AdminSystemController, AdminContentPolicyController],
+  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, ReportAiTriageService, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
 })
 export class AdminAppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

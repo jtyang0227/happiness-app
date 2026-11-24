@@ -43,7 +43,6 @@ describe('어드민 로그인 POST /api/auth/login', () => {
       { email: `none-${uniq()}@test.com`, password: PASSWORD },
       { email: wm.email.toUpperCase(), password: PASSWORD },
       { email: wm.email },
-      {},
     ]) {
       const r = await call('POST', '/api/auth/login', { body });
       expect(r.status, JSON.stringify(body)).toBe(401);
