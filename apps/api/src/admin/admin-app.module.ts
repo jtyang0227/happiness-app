@@ -14,6 +14,14 @@ import { MemberSuspensionScheduler } from './member/member-suspension.scheduler.
 import { AdminPrivacyLogController } from './audit/admin-privacy-log.controller.js';
 import { AdminSecurityAuditController } from './audit/admin-security-audit.controller.js';
 import { FieldEncryptor } from './privacy/field-encryptor.js';
+import { AdminCategoryController, AdminPhotoController } from './content/admin-photo.controller.js';
+import { AdminSeriesController } from './content/admin-series.controller.js';
+import { AdminPortfolioController } from './content/admin-portfolio.controller.js';
+import { AdminSortController } from './content/admin-sort.controller.js';
+import { AdminCommentController } from './content/admin-comment.controller.js';
+import { AdminFeaturedController } from './content/admin-featured.controller.js';
+import { AdminProfileContentController } from './content/admin-profile-content.controller.js';
+import { AdminBannerController, AdminNoticeController, AdminPopupController, PopupApiController } from './content/admin-notice-banner-popup.controllers.js';
 import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
 
 /**
@@ -21,7 +29,9 @@ import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
  * 경로(/api/auth/login, /api/admin/reports 등)·오류 형식·JWT가 앱과 달라 한 프로세스에 섞지 않는다(PLANNING 4-1).
  */
 @Module({
-  controllers: [AdminHelloController, AdminAuthController, AdminMemberController, AdminPrivacyLogController, AdminSecurityAuditController],
+  controllers: [AdminHelloController, AdminAuthController, AdminMemberController, AdminPrivacyLogController, AdminSecurityAuditController,
+    AdminPhotoController, AdminCategoryController, AdminSeriesController, AdminPortfolioController, AdminSortController, AdminCommentController,
+    AdminFeaturedController, AdminProfileContentController, AdminBannerController, AdminPopupController, PopupApiController, AdminNoticeController],
   providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
 })
 export class AdminAppModule implements NestModule {

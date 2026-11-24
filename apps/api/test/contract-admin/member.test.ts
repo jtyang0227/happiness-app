@@ -4,8 +4,8 @@ import { admin, call, INVALID, insertMember, LOCAL_DATE_TIME, SERVER_ERROR, uniq
 
 afterAll(closeDb);
 
-const DTO_KEYS = ['authority', 'createdAt', 'email', 'id', 'inquiryCount', 'name', 'photoCount', 'portfolioCount', 'profileName', 'provider',
-  'seriesCount', 'status', 'suspendReason', 'suspendUntil', 'suspendedAt', 'tel', 'verified', 'verifiedAt'];
+const DTO_KEYS = ['id', 'name', 'email', 'tel', 'profileName', 'authority', 'status', 'suspendReason', 'suspendUntil', 'suspendedAt', 'verifiedAt', 'createdAt',
+  'photoCount', 'seriesCount', 'inquiryCount', 'portfolioCount', 'provider', 'verified'];
 const PAGE_KEYS = ['content', 'last', 'page', 'size', 'totalElements', 'totalPages'];
 
 async function lastPrivacyLog(adminId: number) {
@@ -25,7 +25,7 @@ describe('회원 목록·상세·요약', () => {
     expect(Object.keys(r.body).sort()).toEqual(PAGE_KEYS);
     expect(r.body).toMatchObject({ page: 0, size: 1, totalElements: 2, totalPages: 2, last: false });
     const d = r.body.content[0];
-    expect(Object.keys(d).sort()).toEqual(DTO_KEYS);
+    expect(Object.keys(d)).toEqual(DTO_KEYS);
     expect(d).toMatchObject({ id: m2.id, name: m2.name, tel: '010****0003', authority: 'US', status: 'ACTIVE', verified: false, photoCount: 2, seriesCount: 1, inquiryCount: 1, portfolioCount: 1, suspendReason: null, provider: null });
     expect(d.email).toMatch(/^ca\*\*\*@test\.com$/);
     expect(d.createdAt).toMatch(LOCAL_DATE_TIME);
@@ -52,7 +52,7 @@ describe('회원 목록·상세·요약', () => {
     const m = await insertMember({ tel: '010-5555-6666' });
     const r = await call('GET', `/api/admin/members/${m.id}`, { token: a.token });
     expect(r.status).toBe(200);
-    expect(Object.keys(r.body).sort()).toEqual(DTO_KEYS);
+    expect(Object.keys(r.body)).toEqual(DTO_KEYS);
     expect(r.body.tel).toBe('010-****-6666');
     expect(await lastPrivacyLog(a.id)).toMatchObject({ action: 'VIEW', subject_member_id: String(m.id), subject_count: 1, detail: '회원 상세(마스킹)', reason: null });
     expect(await call('GET', '/api/admin/members/999999999', { token: a.token })).toMatchObject({ status: 400, body: { error: '회원을 찾을 수 없습니다.' } });

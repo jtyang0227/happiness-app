@@ -89,7 +89,6 @@ export class AdminMemberService {
       suspendReason: this.enc.decrypt(m.suspend_reason),
       suspendUntil: localDateTime(m.suspend_until),
       suspendedAt: localDateTime(m.suspended_at),
-      verified: m.is_verified,
       verifiedAt: localDateTime(m.verified_at),
       createdAt: localDateTime(m.created_at),
       photoCount: c.photos,
@@ -97,6 +96,8 @@ export class AdminMemberService {
       inquiryCount: c.inquiries,
       portfolioCount: c.portfolios,
       provider: m.provider,
+      // Lombok isVerified → JSON verified, 필드명과 달라 Jackson이 맨 뒤에 둔다
+      verified: m.is_verified,
     };
   }
 
