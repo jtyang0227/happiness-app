@@ -24,12 +24,13 @@ import { ReportService } from './report/report.service.js';
 import { PhotoController } from './photo/photo.controller.js';
 import { PhotoCommandService } from './photo/photo-command.service.js';
 import { PhotoQueryService } from './photo/photo-query.service.js';
+import { FeedController } from './feed/feed.controller.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController],
   providers: [
     PrismaService,
     JwtService,

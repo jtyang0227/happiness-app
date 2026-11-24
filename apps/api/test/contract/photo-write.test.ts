@@ -93,3 +93,22 @@ describe('사진 쓰기', () => {
     expect((await call('GET', `/api/photos/${theirs}`)).body.data.displayOrder).toBe(7);
   });
 });
+
+describe('피드 (ApiResponse 래퍼)', () => {
+  it('팔로우한 작가 사진 최신순·작성자 정보, 팔로우 없으면 빈 배열, 남의 피드 403, size 상한', async () => {
+    const me = await signupAndLogin();
+    const artist = await signupAndLogin({ name: '작가' });
+    expect((await call('GET', `/api/feed?memberId=${me.id}`, { token: me.token })).body).toMatchObject({ success: true, data: [] });
+    const a = await createPhoto(artist);
+    const b = await createPhoto(artist);
+    await call('POST', `/api/follows?followerId=${me.id}&followingId=${artist.id}`, { token: me.token });
+    const feed = await call('GET', `/api/feed?memberId=${me.id}&size=500`, { token: me.token });
+    expect(feed.status).toBe(200);
+    expect(feed.body.data.map((x: any) => x.id)).toEqual([b, a]);
+    expect(feed.body.data[0]).toMatchObject({ memberName: '작가', liked: false });
+    expect((await call('GET', `/api/feed?memberId=${me.id}&page=1&size=1`, { token: me.token })).body.data.map((x: any) => x.id)).toEqual([a]);
+    const denied = await call('GET', `/api/feed?memberId=${artist.id}`, { token: me.token });
+    expect(denied.status).toBe(403);
+    expect(denied.body).toMatchObject({ code: '403', message: '본인 피드만 볼 수 있습니다.' });
+  });
+});

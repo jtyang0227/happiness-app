@@ -13,7 +13,7 @@
 |---|---|---|---|
 | 1 | ✅ | 기반 — `apps/api` Nest 뼈대·Prisma 스키마(db pull)·응답/오류 형식·JWT 호환·가드·레거시 프록시·계약 테스트 하네스 | NestJS 12(ESM 전용 → `type: module`)·Prisma 7.10.1(최신 태그가 RC라 제외)·TS 6.0.3·vitest 3.2.7(4.x는 npm 설치 오류). 로컬: PG16 + Redis 7 + Spring(같은 PG) |
 | 2 | ✅ | 인증·회원·계정 찾기 `/api/auth/**` | b85b7cf + (이번 커밋) — 프로필·비밀번호·통계·관리자 목록(마스킹)·검색·권한, 계정 찾기 4개(nodemailer), OAuth 4개. 계약 26개 Spring·Nest 둘 다 통과 + 서버 간 호환. **발견**: Spring XSS 필터가 쿼리·폼·헤더를 HTML 이스케이프(그대로 옮김), `@PreAuthorize` 거부가 500(Nest는 403 유지). 탈퇴(DELETE member)는 7단계 |
-| 3 | 🔄 | 사진·댓글·팔로우·피드·업로드·신고·차단 | 완료: 댓글·팔로우·차단·신고·사진 조회·사진 쓰기(계약 43개 양쪽 통과). 다음: 피드(`FeedController`, `PhotoResponse`+attachMembers 재사용) → 저장소(`storage/` Supabase 업로드·삭제, `POST /api/upload/image`) → 사진 업로드(`/photos/upload`, 4단계 리사이즈 — sharp 필요)·삭제 cascade·AI 태그(`AutoTagService`). 사진(PhotoController, `{status,data}` 래퍼) + 피드(PhotoResponse 필요) → 업로드. 사진 응답은 `{status,data}` 래퍼, `page` opt-in 페이징, pg_trgm fuzzy → LIKE fallback 주의 |
+| 3 | 🔄 | 사진·댓글·팔로우·피드·업로드·신고·차단 | 완료: 댓글·팔로우·차단·신고·사진 조회·사진 쓰기·피드(계약 44개 양쪽 통과). 다음: 저장소(`storage/` Supabase 업로드·삭제, `POST /api/upload/image`) → 사진 업로드(`/photos/upload`, 4단계 리사이즈 — sharp 필요)·삭제 cascade·AI 태그(`AutoTagService`). 사진(PhotoController, `{status,data}` 래퍼) + 피드(PhotoResponse 필요) → 업로드. 사진 응답은 `{status,data}` 래퍼, `page` opt-in 페이징, pg_trgm fuzzy → LIKE fallback 주의 |
 | 4 | ⏳ | 시리즈·포트폴리오·무드보드·탐색·비슷한 사진 | |
 | 5 | ⏳ | 업무 — 문의·예약·납품·약속·분석 | |
 | 6 | ⏳ | 모임·스팟·알림·배치 | |
