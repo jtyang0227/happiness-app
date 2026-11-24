@@ -41,8 +41,9 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | 사진 조회: `GET /api/photos`(필터·정렬·키워드 pg_trgm→LIKE·태그·조회순·page opt-in), `/suggestions`, `/{id}`, `/{id}/similar`, `/{id}/tags·likes·shares`, `/saves/{memberId}`, `/genres/stats` | `photo-read.test.ts` — `{status,data}` 래퍼, 키 `liked`·`saved` |
 | 사진 쓰기: `POST /api/photos`, `PUT /{id}`, `PUT /reorder`, 태그 추가·삭제, 좋아요·저장(취소 포함)·공유 | `photo-write.test.ts` — 오류 본문 `{status:'error',message}`(`RawBodyError`) |
 | `GET /api/feed` | `photo-write.test.ts` |
+| `POST /api/photos/upload`(4단계 변형 1024/512/256/128 + 색 분석, sharp) | `photo-upload.test.ts` |
 | `POST /api/upload/image`(multipart, Supabase Storage) | `upload.test.ts` — `scripts/fake-supabase.mjs`(dev-env.sh가 띄움)로 성공 경로까지 양쪽 비교. 저장소 요청 경로의 키는 Spring처럼 `%2F` 인코딩 |
-| 아직 Spring: 사진 삭제(저장소 파일 삭제), `POST /api/photos/upload`, AI 태그, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| 아직 Spring: 사진 삭제(저장소 파일 삭제), AI 태그, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
@@ -51,6 +52,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 - Apple `id_token`은 서명을 검증하지 않고 페이로드만 읽는다(Spring과 같음 — 보안상 위험, 별도 작업으로 고칠 것).
 
 ## Spring과 의도적으로 다른 점
+- **WebP 사진 업로드**(`/api/photos/upload`): Spring은 허용 형식에 WebP를 넣었지만 ImageIO에 WebP 리더가 없어 항상 500 "이미지를 읽을 수 없습니다". 여기서는 sharp로 읽어 jpg로 저장한다.
+- 사진 업로드의 리사이즈 결과 바이트·대표색은 Thumbnailator와 sharp가 달라 한두 단계 차이 날 수 있다(단색 이미지는 같음). EXIF 회전은 양쪽 모두 적용하지 않는다.
 - 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
 - 로그아웃 때 Redis가 죽어 있으면 Spring은 500(`TokenBlacklistService`에 예외 처리 없음), 여기서는 다른 Redis 사용처처럼 통과.

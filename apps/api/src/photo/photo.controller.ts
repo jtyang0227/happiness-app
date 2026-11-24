@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Post, Put, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { escapeHtml4 } from '../common/escape-html4.js';
 import type { Response } from 'express';
 import { optionalInt, optionalLong, requiredLong } from '../common/params.js';
 import { AuthUser, CurrentUser, Public } from '../auth/auth.guard.js';
 import { PhotoCommandService, PhotoRequest } from './photo-command.service.js';
+import { optionalInt as optInt } from '../common/params.js';
 import { photoError } from './photo.mapper.js';
 import { PhotoQueryService } from './photo-query.service.js';
 
@@ -49,6 +52,22 @@ export class PhotoController {
   @HttpCode(201)
   create(@Body() body: PhotoRequest | undefined, @CurrentUser() user: AuthUser) {
     return this.commands.create(body ?? {}, user);
+  }
+
+  /** multipart — 텍스트 칸은 폼 파라미터라 Spring XSS 필터처럼 이스케이프된다 */
+  @Post('upload')
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
+  upload(@UploadedFile() file: { buffer: Buffer; size: number; mimetype: string } | undefined, @Body() raw: Record<string, string> | undefined, @CurrentUser() user: AuthUser) {
+    const b: Record<string, string | undefined> = {};
+    for (const [k, v] of Object.entries(raw ?? {})) b[k] = escapeHtml4(typeof v === 'string' ? v : String(v));
+    const memberId = requiredLong(b.memberId, 'memberId');
+    if (b.title == null) throw new Error('Required request parameter title is not present');
+    if (!file) throw new Error("Required part 'file' is not present.");
+    return this.commands.upload({
+      memberId, title: b.title, description: b.description, imageRatio: b.imageRatio, gridColSpan: optInt(b.gridColSpan, 'gridColSpan', 6),
+      colorMood: b.colorMood, genre: b.genre, subGenres: b.subGenres,
+    }, file, user);
   }
 
   @Put('reorder')

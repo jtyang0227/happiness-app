@@ -5,6 +5,9 @@ import { now } from '../common/time.js';
 import { AuthUser, isAdmin } from '../auth/auth.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { photoError, toPhotoResponse } from './photo.mapper.js';
+import { randomUUID } from 'node:crypto';
+import { StorageService } from '../storage/storage.service.js';
+import { SIZES, VariantInputError, prepareVariants } from './image-variants.js';
 
 export interface PhotoRequest {
   memberId?: number | null; title?: string | null; imageUrl?: string | null; description?: string | null; imageRatio?: string | null;
@@ -26,7 +29,7 @@ const blank = (s?: string | null) => s == null || s.trim() === '';
 /** Spring PhotoController 쓰기 경로 1:1 (삭제·업로드·AI 태그 제외) */
 @Injectable()
 export class PhotoCommandService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly storage: StorageService) {}
 
   private selfOrAdmin(user: AuthUser, ownerId: number | bigint) {
     return user.id === Number(ownerId) || isAdmin(user);
@@ -149,4 +152,40 @@ export class PhotoCommandService {
     }
     return ok('순서가 저장되었습니다.');
   }
+
+  /**
+   * Spring uploadPhoto — 4단계 변형을 photos/{uuid}_{size}.{ext}로 올리고 1024=imageUrl, 256=thumbnailUrl.
+   * 색 분위기는 요청 값이 있으면 그것, 없으면 분석값. 처리 중 오류는 500 {status:error, "사진 업로드 중 오류: …"}.
+   */
+  async upload(f: UploadForm, file: { buffer: Buffer; size: number; mimetype: string }, user: AuthUser) {
+    if (!this.selfOrAdmin(user, f.memberId)) throw new PhotoHttpError(403, '본인 명의로만 사진을 등록할 수 있습니다.');
+    try {
+      const prep = await prepareVariants(file.buffer, file.size, file.mimetype);
+      const uid = randomUUID();
+      const urls = new Map<number, string>();
+      for (const size of SIZES) {
+        urls.set(size, await this.storage.uploadBytes(prep.variants.get(size)!, `photos/${uid}_${size}.${prep.ext}`, prep.contentType));
+      }
+      const colSpan = f.gridColSpan >= 1 && f.gridColSpan <= 12 ? f.gridColSpan : 6;
+      const t = now();
+      const saved = await this.prisma.photos.create({
+        data: {
+          member_id: BigInt(f.memberId), title: f.title, image_url: urls.get(1024)!, thumbnail_url: urls.get(256)!,
+          description: f.description ?? null, image_ratio: f.imageRatio ?? '1:1', grid_col_span: colSpan,
+          dominant_color: prep.dominantColor, color_mood: f.colorMood != null && f.colorMood.trim() !== '' ? f.colorMood : prep.colorMood,
+          color_palette: prep.colorPalette, genre: f.genre ?? null, sub_genres: f.subGenres ?? null,
+          likes_count: 0, saves_count: 0, shares_count: 0, pan_type: 'EDITORIAL', image_right: false, created_at: t, updated_at: t,
+        },
+      });
+      return ok('사진이 업로드되었습니다.', toPhotoResponse(saved));
+    } catch (e) {
+      const msg = e instanceof VariantInputError ? e.message : (e as Error).message;
+      throw new PhotoHttpError(500, `사진 업로드 중 오류: ${msg}`);
+    }
+  }
+}
+
+export interface UploadForm {
+  memberId: number; title: string; description?: string; imageRatio?: string; gridColSpan: number;
+  colorMood?: string; genre?: string; subGenres?: string;
 }
