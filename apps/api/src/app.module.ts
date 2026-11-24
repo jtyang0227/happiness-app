@@ -28,6 +28,8 @@ import { PhotoQueryService } from './photo/photo-query.service.js';
 import { FeedController } from './feed/feed.controller.js';
 import { StorageController } from './storage/storage.controller.js';
 import { StorageService } from './storage/storage.service.js';
+import { BookingController } from './booking/booking.controller.js';
+import { BookingService } from './booking/booking.service.js';
 import { InquiryController } from './inquiry/inquiry.controller.js';
 import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
@@ -38,7 +40,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController],
   providers: [
     PrismaService,
     JwtService,
@@ -58,6 +60,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     StorageService,
     AutoTagService,
     SeriesService,
+    BookingService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

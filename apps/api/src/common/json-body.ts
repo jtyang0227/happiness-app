@@ -50,3 +50,43 @@ export function javaTrim(s: string): string {
 export function htmlEscape(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
+
+/** Integer(래퍼) 필드 — 범위 밖·숫자가 아니면 실패, 실수는 버림 */
+export function jsonInt(v: unknown, name: string): number | null {
+  const n = jsonLong(v, name);
+  if (n != null && (n > 2147483647 || n < -2147483648)) throw new Error(`Cannot deserialize ${name}`);
+  return n;
+}
+
+/** primitive int — null·없음은 0 */
+export function jsonPrimitiveInt(v: unknown, name: string): number {
+  return jsonInt(v, name) ?? 0;
+}
+
+/** primitive boolean — null·없음은 false, 문자열 "true"/"false", 정수는 !=0 */
+export function jsonPrimitiveBool(v: unknown, name: string): boolean {
+  if (v === undefined || v === null) return false;
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'number' && Number.isInteger(v)) return v !== 0;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (s === 'true') return true;
+    if (s === 'false' || s === '') return false;
+  }
+  throw new Error(`Cannot deserialize ${name}`);
+}
+
+/** LocalDate("yyyy-MM-dd") 필드 — 빈 문자열은 null, 잘못된 날짜는 실패. 반환은 UTC 자정 Date */
+export function jsonLocalDate(v: unknown, name: string): Date | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (s === '') return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) {
+      const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      if (d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3]) return d;
+    }
+  }
+  throw new Error(`Cannot deserialize ${name}`);
+}

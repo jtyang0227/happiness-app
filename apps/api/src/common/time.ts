@@ -13,3 +13,14 @@ export function localDateTime(d: Date | null | undefined): string | null {
 export function now(): Date {
   return new Date();
 }
+
+/** LocalDate JSON("2026-11-24") — DB date 컬럼은 UTC 자정 Date로 온다 */
+export function localDate(d: Date | null | undefined): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
+}
+
+/** LocalDate.now() (UTC) — UTC 자정 Date */
+export function today(): Date {
+  const n = new Date();
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
+}
