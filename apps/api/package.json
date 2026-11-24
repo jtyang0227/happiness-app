@@ -27,6 +27,7 @@
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.10",
     "http-proxy-middleware": "^4.2.2",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.6.1",
@@ -43,7 +44,6 @@
     "@types/node": "^22.20.5",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
-    "dotenv": "^18.0.10",
     "prisma": "^7.10.1",
     "typescript": "^6.0.3",
     "vitest": "^3.2.7"

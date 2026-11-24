@@ -44,3 +44,106 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+
+  # ── TypeScript 전환(컷오버 11단계) — 새 API. 추가만 해 두고 트래픽은 DNS를 바꿀 때 넘어온다(DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md "B 상세").
+  # 무료 인스턴스 시간은 작업 공간 합계 월 750시간 — Spring과 함께 켜 두는 전환 기간은 짧게.
+  - type: web
+    name: happiness-api-ts
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: apps/api
+    # NODE_ENV=production이면 npm ci가 devDependencies(typescript·prisma)를 빼서 빌드가 실패한다
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node dist/main.js
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      - key: TZ
+        value: UTC
+      # Spring과 반드시 같은 값 — 다르면 기존 로그인 토큰이 모두 무효(자동 생성 금지)
+      - key: JWT_SECRET
+        sync: false
+      # 빌드(prisma generate)에도 필요
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      # 옮기지 않은 경로를 넘길 Spring 주소 — Spring을 끌 때 비운다
+      - key: LEGACY_API_URL
+        sync: false
+      # Spring이 같은 DB에서 배치를 돌리는 동안 false, Spring을 끄는 순간 true
+      - key: BATCH_ENABLED
+        value: 'false'
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: images
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://happiness.io.kr,https://www.happiness.io.kr,https://happiness-app.pages.dev
+      - key: FRONTEND_URL
+        value: https://happiness.io.kr
+      - key: APP_CLIENT_IP_HEADER
+        value: CF-Connecting-IP
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+
+  # 어드민 API(happiness-admin Spring 대체) — 같은 코드의 다른 진입점
+  - type: web
+    name: happiness-admin-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: apps/api
+    # NODE_ENV=production이면 npm ci가 devDependencies(typescript·prisma)를 빼서 빌드가 실패한다
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node dist/admin-main.js
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      - key: TZ
+        value: UTC
+      # Render 기본 포트(PORT=10000)에서 듣게 한다
+      - key: ADMIN_PORT
+        value: '10000'
+      - key: DATABASE_URL
+        sync: false
+      # Spring 어드민 DB_SCHEMA와 같은 값(기본 admin — 앱 public 표와 별도)
+      - key: ADMIN_DB_SCHEMA
+        value: admin
+      # Spring 어드민 JWT_SECRET·PRIVACY_ENCRYPTION_KEY와 반드시 같은 값(자동 생성 금지)
+      - key: ADMIN_JWT_SECRET
+        sync: false
+      - key: PRIVACY_ENCRYPTION_KEY
+        sync: false
+      - key: ADMIN_CORS_ALLOWED_ORIGINS
+        sync: false
+      # Spring 어드민이 같은 스키마에서 정지 자동 해제를 돌리는 동안 false
+      - key: ADMIN_BATCH_ENABLED
+        value: 'false'
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false

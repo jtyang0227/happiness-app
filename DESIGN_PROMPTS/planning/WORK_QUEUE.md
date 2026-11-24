@@ -28,7 +28,7 @@
 | 9f | ✅ | 문서·CI·happiness-admin 저장소 처리 질문(README만 남길지 — 사용자 결정) | CI `admin-web-ci`(typecheck·test·build) 추가, api-ci는 두 Prisma 클라이언트 생성(깨끗한 체크아웃에서 확인). README "어드민 진입점", PLANNING 5-1 어드민 컷오버, CLAUDE.md·PROJECT_MEMORY. 저장소 처리·스키마 합치기는 11번에서 사용자 확인 |
 | 10 | ✅ | 모바일 TypeScript | 전 파일 .ts/.tsx(73개, babel.config.js만 JS), TypeScript ~5.1(Expo 49 권장), tsc 0. expo export web·android 통과, 안드로이드 번들 크기 같음·.web.ts 스텁은 웹에만, 웹 번들 화면 3개 픽셀 동일. 커밋 190a06c |
 | 11 | 🔄 | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후. 어드민도 포함: 운영 `DB_SCHEMA` 확인·앱 데이터와 합칠지, happiness-admin 저장소를 README만 남길지(PLANNING 5-1) |
-| 11a | 🔄 | 컷오버 A — 저장소 준비: render.yaml 새 서비스 2개, 웹 전환 스위치(`WEB_APP_DIR`), 스모크 스크립트·워크플로, 문서 | 실행 프롬프트 `PROMPT_ts-cutover.md` |
+| 11a | ✅ | 컷오버 A — 저장소 준비: render.yaml 새 서비스 2개, 웹 전환 스위치(`WEB_APP_DIR`), 스모크 스크립트·워크플로, 문서 | `render.yaml` happiness-api-ts·happiness-admin-api(빌드 `npm ci --include=dev`), deploy.yml `WEB_APP_DIR`(기본 frontend — 지금과 동일), `apps/web/vercel.json`(SPA 폴백 — 없으면 Vercel에서 깊은 링크 404), `_headers` `/_next/static/*`, 남은 CRA `public/index.html` 삭제, `scripts/smoke.mjs`·`smoke.yml`. **발견·수정**: `dotenv`가 devDependency라 운영 설치(`--omit=dev`)에서 API가 시작조차 못 함 → dependencies로(재현·확인). **발견**: Spring 작업 탐색 `location` 없으면 PG 500(`lower(bytea)`, 스모크가 잡음 — Nest 정상). 확인: 앱 계약 91·어드민 47 양쪽, 스모크 Nest 4대 통과 |
 | 11b | ⏸ | 컷오버 B — 사용자 대시보드 작업(새 서비스·도메인·Spring 중지·웹/어드민 전환·master 병합) | 값·순서는 `PROMPT_ts-cutover.md` "B 상세". 운영 접근 불가(자격 증명·네트워크) |
 | 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |

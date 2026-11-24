@@ -70,7 +70,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 
 ## Spring과 의도적으로 다른 점
 - **WebP 사진 업로드**(`/api/photos/upload`): Spring은 허용 형식에 WebP를 넣었지만 ImageIO에 WebP 리더가 없어 항상 500 "이미지를 읽을 수 없습니다". 여기서는 sharp로 읽어 jpg로 저장한다.
-- **스팟 목록**(`GET /api/spots`): Spring은 PostgreSQL에서 null 문자열 파라미터를 `bytea`로 묶어 `region`·`q` 중 하나라도 없으면 **500**(`operator does not exist: text ~~ bytea`) — 웹 둘러보기 스팟 탭(지도·내 주변)이 운영에서 동작하지 않았을 것. H2(dev 테스트)에서는 재현되지 않는다. 여기서는 정상 동작, 계약 테스트는 `IS_SPRING`으로 이 차이만 따로 확인한다.
+- **스팟 목록**(`GET /api/spots`): Spring은 PostgreSQL에서 null 문자열 파라미터를 `bytea`로 묶어 `region`·`q` 중 하나라도 없으면 **500**(`operator does not exist: text ~~ bytea`) — 웹 둘러보기 스팟 탭(지도·내 주변)이 운영에서 동작하지 않았을 것. H2(dev 테스트)에서는 재현되지 않는다. **Spring 프로세스마다 결과가 다르다**(이전 실행 500, 2026-11-24 재기동 뒤 200 — Hibernate가 처음 실행 때 정한 파라미터 형식을 캐시하는 것으로 보임)라 계약 테스트는 Spring 쪽에서 200·500을 모두 허용한다. 여기서는 정상 동작, 계약 테스트는 `IS_SPRING`으로 이 차이만 따로 확인한다.
+- **작업 탐색**(`GET /api/series/discover`): Spring은 `location` 없이 부르면(둘러보기 '작업' 탭 기본 화면) PostgreSQL에서 null 문자열을 `bytea`로 묶어 **500**(`function lower(bytea) does not exist`) — 스팟 목록과 같은 유형(프로세스마다 다를 수 있음). 컷오버 스모크(`scripts/smoke.mjs`)가 처음 잡았다. 여기서는 정상, 계약 테스트는 `IS_SPRING`으로 구분.
 - 사진 업로드의 리사이즈 결과 바이트·대표색은 Thumbnailator와 sharp가 달라 한두 단계 차이 날 수 있다(단색 이미지는 같음). EXIF 회전은 양쪽 모두 적용하지 않는다.
 - 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
@@ -99,3 +100,11 @@ ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Sp
 - **Spring 어드민과 의도적으로 다른 점**: ① prod 프로필 `lazy-initialization=true`라 Spring은 `FieldEncryptor`가 만들어지지 않아 회원을 읽는 모든 요청(로그인 포함)이 500 — 로컬 계약 테스트는 Spring을 `SPRING_MAIN_LAZY_INITIALIZATION=false`로 띄운다. ② 예약 목록 `date` 필터: Spring은 PostgreSQL에서 500(`could not determine data type of parameter`), 여기서는 정상(`IS_SPRING`으로 구분). ③ 시스템 상태의 `dbType`은 항상 PostgreSQL(Spring은 프로필로 짐작). ④ 프로필 콘텐츠 `type` 오류 문구의 종류 순서(Spring은 `Map.of` 순서라 실행마다 다름).
 - **그대로 옮긴 Spring 버그(기록)**: 배너·팝업·공지 요청 DTO의 Lombok `isActive`/`isPinned` → JSON 키 `active`/`pinned`라 어드민 화면이 보내는 `isActive`·`isPinned`는 무시되고(항상 비활성·고정 안 됨) 응답도 `active`/`pinned`라 화면 표시가 어긋난다. 피처드 등록자 id는 이메일을 Long으로 읽다 실패해 늘 null. 무드 별칭은 Spring `Map.ofEntries` 순서가 정해져 있지 않아 별칭이 둘 들어간 검색어만 결과가 갈릴 수 있다(여기서는 선언 순서).
 - 로컬 Spring 어드민(계약 테스트용): happiness-admin `origin/claude/admin-planning-doc-120dha`를 `./gradlew bootJar` → `SPRING_PROFILES_ACTIVE=prod SERVER_PORT=8081 DB_URL=jdbc:postgresql://localhost:5432/happiness DB_USERNAME=happy DB_PASSWORD=happy DB_SCHEMA=admin JWT_SECRET=(ADMIN_JWT_SECRET과 같은 값) PRIVACY_ENCRYPTION_KEY=(같은 값) SPRING_MAIN_LAZY_INITIALIZATION=false java -jar app.jar`. prod 프로필엔 시드가 없어 테스트가 SQL로 관리자를 넣는다(`test/contract-admin/helpers.ts`).
+
+## 컷오버 스모크 (`scripts/smoke.mjs`, `.github/workflows/smoke.yml`)
+
+운영에 돌려도 안전한 읽기 위주 점검(쓰기는 없는 계정의 로그인 실패 1번). 주소를 준 대상만 본다.
+```bash
+node scripts/smoke.mjs --api https://api.happiness.io.kr --admin-api <어드민 API> --web https://happiness.io.kr --admin-web <어드민 웹>
+```
+GitHub Actions › Smoke(수동 실행)에서도 같은 점검을 한다 — 클라우드 개발 세션은 운영 도메인에 접속할 수 없어서. 로컬 확인(2026-11-24): Nest 8090·8091 + `apps/web`·`apps/admin` 빌드 모두 통과, Spring 8080은 작업 탐색 1건 실패(위 의도적 차이), Spring 어드민 8081 통과.

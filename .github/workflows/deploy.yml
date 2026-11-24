@@ -295,14 +295,14 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.vercel-check.outputs.configured == 'true'
         with:
-          node-version: '20'
+          node-version: ${{ (vars.WEB_APP_DIR || 'frontend') == 'frontend' && '20' || '22' }}
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: ${{ vars.WEB_APP_DIR || 'frontend' }}/package-lock.json
 
       - name: Install dependencies
         if: steps.vercel-check.outputs.configured == 'true'
         run: npm ci
-        working-directory: frontend
+        working-directory: ${{ vars.WEB_APP_DIR || 'frontend' }}
 
       - name: Deploy to Vercel
         if: steps.vercel-check.outputs.configured == 'true'
@@ -311,7 +311,8 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
+          # 컷오버 스위치 — Variable WEB_APP_DIR=apps/web (Vercel 프로젝트 Root Directory도 함께 바꾼다)
+          working-directory: ${{ vars.WEB_APP_DIR || 'frontend' }}
           vercel-args: '--prod'
 
   # ────────────────────────────────────────────────────────────────────
@@ -319,7 +320,8 @@ jobs:
   #
   # Secrets: CLOUDFLARE_API_TOKEN(권한: Account › Cloudflare Pages › Edit), CLOUDFLARE_ACCOUNT_ID
   # Variables(선택): CF_PAGES_PROJECT(기본 happiness-app), REACT_APP_API_URL, REACT_APP_FIREBASE_*
-  # 없으면 경고만 남기고 건너뛴다. SPA 라우팅·보안 헤더는 frontend/public/_redirects·_headers.
+  # 없으면 경고만 남기고 건너뛴다. SPA 라우팅·보안 헤더는 frontend/public/_redirects·_headers(apps/web도 같은 파일).
+  # WEB_APP_DIR(Variable)=apps/web이면 Next.js 웹을 배포 — TS 전환 컷오버 스위치(PROMPT_ts-cutover.md).
   # ────────────────────────────────────────────────────────────────────
   deploy-frontend-cloudflare:
     name: Deploy Frontend (Cloudflare Pages)
@@ -330,9 +332,11 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'happiness-app' }}
+      # 컷오버 스위치(TS 전환 11단계) — 저장소 Variable WEB_APP_DIR=apps/web이면 Next.js 웹(출력 out), 없으면 지금처럼 frontend(CRA, 출력 build)
+      WEB_APP_DIR: ${{ vars.WEB_APP_DIR || 'frontend' }}
     defaults:
       run:
-        working-directory: frontend
+        working-directory: ${{ vars.WEB_APP_DIR || 'frontend' }}
 
     steps:
       - name: Check Cloudflare secrets
@@ -352,9 +356,9 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.cf-check.outputs.configured == 'true'
         with:
-          node-version: '20'
+          node-version: ${{ (vars.WEB_APP_DIR || 'frontend') == 'frontend' && '20' || '22' }}
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: ${{ vars.WEB_APP_DIR || 'frontend' }}/package-lock.json
 
       - run: npm ci
         if: steps.cf-check.outputs.configured == 'true'
@@ -377,7 +381,7 @@ jobs:
             if [ -n "$val" ]; then echo "$v=$val" >> .env.production.local; fi
             unset "$v"
           done
-          CI=true npm run build
+          if [ "$WEB_APP_DIR" = "frontend" ]; then CI=true npm run build; else npm run build; fi
 
       # 첫 배포 때 프로젝트가 없으면 만든다(이미 있으면 실패 메시지만 남고 다음 단계 진행)
       - name: Ensure Pages project
@@ -386,4 +390,6 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         if: steps.cf-check.outputs.configured == 'true'
-        run: npx --yes wrangler@3.114.0 pages deploy build --project-name="$CF_PAGES_PROJECT" --branch=master --commit-hash="$GITHUB_SHA"
+        run: |
+          OUT_DIR=build; [ "$WEB_APP_DIR" = "frontend" ] || OUT_DIR=out
+          npx --yes wrangler@3.114.0 pages deploy "$OUT_DIR" --project-name="$CF_PAGES_PROJECT" --branch=master --commit-hash="$GITHUB_SHA"
