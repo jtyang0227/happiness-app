@@ -16,4 +16,5 @@ npm run dev                                                  # 개발 서버 300
 - 로고는 `public/assets/logo.png`(CRA의 이미지 import 대신 정적 경로).
 - 환경 변수: `REACT_APP_API_URL`(이름 그대로, 빌드 때 `next.config.mjs`가 넣는다).
 - 배포: `vercel.json`(SPA 폴백 + 보안 헤더) 그대로. Vercel 프로젝트의 Root Directory를 `apps/admin`, 출력 `out`으로(컷오버 11단계).
-- 확인(2026-11-24): CRA 빌드와 31개 화면 × 390/1280 = 62장 픽셀 동일(Nest 어드민 API, 고정 시각, 경로마다 교대로 촬영).
+- TypeScript(`strict: false`로 시작, `npm run typecheck` 0) — CRA jest 테스트는 vitest(`npm test`, 전역 describe/it).
+- 확인(2026-11-24): JS 셸·TS 전환 각각 CRA 빌드와 31개 화면 × 390/1280 = 62장 픽셀 동일(Nest 어드민 API, 고정 시각, 경로마다 교대로 촬영).

@@ -6,7 +6,7 @@
       "dom.iterable",
       "esnext"
     ],
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
     "skipLibCheck": true,
     "strict": false,
@@ -19,8 +19,8 @@
     "jsx": "react-jsx",
     "incremental": true,
     "types": [
-      "node"
-      
+      "node",
+      "vitest/globals"
     ]
   },
   "include": [
