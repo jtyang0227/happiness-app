@@ -33,6 +33,10 @@ import { BookingService } from './booking/booking.service.js';
 import { DeliveryController } from './delivery/delivery.controller.js';
 import { MeetController } from './meet/meet.controller.js';
 import { AnalyticsController } from './analytics/analytics.controller.js';
+import { GatheringController, GatheringNotificationController, GatheringPlacePollController } from './gathering/gathering.controller.js';
+import { GatheringNotificationService } from './gathering/gathering-notification.service.js';
+import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
+import { GatheringService } from './gathering/gathering.service.js';
 import { InquiryController } from './inquiry/inquiry.controller.js';
 import { PortfolioController } from './portfolio/portfolio.controller.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
@@ -43,7 +47,7 @@ import { AccountRecoveryController } from './recovery/account-recovery.controlle
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringController],
   providers: [
     PrismaService,
     JwtService,
@@ -64,6 +68,9 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     AutoTagService,
     SeriesService,
     BookingService,
+    GatheringNotificationService,
+    GatheringPlacePollService,
+    GatheringService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

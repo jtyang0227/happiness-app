@@ -117,3 +117,27 @@ export function javaSplit(s: string, sep: string): string[] {
   while (parts.length > 1 && parts[parts.length - 1] === '') parts.pop();
   return parts.length === 1 && parts[0] === '' && s !== '' ? [] : parts;
 }
+
+/** LocalDateTime 필드 — "yyyy-MM-ddTHH:mm[:ss[.f…]]", 끝의 Z는 UTC로(Jackson lenient). 빈 문자열 null */
+export function jsonLocalDateTime(v: unknown, name: string): Date | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (s === '') return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?Z?$/.exec(s);
+    if (m) {
+      const [y, mo, d, h, mi, se] = [+m[1], +m[2], +m[3], +m[4], +m[5], +(m[6] ?? 0)];
+      const ms = m[7] ? Math.floor(Number(`0.${m[7]}`) * 1000) : 0;
+      const dt = new Date(Date.UTC(y, mo - 1, d, h, mi, se, ms));
+      if (dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d && h < 24 && mi < 60 && se < 60) return dt;
+    }
+  }
+  throw new Error(`Cannot deserialize ${name}`);
+}
+
+/** Boolean(래퍼) 필드 */
+export function jsonBool(v: unknown, name: string): boolean | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'string' && v.trim() === '') return null;
+  return jsonPrimitiveBool(v, name);
+}

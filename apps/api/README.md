@@ -52,7 +52,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `/api/delivery/**`(토큰 경로 공개 — 비밀번호 세트는 본문 password, 토큰당 5회 실패 시 15분 429) | `delivery.test.ts` — 같은 사진을 두 번 보내면 Spring(Hibernate merge)처럼 한 행·마지막 순서, 응답 photoCount는 보낸 개수. 만료 세트 정리 배치(매시)는 6단계에서 |
 | `/api/meets/**`(전부 인증, 요청자·수신자 외 403) | `meet.test.ts` — `updated_at`은 Hibernate처럼 값이 바뀔 때만 갱신. 좌표는 Jackson이 `37.0`, 여기선 `37`로 직렬화(값은 같음) |
 | `/api/analytics/**`(`track`만 공개 — 작업·사진은 실제 작가 소유일 때만 기록, visitorToken 분당 60회) | `analytics.test.ts` — 저장 실패 시 Spring은 예외를 잡지만 트랜잭션이 rollback-only라 500, 여기서도 500 |
-| 아직 Spring: 6단계 이후 모듈(모임·스팟·알림·배치, 추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/gatherings`(목록·상세 공개, CRUD·참여/대기자·취소 시 승격·모집 마감·참여자), `/api/gatherings/notifications/**`, `/api/gatherings/{id}/place-poll/**` | `gathering.test.ts` — 알림 응답의 읽음 키는 Lombok 규칙대로 `read` |
+| 아직 Spring: 모임 피드·앨범·Instagram, 스팟, 배치, 7단계(추천사 등), `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
@@ -67,5 +68,6 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
 - 로그아웃 때 Redis가 죽어 있으면 Spring은 500(`TokenBlacklistService`에 예외 처리 없음), 여기서는 다른 Redis 사용처처럼 통과.
 - `@PreAuthorize`(WM/SA) 거부: Spring은 `AuthorizationDeniedException`을 전역 핸들러가 못 잡아 **500 C001**, 여기서는 403 B001. 계약 테스트는 "거부됨"만 공통으로 확인한다.
+- `LocalDateTime` 응답은 Jackson처럼 소수 초 끝 0을 지운다(`.500` → `.5`). 단 Prisma `Date`가 밀리초까지라 Spring이 저장한 마이크로초는 잘린다.
 - 포트폴리오 구성 JSON: Jackson `readTree`는 뒤에 붙은 쓰레기(`{"blocks":[]} xyz`)를 무시하고 받아들이지만 여기서는 형식 오류 400. `1.0` 같은 실수는 Jackson이 텍스트 설정에 "1.0"으로, 여기서는 "1"로 넣는다.
 - 필수 쿼리 파라미터 누락(`members/search`의 `q`, `password-reset/verify`의 `token`)은 Spring처럼 500으로 둔다.

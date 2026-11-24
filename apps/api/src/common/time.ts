@@ -5,8 +5,10 @@
 export function localDateTime(d: Date | null | undefined): string | null {
   if (!d) return null;
   const iso = d.toISOString(); // 2026-11-24T03:12:34.123Z
-  const noZone = iso.slice(0, -1);
-  return noZone.endsWith('.000') ? noZone.slice(0, -4) : noZone;
+  // toISOString은 늘 .mmm까지 — ISO_LOCAL_DATE_TIME처럼 소수 초 끝의 0을 지운다(.500 → .5, .000 → 없음)
+  const [sec, frac] = iso.slice(0, -1).split('.');
+  const trimmed = frac.replace(/0+$/, '');
+  return trimmed ? `${sec}.${trimmed}` : sec;
 }
 
 /** Spring의 LocalDateTime.now()에 해당 — 프로세스가 UTC라는 전제에서 그대로 저장한다 */
