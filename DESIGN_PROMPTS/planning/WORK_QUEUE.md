@@ -11,8 +11,8 @@
 
 | # | 상태 | 항목 | 메모 |
 |---|---|---|---|
-| 1 | ⏳ | 기반 — `apps/api` Nest 뼈대·Prisma 스키마(db pull)·응답/오류 형식·JWT 호환·가드·레거시 프록시·계약 테스트 하네스 | |
-| 2 | ⏳ | 인증·회원·계정 찾기 `/api/auth/**` | |
+| 1 | ✅ | 기반 — `apps/api` Nest 뼈대·Prisma 스키마(db pull)·응답/오류 형식·JWT 호환·가드·레거시 프록시·계약 테스트 하네스 | NestJS 12(ESM 전용 → `type: module`)·Prisma 7.10.1(최신 태그가 RC라 제외)·TS 6.0.3·vitest 3.2.7(4.x는 npm 설치 오류). 로컬: PG16 + Redis 7 + Spring(같은 PG) |
+| 2 | 🔄 | 인증·회원·계정 찾기 `/api/auth/**` | 완료: signup·login·refresh·logout·check-email·check-profile-name·member/{id} — 계약 14개 Spring·Nest 둘 다 통과 + 서버 간 호환(양방향). 다음: member/{id}/profile·password·stats, members(관리자·검색), member/{id}/role, 계정 찾기 4개, OAuth 4개. 탈퇴(DELETE member)는 연쇄 삭제가 전 모듈에 걸쳐 7단계 뒤로 |
 | 3 | ⏳ | 사진·댓글·팔로우·피드·업로드·신고·차단 | |
 | 4 | ⏳ | 시리즈·포트폴리오·무드보드·탐색·비슷한 사진 | |
 | 5 | ⏳ | 업무 — 문의·예약·납품·약속·분석 | |

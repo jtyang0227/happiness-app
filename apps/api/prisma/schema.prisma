@@ -1,0 +1,676 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model achievements {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  location      String?  @db.VarChar(100)
+  member_id     BigInt
+  organizer     String?  @db.VarChar(100)
+  title         String   @db.VarChar(200)
+  type          String   @db.VarChar(20)
+  url           String?  @db.VarChar(500)
+  year_month    String?  @db.VarChar(7)
+
+  @@index([member_id], map: "idx_achievements_member_id")
+}
+
+model analytics_events {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  event_type    String   @db.VarChar(30)
+  member_id     BigInt
+  target_id     BigInt?
+  target_type   String?  @db.VarChar(20)
+  visitor_token String?  @db.VarChar(32)
+
+  @@index([created_at], map: "idx_analytics_created_at")
+  @@index([member_id, event_type], map: "idx_analytics_member_type")
+  @@index([member_id, event_type, created_at], map: "idx_analytics_member_type_created")
+  @@index([target_type, target_id, event_type], map: "idx_analytics_target")
+  @@index([visitor_token, created_at], map: "idx_analytics_visitor_token")
+}
+
+model boards {
+  id         BigInt   @id @default(autoincrement())
+  count      Int
+  created_at DateTime @db.Timestamp(6)
+  title      String   @db.VarChar(255)
+  updated_at DateTime @db.Timestamp(6)
+}
+
+model booking_availability {
+  id           BigInt    @id @default(autoincrement())
+  booking_note String?
+  buffer_hours Int
+  is_active    Boolean
+  member_id    BigInt    @unique(map: "uksdrqmlekkih69ap90lfos9sa4")
+  time_slots   String?   @db.VarChar(100)
+  updated_at   DateTime? @db.Timestamp(6)
+  weekdays     String?   @db.VarChar(20)
+}
+
+model booking_blocked_dates {
+  id           BigInt   @id @default(autoincrement())
+  blocked_date DateTime @db.Date
+  member_id    BigInt
+  reason       String?  @db.VarChar(100)
+
+  @@unique([member_id, blocked_date], map: "ukom1nabvbeq9gphni5wgvjuvus")
+}
+
+model bookings {
+  id                  BigInt    @id @default(autoincrement())
+  balance_amount      Int?
+  balance_received_at DateTime? @db.Timestamp(6)
+  balance_status      String?   @db.VarChar(20)
+  cancelled_at        DateTime? @db.Timestamp(6)
+  checklist_json      String?
+  client_email        String?   @db.VarChar(255)
+  client_name         String    @db.VarChar(100)
+  client_phone        String?   @db.VarChar(30)
+  confirmed_at        DateTime? @db.Timestamp(6)
+  created_at          DateTime  @db.Timestamp(6)
+  delivery_deadline   DateTime? @db.Date
+  deposit_amount      Int?
+  deposit_received_at DateTime? @db.Timestamp(6)
+  deposit_status      String?   @db.VarChar(20)
+  member_id           BigInt
+  memo                String?
+  reject_reason       String?   @db.VarChar(200)
+  shoot_date          DateTime  @db.Date
+  shoot_time          String?   @db.VarChar(10)
+  shoot_type          String?   @db.VarChar(20)
+  status              String?   @db.VarChar(20)
+
+  @@index([member_id, shoot_date], map: "idx_bookings_member_shoot_date")
+  @@index([status, shoot_date], map: "idx_bookings_status_shoot_date")
+}
+
+model client_brands {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  logo_url      String?  @db.VarChar(500)
+  member_id     BigInt
+  name          String   @db.VarChar(100)
+
+  @@index([member_id], map: "idx_client_brands_member_id")
+}
+
+model comments {
+  id                BigInt   @id @default(autoincrement())
+  content           String
+  created_at        DateTime @db.Timestamp(6)
+  member_avatar_url String?  @db.VarChar(500)
+  member_id         BigInt
+  member_name       String   @db.VarChar(100)
+  parent_id         BigInt?
+  photo_id          BigInt
+
+  @@index([parent_id], map: "idx_comments_parent_id")
+  @@index([photo_id], map: "idx_comments_photo_id")
+}
+
+model contents {
+  id         BigInt   @id @default(autoincrement())
+  content    String
+  count      Int
+  created_at DateTime @db.Timestamp(6)
+  likes      Int
+  subtitle   String?  @db.VarChar(255)
+  title      String   @db.VarChar(255)
+  updated_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  members    members  @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk4fuvkrhbvpt87m2028pb9e03c")
+}
+
+model delivery_set_photos {
+  delivery_set_id BigInt
+  photo_id        BigInt
+  liked           Boolean
+  sort_order      Int
+
+  @@id([delivery_set_id, photo_id])
+}
+
+model delivery_sets {
+  id            BigInt    @id @default(autoincrement())
+  approved_at   DateTime? @db.Timestamp(6)
+  client_name   String?   @db.VarChar(100)
+  created_at    DateTime  @db.Timestamp(6)
+  expires_at    DateTime  @db.Timestamp(6)
+  feedback      String?
+  member_id     BigInt
+  password_hash String?   @db.VarChar(255)
+  status        String?   @db.VarChar(20)
+  title         String    @db.VarChar(200)
+  token         String    @unique(map: "ukcjugk1vy52qr9xx68c281otd8") @db.VarChar(64)
+  viewed_at     DateTime? @db.Timestamp(6)
+
+  @@index([member_id], map: "idx_delivery_sets_member_id")
+}
+
+model follows {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  follower_id  BigInt
+  following_id BigInt
+
+  @@unique([follower_id, following_id], map: "uk4faelgsm2rxl2jf3iyjy981ro")
+  @@index([following_id], map: "idx_follows_following_id")
+}
+
+model gathering_notifications {
+  id              BigInt   @id @default(autoincrement())
+  created_at      DateTime @db.Timestamp(6)
+  gathering_id    BigInt
+  is_read         Boolean
+  member_id       BigInt
+  message         String   @db.VarChar(300)
+  related_post_id BigInt?
+  type            String   @db.VarChar(30)
+
+  @@index([created_at], map: "idx_gn_created_at")
+  @@index([member_id, is_read], map: "idx_gn_member_read")
+}
+
+model gathering_participants {
+  id           BigInt   @id @default(autoincrement())
+  gathering_id BigInt
+  joined_at    DateTime @db.Timestamp(6)
+  member_id    BigInt
+  reason       String?  @db.VarChar(200)
+  status       String   @db.VarChar(20)
+
+  @@unique([gathering_id, member_id], map: "uq_gathering_member")
+  @@index([gathering_id, status], map: "idx_gathering_participants_gathering")
+  @@index([member_id], map: "idx_gathering_participants_member")
+}
+
+model gathering_photos {
+  id                BigInt   @id @default(autoincrement())
+  caption           String?
+  created_at        DateTime @db.Timestamp(6)
+  gathering_post_id BigInt
+  image_url         String   @db.VarChar(500)
+  sort_order        Int
+
+  @@index([gathering_post_id], map: "idx_gathering_photos_post_id")
+}
+
+model gathering_place_options {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  gathering_id BigInt
+  label        String   @db.VarChar(100)
+  spot_id      BigInt?
+
+  @@index([gathering_id], map: "idx_gpo_gathering")
+}
+
+model gathering_place_votes {
+  id           BigInt   @id @default(autoincrement())
+  gathering_id BigInt
+  member_id    BigInt
+  option_id    BigInt
+  voted_at     DateTime @db.Timestamp(6)
+
+  @@unique([gathering_id, member_id], map: "uk_gpv_gathering_member")
+  @@index([option_id], map: "idx_gpv_option")
+}
+
+model gathering_post_comments {
+  id                BigInt   @id @default(autoincrement())
+  content           String
+  created_at        DateTime @db.Timestamp(6)
+  gathering_post_id BigInt
+  member_avatar_url String?  @db.VarChar(500)
+  member_id         BigInt
+  member_name       String   @db.VarChar(100)
+
+  @@index([gathering_post_id], map: "idx_gathering_post_comments_post_id")
+}
+
+model gathering_post_likes {
+  id                BigInt   @id @default(autoincrement())
+  created_at        DateTime @db.Timestamp(6)
+  gathering_post_id BigInt
+  member_id         BigInt
+
+  @@unique([gathering_post_id, member_id], map: "uq_gathering_post_like")
+  @@index([gathering_post_id], map: "idx_gathering_post_likes_post_id")
+}
+
+model gathering_posts {
+  id                BigInt   @id @default(autoincrement())
+  content           String?
+  created_at        DateTime @db.Timestamp(6)
+  gathering_id      BigInt
+  hashtags          String?  @db.VarChar(300)
+  member_avatar_url String?  @db.VarChar(500)
+  member_id         BigInt
+  member_name       String   @db.VarChar(100)
+  wants_feedback    Boolean?
+
+  @@index([gathering_id], map: "idx_gathering_posts_gathering_id")
+  @@index([member_id], map: "idx_gathering_posts_member_id")
+}
+
+model gatherings {
+  id                        BigInt   @id @default(autoincrement())
+  beginner_friendly         Boolean?
+  created_at                DateTime @db.Timestamp(6)
+  created_by                BigInt
+  description               String?
+  detail_description        String?
+  end_date_time             DateTime @db.Timestamp(6)
+  fee                       String?  @db.VarChar(100)
+  hashtags                  String?  @db.VarChar(300)
+  location                  String   @db.VarChar(300)
+  location_intro            String?
+  max_participants          Int
+  portrait_consent_rule     Boolean?
+  preparation_note          String?
+  recruitment_end_date_time DateTime @db.Timestamp(6)
+  reference_image_url       String?  @db.VarChar(500)
+  shoot_theme               String?  @db.VarChar(200)
+  spot_id                   BigInt?
+  start_date_time           DateTime @db.Timestamp(6)
+  status                    String   @db.VarChar(20)
+  thumbnail_url             String?  @db.VarChar(500)
+  title                     String   @db.VarChar(200)
+
+  @@index([created_by], map: "idx_gatherings_created_by")
+  @@index([start_date_time], map: "idx_gatherings_start_date")
+  @@index([status], map: "idx_gatherings_status")
+}
+
+model inquiries {
+  id                 BigInt   @id @default(autoincrement())
+  budget             String?  @db.VarChar(100)
+  created_at         DateTime @db.Timestamp(6)
+  is_read            Boolean
+  message            String
+  receiver_member_id BigInt
+  sender_email       String   @db.VarChar(100)
+  sender_name        String   @db.VarChar(50)
+  shoot_date         String?  @db.VarChar(50)
+  shoot_type         String?  @db.VarChar(20)
+  source_series_id   BigInt?
+
+  @@index([receiver_member_id], map: "idx_inquiries_receiver_member_id")
+}
+
+model instagram_story_shares {
+  id                BigInt   @id @default(autoincrement())
+  caption_text      String?  @db.VarChar(300)
+  gathering_id      BigInt
+  gathering_post_id BigInt?
+  member_id         BigInt
+  shared_at         DateTime @db.Timestamp(6)
+  tagged_member_ids String?  @db.VarChar(500)
+  template          String   @db.VarChar(30)
+
+  @@index([gathering_id], map: "idx_instagram_shares_gathering")
+  @@index([member_id], map: "idx_instagram_shares_member")
+}
+
+model meet_availabilities {
+  id              BigInt   @id @default(autoincrement())
+  available_dates String?
+  available_times String?
+  meet_id         BigInt
+  member_id       BigInt
+  updated_at      DateTime @db.Timestamp(6)
+
+  @@unique([meet_id, member_id], map: "uk8ur97a54d468wd59jicga222s")
+}
+
+model meet_messages {
+  id            BigInt   @id @default(autoincrement())
+  content       String
+  created_at    DateTime @db.Timestamp(6)
+  meet_id       BigInt
+  sender_avatar String?  @db.VarChar(500)
+  sender_id     BigInt
+  sender_name   String   @db.VarChar(100)
+
+  @@index([meet_id], map: "idx_meet_messages_meet_id")
+}
+
+model meets {
+  id               BigInt    @id @default(autoincrement())
+  confirmed_date   DateTime? @db.Date
+  confirmed_time   String?   @db.VarChar(10)
+  created_at       DateTime  @db.Timestamp(6)
+  initial_message  String?
+  location_address String?   @db.VarChar(400)
+  location_lat     Float?
+  location_lng     Float?
+  location_name    String?   @db.VarChar(200)
+  receiver_id      BigInt
+  requester_id     BigInt
+  status           String    @db.VarChar(20)
+  updated_at       DateTime  @db.Timestamp(6)
+
+  @@index([receiver_id], map: "idx_meets_receiver")
+  @@index([requester_id], map: "idx_meets_requester")
+}
+
+model member_blocks {
+  id         BigInt   @id @default(autoincrement())
+  blocked_id BigInt
+  blocker_id BigInt
+  created_at DateTime @db.Timestamp(6)
+
+  @@unique([blocker_id, blocked_id], map: "uknaluyibog40pgd662axp5fse8")
+  @@index([blocked_id], map: "idx_member_blocks_blocked_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model members {
+  id                       BigInt     @id @default(autoincrement())
+  authority                String     @db.VarChar(255)
+  avatar_url               String?    @db.VarChar(500)
+  bio                      String?
+  cover_url                String?    @db.VarChar(500)
+  created_at               DateTime   @db.Timestamp(6)
+  email                    String     @unique(map: "uk9d30a9u1qpg8eou0otgkwrp5d") @db.VarChar(255)
+  email_notifications      Boolean
+  instagram_id             String?    @db.VarChar(50)
+  location                 String?    @db.VarChar(100)
+  name                     String     @db.VarChar(255)
+  password                 String?    @db.VarChar(255)
+  portfolio_cover_photo_id BigInt?
+  portfolio_layout         String?    @db.VarChar(20)
+  portfolio_sections_json  String?
+  portfolio_style_json     String?
+  portfolio_template       String?    @db.VarChar(20)
+  profile_name             String?    @unique(map: "uksc7nu0i3lec93dlnsrdjejp4u") @db.VarChar(30)
+  provider                 String?    @db.VarChar(255)
+  provider_id              String?    @db.VarChar(255)
+  public_profile           Boolean
+  specialties              String?    @db.VarChar(300)
+  status                   String     @db.VarChar(255)
+  tel                      String     @db.VarChar(255)
+  updated_at               DateTime   @db.Timestamp(6)
+  website_url              String?    @db.VarChar(300)
+  contents                 contents[]
+
+  @@index([provider, provider_id], map: "idx_members_provider")
+}
+
+model moodboard_items {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  moodboard_id BigInt
+  photo_id     BigInt
+
+  @@unique([moodboard_id, photo_id], map: "ukdsmbf98shkovbhijaxis0we51")
+  @@index([photo_id], map: "idx_moodboard_items_photo")
+}
+
+model moodboards {
+  id          BigInt   @id @default(autoincrement())
+  created_at  DateTime @db.Timestamp(6)
+  member_id   BigInt
+  name        String   @db.VarChar(50)
+  share_token String?  @unique(map: "idx_moodboards_share_token") @db.VarChar(32)
+  updated_at  DateTime @db.Timestamp(6)
+
+  @@index([member_id], map: "idx_moodboards_member")
+}
+
+model newsletter_subscribers {
+  id              BigInt    @id @default(autoincrement())
+  email           String    @db.VarChar(255)
+  member_id       BigInt
+  subscribed_at   DateTime  @db.Timestamp(6)
+  token           String    @unique(map: "ukh0onykosbrrffkms10ckkt6hs") @db.VarChar(64)
+  unsubscribed_at DateTime? @db.Timestamp(6)
+
+  @@unique([member_id, email], map: "uketsi5wpynjancgu4ku4a5gxvy")
+}
+
+model password_reset_tokens {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime  @db.Timestamp(6)
+  expires_at DateTime  @db.Timestamp(6)
+  member_id  BigInt
+  token_hash String    @unique(map: "ukajre85ybxavf1tt4omkrs5p6g") @db.VarChar(64)
+  used_at    DateTime? @db.Timestamp(6)
+
+  @@index([member_id], map: "idx_password_reset_tokens_member")
+}
+
+model photo_likes {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  photo_id   BigInt
+
+  @@unique([photo_id, member_id], map: "ukqay2plmv9nproixw6pndpqhdd")
+}
+
+model photo_saves {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  photo_id   BigInt
+
+  @@unique([photo_id, member_id], map: "uk1ygk5hf0ustksn3c5xqnig07w")
+  @@index([member_id], map: "idx_photo_saves_member_id")
+}
+
+model photo_shares {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  photo_id   BigInt
+  platform   String   @db.VarChar(255)
+
+  @@index([photo_id], map: "idx_photo_shares_photo_id")
+}
+
+model photo_spots {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @db.Timestamp(6)
+  photo_id   BigInt   @unique(map: "uk_photo_spots_photo")
+  spot_id    BigInt
+
+  @@index([spot_id], map: "idx_photo_spots_spot")
+}
+
+model photo_tags {
+  id          BigInt   @id @default(autoincrement())
+  created_at  DateTime @db.Timestamp(6)
+  member_id   BigInt
+  member_name String   @db.VarChar(255)
+  photo_id    BigInt
+  positionx   Float?
+  positiony   Float?
+
+  @@index([photo_id], map: "idx_photo_tags_photo_id")
+}
+
+model photos {
+  id               BigInt   @id @default(autoincrement())
+  aperture         String?  @db.VarChar(20)
+  blur_hash        String?  @db.VarChar(500)
+  camera_model     String?  @db.VarChar(100)
+  color_mood       String?  @db.VarChar(255)
+  color_palette    String?
+  created_at       DateTime @db.Timestamp(6)
+  description      String?
+  display_order    Int?
+  dominant_color   String?  @db.VarChar(255)
+  focal_length     String?  @db.VarChar(20)
+  genre            String?  @db.VarChar(20)
+  grid_col_span    Int
+  image_ratio      String   @db.VarChar(255)
+  image_right      Boolean?
+  image_url        String   @db.VarChar(255)
+  iso              Int?
+  lens_model       String?  @db.VarChar(100)
+  likes_count      Int
+  magazine_caption String?
+  member_id        BigInt
+  pan_type         String?  @db.VarChar(20)
+  saves_count      Int
+  shares_count     Int
+  shutter_speed    String?  @db.VarChar(20)
+  sub_genres       String?  @db.VarChar(60)
+  thumbnail_url    String?  @db.VarChar(255)
+  title            String   @db.VarChar(255)
+  updated_at       DateTime @db.Timestamp(6)
+
+  @@index([color_mood], map: "idx_photos_color_mood")
+  @@index([genre], map: "idx_photos_genre")
+  @@index([member_id, created_at], map: "idx_photos_member_created")
+}
+
+model press_features {
+  id             BigInt   @id @default(autoincrement())
+  created_at     DateTime @db.Timestamp(6)
+  display_order  Int
+  logo_url       String?  @db.VarChar(500)
+  member_id      BigInt
+  publication    String   @db.VarChar(100)
+  published_date String?  @db.VarChar(20)
+  title          String?  @db.VarChar(200)
+  url            String?  @db.VarChar(500)
+
+  @@index([member_id], map: "idx_press_features_member_id")
+}
+
+model pricing_packages {
+  id            BigInt   @id @default(autoincrement())
+  active        Boolean
+  created_at    DateTime @db.Timestamp(6)
+  description   String?
+  display_order Int
+  featured      Boolean
+  features      String?
+  member_id     BigInt
+  name          String   @db.VarChar(100)
+  price         Int?
+  price_label   String?  @db.VarChar(50)
+
+  @@index([member_id], map: "idx_pricing_packages_member_id")
+}
+
+model reports {
+  id              BigInt    @id @default(autoincrement())
+  comment_id      BigInt?
+  created_at      DateTime  @db.Timestamp(6)
+  detail          String?
+  evidence_url    String?   @db.VarChar(500)
+  photo_id        BigInt
+  reason          String    @db.VarChar(30)
+  reporter_id     BigInt
+  reporter_seen   Boolean
+  resolution_note String?   @db.VarChar(300)
+  resolved_at     DateTime? @db.Timestamp(6)
+  status          String    @db.VarChar(20)
+
+  @@index([photo_id], map: "idx_reports_photo_id")
+  @@index([reporter_id], map: "idx_reports_reporter_id")
+  @@index([status], map: "idx_reports_status")
+}
+
+model security_audit_log {
+  id            BigInt   @id @default(autoincrement())
+  action_detail String?  @db.VarChar(500)
+  action_type   String   @db.VarChar(100)
+  created_at    DateTime @db.Timestamp(6)
+  error_message String?  @db.VarChar(500)
+  ip_address    String?  @db.VarChar(45)
+  member_id     BigInt?
+  role          String?  @db.VarChar(10)
+  success       Boolean
+
+  @@index([member_id], map: "idx_audit_member")
+}
+
+model series {
+  id              BigInt    @id @default(autoincrement())
+  client_label    String?   @db.VarChar(100)
+  cover_image_url String?   @db.VarChar(255)
+  created_at      DateTime  @db.Timestamp(6)
+  credits_json    String?
+  description     String?
+  display_order   Int
+  draft           Boolean?
+  featured_at     DateTime? @db.Timestamp(6)
+  member_id       BigInt
+  pinned          Boolean?
+  shoot_type      String?   @db.VarChar(30)
+  shot_on         String?   @db.VarChar(7)
+  story           String?
+  title           String    @db.VarChar(100)
+  updated_at      DateTime  @db.Timestamp(6)
+
+  @@index([member_id], map: "idx_series_member_id")
+}
+
+model series_appreciations {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @db.Timestamp(6)
+  member_id  BigInt
+  series_id  BigInt
+
+  @@unique([series_id, member_id], map: "ukn0tup30ughhf32dwxx3vbgtwx")
+  @@index([member_id], map: "idx_series_appreciations_member")
+}
+
+model series_photos {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  photo_id      BigInt
+  series_id     BigInt
+
+  @@unique([series_id, photo_id], map: "uk60nkpyvhp4g2bx4eh4mgsjuy5")
+}
+
+model spots {
+  id         BigInt   @id @default(autoincrement())
+  address    String?  @db.VarChar(200)
+  best_time  String?  @db.VarChar(30)
+  created_at DateTime @db.Timestamp(6)
+  created_by BigInt
+  lat        Float
+  lng        Float
+  name       String   @db.VarChar(50)
+  region     String?  @db.VarChar(30)
+  tips       String?
+  updated_at DateTime @db.Timestamp(6)
+
+  @@index([created_by], map: "idx_spots_created_by")
+  @@index([lat, lng], map: "idx_spots_lat_lng")
+  @@index([region], map: "idx_spots_region")
+}
+
+model testimonials {
+  id            BigInt   @id @default(autoincrement())
+  client_name   String   @db.VarChar(100)
+  client_role   String?  @db.VarChar(100)
+  content       String
+  created_at    DateTime @db.Timestamp(6)
+  display_order Int
+  featured      Boolean
+  member_id     BigInt
+  series_id     BigInt?
+  shoot_date    String?  @db.VarChar(20)
+
+  @@index([member_id], map: "idx_testimonials_member_id")
+}

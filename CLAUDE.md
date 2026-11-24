@@ -2900,6 +2900,17 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 
 ---
 
+## TypeScript 전환 — `apps/api` (NestJS, 2026-11-24~)
+
+사용자 결정: 전체를 **TypeScript로 통일**, **단계별 전환**. 계획 `DESIGN_PROMPTS/planning/PLANNING_typescript-migration.md`, 진행은 `WORK_QUEUE.md`.
+- `apps/api` — NestJS 12(ESM, `type: module`, 상대 import는 `.js`) + Prisma 7.10.1(`@prisma/adapter-pg`, 스키마는 Hibernate가 만든 DB를 `db pull` — **여기서 마이그레이션 금지**) + TypeScript 6.0.3. 자세한 실행법은 `apps/api/README.md`.
+- **옮기지 않은 경로는 `LEGACY_API_URL`(Spring)로 프록시** — 전역 예외 필터가 "어떤 라우트에도 안 걸린 404"(`req.route` 없음)만 넘긴다. 그래서 새 API를 앞에 세워도 기능이 빠지지 않는다.
+- **Spring과 1:1 호환**: `ApiResponse{success,code,message,data?,timestamp}`(`common/api-response.ts`, data null이면 키 생략), 오류 코드표(`common/app-error.ts` = `ErrorCode`), `LocalDateTime` 형식(`common/time.ts`, 시간대 표시 없음·TZ=UTC 전제), JWT(같은 `JWT_SECRET` 바이트, **jjwt처럼 키 길이로 HS256/384/512 선택** — 기본 키는 69바이트라 HS512), BCrypt 10, Redis 키 `rt:{회원}:{기기}`·`bl:{jti}`. 인증은 전역 `AuthGuard` + `@Public()`/`@Roles()`.
+- **계약 테스트** `apps/api/test/contract/*` — HTTP만 쓰므로 `API_BASE_URL`을 바꿔 Spring(8080)·Nest(8090)에 같은 테스트. 단계 완료 기준 = 양쪽 통과. `OTHER_API_BASE_URL`을 주면 서버 간 토큰·비밀번호 호환 테스트도 돈다.
+- 발견(고치지 않고 기록): Spring `TokenBlacklistService.blacklist`는 Redis 예외를 안 잡아 Redis 장애 시 로그아웃이 500(다른 Redis 사용처는 fail-open).
+
+---
+
 ## Claude Code 외부 스킬 (`.claude/skills/`, 2026-11-12 추가)
 
 skills.sh 레지스트리에서 스택에 맞춰 고른 11개를 원본 저장소에서 그대로 복사해 커밋했다(내용 훑어 위험 지시 없음 확인, `.zip`·`agents/openai.yaml` 제외).
