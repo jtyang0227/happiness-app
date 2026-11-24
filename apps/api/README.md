@@ -79,3 +79,23 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 - `LocalDateTime` 응답은 Jackson처럼 소수 초 끝 0을 지운다(`.500` → `.5`). 단 Prisma `Date`가 밀리초까지라 Spring이 저장한 마이크로초는 잘린다.
 - 포트폴리오 구성 JSON: Jackson `readTree`는 뒤에 붙은 쓰레기(`{"blocks":[]} xyz`)를 무시하고 받아들이지만 여기서는 형식 오류 400. `1.0` 같은 실수는 Jackson이 텍스트 설정에 "1.0"으로, 여기서는 "1"로 넣는다.
 - 필수 쿼리 파라미터 누락(`members/search`의 `q`, `password-reset/verify`의 `token`)은 Spring처럼 500으로 둔다.
+
+## 어드민 진입점 (`dist/admin-main.js`, 9단계 — happiness-admin Spring 대체)
+
+happiness-admin `backend/`(Spring Boot 3.5)의 경로 115개를 `src/admin/**`로 옮겼다. 앱과 경로(`/api/auth/login`, `/api/admin/reports`, `/api/admin/series/{id}/featured`)·오류 형식(`{error}`)·JWT가 달라 **별도 프로세스**로 띄운다(설계·충돌 표: `DESIGN_PROMPTS/planning/PLANNING_typescript-migration.md` 4-1).
+
+```bash
+npm run build                    # 앱·어드민 Prisma 클라이언트 둘 다 생성
+ADMIN_JWT_SECRET=… PRIVACY_ENCRYPTION_KEY=… npm run start:admin   # 기본 8091
+ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Spring 어드민)에도 같은 테스트
+```
+
+- **DB 스키마**: Spring 어드민은 `DB_SCHEMA`(기본 `admin`) 스키마에 자기 표 37개를 따로 만든다 — 앱의 `public` 표가 아니다. 여기서도 `ADMIN_DB_SCHEMA`(기본 `admin`)를 따르고 Prisma 스키마를 따로 둔다(`prisma/admin/schema.prisma`, `prisma.admin.config.ts`). 갱신: `ADMIN_DATABASE_URL="postgresql://…?schema=admin" npm run prisma:pull:admin`.
+- 오류: IllegalArgument 400 `{error: 메시지}`, 타입 불일치·필수값 누락·깨진 JSON·메서드 불일치 400 `{error:"잘못된 요청입니다."}`, WM 전용 거부 403, 그 밖 500 `{error:"서버 오류가 발생했습니다."}`(없는 경로도 500). 인증이 없으면 경로와 상관없이 403 빈 본문.
+- 인증: JWT(subject=이메일, `authority`, 8시간, `ADMIN_JWT_SECRET` — 앱 `JWT_SECRET`과 다름)를 검증한 뒤 **매 요청 DB에서** 상태 ACTIVE·권한 WM/SA를 다시 본다. 로그인 잠금 5회/15분(인메모리).
+- 개인정보: 마스킹(`privacy/privacy-masker.ts`), 자유서술 필드 AES-256-GCM(`enc:v1:`, `PRIVACY_ENCRYPTION_KEY` — Spring과 같은 키여야 기존 암호문을 읽는다), 접속기록 해시 체인(`admin_privacy_access_logs` — 마이크로초까지 글자로 읽어 계산, 두 서버 기록이 섞여도 검증 유효). 클라이언트 IP는 `X-Forwarded-For` 첫 값(Spring `forward-headers-strategy=framework`).
+- 정지 자동 해제 스케줄러(10분, 첫 실행 30초): Spring 어드민이 같은 스키마에서 돌고 있으면 `ADMIN_BATCH_ENABLED=false`.
+- 신고 AI 분류(`POST /api/admin/reports/ai-triage/run`): 공식 SDK `@anthropic-ai/sdk`, Spring과 같은 요청(`claude-opus-5`, max_tokens 500, thinking disabled, effort low), 키 `ANTHROPIC_API_KEY`(없으면 건마다 실패로 센다).
+- **Spring 어드민과 의도적으로 다른 점**: ① prod 프로필 `lazy-initialization=true`라 Spring은 `FieldEncryptor`가 만들어지지 않아 회원을 읽는 모든 요청(로그인 포함)이 500 — 로컬 계약 테스트는 Spring을 `SPRING_MAIN_LAZY_INITIALIZATION=false`로 띄운다. ② 예약 목록 `date` 필터: Spring은 PostgreSQL에서 500(`could not determine data type of parameter`), 여기서는 정상(`IS_SPRING`으로 구분). ③ 시스템 상태의 `dbType`은 항상 PostgreSQL(Spring은 프로필로 짐작). ④ 프로필 콘텐츠 `type` 오류 문구의 종류 순서(Spring은 `Map.of` 순서라 실행마다 다름).
+- **그대로 옮긴 Spring 버그(기록)**: 배너·팝업·공지 요청 DTO의 Lombok `isActive`/`isPinned` → JSON 키 `active`/`pinned`라 어드민 화면이 보내는 `isActive`·`isPinned`는 무시되고(항상 비활성·고정 안 됨) 응답도 `active`/`pinned`라 화면 표시가 어긋난다. 피처드 등록자 id는 이메일을 Long으로 읽다 실패해 늘 null. 무드 별칭은 Spring `Map.ofEntries` 순서가 정해져 있지 않아 별칭이 둘 들어간 검색어만 결과가 갈릴 수 있다(여기서는 선언 순서).
+- 로컬 Spring 어드민(계약 테스트용): happiness-admin `origin/claude/admin-planning-doc-120dha`를 `./gradlew bootJar` → `SPRING_PROFILES_ACTIVE=prod SERVER_PORT=8081 DB_URL=jdbc:postgresql://localhost:5432/happiness DB_USERNAME=happy DB_PASSWORD=happy DB_SCHEMA=admin JWT_SECRET=(ADMIN_JWT_SECRET과 같은 값) PRIVACY_ENCRYPTION_KEY=(같은 값) SPRING_MAIN_LAZY_INITIALIZATION=false java -jar app.jar`. prod 프로필엔 시드가 없어 테스트가 SQL로 관리자를 넣는다(`test/contract-admin/helpers.ts`).

@@ -2911,6 +2911,7 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - **Spring `XssProtectionFilter`가 모든 쿼리·폼 파라미터·헤더 값을 `escapeHtml4`로 바꾼다**(JSON 본문 제외) — Nest도 같은 표로 적용(`common/escape-html4.ts`·`xss-query.middleware.ts`). 쿼리 값을 쓰는 경로를 옮길 때 이 전제를 잊지 말 것.
 - 1~7단계 완료(2026-11-24) — Spring 컨트롤러 194개 경로 전부 + 배치 4개(같은 cron, `LEGACY_API_URL`이 있으면 기본 꺼짐 → `BATCH_ENABLED`). 계약 테스트 92개, 준비용 DB 조작은 `test/contract/db.ts`, Spring 버그를 고친 의도적 차이는 `IS_SPRING`으로만 분기. 응답 `LocalDateTime`은 Jackson처럼 소수 끝 0 제거.
 - 8·10단계(2026-11-24): 웹 `apps/web`(Next.js 16 Pages Router·React 18·정적 내보내기, 전 파일 TS — `apps/web/README.md`), 모바일 `mobile/` 전 파일 TS(`npm run typecheck`). 둘 다 `strict: false`로 시작, 화면 회귀는 스크린샷 픽셀 비교로 0. 운영 웹 배포는 컷오버 전까지 `frontend/`.
+- 9단계(2026-11-24): **어드민 이관** — happiness-admin Spring 경로 115개 → `apps/api/src/admin/**`(별도 진입점 `dist/admin-main.js`, 포트 8091, 앱과 경로·오류 형식·JWT가 달라 프로세스 분리), 프론트 → `apps/admin`(Next.js 16, webpack 빌드 — Turbopack 인라인 스크립트가 CSP 위반, CSS는 CRA 순서로 `_app`). 계약 테스트 `test/contract-admin`(48개, Spring 어드민 8081·Nest 8091 양쪽), CRA와 화면 62장 픽셀 동일. **어드민은 별도 스키마 `admin`(DB_SCHEMA) — 앱 `public` 표를 보지 않는다**(합칠지·happiness-admin 저장소 처리는 사용자 결정, 11단계). 발견: Spring 어드민 prod lazy-init로 로그인 500, 예약 날짜 필터 PG 500, 배너·팝업·공지 `isActive`/`isPinned` 키 불일치(그대로 옮김) — `apps/api/README.md` "어드민 진입점".
 - Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
 ---

@@ -15,7 +15,8 @@
 | 영역 | 기술 | 위치 |
 |---|---|---|
 | 백엔드 | Spring Boot 3.4.5, Java 21 빌드, JPA+JPQL, feature 패키지 | `backend/src/main/java/com/happiness/app/<feature>/` |
-| 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — Spring 경로 전부 옮김(프록시는 컷오버 전 안전망), 배치는 `BATCH_ENABLED`·`scripts/run-batch.mjs` | `apps/api/` (`PLANNING_typescript-migration.md`) |
+| 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — Spring 경로 전부 옮김(프록시는 컷오버 전 안전망), 배치는 `BATCH_ENABLED`·`scripts/run-batch.mjs`. 어드민은 별도 진입점 `dist/admin-main.js`(8091, 스키마 `admin`) | `apps/api/` (`PLANNING_typescript-migration.md`) |
+| 어드민 웹(전환 중) | Next.js 16 + TS(happiness-admin CRA 이관, webpack 빌드) | `apps/admin/` |
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
 | 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
@@ -23,7 +24,7 @@
 
 ## 3. 검증 명령 (이것만 쓴다)
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
-- TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`).
+- TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
@@ -71,6 +72,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 Spring 어드민은 prod 프로필에서 로그인부터 500일 가능성(lazy-init) — 작업 카드 있음.
 - **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
 - 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
@@ -81,6 +83,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-24 | f44dd80~d3303d2 | TS 전환 9단계 — 어드민 이관(API 115경로 `src/admin`, 계약 48개 Spring 어드민·Nest 양쪽, 웹 `apps/admin` CRA와 62장 동일). 발견: 어드민은 별도 스키마 `admin`, Spring 어드민 prod 로그인 500(lazy-init) | `apps/api/README.md` 어드민 진입점, PLANNING 4-1·5-1 |
 | 11-24 | b85ca30 | TypeScript 전환 1~7단계 — `apps/api`(NestJS+Prisma)가 Spring 194개 경로 전부 + 배치 4개, 계약 테스트 92개(Spring·Nest·프록시 없는 Nest 모두 통과). 발견: Spring 스팟 목록 PG 500. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |
 | 11-23 | 2cca51e~ | 출사 스팟(지도·목록·상세·사진 연결·중복 제안) + 모임 강화(스팟·초보 환영·인물 동의·장소 투표·피드백 요청) | `planning/ANALYSIS_chulsa-app-public-features.md` |
 | 11-13 | 9820fbe·e99a6bc | 스킬 기반 점검 — 문의 메일 이스케이프·`ClientIp`, Supabase 잠금 SQL, 웹 화면별 코드 분할(268→120kB), 모바일 피드 버그 | CLAUDE.md "스킬 기반 점검" 절 |

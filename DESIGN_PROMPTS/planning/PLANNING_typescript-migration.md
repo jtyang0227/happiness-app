@@ -79,6 +79,12 @@ happiness-app/
 - `frontend-ci`·`deploy-frontend*`가 `apps/web`을 보게 바꾼 뒤 `frontend/` 삭제. `web-ci`는 이미 있음(2026-11-24).
 - 되돌리기: 루트 디렉터리만 `frontend`로.
 
+**어드민 (`apps/api` 어드민 진입점 + `apps/admin`)** — 9단계 결과물
+- **사용자 확인 먼저**: ① 운영 Spring 어드민의 Railway 변수 `DB_SCHEMA`(기본 `admin`)와 그 스키마에 실제 데이터가 있는지 — 지금 설정이면 어드민은 앱 회원·사진이 아닌 자기 스키마만 본다(4-1). 그대로 둘지, 앱 데이터(`public`)를 보게 합칠지(합치면 `members.is_verified` 등 어드민 전용 열·표를 `public`에 만드는 SQL 필요 — 스키마 변경이라 별도 승인). ② happiness-admin 저장소를 "이 저장소로 이전됨" README만 남기고 보관할지(보관·삭제는 사용자 결정).
+- 새 서비스: 루트 `apps/api`, 빌드 `npm ci && npm run build`, 시작 `node dist/admin-main.js`(포트 `ADMIN_PORT` 또는 플랫폼 `PORT`를 `ADMIN_PORT`로), 헬스 `/actuator/health`. 변수: `DATABASE_URL`(또는 `ADMIN_DATABASE_URL`), `ADMIN_DB_SCHEMA`(Spring `DB_SCHEMA`와 같게), `ADMIN_JWT_SECRET`(Spring 어드민 `JWT_SECRET`과 같은 값 — 로그인 유지), `PRIVACY_ENCRYPTION_KEY`(같은 값 — 기존 암호문), `ADMIN_CORS_ALLOWED_ORIGINS`(어드민 웹 도메인), `NODE_ENV=production`, 선택 `GEMINI_API_KEY`·`ANTHROPIC_API_KEY`·`MAIL_HOST`.
+- 전환 순서: 새 서비스를 `ADMIN_BATCH_ENABLED=false`로 → 스모크(로그인·회원 목록·접속기록 verify) → 어드민 API 도메인 전환 → Spring 어드민 중지와 동시에 `ADMIN_BATCH_ENABLED=true`. 되돌리기는 도메인만.
+- 웹: Vercel 프로젝트 Root Directory `frontend` → `apps/admin`(happiness-admin 저장소 대신 이 저장소), 빌드 `npm run build`(webpack), 출력 `out`, `REACT_APP_API_URL` 그대로. `vercel.json`(SPA 폴백·CSP) 동봉.
+
 ## 6. 위험·주의
 - Java의 `LocalDateTime` JSON(`"2026-11-24T10:00:00.123456"`, 시간대 없음)과 JS `Date`(`...Z`)가 다르다 → 응답 직렬화에서 Spring 형식으로 맞춘다(`toLocalDateTimeString`).
 - Spring의 Jackson은 `null` 필드를 내보내고(`ApiResponse`만 `NON_NULL`) Lombok `isXxx` → `xxx` 규칙이 있다 → 계약 테스트가 키 이름까지 비교한다.

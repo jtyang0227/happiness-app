@@ -101,7 +101,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/api/package-lock.json
       - run: npm ci
-      - name: Build (prisma generate는 접속하지 않지만 prisma.config.ts가 DATABASE_URL을 요구)
+      - name: Build — 앱·어드민 Prisma 클라이언트 생성 + tsc (generate는 접속하지 않지만 prisma.config.ts가 DATABASE_URL을 요구)
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: npm run build
@@ -119,6 +119,24 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  admin-web-ci:
+    name: Admin Web (Next.js) CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/admin/package-lock.json
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
