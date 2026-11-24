@@ -1,0 +1,26 @@
+import { createHash } from 'node:crypto';
+import pg from 'pg';
+
+/** 계약 테스트 준비용 — HTTP로 만들 수 없는 상태(관리자 권한, 재설정 토큰)만 DB에 직접 넣는다. 두 서버는 같은 DB를 본다. */
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://happy:happy@localhost:5432/happiness' });
+
+export async function makeAdmin(memberId: number) {
+  await pool.query("UPDATE members SET authority = 'SA' WHERE id = $1", [memberId]);
+}
+
+export async function setTel(memberId: number, tel: string) {
+  await pool.query('UPDATE members SET tel = $2 WHERE id = $1', [memberId, tel]);
+}
+
+/** 원문 토큰을 정해서 넣는다(서버는 해시만 저장하므로). minutes가 음수면 이미 만료. */
+export async function insertResetToken(memberId: number, raw: string, minutes = 30) {
+  const hash = createHash('sha256').update(raw).digest('hex');
+  await pool.query(
+    "INSERT INTO password_reset_tokens (member_id, token_hash, expires_at, created_at) VALUES ($1, $2, (now() at time zone 'utc') + make_interval(mins => $3), now() at time zone 'utc')",
+    [memberId, hash, minutes],
+  );
+}
+
+export async function closeDb() {
+  await pool.end();
+}

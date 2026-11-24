@@ -73,6 +73,15 @@ export class AuthService {
     return this.tokenResponse(toMemberResponse(member), access, refresh);
   }
 
+  /** Spring issueTokensForOAuth — 기기 ID는 X-Device-Id 헤더만 본다(본문 없음), 감사 로그·로그인 잠금 없음 */
+  async issueForOAuth(member: MemberResponse, deviceHeader?: string): Promise<TokenResponse> {
+    const deviceId = resolveDevice(undefined, deviceHeader);
+    const access = this.jwt.accessToken(member.id, member.email!, member.authority!);
+    const refresh = this.jwt.refreshToken(member.id, member.email!);
+    await this.tokens.saveRefresh(member.id, deviceId, refresh);
+    return this.tokenResponse(member, access, refresh);
+  }
+
   async refresh(body: { refreshToken?: string; deviceId?: string }, deviceHeader?: string): Promise<TokenResponse> {
     if (!body.refreshToken || !body.refreshToken.trim()) throw AppError.badInput('리프레시 토큰은 필수입니다.');
     const deviceId = resolveDevice(body.deviceId, deviceHeader);

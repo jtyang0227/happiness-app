@@ -51,6 +51,7 @@
 6. hover에 `transform`을 쓰는 카드에 등장 애니메이션을 같은 요소에 주면 hover가 죽는다 → wrapper/inner 분리.
 7. **공개·인증 요청의 401을 토큰 만료로 처리하면** apiClient가 `logout()`→`/login` 새로고침을 돌려 오류 문구가 사라진다(틀린 비밀번호가 "아무 반응 없음"으로 보였던 원인). 인증 요청은 인터셉터 예외 목록에 둔다.
 8. 모바일 네이티브 전용 모듈은 `*.web.js` 스텁으로 웹 번들에서 뺀다(metro 커스텀 리졸버는 동작 안 함). 서버 주소는 `mobile/constants/config.js` 한 곳.
+9. **Spring `XssProtectionFilter`가 쿼리·폼 파라미터·헤더를 HTML 이스케이프**한다(JSON 본문 제외) — `&`·`"` 같은 문자가 든 검색어는 `&amp;`로 비교된다. TS 전환에서도 같은 표로 재현(`apps/api/src/common/escape-html4.ts`).
 
 ## 7. 운영·배포 현황
 - Vercel: GitHub 앱 연동으로 master push마다 Production — 정상.
@@ -70,7 +71,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-24 | — | TypeScript 전면 전환 시작 — `apps/api`(NestJS+Prisma) 기반 + 인증 7개 경로, Spring 프록시, 계약 테스트 | `planning/PLANNING_typescript-migration.md` |
+| 11-24 | — | TypeScript 전환 1~2단계 — `apps/api`(NestJS+Prisma), `/api/auth/**` 전부(탈퇴 제외), Spring 프록시, 계약 테스트 26개. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |
 | 11-23 | 2cca51e~ | 출사 스팟(지도·목록·상세·사진 연결·중복 제안) + 모임 강화(스팟·초보 환영·인물 동의·장소 투표·피드백 요청) | `planning/ANALYSIS_chulsa-app-public-features.md` |
 | 11-13 | 9820fbe·e99a6bc | 스킬 기반 점검 — 문의 메일 이스케이프·`ClientIp`, Supabase 잠금 SQL, 웹 화면별 코드 분할(268→120kB), 모바일 피드 버그 | CLAUDE.md "스킬 기반 점검" 절 |
 | 11-12 | d5a6ebc | 공식 플러그인 4개(hookify·commit-commands·ralph-loop·claude-code-setup) + 가드 규칙 5개 + 편집 훅 교체 | CLAUDE.md "플러그인·가드 규칙" 절 |

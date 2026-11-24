@@ -1,5 +1,6 @@
 import type { Request, RequestHandler, Response } from 'express';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
+import { restoreRawUrl } from './xss-query.middleware.js';
 
 /**
  * 아직 옮기지 않은 경로는 기존 Spring API로 그대로 넘긴다 (strangler 방식, PLANNING_typescript-migration.md 2-1).
@@ -25,6 +26,7 @@ export function legacyProxy(): RequestHandler | null {
 export function forwardToLegacy(req: Request, res: Response): boolean {
   const p = legacyProxy();
   if (!p) return false;
+  restoreRawUrl(req);
   p(req, res, () => undefined);
   return true;
 }

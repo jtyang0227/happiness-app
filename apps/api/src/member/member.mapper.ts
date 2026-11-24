@@ -58,3 +58,26 @@ export function toMemberResponse(m: members): MemberResponse {
 export function withoutContact(r: MemberResponse): MemberResponse {
   return { ...r, email: null, tel: null };
 }
+
+/** 관리자 목록용 — Spring PrivacyMasker와 같은 규칙 (us***@test.com, 010-****-0002) */
+export function maskedContact(r: MemberResponse): MemberResponse {
+  return { ...r, email: maskEmail(r.email), tel: maskTel(r.tel) };
+}
+
+export function maskEmail(email: string | null): string | null {
+  if (email == null || email.trim() === '') return email;
+  const at = email.indexOf('@');
+  if (at <= 0) return '***';
+  return email.slice(0, Math.min(2, at)) + '***' + email.slice(at);
+}
+
+export function maskTel(tel: string | null): string | null {
+  if (tel == null || tel.trim() === '') return tel;
+  const digits = tel.replace(/\D/g, '');
+  if (digits.length < 7) return '****';
+  if (tel.includes('-')) {
+    const parts = tel.split('-');
+    if (parts.length === 3) return `${parts[0]}-****-${parts[2]}`;
+  }
+  return digits.slice(0, 3) + '****' + digits.slice(-4);
+}

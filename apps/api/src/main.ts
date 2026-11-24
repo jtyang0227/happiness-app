@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { xssQueryMiddleware } from './common/xss-query.middleware.js';
 
 async function bootstrap() {
   // DB의 timestamp without time zone을 Spring(LocalDateTime, UTC 서버)과 같은 값으로 읽고 쓰기 위해 UTC로 고정
@@ -15,6 +16,7 @@ async function bootstrap() {
     allowedHeaders: '*',
     credentials: true,
   });
+  app.use(xssQueryMiddleware);
   app.enableShutdownHooks();
   const port = Number(process.env.PORT ?? 8090);
   await app.listen(port);

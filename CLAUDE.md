@@ -2907,7 +2907,10 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - **옮기지 않은 경로는 `LEGACY_API_URL`(Spring)로 프록시** — 전역 예외 필터가 "어떤 라우트에도 안 걸린 404"(`req.route` 없음)만 넘긴다. 그래서 새 API를 앞에 세워도 기능이 빠지지 않는다.
 - **Spring과 1:1 호환**: `ApiResponse{success,code,message,data?,timestamp}`(`common/api-response.ts`, data null이면 키 생략), 오류 코드표(`common/app-error.ts` = `ErrorCode`), `LocalDateTime` 형식(`common/time.ts`, 시간대 표시 없음·TZ=UTC 전제), JWT(같은 `JWT_SECRET` 바이트, **jjwt처럼 키 길이로 HS256/384/512 선택** — 기본 키는 69바이트라 HS512), BCrypt 10, Redis 키 `rt:{회원}:{기기}`·`bl:{jti}`. 인증은 전역 `AuthGuard` + `@Public()`/`@Roles()`.
 - **계약 테스트** `apps/api/test/contract/*` — HTTP만 쓰므로 `API_BASE_URL`을 바꿔 Spring(8080)·Nest(8090)에 같은 테스트. 단계 완료 기준 = 양쪽 통과. `OTHER_API_BASE_URL`을 주면 서버 간 토큰·비밀번호 호환 테스트도 돈다.
-- 발견(고치지 않고 기록): Spring `TokenBlacklistService.blacklist`는 Redis 예외를 안 잡아 Redis 장애 시 로그아웃이 500(다른 Redis 사용처는 fail-open).
+- 발견(고치지 않고 기록): Spring `TokenBlacklistService.blacklist`는 Redis 예외를 안 잡아 Redis 장애 시 로그아웃이 500(다른 Redis 사용처는 fail-open). `@PreAuthorize` 거부(`AuthorizationDeniedException`)를 전역 핸들러가 못 잡아 일반 회원이 관리자 경로를 부르면 **500 C001**(Nest는 403 B001). Apple `id_token` 서명 미검증.
+- **Spring `XssProtectionFilter`가 모든 쿼리·폼 파라미터·헤더 값을 `escapeHtml4`로 바꾼다**(JSON 본문 제외) — Nest도 같은 표로 적용(`common/escape-html4.ts`·`xss-query.middleware.ts`). 쿼리 값을 쓰는 경로를 옮길 때 이 전제를 잊지 말 것.
+- 2단계(인증 `/api/auth/**`) 완료 — 남은 Spring 경로는 탈퇴(`DELETE member/{id}`, 7단계). 계약 테스트 26개, 준비용 DB 조작은 `test/contract/db.ts`.
+- Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
 ---
 
