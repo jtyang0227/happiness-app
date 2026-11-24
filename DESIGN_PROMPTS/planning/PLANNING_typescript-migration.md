@@ -48,6 +48,19 @@ happiness-app/
 - 2단계가 끝나면 `apps/api`를 Render/Railway 새 서비스로 띄우고 `LEGACY_API_URL=기존 API 주소`. `api.happiness.io.kr`을 새 서비스로 돌리면 옮긴 기능만 Nest, 나머지는 Spring으로 간다. 되돌리기는 DNS만 다시 돌리면 된다.
 - 운영 DB 스키마는 이 계획 동안 바꾸지 않는다.
 
+## 5-1. 컷오버 체크리스트 (11단계 — 사용자 확인 후)
+**API (`apps/api`)**
+- 새 서비스(Render/Railway): 루트 `apps/api`, 빌드 `npm ci && npm run build`(빌드 때도 `DATABASE_URL` 필요 — `prisma.config.ts`), 시작 `node dist/main.js`, 헬스 `/actuator/health`.
+- 환경 변수: Spring과 같은 값 — `DATABASE_URL`(풀러면 `?pgbouncer=true` 불필요, pg 어댑터), `JWT_SECRET`(같은 값이어야 로그인 유지), `REDIS_URL`, `SUPABASE_*`, `MAIL_*`, `FRONTEND_URL`, `GEMINI_API_KEY`, `CORS_ALLOWED_ORIGINS`, OAuth 키들.
+- 전환 순서: ① 새 서비스를 `LEGACY_API_URL=기존 Spring`, `BATCH_ENABLED=false`로 띄움 → 스모크 ② `api.happiness.io.kr`을 새 서비스로 → 하루 관찰 ③ Spring 중지와 **동시에** `BATCH_ENABLED=true` ④ 프록시 제거(`LEGACY_API_URL` 비움) ⑤ Prisma baseline(`prisma migrate diff`로 현재 스키마 기준선) ⑥ `backend/` 삭제.
+- 되돌리기: DNS를 Spring으로, 새 서비스 `BATCH_ENABLED=false`.
+
+**웹 (`apps/web`)**
+- Cloudflare Pages job(`deploy-frontend-cloudflare`): `working-directory: frontend` → `apps/web`, 출력 `build` → `out`, Node 22. `REACT_APP_*` 변수 이름은 그대로.
+- Vercel: 프로젝트 Root Directory `frontend` → `apps/web`, Framework Next.js(정적 내보내기라 `out/`), 환경 변수 그대로.
+- `frontend-ci`·`deploy-frontend*`가 `apps/web`을 보게 바꾼 뒤 `frontend/` 삭제. `web-ci`는 이미 있음(2026-11-24).
+- 되돌리기: 루트 디렉터리만 `frontend`로.
+
 ## 6. 위험·주의
 - Java의 `LocalDateTime` JSON(`"2026-11-24T10:00:00.123456"`, 시간대 없음)과 JS `Date`(`...Z`)가 다르다 → 응답 직렬화에서 Spring 형식으로 맞춘다(`toLocalDateTimeString`).
 - Spring의 Jackson은 `null` 필드를 내보내고(`ApiResponse`만 `NON_NULL`) Lombok `isXxx` → `xxx` 규칙이 있다 → 계약 테스트가 키 이름까지 비교한다.

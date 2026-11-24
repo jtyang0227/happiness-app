@@ -84,6 +84,47 @@ jobs:
       - run: npm test -- --watchAll=false --passWithNoTests
 
   # ────────────────────────────────────────────────────────────────────
+  # TypeScript 전환(apps/api·apps/web) — 빌드·타입·테스트만, 배포와 무관
+  # (계약 테스트는 PostgreSQL·Redis·Spring이 필요해 로컬 scripts/dev-env.sh에서 돌린다)
+  # ────────────────────────────────────────────────────────────────────
+  api-ci:
+    name: API (NestJS) CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+      - name: Build (prisma generate는 접속하지 않지만 prisma.config.ts가 DATABASE_URL을 요구)
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: npm run build
+
+  web-ci:
+    name: Web (Next.js) CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  # ────────────────────────────────────────────────────────────────────
   # 3. Docker — 이미지 빌드 & GHCR Push (master 브랜치만)
   #
   # Dockerfile.prod 사용: backend-ci 에서 만든 JAR을 그대로 복사.

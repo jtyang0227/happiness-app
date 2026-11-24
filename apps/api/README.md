@@ -28,6 +28,8 @@ API_BASE_URL=http://localhost:8090 npm run test:contract
 API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm run test:contract   # 서버 간 호환
 ```
 
+- 빌드(`npm run build`)도 `DATABASE_URL`이 있어야 한다 — `prisma generate`는 접속하지 않지만 `prisma.config.ts`가 값을 요구한다(CI는 자리 표시 값).
+
 ## 옮긴 경로 (2026-11-24)
 | 경로 | 비고 |
 |---|---|
