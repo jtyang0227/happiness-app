@@ -1,0 +1,270 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import apiClient from '../api/apiClient';
+import { applyPageMeta } from '../utils/pageMeta';
+import { trackView } from '../utils/trackView';
+import { followApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { COLORS } from '../constants/colors';
+
+import TemplateEditorial from '../components/portfolio/templates/TemplateEditorial';
+import TemplateMinimal   from '../components/portfolio/templates/TemplateMinimal';
+import TemplateScrl      from '../components/portfolio/templates/TemplateScrl';
+import TemplateDarkRoom  from '../components/portfolio/templates/TemplateDarkRoom';
+import TemplateBlocks    from '../components/portfolio/templates/TemplateBlocks';
+
+/* ── Follow List Modal ────────────────────────────── */
+function FollowListModal({ title, members, loading, onClose }: { title?: any; members?: any; loading?: any; onClose?: (...args: any[]) => any }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: COLORS.surface, borderRadius: 16, padding: 20, width: '90%', maxWidth: 360, maxHeight: '70vh', overflow: 'auto', border: `1px solid ${COLORS.border}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>{title}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textSecondary, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+        </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: COLORS.textMuted, fontSize: 13 }}>불러오는 중...</div>
+        ) : members.length === 0 ? (
+          <div style={{ textAlign: 'center', color: COLORS.textMuted, padding: '24px 0', fontSize: 13 }}>목록이 없습니다.</div>
+        ) : members.map(m => (
+          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${COLORS.borderLight}` }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+              {m.avatarUrl ? <img src={m.avatarUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name?.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>{m.name}</div>
+              {m.profileName && <div style={{ fontSize: 11, color: COLORS.textMuted }}>@{m.profileName}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── 템플릿 레지스트리 — 새 템플릿은 여기 한 줄만 추가하면 됨 ──────── */
+const TEMPLATE_REGISTRY = {
+  EDITORIAL: TemplateEditorial,
+  SCRL:      TemplateScrl,
+  MINIMAL:   TemplateMinimal,
+  DARK_ROOM: TemplateDarkRoom,
+  BLOCKS:    TemplateBlocks,   // 직접 구성 — PLANNING_portfolio-blocks.md
+};
+
+/* ── 레지스트리에 없는 템플릿(FILM/SPLIT/MOSAIC/MAGAZINE)용 배너 래퍼 ──────── */
+function TemplateComingSoon({ template, children }: { template?: any; children?: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{
+        background: COLORS.surfaceDim,
+        borderBottom: `1px solid ${COLORS.border}`,
+        padding: '10px 20px',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 14 }}>✦</span>
+        <div style={{ fontSize: 11, color: COLORS.textMuted, letterSpacing: '0.08em' }}>
+          {template} 템플릿은 준비 중입니다. 에디토리얼 레이아웃으로 표시합니다.
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Main Page ──────────────────────────────────────── */
+export default function PortfolioPage() {
+  const { profileName } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [data, setData]           = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+
+  const [template, setTemplate]   = useState('EDITORIAL');
+  const [portfolioConfig, setPortfolioConfig] = useState(null);
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  const [following, setFollowing]         = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const [followModal, setFollowModal]               = useState(null);
+  const [followModalMembers, setFollowModalMembers] = useState([]);
+  const [loadingModal, setLoadingModal]             = useState(false);
+
+  /* ── 포트폴리오 데이터 + config 동시 로드 ── */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true); setError(''); setIsPrivate(false);
+      try {
+        const [portfolioRes, configRes] = await Promise.allSettled([
+          apiClient.get(`/portfolio/${profileName}`),
+          apiClient.get(`/portfolio/${profileName}/config`),
+        ]);
+
+        if (cancelled) return;
+
+        if (portfolioRes.status === 'fulfilled') {
+          setData(portfolioRes.value.data);
+          setFollowerCount(portfolioRes.value.data.followerCount ?? 0);
+        } else {
+          const err = portfolioRes.reason;
+          if (err?.response?.status === 403) setIsPrivate(true);
+          else if (err?.response?.status === 404) setError('포트폴리오를 찾을 수 없습니다.');
+          else setError('불러오는데 실패했습니다.');
+        }
+
+        if (configRes.status === 'fulfilled') {
+          const cfg = configRes.value.data;
+          setTemplate(cfg?.template || 'EDITORIAL');
+          setPortfolioConfig(cfg || null);
+        }
+        setConfigLoaded(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profileName]);
+
+  /* ── 방문 기록 (분석 대시보드 PORTFOLIO_VIEW) — 프로필이 바뀔 때 1회 ── */
+  useEffect(() => {
+    if (!data?.member?.id) return;
+    trackView({ ownerId: data.member.id, viewerId: user?.id, eventType: 'PORTFOLIO_VIEW', targetType: 'PORTFOLIO' });
+  }, [data?.member?.id, user?.id]); // user는 authStore가 세션에서 동기 복원하므로 첫 렌더부터 확정돼 있다
+
+  /* ── SEO 메타태그 동적 주입 ── */
+  useEffect(() => {
+    if (!data?.member) return;
+    const member = data.member;
+    const name = member.name || profileName;
+    const specialties = member.specialties
+      ? member.specialties.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    const specialtyText = specialties.length > 0 ? ` · ${specialties.join(' · ')}` : '';
+    const title = `${name} — 포트폴리오${specialtyText} | Happiness`;
+    const description = member.bio
+      ? member.bio.slice(0, 120)
+      : `${name}의 사진 포트폴리오${specialtyText}`;
+    const ogImage = member.coverUrl || (data.photos?.[0]?.thumbnailUrl) || '';
+    return applyPageMeta({ title, description, image: ogImage, url: window.location.href, type: 'profile' });
+  }, [data, profileName]);
+
+  /* ── 팔로우 여부 ── */
+  useEffect(() => {
+    if (!data?.member?.id || !user?.id || user.id === data.member.id) return;
+    followApi.isFollowing(user.id, data.member.id)
+      .then(res => setFollowing(res?.data?.following ?? res?.following ?? false))
+      .catch(() => {});
+  }, [data?.member?.id, user?.id]);
+
+  const handleFollow = async () => {
+    if (!user?.id || !data?.member?.id) return;
+    const memberId = data.member.id;
+    setFollowLoading(true);
+    const prev = following;
+    setFollowing(!prev);
+    setFollowerCount(c => c + (prev ? -1 : 1));
+    try {
+      if (prev) await followApi.unfollow(user.id, memberId);
+      else await followApi.follow(user.id, memberId);
+    } catch {
+      setFollowing(prev);
+      setFollowerCount(c => c + (prev ? 1 : -1));
+    } finally { setFollowLoading(false); }
+  };
+
+  const handleOpenFollowModal = async (type) => {
+    if (!data?.member?.id) return;
+    setFollowModal(type); setFollowModalMembers([]); setLoadingModal(true);
+    try {
+      const res = type === 'followers'
+        ? await followApi.getFollowers(data.member.id)
+        : await followApi.getFollowing(data.member.id);
+      const list = res?.data ?? res ?? [];
+      setFollowModalMembers(Array.isArray(list) ? list : []);
+    } catch { setFollowModalMembers([]); }
+    finally { setLoadingModal(false); }
+  };
+
+  /* ── 로딩 ── */
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary, animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+
+  if (isPrivate) return (
+    <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ fontSize: 48 }}>🔒</div>
+      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 700 }}>비공개 포트폴리오</div>
+      <div style={{ color: COLORS.textMuted, fontSize: 14 }}>이 작가의 포트폴리오는 비공개 상태입니다.</div>
+      <button onClick={() => navigate(-1)} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: COLORS.primary, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>돌아가기</button>
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ fontSize: 48 }}>✦</div>
+      <div style={{ color: COLORS.textMuted, fontSize: 16 }}>{error}</div>
+      <button onClick={() => navigate('/login')} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: COLORS.primary, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>로그인하기</button>
+    </div>
+  );
+
+  const {
+    member, photos = [], photoCount = 0, series = [],
+    followingCount = 0, totalLikes = 0, acceptingBookings = false,
+  } = data || {};
+
+  const isOwnPage = user?.id === member?.id;
+
+  /* ── 모든 템플릿에 공통으로 전달하는 props (신규 템플릿도 이 객체 하나만 받으면 됨) ── */
+  const templateProps = {
+    member,
+    photos,
+    series,
+    profileName: member?.profileName || profileName,
+    isOwnPage,
+    photoCount, followerCount, followingCount, totalLikes,
+    acceptingBookings,   // "예약 받는 중" 배지 — 예약 가용 설정을 켠 작가만 true
+    portfolioConfig,     // 직접 구성(BLOCKS)의 sectionsJson·styleJson
+    following: !isOwnPage && user?.id ? following : undefined,
+    followLoading,
+    onFollow: !isOwnPage && user?.id ? handleFollow : null,
+    onOpenFollowModal: handleOpenFollowModal,
+  };
+
+  /* ── 템플릿 분기 렌더링 — 레지스트리 조회, 새 템플릿은 TEMPLATE_REGISTRY에만 추가하면 됨 ── */
+  const renderTemplate = () => {
+    const TemplateComponent = TEMPLATE_REGISTRY[template];
+
+    if (!TemplateComponent) {
+      return (
+        <TemplateComingSoon template={template}>
+          <TemplateEditorial {...templateProps} />
+        </TemplateComingSoon>
+      );
+    }
+    return <TemplateComponent {...templateProps} />;
+  };
+
+  return (
+    <>
+      {renderTemplate()}
+
+      {/* 팔로워/팔로잉 모달 */}
+      {followModal && (
+        <FollowListModal
+          title={followModal === 'followers' ? `팔로워 ${followerCount}명` : `팔로잉 ${followingCount}명`}
+          members={followModalMembers}
+          loading={loadingModal}
+          onClose={() => setFollowModal(null)}
+        />
+      )}
+    </>
+  );
+}

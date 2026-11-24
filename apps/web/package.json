@@ -6,7 +6,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "npx serve out -l 3000 -s",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "axios": "1.7.2",
@@ -21,6 +22,8 @@
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "3.2.7",
+    "jsdom": "^26.1.0"
   }
 }

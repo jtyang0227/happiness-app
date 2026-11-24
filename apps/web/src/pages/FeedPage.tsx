@@ -1,0 +1,220 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { photoApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { COLORS, MOOD_COLORS } from '../constants/colors';
+import DotEmptyState from '../components/common/DotEmptyState';
+import { SkeletonFeedCard } from '../components/common/Skeleton';
+
+const FEED_LAYOUT_CSS = `
+  .feed-container { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
+  .feed-grid { display: flex; flex-direction: column; gap: 20px; }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .feed-container { max-width: none; padding: 32px 24px 60px; }
+    .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  }
+`;
+
+function FeedCard({ photo, onClick }: { photo?: any; onClick?: (...args: any[]) => any }) {
+  const mood = photo.colorMood && MOOD_COLORS[photo.colorMood];
+  const authorName = photo.memberName || photo.member?.name || '익명';
+  const authorAvatar = photo.memberAvatarUrl || photo.member?.avatarUrl;
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return '방금';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+    return new Date(dateStr).toLocaleDateString('ko-KR');
+  }
+
+  return (
+    <div
+      style={{
+        background: COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 16,
+        overflow: 'hidden',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(26,26,46,0.10)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.boxShadow = '';
+      }}
+    >
+      {/* 작가 헤더 */}
+      <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${COLORS.borderLight}` }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          background: authorAvatar ? 'transparent' : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden',
+        }}>
+          {authorAvatar
+            ? <img src={authorAvatar} alt={authorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : authorName.charAt(0).toUpperCase()
+          }
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>{authorName}</div>
+          {mood && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: mood.dot, display: 'inline-block' }} />
+              <span style={{ fontSize: 11, color: COLORS.textMuted }}>{mood.label}</span>
+            </div>
+          )}
+        </div>
+        <span style={{ fontSize: 11, color: COLORS.textMuted }}>{relativeTime(photo.createdAt)}</span>
+      </div>
+
+      {/* 이미지 */}
+      <div
+        onClick={() => onClick(photo.id)}
+        style={{ position: 'relative', aspectRatio: '4/3', background: COLORS.surfaceDim, overflow: 'hidden', cursor: 'pointer' }}
+      >
+        <img
+          src={photo.thumbnailUrl || photo.imageUrl}
+          alt={photo.title || '사진'}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
+          onError={e => { (e.target as HTMLElement).style.display = 'none'; }}
+        />
+      </div>
+
+      {/* 하단 액션 바 */}
+      <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 13, color: COLORS.textMuted }}>♡</span>
+        <span style={{ fontSize: 12, color: COLORS.textSecondary, marginRight: 8 }}>{photo.likesCount ?? 0}</span>
+        <span style={{ fontSize: 13, color: COLORS.textMuted }}>🔖</span>
+        <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{photo.savesCount ?? 0}</span>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: COLORS.text, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {photo.title || ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function FeedPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const PAGE_SIZE = 20;
+
+  const loadFeed = useCallback(async (pageNum = 0, append = false) => {
+    if (!user?.id) return;
+    if (pageNum === 0) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const res = await photoApi.getFeed(user.id, { page: pageNum, size: PAGE_SIZE });
+      const items = res?.data ?? [];
+      setPhotos(prev => append ? [...prev, ...items] : items);
+      setHasMore(items.length === PAGE_SIZE);
+    } catch {
+      // 팔로우 없거나 오류 — 빈 피드 표시
+      if (!append) setPhotos([]);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    setPage(0);
+    loadFeed(0, false);
+  }, [loadFeed]);
+
+  const handleLoadMore = async () => {
+    const next = page + 1;
+    setPage(next);
+    await loadFeed(next, true);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: COLORS.bg,
+    }}>
+    <style>{FEED_LAYOUT_CSS}</style>
+    <div className="feed-container">
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>📰 피드</h2>
+          <p style={{ fontSize: 13, color: COLORS.textMuted }}>팔로우한 작가들의 최신 작품</p>
+        </div>
+        {!loading && photos.length === 0 && (
+          <button onClick={() => navigate('/explore')} style={{
+            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+            border: `1px solid ${COLORS.border}`,
+            background: COLORS.surface,
+            color: COLORS.textSecondary, cursor: 'pointer',
+          }}>
+            둘러보러 가기
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="feed-grid">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonFeedCard key={i} />)}
+        </div>
+      ) : photos.length === 0 ? (
+        <DotEmptyState
+          icon="✨"
+          title="팔로우한 작가가 없어요"
+          description="마음에 드는 작가를 팔로우하면 여기에 최신 사진이 나타납니다."
+          actionLabel="둘러보며 작가 찾기"
+          onAction={() => navigate('/explore')}
+          theme="light"
+        />
+      ) : (
+        <>
+          <div className="feed-grid">
+            {photos.map(photo => (
+              <FeedCard key={photo.id} photo={photo} onClick={id => navigate(`/photo/${id}`)} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: 32 }}>
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                style={{
+                  padding: '10px 32px', borderRadius: 24,
+                  border: `1px solid ${COLORS.border}`,
+                  background: COLORS.surface,
+                  color: COLORS.textSecondary,
+                  fontWeight: 600, cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  fontSize: 14, opacity: loadingMore ? 0.6 : 1,
+                }}
+              >
+                {loadingMore ? '로딩 중...' : '더 보기'}
+              </button>
+            </div>
+          )}
+          {!hasMore && photos.length > 0 && (
+            <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: COLORS.textMuted }}>
+              모든 게시물을 확인했습니다 ✓
+            </div>
+          )}
+        </>
+      )}
+    </div>
+    </div>
+  );
+}

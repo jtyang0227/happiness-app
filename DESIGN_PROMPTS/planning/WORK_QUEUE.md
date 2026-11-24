@@ -18,7 +18,7 @@
 | 5 | ✅ | 업무 — 문의·예약·납품·약속·분석 | 계약 78개 양쪽 통과(교차 1개는 OTHER 지정 시). 커밋 4b19011·3195dfe·b923b23·99fee6c·a102a2d |
 | 6 | ✅ | 모임·스팟·알림·배치 | 모임 CRUD·참여·알림·장소 투표·피드·앨범·Instagram·스팟 + 배치 4개(run-batch.mjs로 확인), 계약 85개 양쪽. 커밋 78de64b·01e8c02·d61c6ae·3e7a67a. 발견: Spring 스팟 목록 PG 500(README) |
 | 7 | ✅ | 추천사·언론·패키지·브랜드·뉴스레터·AI 어시스턴트 + 회원 탈퇴 | Spring 경로 0개(정적 대조 194/194), 프록시 끈 Nest에서 계약 92개 전부 통과·Spring 92개 통과. 커밋 2a32d07·b85ca30 |
-| 8 | 🔄 | 웹 → TypeScript → Next.js | 8a 완료: `apps/web` Next.js 16(Pages Router·React 18 그대로·정적 내보내기) — CRA와 스크린샷 46장(23화면×390/1280) 픽셀 동일. 다음 8b: .jsx/.js → .tsx/.ts 일괄 전환(strict false로 시작) → tsc·빌드·스크린샷 재비교. `frontend/`는 컷오버(11)까지 운영 소스 |
+| 8 | 🔄 | 웹 → TypeScript → Next.js | 8a(40737e8) Next.js 셸, 8b 전 파일 .ts/.tsx(201개, tsc 0·vitest 13·빌드) — CRA와 46장 동일. 다음 8c: CI에 apps/web 빌드·타입·테스트 job, 배포 설정 초안(전환은 11번에서) |
 | 9 | ⏳ | 어드민 이관 (happiness-admin → `apps/api` admin 모듈 + `apps/admin`) | 실행 프롬프트 B절. 앱 2~8 뒤 |
 | 10 | ⏳ | 모바일 TypeScript | |
 | 11 | ⏸ | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후 |
