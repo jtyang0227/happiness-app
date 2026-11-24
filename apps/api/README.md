@@ -36,6 +36,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `PUT /api/auth/member/{id}/profile·password`, `GET member/{id}/stats`, `GET members`(WM/SA, 마스킹), `GET members/search`(래퍼 없는 배열), `PUT member/{id}/role`(WM/SA) | `member.test.ts` |
 | `POST /api/auth/find-email`, `POST password-reset/request·confirm`, `GET password-reset/verify` | `member.test.ts` — 메일은 `MAIL_*`(nodemailer), 없으면 개발에서만 링크 로그 |
 | `POST /api/auth/oauth/kakao·google·naver`, `POST oauth/apple/callback`(폼 → 302) | `oauth.test.ts` — Apple만 오프라인 확인, 나머지 3개는 외부 공급자 호출이라 실패 응답 모양만 |
+| `GET·POST /api/photos/{id}/comments`(읽기 공개), `DELETE /api/comments/{id}`, `/api/follows/**`, `/api/blocks/**` | `social.test.ts` |
 | 아직 Spring: `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).

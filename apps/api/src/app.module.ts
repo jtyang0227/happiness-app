@@ -13,12 +13,17 @@ import { MailService } from './mail/mail.service.js';
 import { MemberService } from './member/member.service.js';
 import { OAuthController } from './oauth/oauth.controller.js';
 import { OAuthService } from './oauth/oauth.service.js';
+import { BlockController } from './block/block.controller.js';
+import { CommentController } from './comment/comment.controller.js';
+import { CommentService } from './comment/comment.service.js';
+import { FollowController } from './follow/follow.controller.js';
+import { FollowService } from './follow/follow.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController],
   providers: [
     PrismaService,
     JwtService,
@@ -30,6 +35,8 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     MailService,
     AccountRecoveryService,
     OAuthService,
+    CommentService,
+    FollowService,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
