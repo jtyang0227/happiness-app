@@ -27,7 +27,10 @@
 | 9e | ✅ | 웹 `apps/admin`(Next.js TS, Cosmos×Pinterest CSS 변수 유지) — CRA와 화면 비교 | 9e-a c72c77e Next 셸(CSS는 CRA 순서로 `_app`, webpack 빌드 — Turbopack 인라인 스크립트가 CSP 위반). 9e-b(이번 커밋) 전 파일 `.ts/.tsx`(55개), tsc 0, vitest 10, CRA와 62장 픽셀 동일(1장은 안티앨리어싱 4×2px — 재촬영 시 동일) |
 | 9f | ✅ | 문서·CI·happiness-admin 저장소 처리 질문(README만 남길지 — 사용자 결정) | CI `admin-web-ci`(typecheck·test·build) 추가, api-ci는 두 Prisma 클라이언트 생성(깨끗한 체크아웃에서 확인). README "어드민 진입점", PLANNING 5-1 어드민 컷오버, CLAUDE.md·PROJECT_MEMORY. 저장소 처리·스키마 합치기는 11번에서 사용자 확인 |
 | 10 | ✅ | 모바일 TypeScript | 전 파일 .ts/.tsx(73개, babel.config.js만 JS), TypeScript ~5.1(Expo 49 권장), tsc 0. expo export web·android 통과, 안드로이드 번들 크기 같음·.web.ts 스텁은 웹에만, 웹 번들 화면 3개 픽셀 동일. 커밋 190a06c |
-| 11 | ⏸ | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후. 어드민도 포함: 운영 `DB_SCHEMA` 확인·앱 데이터와 합칠지, happiness-admin 저장소를 README만 남길지(PLANNING 5-1) |
+| 11 | 🔄 | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후. 어드민도 포함: 운영 `DB_SCHEMA` 확인·앱 데이터와 합칠지, happiness-admin 저장소를 README만 남길지(PLANNING 5-1) |
+| 11a | 🔄 | 컷오버 A — 저장소 준비: render.yaml 새 서비스 2개, 웹 전환 스위치(`WEB_APP_DIR`), 스모크 스크립트·워크플로, 문서 | 실행 프롬프트 `PROMPT_ts-cutover.md` |
+| 11b | ⏸ | 컷오버 B — 사용자 대시보드 작업(새 서비스·도메인·Spring 중지·웹/어드민 전환·master 병합) | 값·순서는 `PROMPT_ts-cutover.md` "B 상세". 운영 접근 불가(자격 증명·네트워크) |
+| 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
 ## 이전 묶음 — 출사 스팟 + 출사 모임 강화 (요청: "프롬프트 읽어서 작업 진행하고 에러 검증까지", 2026-11-23)
