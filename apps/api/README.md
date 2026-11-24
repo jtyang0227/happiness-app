@@ -41,6 +41,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | 사진 조회: `GET /api/photos`(필터·정렬·키워드 pg_trgm→LIKE·태그·조회순·page opt-in), `/suggestions`, `/{id}`, `/{id}/similar`, `/{id}/tags·likes·shares`, `/saves/{memberId}`, `/genres/stats` | `photo-read.test.ts` — `{status,data}` 래퍼, 키 `liked`·`saved` |
 | 사진 쓰기: `POST /api/photos`, `PUT /{id}`, `PUT /reorder`, 태그 추가·삭제, 좋아요·저장(취소 포함)·공유 | `photo-write.test.ts` — 오류 본문 `{status:'error',message}`(`RawBodyError`) |
 | `GET /api/feed` | `photo-write.test.ts` |
+| `POST /api/upload/image`(multipart, Supabase Storage) | `upload.test.ts` — `scripts/fake-supabase.mjs`(dev-env.sh가 띄움)로 성공 경로까지 양쪽 비교. 저장소 요청 경로의 키는 Spring처럼 `%2F` 인코딩 |
 | 아직 Spring: 사진 삭제(저장소 파일 삭제), `POST /api/photos/upload`, AI 태그, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).

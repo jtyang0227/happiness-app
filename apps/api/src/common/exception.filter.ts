@@ -34,6 +34,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
+      if (status === 413) {
+        // 업로드 용량 초과 — Spring MaxUploadSizeExceededException 핸들러와 같은 400 F002
+        res.status(400).json(fail(ErrorCode.FILE_SIZE_EXCEEDED.code, ErrorCode.FILE_SIZE_EXCEEDED.message));
+        return;
+      }
       if (status === 400) {
         // 본문 JSON이 깨진 경우 등 — Spring은 처리 못 한 예외로 500을 냈지만 400이 맞다(차이 기록: 계약 테스트 대상 아님)
         res.status(400).json(fail(ErrorCode.INVALID_INPUT.code, ErrorCode.INVALID_INPUT.message));

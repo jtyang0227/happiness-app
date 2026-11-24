@@ -14,8 +14,8 @@ wait_health() { # $1=port $2=초
 }
 
 if [ "$cmd" = down ]; then
-  fuser -k 8080/tcp 8090/tcp >/dev/null 2>&1 || true   # pkill -f 금지(내 셸까지 죽음)
-  echo "stopped 8080/8090"; exit 0
+  fuser -k 8080/tcp 8090/tcp 54321/tcp >/dev/null 2>&1 || true   # pkill -f 금지(내 셸까지 죽음)
+  echo "stopped 8080/8090/54321"; exit 0
 fi
 if [ "$cmd" = status ]; then
   for p in 8080 8090; do printf '%s ' "$p"; curl -s "localhost:$p/actuator/health" || printf 'down'; echo; done
@@ -31,6 +31,10 @@ su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='happiness'\
 
 # 2) Redis (토큰 회전·블랙리스트 테스트에 필요)
 redis-cli ping >/dev/null 2>&1 || redis-server --daemonize yes --dir "$LOG_DIR" >/dev/null 2>&1 < /dev/null
+
+# 2-1) 가짜 Supabase Storage(업로드 계약 테스트용) — 두 서버 모두 이쪽으로 업로드
+export SUPABASE_URL="${SUPABASE_URL:-http://localhost:54321}" SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-test-service-key}"
+curl -sf localhost:54321/__log >/dev/null || (setsid nohup node "$ROOT/apps/api/scripts/fake-supabase.mjs" > "$LOG_DIR/fake-supabase.log" 2>&1 < /dev/null &)
 
 # 3) Spring — 같은 PG에 ddl-auto=update로 스키마 생성(스키마 주인은 Hibernate)
 if ! curl -sf localhost:8080/actuator/health >/dev/null; then
