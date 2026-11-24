@@ -28,4 +28,9 @@ export class AuditService {
   loginSuccess(memberId: number, ip: string) {
     this.write({ member_id: BigInt(memberId), action_type: 'LOGIN_SUCCESS', action_detail: `ip=${ip}`, ip_address: ip, success: true });
   }
+
+  adminAction(memberId: number, role: string, method: string, uri: string, ip: string) {
+    this.log.log(`[ADMIN_AUDIT] memberId=${memberId} | role=${role} | ${method} ${uri}`);
+    this.write({ member_id: BigInt(memberId), role, action_type: 'ADMIN_API', action_detail: `${method} ${uri}`, ip_address: ip, success: true });
+  }
 }

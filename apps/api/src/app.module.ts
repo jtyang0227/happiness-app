@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditService } from './audit/audit.service.js';
 import { AuthController } from './auth/auth.controller.js';
 import { AuthGuard } from './auth/auth.guard.js';
@@ -18,12 +18,15 @@ import { CommentController } from './comment/comment.controller.js';
 import { CommentService } from './comment/comment.service.js';
 import { FollowController } from './follow/follow.controller.js';
 import { FollowService } from './follow/follow.service.js';
+import { AdminAuditInterceptor } from './common/admin-audit.interceptor.js';
+import { ReportController } from './report/report.controller.js';
+import { ReportService } from './report/report.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 
 @Module({
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController],
   providers: [
     PrismaService,
     JwtService,
@@ -37,6 +40,8 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     OAuthService,
     CommentService,
     FollowService,
+    ReportService,
+    { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],

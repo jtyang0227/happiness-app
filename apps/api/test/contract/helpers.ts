@@ -51,3 +51,10 @@ export const MEMBER_KEYS = [
   'specialties', 'provider', 'publicProfile', 'emailNotifications', 'portfolioLayout', 'portfolioCoverPhotoId', 'status',
   'authority', 'role', 'createdAt', 'updatedAt',
 ];
+
+/** 사진 등록 — 사진 API는 아직 Spring(프록시)이라 양쪽 서버 모두 같은 경로로 만든다. 응답은 {status,data} 래퍼 */
+export async function createPhoto(u: User, extra: Record<string, unknown> = {}): Promise<number> {
+  const r = await call('POST', '/api/photos', { token: u.token, body: { title: `사진-${uniq()}`, imageUrl: 'https://example.com/a.jpg', memberId: u.id, ...extra } });
+  if (r.status !== 200 && r.status !== 201) throw new Error(`photo ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body.data.id;
+}
