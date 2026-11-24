@@ -21,7 +21,7 @@
 | 8 | ✅ | 웹 → TypeScript → Next.js | 8a 40737e8 Next.js 셸 · 8b 3f1bb3f 전 파일 TS(tsc 0·vitest 13·빌드, CRA와 화면 46장 동일) · 8c 241d730 CI(api-ci·web-ci) + 컷오버 체크리스트(PLANNING 5-1). 운영 배포 전환은 11번 |
 | 9 | 🔄 | 어드민 이관 (happiness-admin → `apps/api` 어드민 진입점 + `apps/admin`) | 설계·충돌 표: PLANNING 4-1. **발견**: 어드민은 별도 스키마 `admin`(DB_SCHEMA) — 앱 테이블을 안 봄, 1:1로 옮기고 합칠지는 사용자 확인(11번). 하위 9a~9f |
 | 9a | ✅ | 기반 — 어드민 Spring을 로컬 PG(`admin` 스키마)로 기동, 어드민 Prisma 스키마 pull, `admin-main.ts` 진입점(오류 `{error}`·JWT·DB 재검증 가드·로그인 잠금), 로그인·hello, 계약 하네스 | `prisma/admin/schema.prisma`(37표)·`prisma.admin.config.ts`, `src/admin/**`, `test/contract-admin`(`npm run test:contract-admin`, ADMIN_API_BASE_URL) 13개 양쪽 통과 + 서버 간 토큰. **발견**: Spring 어드민 prod 프로필 `lazy-initialization=true`라 `FieldEncryptor`가 생성되지 않아 회원을 읽는 모든 요청(로그인 포함)이 500 — 로컬 Spring은 `SPRING_MAIN_LAZY_INITIALIZATION=false`로 띄움, Nest는 해당 없음. 공개 팝업은 9c |
-| 9b | ⏳ | 회원(목록·상세·요약·역할·정지·삭제·메모·이력·원문 열람·내보내기) + 개인정보 접속기록·보안 감사(암호화 `PRIVACY_ENCRYPTION_KEY`) | |
+| 9b | ✅ | 회원(목록·상세·요약·역할·정지·삭제·메모·이력·원문 열람·내보내기) + 개인정보 접속기록·보안 감사(암호화 `PRIVACY_ENCRYPTION_KEY`) | 계약 26개 양쪽 통과. AES-256-GCM(`enc:v1:`) 서로 읽힘, 접속기록 해시 체인은 마이크로초까지 글자로 읽어 계산 — 두 서버 기록 60행 섞여도 양쪽 verify 유효. 정지 자동 해제 스케줄러(`ADMIN_BATCH_ENABLED`) |
 | 9c | ⏳ | 콘텐츠 — 사진·시리즈·포트폴리오·카테고리·정렬·댓글·프로필 콘텐츠·추천·배너·팝업·공지 | |
 | 9d | ⏳ | 업무·운영 — 문의·예약·거래·모임·뉴스레터·인증·신고(+AI 분류)·통계·시스템·콘텐츠 정책 | |
 | 9e | ⏳ | 웹 `apps/admin`(Next.js TS, Cosmos×Pinterest CSS 변수 유지) — CRA와 화면 비교 | |

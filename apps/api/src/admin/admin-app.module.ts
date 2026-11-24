@@ -7,14 +7,22 @@ import { AdminAuthController } from './auth/admin-auth.controller.js';
 import { AdminAuthMiddleware } from './auth/admin-auth.middleware.js';
 import { AdminJwtService } from './auth/admin-jwt.service.js';
 import { AdminExceptionFilter } from './common/admin-exception.filter.js';
+import { AdminActivityRecorder } from './common/activity-recorder.js';
+import { AdminMemberController } from './member/admin-member.controller.js';
+import { AdminMemberService } from './member/admin-member.service.js';
+import { MemberSuspensionScheduler } from './member/member-suspension.scheduler.js';
+import { AdminPrivacyLogController } from './audit/admin-privacy-log.controller.js';
+import { AdminSecurityAuditController } from './audit/admin-security-audit.controller.js';
+import { FieldEncryptor } from './privacy/field-encryptor.js';
+import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
 
 /**
  * happiness-admin(Spring Boot) 이관 — 앱(AppModule)과 별도 진입점(admin-main.ts).
  * 경로(/api/auth/login, /api/admin/reports 등)·오류 형식·JWT가 앱과 달라 한 프로세스에 섞지 않는다(PLANNING 4-1).
  */
 @Module({
-  controllers: [AdminHelloController, AdminAuthController],
-  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
+  controllers: [AdminHelloController, AdminAuthController, AdminMemberController, AdminPrivacyLogController, AdminSecurityAuditController],
+  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
 })
 export class AdminAppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

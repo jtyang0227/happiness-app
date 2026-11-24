@@ -42,8 +42,9 @@ export class AdminAuthController {
 
     const lockMs = this.limiter.remainingLockMs(email ?? '');
     if (lockMs > 0) {
-      // Duration.toMinutes()는 내림 → Math.max(1, 분 + 1)
-      const minutes = Math.max(1, Math.floor(lockMs / 60000) + 1);
+      // Duration.toMinutes()는 내림 → Math.max(1, 분 + 1). Java는 나노초가 흘러 막 잠긴 직후도 14분 59.9초라 15가 된다
+      // — 밀리초 해상도에서 같은 순간(정확히 15분)이 나와도 같게 1ms를 뺀다
+      const minutes = Math.max(1, Math.floor((lockMs - 1) / 60000) + 1);
       throw new RawBodyError(429, { message: `로그인 시도가 너무 많습니다. ${minutes}분 후 다시 시도해 주세요.` });
     }
     const member = email === null ? null : await this.prisma.members.findUnique({ where: { email } });

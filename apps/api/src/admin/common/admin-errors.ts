@@ -32,3 +32,8 @@ export class AdminServerError extends Error {
     super(detail ?? SERVER_ERROR);
   }
 }
+
+/** @PreAuthorize("hasRole('WM')") 거부 — AccessDeniedException 핸들러 */
+export function requireWm(admin: { authority: string }) {
+  if (admin.authority !== 'WM') throw new AdminError(403, '이 작업을 할 권한이 없습니다.');
+}
