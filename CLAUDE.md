@@ -2909,7 +2909,7 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - **계약 테스트** `apps/api/test/contract/*` — HTTP만 쓰므로 `API_BASE_URL`을 바꿔 Spring(8080)·Nest(8090)에 같은 테스트. 단계 완료 기준 = 양쪽 통과. `OTHER_API_BASE_URL`을 주면 서버 간 토큰·비밀번호 호환 테스트도 돈다.
 - 발견(고치지 않고 기록): Spring `TokenBlacklistService.blacklist`는 Redis 예외를 안 잡아 Redis 장애 시 로그아웃이 500(다른 Redis 사용처는 fail-open). `@PreAuthorize` 거부(`AuthorizationDeniedException`)를 전역 핸들러가 못 잡아 일반 회원이 관리자 경로를 부르면 **500 C001**(Nest는 403 B001). Apple `id_token` 서명 미검증.
 - **Spring `XssProtectionFilter`가 모든 쿼리·폼 파라미터·헤더 값을 `escapeHtml4`로 바꾼다**(JSON 본문 제외) — Nest도 같은 표로 적용(`common/escape-html4.ts`·`xss-query.middleware.ts`). 쿼리 값을 쓰는 경로를 옮길 때 이 전제를 잊지 말 것.
-- 2단계(인증 `/api/auth/**`) 완료 — 남은 Spring 경로는 탈퇴(`DELETE member/{id}`, 7단계). 계약 테스트 26개, 준비용 DB 조작은 `test/contract/db.ts`.
+- 1~7단계 완료(2026-11-24) — Spring 컨트롤러 194개 경로 전부 + 배치 4개(같은 cron, `LEGACY_API_URL`이 있으면 기본 꺼짐 → `BATCH_ENABLED`). 계약 테스트 92개, 준비용 DB 조작은 `test/contract/db.ts`, Spring 버그를 고친 의도적 차이는 `IS_SPRING`으로만 분기. 응답 `LocalDateTime`은 Jackson처럼 소수 끝 0 제거.
 - Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
 ---

@@ -15,7 +15,7 @@
 | 영역 | 기술 | 위치 |
 |---|---|---|
 | 백엔드 | Spring Boot 3.4.5, Java 21 빌드, JPA+JPQL, feature 패키지 | `backend/src/main/java/com/happiness/app/<feature>/` |
-| 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — 옮긴 경로만 처리, 나머지는 Spring으로 프록시 | `apps/api/` (`PLANNING_typescript-migration.md`) |
+| 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — Spring 경로 전부 옮김(프록시는 컷오버 전 안전망), 배치는 `BATCH_ENABLED`·`scripts/run-batch.mjs` | `apps/api/` (`PLANNING_typescript-migration.md`) |
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
 | 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
@@ -81,7 +81,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-24 | — | TypeScript 전환 1~2단계 — `apps/api`(NestJS+Prisma), `/api/auth/**` 전부(탈퇴 제외), Spring 프록시, 계약 테스트 26개. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |
+| 11-24 | b85ca30 | TypeScript 전환 1~7단계 — `apps/api`(NestJS+Prisma)가 Spring 194개 경로 전부 + 배치 4개, 계약 테스트 92개(Spring·Nest·프록시 없는 Nest 모두 통과). 발견: Spring 스팟 목록 PG 500. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |
 | 11-23 | 2cca51e~ | 출사 스팟(지도·목록·상세·사진 연결·중복 제안) + 모임 강화(스팟·초보 환영·인물 동의·장소 투표·피드백 요청) | `planning/ANALYSIS_chulsa-app-public-features.md` |
 | 11-13 | 9820fbe·e99a6bc | 스킬 기반 점검 — 문의 메일 이스케이프·`ClientIp`, Supabase 잠금 SQL, 웹 화면별 코드 분할(268→120kB), 모바일 피드 버그 | CLAUDE.md "스킬 기반 점검" 절 |
 | 11-12 | d5a6ebc | 공식 플러그인 4개(hookify·commit-commands·ralph-loop·claude-code-setup) + 가드 규칙 5개 + 편집 훅 교체 | CLAUDE.md "플러그인·가드 규칙" 절 |
