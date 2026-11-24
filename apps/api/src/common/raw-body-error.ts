@@ -6,3 +6,10 @@ export class RawBodyError extends HttpException {
     super(body, status);
   }
 }
+
+/** 본문 없는 상태 응답 — Spring `ResponseEntity.notFound().build()` 등 */
+export class EmptyResponseError extends HttpException {
+  constructor(status: number) {
+    super('', status);
+  }
+}

@@ -45,7 +45,8 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 | `POST /api/upload/image`(multipart, Supabase Storage) | `upload.test.ts` — `scripts/fake-supabase.mjs`(dev-env.sh가 띄움)로 성공 경로까지 양쪽 비교. 저장소 요청 경로의 키는 Spring처럼 `%2F` 인코딩 |
 | `DELETE /api/photos/{id}`(연관 기록 + 저장소 변형 4개), `POST /api/photos/{id}/auto-tags`(키워드 + Google Vision `GOOGLE_VISION_API_KEY`) | `photo-write.test.ts` — 사진 삭제 시 댓글·신고는 Spring처럼 남는다 |
 | `/api/moodboards/**`(공유 보기 `GET /shared/{token}`만 공개) | `moodboard.test.ts` |
-| 아직 Spring: 시리즈·포트폴리오 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
+| `/api/series/**`(목록·탐색·상세 공개, 초안은 본인·관리자만), `PUT /api/admin/series/{id}/featured` | `series.test.ts` — 없는 작업·권한 거부 등은 Spring처럼 본문 없는 404/403/400(`EmptyResponseError`) |
+| 아직 Spring: 포트폴리오 이후 모듈, `DELETE /api/auth/member/{id}`(탈퇴 — 전 모듈 연쇄 삭제라 7단계) | 프록시 |
 
 계약 테스트 준비용 DB 조작(`test/contract/db.ts` — 관리자 승격·전화번호·재설정 토큰 넣기)은 `DATABASE_URL`을 쓴다(두 서버가 같은 DB).
 
