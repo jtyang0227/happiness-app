@@ -5,3 +5,6 @@ interface Window {
   /** 카카오맵 SDK를 한 번만 불러오기 위한 진행 중 Promise */
   __kakaoMapsLoading?: Promise<any>;
 }
+
+/** next-env.d.ts는 빌드 때 생성되므로(gitignore) 빌드 전 typecheck(CI)에서도 CSS import를 알게 한다 */
+declare module '*.css';

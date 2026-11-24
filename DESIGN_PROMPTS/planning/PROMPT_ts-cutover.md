@@ -34,6 +34,8 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 
 ## B 상세 (사용자 할 일 — 값 포함)
 
+> **진행 상황(2026-11-24)**: 7번(master 병합)만 끝났다. 1~6번은 아직 — GitHub 기록상 운영 웹 Production 배포는 11-13 이후 없었고(병합 배포 제외), Smoke 실행 기록도 없다. 각 단계 뒤 Actions › Smoke를 돌리면 Claude가 실행 결과를 GitHub에서 확인할 수 있다.
+
 > 지금 운영이 Railway(Spring API)·Vercel(웹)·별도 Vercel(어드민)인지, 무료 전환(`PLANNING_free-hosting.md`)을 이미 했는지에 따라 1·2의 플랫폼만 바뀐다. 값과 순서는 같다.
 
 **0. 결정 두 가지 (먼저)**
@@ -66,8 +68,10 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 - Spring 어드민 중지와 같은 때 `ADMIN_BATCH_ENABLED=true`.
 - 되돌리기: 이전 Vercel 연결·도메인.
 
-**7. master 병합**
-- 1~6을 쓰려면 작업 브랜치(`claude/wonderful-fermi-9uv8gf`)가 master에 있어야 한다(Render Blueprint·Actions는 master 기준). 병합하면 `render.yaml`의 새 서비스가 Blueprint 자동 동기화로 생길 수 있다(트래픽에는 영향 없음). 병합 승인은 사용자가.
+**7. master 병합 — ✅ 2026-11-24 완료(사용자 승인, b2c07c0로 fast-forward)**
+- 원래 마지막에 적었지만 실제로는 **1~6보다 먼저** 필요했다(Render Blueprint·Actions·Smoke 워크플로가 master 기준). 병합 전 확인: 백엔드 테스트 62/62, CRA 운영 빌드 성공.
+- 이 병합으로 11-23 출사 스팟 기능(웹·Spring)도 함께 운영에 나갔다(Railway 재배포 시 `spots` 등 표가 ddl-auto로 생성).
+- 다음은 1~6단계.
 
 **무료 플랜 주의(Render)**: 무료 인스턴스 시간은 작업 공간 합계 월 750시간이다. Spring + 새 앱 API + 새 어드민 API를 동시에 깨워 두면 한 달을 못 버틴다 — 전환 기간을 짧게 하고, keepalive(`KEEPALIVE_URL`)는 앱 API 하나에만 둔다(어드민은 잠들어도 된다).
 
