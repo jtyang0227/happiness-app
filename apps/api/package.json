@@ -13,7 +13,8 @@
     "test:contract": "vitest run --config vitest.contract.config.ts",
     "start:admin": "node dist/admin-main.js",
     "prisma:pull:admin": "prisma db pull --config prisma.admin.config.ts",
-    "test:contract-admin": "vitest run --config vitest.contract-admin.config.ts"
+    "test:contract-admin": "vitest run --config vitest.contract-admin.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts"
   },
   "engines": {
     "node": ">=20"

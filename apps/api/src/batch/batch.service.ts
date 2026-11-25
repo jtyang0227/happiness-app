@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { now, today } from '../common/time.js';
 import { GatheringNotificationService } from '../gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from '../gathering/gathering-place-poll.service.js';
+import { OutingPollService } from '../outing/outing-poll.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -14,7 +15,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class BatchService {
   private readonly log = new Logger('BatchService');
   constructor(private readonly prisma: PrismaService, private readonly notifications: GatheringNotificationService,
-    private readonly polls: GatheringPlacePollService) {}
+    private readonly polls: GatheringPlacePollService, private readonly outingPolls: OutingPollService) {}
 
   get enabled() {
     const v = process.env.BATCH_ENABLED;
@@ -103,6 +104,17 @@ export class BatchService {
       }
     } catch (e) {
       this.log.error(`[GATHERING_NOTIFICATION] 배치 알림 루프 실패: type=${type}: ${(e as Error).message}`);
+    }
+  }
+
+  /** SNAPDAY 월간 출사 투표 — 10분마다 자동 마감·마감 임박 알림(새 API에만 있는 배치) */
+  @Cron('0 */10 * * * *')
+  async runOutingPollBatch() {
+    if (!this.enabled) return;
+    try {
+      await this.outingPolls.runBatch();
+    } catch (e) {
+      this.log.error(`Outing poll batch 실행 중 오류 — 다음 실행에서 재시도됩니다: ${(e as Error).message}`);
     }
   }
 }

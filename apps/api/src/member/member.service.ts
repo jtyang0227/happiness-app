@@ -249,6 +249,11 @@ export class MemberService {
       await tx.password_reset_tokens.deleteMany({ where: { member_id: id } });
       await tx.comments.deleteMany({ where: { member_id: id } });            // 남의 사진에 남긴 내 댓글
       await tx.member_blocks.deleteMany({ where: { OR: [{ blocker_id: id }, { blocked_id: id }] } });
+      // SNAPDAY(새 API에만 있는 표) — 출사 투표 응답·베스트 포토 표·스토리·AI 추천 기록
+      await tx.outing_poll_votes.deleteMany({ where: { member_id: id } });
+      await tx.gathering_best_votes.deleteMany({ where: { member_id: id } });
+      await tx.gathering_stories.deleteMany({ where: { member_id: id } });
+      await tx.gathering_ai_recommendations.deleteMany({ where: { member_id: id } });
       await tx.members.deleteMany({ where: { id } });
     });
   }

@@ -42,9 +42,9 @@
 |---|---|---|---|
 | 1 | ✅ | 기획 문서(PROJECT_SPEC.html·DEVELOPMENT_PLAN·DATABASE_SCHEMA·API_SPEC·TODO·README) + 디자인 프롬프트 | 5ee568d — 루트 대신 `DESIGN_PROMPTS/planning/snapday/`(저장소 규칙), 디자인 `DESIGN_PROMPT_snapday-outing.md` |
 | 2 | ✅ | DB — Spring 엔티티(표 정의) + `prisma db pull` + 운영 SQL 기록 | (이번 커밋) 엔티티 7개(`outing/entity/*`, `gathering/entity/*`), 로컬 PG에 Hibernate가 표 생성 확인, pull은 모델 7개 추가뿐. `year/month`는 H2 예약어라 `poll_year/poll_month`. 백엔드 테스트 62 통과 |
-| 3 | 🔄 | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | 하드코딩 금지 |
-| 4 | ⏳ | 월간 출사 투표 API — 생성(주말·공휴일 자동, 평일 추가)·투표(가능/불가, 수정)·집계·마감·확정→모임 생성·알림·마감 임박/자동 마감 배치 | |
-| 5 | ⏳ | 월간 출사 투표 웹 — 2027 월 목록·달력 투표·집계·추천 날짜·관리자 도구 | |
+| 3 | ✅ | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | (이번 커밋) `apps/api/src/outing/holiday.service.ts` — `HOLIDAY_API_KEY` 없으면 503 안내, 응답 파서 단위 테스트 3(`npm run test:unit`, CI 추가). 실제 API 호출은 이 세션 네트워크 차단으로 미확인 |
+| 4 | ✅ | 월간 출사 투표 API — 생성(주말·공휴일 자동, 평일 추가)·투표(가능/불가, 수정)·집계·마감·확정→모임 생성·알림·마감 임박/자동 마감 배치 | (이번 커밋) `outing-poll.service.ts`·`outing.controller.ts`, 배치 10분(`run-batch.mjs outing-polls`로 자동 마감·임박 알림 1회 확인), 탈퇴 시 SNAPDAY 기록 삭제. 계약 테스트 `outing.test.ts` 3(새 API만), 새 API 전체 94 통과 |
+| 5 | 🔄 | 월간 출사 투표 웹 — 2027 월 목록·달력 투표·집계·추천 날짜·관리자 도구 | |
 | 6 | ⏳ | 현장 모드 — 출사 시작/종료(만든 사람·관리자) API + 웹 | |
 | 7 | ⏳ | AI 계절 추천 — Gemini(기존 키) 구조화 결과·샘플 구분·저장·장소 후보 등록 + 웹 | |
 | 8 | ⏳ | 베스트 포토 — 1인 3표·집계·앨범 표시 API + 웹 | |

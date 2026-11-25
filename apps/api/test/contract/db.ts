@@ -38,3 +38,21 @@ export async function newsletterToken(memberId: number, email: string): Promise<
   const r = await pool.query('SELECT token FROM newsletter_subscribers WHERE member_id = $1 AND email = $2', [memberId, email]);
   return r.rows[0].token;
 }
+
+/** SNAPDAY — 투표 마감 시각을 옮긴다(배치·기간 검사 테스트용) */
+export async function setPollEndsAt(pollId: number, endsAt: string) {
+  await pool.query('UPDATE outing_polls SET ends_at = $2 WHERE id = $1', [pollId, endsAt]);
+}
+
+/** SNAPDAY — 관리자 확인용: 특정 회원에게 온 알림 */
+export async function notificationsOf(memberId: number, type: string): Promise<{ gathering_id: string; related_post_id: string | null; message: string }[]> {
+  return (await pool.query('SELECT gathering_id, related_post_id, message FROM gathering_notifications WHERE member_id = $1 AND type = $2 ORDER BY id', [memberId, type])).rows;
+}
+
+/** SNAPDAY — 테스트가 만든 연도의 투표·공휴일 정리(월 1개 제약이 다음 실행과 부딪히지 않게) */
+export async function cleanupOutingYear(year: number) {
+  await pool.query('DELETE FROM outing_poll_votes WHERE poll_id IN (SELECT id FROM outing_polls WHERE poll_year = $1)', [year]);
+  await pool.query('DELETE FROM outing_poll_options WHERE poll_id IN (SELECT id FROM outing_polls WHERE poll_year = $1)', [year]);
+  await pool.query('DELETE FROM outing_polls WHERE poll_year = $1', [year]);
+  await pool.query("DELETE FROM public_holidays WHERE EXTRACT(YEAR FROM holiday_date) = $1", [year]);
+}

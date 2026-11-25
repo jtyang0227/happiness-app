@@ -52,10 +52,13 @@ import { SeriesService } from './series/series.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
+import { HolidayController, OutingPollController } from './outing/outing.controller.js';
+import { HolidayService } from './outing/holiday.service.js';
+import { OutingPollService } from './outing/outing-poll.service.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, HolidayController, OutingPollController],
   providers: [
     PrismaService,
     JwtService,
@@ -78,6 +81,8 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     BookingService,
     GatheringNotificationService,
     GatheringPlacePollService,
+    HolidayService,
+    OutingPollService,
     GatheringService,
     BatchService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },

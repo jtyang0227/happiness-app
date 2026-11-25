@@ -29,7 +29,7 @@
 | DELETE | `/{id}` | 관리자 | 삭제(확정 전만) |
 
 **대상자**(알림·미응답 계산): 최근 6개월 모임에 PARTICIPATING이었던 회원 ∪ 지난 투표 응답자. 투표 생성 시 대상자에게 `POLL_OPENED`, 마감 24시간 전 미응답 대상자에게 `POLL_CLOSING`(배치), 확정 시 가능 응답자에게 `POLL_CONFIRMED`(gathering_id = 새 모임).
-**배치**(`BATCH_ENABLED`): 10분마다 — 마감 시각 지난 OPEN → CLOSED, 24시간 안 마감 → 알림 1회.
+**배치**(`BATCH_ENABLED`): 10분마다 — 마감 시각 지난 OPEN → CLOSED, 24시간 안 마감 → 알림 1회. 즉시 실행: `node scripts/run-batch.mjs outing-polls`.
 
 ## 출사 현장 모드
 | POST | `/api/gatherings/{id}/start` | 만든 사람·관리자 | RECRUITMENT_CLOSED·SCHEDULED·RECRUITING → ONGOING, 참여자에게 `GATHERING_STARTED` |
