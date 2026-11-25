@@ -35,6 +35,8 @@ import { MeetController } from './meet/meet.controller.js';
 import { AnalyticsController } from './analytics/analytics.controller.js';
 import { GatheringController, GatheringNotificationController, GatheringPlacePollController } from './gathering/gathering.controller.js';
 import { GatheringPostController } from './gathering/gathering-post.controller.js';
+import { GatheringSnapdayController } from './gathering/gathering-snapday.controller.js';
+import { GatheringAiController } from './gathering/gathering-ai.controller.js';
 import { GatheringNotificationService } from './gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
 import { GatheringService } from './gathering/gathering.service.js';
@@ -58,7 +60,7 @@ import { OutingPollService } from './outing/outing-poll.service.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, HolidayController, OutingPollController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringSnapdayController, GatheringAiController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, HolidayController, OutingPollController],
   providers: [
     PrismaService,
     JwtService,
