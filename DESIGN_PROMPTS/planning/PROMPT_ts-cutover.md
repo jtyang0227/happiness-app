@@ -25,8 +25,16 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 
 ## C. 정리 (Claude — B 완료 확인 뒤)
 1. `LEGACY_API_URL`이 비어 있는 운영에서 스모크 통과를 사용자에게 확인받는다.
-2. Prisma 기준선: 운영 DB에서 `npx prisma migrate diff --from-empty --to-config-datasource --script > prisma/migrations/0_baseline/migration.sql`(앱·어드민 각각) → 사용자가 `npx prisma migrate resolve --applied 0_baseline` 실행. 이후 스키마 변경은 마이그레이션으로.
-3. `backend/`·`frontend/` 삭제, CI의 `backend-ci`·`frontend-ci`·`docker-build`·`deploy-backend`(Spring)·`WEB_APP_DIR` 스위치 정리, `render.yaml`의 Spring 서비스 제거, 문서의 Spring·CRA 설명을 TS 기준으로.
+2. Prisma 기준선 — **준비 완료(2026-11-25)**: `apps/api/prisma/migrations/0_baseline`·`prisma/admin/migrations/0_baseline`(스키마 파일에서 생성, 빈 DB에 적용 → 스키마와 차이 0 확인), 운영 적용 도구 `apps/api/scripts/prisma-baseline.sh`. **B-1 전에 사용자가 실행**(아래 B-1 "먼저"). 여기서는 `status`가 둘 다 "up to date"인지 확인만.
+3. `backend/`·`frontend/` 삭제와 정리 — 체크리스트(2026-11-25 저장소 전수 검색):
+   - **삭제**: `backend/`, `frontend/`, 루트 `Dockerfile`(Spring 빌드), `scripts/setup-jdk25.*`, `docker-compose.yml`의 `backend` 서비스(redis만 남기거나 apps/api로), `.gitignore`의 `frontend/build/`·`backend/…` 줄.
+   - **`.github/workflows/deploy.yml`**: `backend-ci`·`frontend-ci`·`docker-build`(GHCR Spring 이미지)·`deploy-backend`(Railway) 삭제, `env.IMAGE_NAME` 삭제. `deploy-frontend`·`deploy-frontend-cloudflare`는 `needs: web-ci`, `WEB_APP_DIR` 스위치를 `apps/web` 고정·Node 22·출력 `out`으로(조건식 제거). 저장소 Variable `WEB_APP_DIR`도 삭제.
+   - **`render.yaml`**: Spring 서비스 `happiness-api`(rootDir backend) 삭제. `keepalive.yml`의 `KEEPALIVE_URL`이 새 API를 가리키는지.
+   - **로컬 환경**: `apps/api/scripts/dev-env.sh`는 `backend/`가 없으면 자동으로 Spring 없이(`NO_SPRING`) 기준선 마이그레이션으로 DB를 만들고 Nest만 띄운다 — Spring 분기 코드만 지우면 된다(2026-11-25 이 모드로 계약 앱 100·어드민 47 통과 확인).
+   - **계약 테스트**: Spring 비교가 끝났으므로 `IS_SPRING` 분기·`OTHER_API_BASE_URL` 서버 간 테스트 정리(테스트 자체는 새 API 회귀용으로 유지).
+   - **Claude 설정**: `.claude/hooks/lint-frontend-file.sh`(CRA ESLint 전용 — `apps/web`엔 ESLint가 없음) 삭제 또는 `tsc` 검사로, `notify-page-change.sh`·`hookify.warn-blur-in-web`의 `frontend/` 경로 제거(apps/web·apps/admin은 2026-11-25 이미 추가), `.claude/agents/backend.md`(Spring 전용)·`deployer.md`·`designer.md`·`admin.md`·`planner.md`, `.claude/skills/design/SKILL.md`의 Spring·CRA 설명.
+   - **주석·문서**: `frontend/…`를 가리키는 주석(`mobile/constants/colors.ts`·`shootTypes.ts`·`utils/signupValidation.ts`, `apps/web/src/styles/theme.css`·`next.config.mjs`, `apps/api/package.json` description), `README.md`·`LAUNCH.md`·`apps/*/README.md`, CLAUDE.md의 Spring·CRA 절(Backend/Frontend Architecture·Commands·검증 규칙·운영 DB 수동 마이그레이션 → "스키마 변경은 `prisma migrate dev`"), PROJECT_MEMORY 2·3절.
+   - **사용자 대시보드**: Railway 서비스 삭제(또는 정지 유지), Vercel 프로젝트 Root Directory가 `apps/web`인지, GHCR `…/backend` 이미지 정리(선택).
 4. (선택) 레거시 프록시 코드(`common/legacy-proxy.ts`) 제거.
 5. happiness-admin 저장소: 사용자가 결정하면 README를 "이 저장소로 이전됨"으로 바꾸고 보관(보관은 사용자가 GitHub에서).
 
@@ -43,6 +51,16 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 - happiness-admin 저장소를 보관할지(C-5).
 
 **1. 새 API 서비스 띄우기 (트래픽은 아직 Spring)**
+- **먼저 DB 맞추기(필수, 2026-11-25 발견)**: SNAPDAY 표 7개(`outing_polls` 등)는 작업 브랜치 Spring 엔티티에만 있어 **운영 DB에 없다** — 그대로 띄우면 출사 투표·스토리·AI 추천·베스트 포토가 500. 운영 DB 주소(Supabase **직접 연결 5432** — 트랜잭션 풀러 6543은 DDL·마이그레이션에 쓰지 않는다)로:
+  ```
+  cd apps/api && npm ci
+  DATABASE_URL=<운영 DB> scripts/prisma-baseline.sh app check     # 읽기 전용 — CREATE TABLE/INDEX만 나와야 정상
+  DATABASE_URL=<운영 DB> scripts/prisma-baseline.sh app apply     # 추가만 실행(DROP·타입 변경이 있으면 거부)
+  DATABASE_URL=<운영 DB> scripts/prisma-baseline.sh app check     # "차이 없음"
+  DATABASE_URL=<운영 DB> scripts/prisma-baseline.sh app resolve   # 0_baseline 적용됨으로 기록
+  ```
+  어드민은 2번의 업그레이드 SQL 뒤 같은 순서로 `ADMIN_DATABASE_URL="<운영 DB>?schema=<ADMIN_DB_SCHEMA>" scripts/prisma-baseline.sh admin check|apply|resolve`.
+  check에 `DROP COLUMN`이 나오면(Hibernate `update`는 옛 열을 지우지 않아 운영에만 남은 열) apply하지 말고 알려 줄 것 — 스키마 파일에 그 열을 넣어 기준선을 다시 만든다. 로컬 운영 흉내 DB(SNAPDAY 표 삭제 + pg_trgm 인덱스)에서 check → apply → check 0 → resolve → status 확인, 삭제가 섞이면 거부되는 것까지 확인했다. pg_trgm 표현식 인덱스는 Prisma가 건드리지 않는다. Spring(ddl-auto update)이 아직 돌아도 영향 없다(새 표를 모른다).
 - Render: Blueprint 동기화(또는 새 Web Service, Root `apps/api`, Build `npm ci && npm run build`, Start `node dist/main.js`).
 - 변수: `DATABASE_URL`·`REDIS_URL`·`SUPABASE_*`·`GEMINI_API_KEY`·`MAIL_*`·OAuth 키 = Spring과 같은 값, **`JWT_SECRET` = Spring과 같은 값**, `LEGACY_API_URL` = 지금 Spring API 주소(예: `https://api.happiness.io.kr`), `BATCH_ENABLED=false`, `NODE_ENV=production`, `CORS_ALLOWED_ORIGINS` = Spring과 같은 값.
 - 확인: Actions › Smoke(`api_url` = 새 서비스 주소). 되돌리기: 서비스 삭제.

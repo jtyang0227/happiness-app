@@ -4,7 +4,8 @@ Spring Boot `backend/`를 기능 묶음 단위로 대체하는 TypeScript API. �
 
 - **옮긴 경로**는 여기서 처리하고, **안 옮긴 경로**는 `LEGACY_API_URL`(Spring)로 그대로 넘긴다 → 언제든 이 서버를 앞에 세워도 기능이 빠지지 않는다.
 - JWT(같은 `JWT_SECRET`, HS256/384/512는 jjwt처럼 키 길이로 선택)·BCrypt·Redis 키(`rt:*`, `bl:*`)가 Spring과 같아 로그인·토큰이 두 서버 사이에서 그대로 통한다.
-- DB 스키마의 주인은 아직 Hibernate. `prisma/schema.prisma`는 `prisma db pull`로 읽은 것이고 여기서 마이그레이션을 하지 않는다.
+- DB 스키마의 주인은 컷오버 전까지 Hibernate. `prisma/schema.prisma`는 `prisma db pull`로 읽은 것이다. 기준선 마이그레이션(`prisma/migrations/0_baseline`, 어드민 `prisma/admin/migrations/0_baseline`)은 준비돼 있고, 운영 DB를 기준선에 올리는 절차는 `scripts/prisma-baseline.sh`(check → apply → resolve, `PROMPT_ts-cutover.md` B-1). 그 뒤의 스키마 변경은 `npx prisma migrate dev --name …` → 커밋 → 운영 `npx prisma migrate deploy`. 기준선 전까지는 여기서 마이그레이션을 만들지 않는다.
+- 로컬: `scripts/dev-env.sh`는 `NO_SPRING=1`(또는 `backend/` 없음)이면 Spring 없이 기준선으로 DB를 만들고 Nest만 띄운다.
 
 ## 실행
 ```bash
