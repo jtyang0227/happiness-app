@@ -73,7 +73,7 @@
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
 - **TS 전환 컷오버(11b)**: `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
-- **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 Spring 어드민은 prod 프로필에서 로그인부터 500일 가능성(lazy-init) — 작업 카드 있음.
+- **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 어드민은 7월 master(c35e964)라 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행(lazy-init 500은 운영에 없는 11월 브랜치 버그).
 - **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
 - 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
@@ -84,7 +84,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
+| 11-25 | (이번 커밋) | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
+| 11-24 | dcdc2fd | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-24 | b2c07c0 | TS 전환 11a 컷오버 준비 — render.yaml 새 서비스 2개, 웹 전환 스위치 `WEB_APP_DIR`, `apps/web/vercel.json`, 스모크(`scripts/smoke.mjs`·Actions Smoke). 발견·수정: `dotenv` devDependency라 운영 설치에서 API 시작 실패. 발견: Spring 작업 탐색 PG 500 | `PROMPT_ts-cutover.md` |
 | 11-24 | f44dd80~d3303d2 | TS 전환 9단계 — 어드민 이관(API 115경로 `src/admin`, 계약 48개 Spring 어드민·Nest 양쪽, 웹 `apps/admin` CRA와 62장 동일). 발견: 어드민은 별도 스키마 `admin`, Spring 어드민 prod 로그인 500(lazy-init) | `apps/api/README.md` 어드민 진입점, PLANNING 4-1·5-1 |
 | 11-24 | b85ca30 | TypeScript 전환 1~7단계 — `apps/api`(NestJS+Prisma)가 Spring 194개 경로 전부 + 배치 4개, 계약 테스트 92개(Spring·Nest·프록시 없는 Nest 모두 통과). 발견: Spring 스팟 목록 PG 500. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |

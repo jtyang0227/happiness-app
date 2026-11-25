@@ -34,7 +34,7 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 
 ## B 상세 (사용자 할 일 — 값 포함)
 
-> **진행 상황(2026-11-24)**: 7번(master 병합)만 끝났다. 1~6번은 아직 — GitHub 기록상 운영 웹 Production 배포는 11-13 이후 없었고(병합 배포 제외), Smoke 실행 기록도 없다. 각 단계 뒤 Actions › Smoke를 돌리면 Claude가 실행 결과를 GitHub에서 확인할 수 있다.
+> **진행 상황(2026-11-25)**: 7번(master 병합)만 끝났다. 1~6번은 아직 — GitHub 기록상 운영 웹 Production 배포는 11-13 이후 없었고(병합 배포 제외), Smoke 실행 기록도 없다. 각 단계 뒤 Actions › Smoke를 돌리면 Claude가 실행 결과를 GitHub에서 확인할 수 있다.
 
 > 지금 운영이 Railway(Spring API)·Vercel(웹)·별도 Vercel(어드민)인지, 무료 전환(`PLANNING_free-hosting.md`)을 이미 했는지에 따라 1·2의 플랫폼만 바뀐다. 값과 순서는 같다.
 
@@ -48,6 +48,7 @@ A(저장소 준비)는 바로 하고, B는 내가 할 일을 값까지 적어 �
 - 확인: Actions › Smoke(`api_url` = 새 서비스 주소). 되돌리기: 서비스 삭제.
 
 **2. 새 어드민 API 띄우기**
+- **먼저 스키마 업그레이드(필수, 2026-11-25 발견)**: 운영 Spring 어드민은 happiness-admin **master c35e964(2026-07 배포)** 이고, 새 어드민 API는 배포된 적 없는 11월 브랜치(cfecd55, 61커밋 앞)를 옮긴 것이다. 운영 `admin` 스키마엔 표 19개뿐이라 새 API가 쓰는 표 18개·열 10개가 없다(Prisma는 표를 만들지 않는다). Supabase SQL Editor에서 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql`을 실행한다 — 추가만 하고(DROP 없음) 여러 번 실행해도 안전, 기존 행엔 기본값. 스키마 이름이 `admin`이 아니면 파일 안 `search_path`를 바꾼다. 이 SQL은 7월 Spring 어드민에 영향이 없다(7월 코드는 새 표·열을 모르고, 추가된 NOT NULL 열엔 기본값이 있다).
 - Start `node dist/admin-main.js`. 변수: `DATABASE_URL`(어드민 DB와 같은 인스턴스), `ADMIN_DB_SCHEMA`(0번 값), **`ADMIN_JWT_SECRET` = Spring 어드민 `JWT_SECRET`과 같은 값**, **`PRIVACY_ENCRYPTION_KEY` = Spring 어드민과 같은 값**, `ADMIN_CORS_ALLOWED_ORIGINS` = 어드민 웹 주소, `ADMIN_BATCH_ENABLED=false`, `NODE_ENV=production`, `ADMIN_PORT` = 플랫폼 포트(Render 10000).
 - 확인: Smoke(`admin_api_url`). 기존 관리자 계정으로 로그인 → 회원 목록 → 개인정보 접속기록 "무결성 검증" 유효.
 
