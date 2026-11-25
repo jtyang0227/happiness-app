@@ -376,6 +376,11 @@ export default function ProfileScreen({ navigation = {} }: { navigation?: Record
           <Text style={styles.legalChevron}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.legalItem}
+          onPress={() => navigation.navigate && navigation.navigate('OutingHistory')}>
+          <Text style={styles.legalItemText}>📸 출사 기록</Text>
+          <Text style={styles.legalChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalItem}
           onPress={() => navigation.navigate && navigation.navigate('Meets')}>
           <Text style={styles.legalItemText}>🤝 약속</Text>
           <Text style={styles.legalChevron}>›</Text>

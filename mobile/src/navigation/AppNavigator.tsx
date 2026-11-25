@@ -31,6 +31,9 @@ import DeliveryScreen    from '../../screens/DeliveryScreen';
 import AvailabilitySettingsScreen from '../../screens/AvailabilitySettingsScreen';
 import ScheduleScreen from '../../screens/ScheduleScreen';
 import BlockedUsersScreen from '../../screens/BlockedUsersScreen';
+import OutingPollsScreen from '../../screens/OutingPollsScreen';
+import OutingPollScreen from '../../screens/OutingPollScreen';
+import OutingHistoryScreen from '../../screens/OutingHistoryScreen';
 import GatheringNotifBadge from '../../components/GatheringNotifBadge';
 import { StatusBar } from 'expo-status-bar';
 
@@ -170,6 +173,12 @@ function MainStack() {
           headerRight: () => <GatheringNotifBadge /> }} />
       <Stack.Screen name="GatheringDetail" component={GatheringDetailScreen}
         options={{ ...HEADER, title: '모임 상세' }} />
+      <Stack.Screen name="OutingPolls" component={OutingPollsScreen}
+        options={{ ...HEADER, title: '월간 출사 투표' }} />
+      <Stack.Screen name="OutingPoll" component={OutingPollScreen}
+        options={{ ...HEADER, title: '출사 투표' }} />
+      <Stack.Screen name="OutingHistory" component={OutingHistoryScreen}
+        options={{ ...HEADER, title: '출사 기록' }} />
       <Stack.Screen name="GatheringInstagramShare" component={GatheringInstagramShareScreen}
         options={{ ...HEADER, title: 'Instagram Story 공유' }} />
       <Stack.Screen name="Legal"       component={LegalScreen}

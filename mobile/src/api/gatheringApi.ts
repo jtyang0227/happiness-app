@@ -63,6 +63,12 @@ export const gatheringApi = {
   shareToInstagram: (id, data) =>
     apiClient.post(`${BASE}/${id}/instagram-share`, data).then(r => r.data),
 
+  /** SNAPDAY 베스트 포토(끝난 출사 참여자 1인 3표) · 내 출사 기록 — 새 API 전용 */
+  getBest: (id) => apiClient.get(`${BASE}/${id}/best`).then(r => r.data),
+  voteBest: (id, photoId) => apiClient.post(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
+  unvoteBest: (id, photoId) => apiClient.delete(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
+  getHistory: () => apiClient.get(`${BASE}/my/history`).then(r => r.data),
+
   /** 읽지 않은 모임 알림 수 — {"count": N} */
   getUnreadCount: () =>
     apiClient.get(`${BASE}/notifications/unread-count`).then(r => r.data),

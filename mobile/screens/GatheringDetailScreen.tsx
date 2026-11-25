@@ -146,6 +146,64 @@ function PlacePollSection({ gatheringId, canVote }: { gatheringId?: any; canVote
   );
 }
 
+// ── 베스트 포토 (끝난 출사, 참여자 1인 3표 — SNAPDAY, 새 API) ──────────
+const MEDAL = ['🥇', '🥈', '🥉'];
+function BestPhotoSection({ gatheringId, isBlocked }: { gatheringId?: any; isBlocked: (id: any) => boolean }) {
+  const [best, setBest] = useState(null);
+  const [busy, setBusy] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    gatheringApi.getBest(gatheringId).then(b => { if (alive) setBest(b); }).catch(() => {});
+    return () => { alive = false; };
+  }, [gatheringId]);
+
+  if (!best || !best.photos || best.photos.length === 0) return null;
+  const mine = new Set(best.myVotes || []);
+  const photos = best.photos.filter(p => !isBlocked(p.memberId));
+
+  const toggle = async (photoId) => {
+    if (!best.canVote || busy) return;
+    if (!mine.has(photoId) && mine.size >= best.maxVotes) {
+      Alert.alert('표를 다 썼어요', `베스트 포토는 ${best.maxVotes}장까지 고를 수 있어요. 다른 사진의 표를 먼저 빼 주세요.`);
+      return;
+    }
+    setBusy(photoId);
+    try {
+      setBest(mine.has(photoId) ? await gatheringApi.unvoteBest(gatheringId, photoId) : await gatheringApi.voteBest(gatheringId, photoId));
+    } catch (e) {
+      Alert.alert('투표하지 못했어요', e.response?.data?.message || '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <View style={styles.pollCard}>
+      <Text style={styles.pollTitle}>
+        🏆 베스트 포토{best.canVote ? <Text style={styles.bestMine}>  내 표 {mine.size}/{best.maxVotes}</Text> : null}
+      </Text>
+      <Text style={styles.pollSub}>{best.canVote ? '마음에 드는 사진을 골라 주세요' : '출사 참여자들이 고른 사진'}</Text>
+      <View style={styles.bestGrid}>
+        {photos.map((p, i) => (
+          <View key={p.photoId} style={styles.bestCell}>
+            <Image source={{ uri: p.imageUrl }} style={styles.bestImage} accessibilityLabel={`${p.memberName}의 사진`} />
+            {i < 3 && p.votes > 0 ? <Text style={styles.bestMedal}>{MEDAL[i]}</Text> : null}
+            <TouchableOpacity disabled={!best.canVote || busy !== null} onPress={() => toggle(p.photoId)}
+              accessibilityRole="button" accessibilityState={{ selected: mine.has(p.photoId), disabled: !best.canVote }}
+              accessibilityLabel={`${p.memberName}의 사진에 ${mine.has(p.photoId) ? '투표 취소' : '투표'}, 현재 ${p.votes}표`}
+              style={[styles.bestVote, mine.has(p.photoId) && styles.bestVoteOn]}>
+              <Text style={[styles.bestVoteText, mine.has(p.photoId) && { color: COLORS.white }]}>
+                {busy === p.photoId ? '…' : mine.has(p.photoId) ? '♥' : '♡'} {p.votes}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 // ── 참여 버튼 (RECRUITING) ────────────────────────────────────────────
 function ParticipationBar({ gatheringId, myStatus, onStatusChange }: { gatheringId?: any; myStatus?: any; onStatusChange?: (...args: any[]) => any }) {
   const [loading, setLoading] = useState(false);
@@ -560,6 +618,9 @@ export default function GatheringDetailScreen({ route, navigation }: { route?: a
           {/* 마감/예정 배너 */}
           <StatusBanner status={gathering.status} />
 
+          {/* 베스트 포토 (끝난 출사) */}
+          {gathering.status === 'ENDED' && <BestPhotoSection gatheringId={gatheringId} isBlocked={isBlocked} />}
+
           {/* 피드 섹션 헤더 */}
           {isOngoingOrEnded && (
             <View style={styles.feedHeader}>
@@ -597,6 +658,14 @@ export default function GatheringDetailScreen({ route, navigation }: { route?: a
 }
 
 const styles = StyleSheet.create({
+  bestMine: { fontSize: FONT.sm, color: COLORS.primary, fontWeight: '600' },
+  bestGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -3, marginTop: SPACING.sm },
+  bestCell: { width: '33.333%', padding: 3 },
+  bestImage: { width: '100%', aspectRatio: 1, borderRadius: RADIUS.sm, backgroundColor: COLORS.inputBg },
+  bestMedal: { position: 'absolute', top: 6, left: 8, fontSize: 20 },
+  bestVote: { position: 'absolute', right: 8, bottom: 8, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: 'rgba(255,255,255,0.92)' },
+  bestVoteOn: { backgroundColor: COLORS.primary },
+  bestVoteText: { fontSize: FONT.xs, fontWeight: '700', color: COLORS.textSecondary },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,
