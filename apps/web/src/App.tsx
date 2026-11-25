@@ -70,6 +70,7 @@ const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotif
 const OutingPollsPage = lazyPage(() => import('./pages/OutingPollsPage'));
 const OutingPollPage = lazyPage(() => import('./pages/OutingPollPage'));
 const OutingHolidaysPage = lazyPage(() => import('./pages/OutingHolidaysPage'));
+const GatheringStoryPage = lazyPage(() => import('./pages/GatheringStoryPage'));
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
 const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
@@ -113,7 +114,8 @@ function AppShell() {
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
     || /^\/portfolio\/[^/]+\/work\/[^/]+$/.test(location.pathname)
-    || /^\/photo\/\d+\/edit$/.test(location.pathname);
+    || /^\/photo\/\d+\/edit$/.test(location.pathname)
+    || /^\/gatherings\/\d+\/story$/.test(location.pathname);   // SNAPDAY 스토리 편집기(다크 전체 화면)
 
   // Toss 플랫 디자인 — 로그인/회원가입 포함 전 화면 동일한 화이트 배경
   const bg = '#ffffff';
@@ -202,6 +204,7 @@ function AppShell() {
           <Route path="/gatherings/:id/edit" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id/manage" element={<ProtectedRoute><GatheringManagePage /></ProtectedRoute>} />
           <Route path="/gatherings/:id/album" element={<GatheringAlbumPage />} />
+          <Route path="/gatherings/:id/story" element={<ProtectedRoute><GatheringStoryPage /></ProtectedRoute>} />
           <Route path="/gatherings/calendar" element={<ProtectedRoute><GatheringCalendarPage /></ProtectedRoute>} />
 
           {/* Admin */}

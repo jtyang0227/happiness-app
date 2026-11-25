@@ -4,6 +4,9 @@ import { COLORS } from '../constants/colors';
 import { mq } from '../constants/breakpoints';
 import gatheringApi from '../services/gatheringApi';
 import DotEmptyState from '../components/common/DotEmptyState';
+import BestPhotoSection from '../components/gathering/BestPhotoSection';
+import StoryStrip from '../components/gathering/StoryStrip';
+import useAuthStore from '../store/authStore';
 
 /* ── Shimmer ────────────────────────────────────────────── */
 const SHIMMER_KF = `@keyframes sk-shimmer-ga {
@@ -129,6 +132,7 @@ function AlbumPhoto({ photo, index = 0 }: { photo?: any; index?: number }) {
 /* ── GatheringAlbumPage ─────────────────────────────────── */
 export default function GatheringAlbumPage() {
   const { id } = useParams();
+  const user = useAuthStore((s: any) => s.user);
 
   const [album, setAlbum] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -246,6 +250,10 @@ export default function GatheringAlbumPage() {
                 <StatItem icon="👥" label="참여자" value={`${album.participantCount ?? 0}명`} />
               </div>
             </div>
+
+            {/* SNAPDAY — 베스트 포토 투표(1인 3표)·출사 스토리 */}
+            <BestPhotoSection gatheringId={id} />
+            <StoryStrip gatheringId={id} user={user} canCreate={!!user} />
 
             {/* 사진 없을 때 빈 상태 */}
             {(!album.photos || album.photos.length === 0) ? (
