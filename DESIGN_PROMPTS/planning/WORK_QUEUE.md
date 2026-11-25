@@ -33,6 +33,25 @@
 | 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
+## 현재 묶음 — SNAPDAY 출사 기능 병합 (요청: "어플에서 전달하는 프롬프트의 기능을 병합", 2026-11-25)
+
+결정(사용자): **TS 전환본(`apps/api`·`apps/web`)에 구현**(표 정의만 Spring 엔티티 — 컷오버 전 스키마 주인), **Toss 디자인 유지**, **"모임" 안에 병합**(앱 이름·메뉴 유지).
+기획 문서: `DESIGN_PROMPTS/planning/snapday/` (PROJECT_SPEC.html 외). 이미 있는 것: 모임·참가·대기자·피드·앨범·달력·알림·스팟·장소 투표·인스타 태그 후보.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | 🔄 | 기획 문서(PROJECT_SPEC.html·DEVELOPMENT_PLAN·DATABASE_SCHEMA·API_SPEC·TODO·README) + 디자인 프롬프트 | |
+| 2 | ⏳ | DB — Spring 엔티티(표 정의) + `prisma db pull` + 운영 SQL 기록 | outing_polls·options·votes, public_holidays, gathering_ai_recommendations, gathering_best_votes, gathering_stories |
+| 3 | ⏳ | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | 하드코딩 금지 |
+| 4 | ⏳ | 월간 출사 투표 API — 생성(주말·공휴일 자동, 평일 추가)·투표(가능/불가, 수정)·집계·마감·확정→모임 생성·알림·마감 임박/자동 마감 배치 | |
+| 5 | ⏳ | 월간 출사 투표 웹 — 2027 월 목록·달력 투표·집계·추천 날짜·관리자 도구 | |
+| 6 | ⏳ | 현장 모드 — 출사 시작/종료(만든 사람·관리자) API + 웹 | |
+| 7 | ⏳ | AI 계절 추천 — Gemini(기존 키) 구조화 결과·샘플 구분·저장·장소 후보 등록 + 웹 | |
+| 8 | ⏳ | 베스트 포토 — 1인 3표·집계·앨범 표시 API + 웹 | |
+| 9 | ⏳ | 스토리 편집기(웹, 9:16) — 사진·레이아웃·텍스트·스티커·멤버 태그·태그 복사·이미지 저장·공유 + 스토리 저장 API | |
+| 10 | ⏳ | 마이페이지 보강 — 출사 참여 이력·내 스토리 | |
+| 11 | ⏳ | 전체 검증(계약 테스트·빌드·Playwright 390/1280) + 문서 정리 | |
+
 ## 현재 묶음 — 새 API·웹 알려진 갭 (요청: 컷오버 대기 중 "새 API 알려진 갭 수정", 2026-11-25)
 
 | # | 상태 | 항목 | 메모 |
