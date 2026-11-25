@@ -15,6 +15,7 @@ const TYPE_META = {
   NEW_LIKE:                { icon: '♥',  label: '좋아요' },
   GATHERING_ENDED:         { icon: '🏁', label: '모임 종료' },
   PLACE_DECIDED:           { icon: '📍', label: '장소 확정' },
+  SCHEDULE_CHANGED:        { icon: '🕒', label: '일정 변경' },
   POLL_OPENED:             { icon: '🗳', label: '출사 투표 시작' },
   POLL_CLOSING:            { icon: '⏰', label: '투표 마감 임박' },
   POLL_REMIND:             { icon: '🔔', label: '투표 응답 요청' },

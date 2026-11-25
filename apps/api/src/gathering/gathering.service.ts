@@ -134,7 +134,24 @@ export class GatheringService {
     if (req.beginnerFriendly != null) d.beginner_friendly = req.beginnerFriendly ? true : null;
     if (req.portraitConsentRule != null) d.portrait_consent_rule = req.portraitConsentRule ? true : null;
     const saved = Object.keys(d).length ? await this.prisma.gatherings.update({ where: { id: g.id }, data: d }) : g;
+    await this.notifyScheduleChanged(g, saved);
     return this.toResponse(saved);
+  }
+
+  /**
+   * 일정·장소 변경 알림(새 API에만 있음 — Spring은 알리지 않았다) — 시작 시각이나 장소가 실제로 바뀌었고
+   * 아직 끝나지 않은 모임이면 참여자·대기자에게. 실패해도 수정은 그대로(notifySafe).
+   */
+  private async notifyScheduleChanged(before: gatherings, after: gatherings) {
+    const timeChanged = before.start_date_time.getTime() !== after.start_date_time.getTime();
+    const placeChanged = before.location !== after.location;
+    if ((!timeChanged && !placeChanged) || after.status === 'ENDED') return;
+    const what = timeChanged && placeChanged ? '일정과 장소가' : timeChanged ? '일정이' : '장소가';
+    const message = `'${after.title}' ${what} 바뀌었습니다: ${scheduleLabel(after.start_date_time)} · ${after.location}`.slice(0, 300);
+    const ps = await this.prisma.gathering_participants.findMany({
+      where: { gathering_id: after.id, status: { in: ['PARTICIPATING', 'WAITING'] } }, orderBy: { id: 'asc' },
+    });
+    for (const p of ps) await this.notifications.notifySafe(p.member_id, after.id, 'SCHEDULE_CHANGED', message);
   }
 
   async remove(id: number, memberId: number) {
@@ -241,4 +258,12 @@ export class GatheringService {
     const waiting = by('WAITING');
     return { participating, waiting, notParticipating: by('NOT_PARTICIPATING'), participantCount: participating.length, waitingCount: waiting.length, maxParticipants: g.max_participants };
   }
+}
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+/** "3월 27일(토) 10:00" — 저장된 LocalDateTime(UTC로 읽힘)을 그대로 표시 */
+function scheduleLabel(d: Date) {
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${WEEKDAYS[d.getUTCDay()]}) ${hh}:${mm}`;
 }
