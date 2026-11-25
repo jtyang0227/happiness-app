@@ -8,7 +8,7 @@ import type { members } from '../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
 import { BCRYPT_ROUNDS } from '../member/member.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { FixedWindowLimiter } from './fixed-window-limiter.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 
 /** Spring AccountRecoveryService 1:1 — 토큰은 32바이트 난수(URL-safe Base64), DB엔 SHA-256 해시만, 30분·1회용. */
 export const TOKEN_TTL_MINUTES = 30;
@@ -24,16 +24,16 @@ export interface AccountHint {
 @Injectable()
 export class AccountRecoveryService {
   private readonly log = new Logger('AccountRecoveryService');
-  private readonly limiter = new FixedWindowLimiter();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenStore,
     private readonly mail: MailService,
+    private readonly limits: SharedLimitService,
   ) {}
 
   async findEmails(name: string | undefined, tel: string | undefined, ip: string): Promise<AccountHint[]> {
-    this.checkRate(`find-email:${ip}`, 5, WINDOW_10_MIN, '아이디 찾기를 너무 많이 시도했습니다. 10분 뒤에 다시 시도해주세요.');
+    await this.checkRate(`find-email:${ip}`, 5, WINDOW_10_MIN, '아이디 찾기를 너무 많이 시도했습니다. 10분 뒤에 다시 시도해주세요.');
     if (name == null || name.trim() === '' || tel == null || tel.trim() === '') {
       throw AppError.badInput('이름과 휴대폰 번호를 입력해주세요.');
     }
@@ -52,10 +52,10 @@ export class AccountRecoveryService {
 
   /** 가입 여부를 호출자에게 알리지 않는다 — 예외는 입력 형식·속도 제한뿐. */
   async requestReset(email: string | undefined, ip: string): Promise<void> {
-    this.checkRate(`reset-ip:${ip}`, 5, WINDOW_10_MIN, '재설정 요청을 너무 많이 했습니다. 10분 뒤에 다시 시도해주세요.');
+    await this.checkRate(`reset-ip:${ip}`, 5, WINDOW_10_MIN, '재설정 요청을 너무 많이 했습니다. 10분 뒤에 다시 시도해주세요.');
     if (email == null || email.trim() === '') throw AppError.badInput('이메일을 입력해주세요.');
     const normalized = email.trim().toLowerCase();
-    if (!this.limiter.allow(`reset-email:${normalized}`, 3, WINDOW_1_HOUR)) {
+    if (!(await this.limits.allow(`reset-email:${normalized}`, 3, WINDOW_1_HOUR))) {
       this.log.log('[password-reset] per-email limit reached');
       return;
     }
@@ -93,7 +93,7 @@ export class AccountRecoveryService {
   }
 
   async confirm(raw: string | undefined, newPassword: string | undefined, ip: string): Promise<void> {
-    this.checkRate(`reset-confirm:${ip}`, 10, WINDOW_10_MIN, '재설정을 너무 많이 시도했습니다. 10분 뒤에 다시 시도해주세요.');
+    await this.checkRate(`reset-confirm:${ip}`, 10, WINDOW_10_MIN, '재설정을 너무 많이 시도했습니다. 10분 뒤에 다시 시도해주세요.');
     if (newPassword == null || newPassword.length < 8) throw AppError.badInput('비밀번호는 8자 이상이어야 합니다.');
     const token = await this.usableToken(raw);
     const m = await this.prisma.members.findUnique({ where: { id: token.member_id } });
@@ -114,8 +114,8 @@ export class AccountRecoveryService {
     return t;
   }
 
-  private checkRate(key: string, limit: number, windowSeconds: number, message: string) {
-    if (!this.limiter.allow(key, limit, windowSeconds)) throw AppError.status(429, message);
+  private async checkRate(key: string, limit: number, windowSeconds: number, message: string) {
+    if (!(await this.limits.allow(key, limit, windowSeconds))) throw AppError.status(429, message);
   }
 }
 

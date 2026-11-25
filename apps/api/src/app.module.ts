@@ -5,7 +5,7 @@ import { AuthController } from './auth/auth.controller.js';
 import { AuthGuard } from './auth/auth.guard.js';
 import { AuthService } from './auth/auth.service.js';
 import { JwtService } from './auth/jwt.service.js';
-import { LoginAttemptLimiter } from './auth/login-attempt-limiter.js';
+import { SharedLimitService } from './common/shared-limit.service.js';
 import { TokenStore } from './auth/token-store.js';
 import { AllExceptionsFilter } from './common/exception.filter.js';
 import { HealthController } from './health.controller.js';
@@ -65,7 +65,7 @@ import { OutingPollService } from './outing/outing-poll.service.js';
     PrismaService,
     JwtService,
     TokenStore,
-    LoginAttemptLimiter,
+    SharedLimitService,
     AuditService,
     MemberService,
     AuthService,

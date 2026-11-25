@@ -14,7 +14,8 @@ export class TokenStore implements OnModuleDestroy {
 
   constructor(private readonly jwt: JwtService) {}
 
-  private async redis(): Promise<RedisClientType | null> {
+  /** 연결된 Redis 클라이언트(없거나 실패하면 null) — SharedLimitService도 쓴다 */
+  async redis(): Promise<RedisClientType | null> {
     if (this.client?.isReady) return this.client;
     const url = process.env.REDIS_URL;
     if (!url) return null;

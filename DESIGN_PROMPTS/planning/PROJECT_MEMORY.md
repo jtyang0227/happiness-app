@@ -113,5 +113,5 @@
 
 ## 10. 알려진 갭 (손대지 않은 것)
 - 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
-- rate limit·로그인 잠금이 전부 인메모리(인스턴스 여러 개면 따로 셈), access token은 비밀번호 변경 후에도 30분 유효.
+- (Spring·운영) rate limit·로그인 잠금 인메모리 — 새 API는 2026-11-25 기능별 제한·로그인 잠금을 Redis 공유로(`shared-limit.service.ts`), 전역 IP 제한·조회 기록 제한만 인메모리(Upstash 명령 한도). access token은 비밀번호 변경 후에도 30분 유효.
 - (Spring·운영 `frontend/`만) `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 새로고침 후 "…ByMe" false — 새 API·`apps/web`에선 2026-11-25 해소(컷오버로 사라짐). `AdminTagsPage`는 mock.

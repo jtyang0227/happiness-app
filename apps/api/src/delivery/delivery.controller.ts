@@ -7,6 +7,7 @@ import { isBlank, jsonLong, jsonPrimitiveInt, jsonString } from '../common/json-
 import { localDateTime, now } from '../common/time.js';
 import type { delivery_sets } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 
 type Body_ = Record<string, unknown> | undefined;
 
@@ -38,8 +39,7 @@ function toResponse(s: delivery_sets, photoCount: number, likedCount: number) {
 @Controller('api/delivery')
 export class DeliveryController {
   private readonly log = new Logger('DeliverySetService');
-  private readonly attempts = new Map<string, { count: number; blockedUntil: number }>();
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly limits: SharedLimitService) {}
 
   @Post()
   @HttpCode(201)
@@ -91,19 +91,13 @@ export class DeliveryController {
 
   private async verifyPassword(s: delivery_sets, token: string, password: string | null) {
     if (s.password_hash == null) return;
-    const st = this.attempts.get(token);
-    if (st && st.count >= MAX_ATTEMPTS) {
-      if (Date.now() / 1000 < st.blockedUntil) throw AppError.status(429, '너무 많은 시도로 잠시 차단되었습니다. 15분 후 다시 시도해주세요.');
-      this.attempts.delete(token);
-    }
+    const key = `delivery:${token}`;
+    if ((await this.limits.lockedMs(key)) > 0) throw AppError.status(429, '너무 많은 시도로 잠시 차단되었습니다. 15분 후 다시 시도해주세요.');
     if (password == null || !(await bcrypt.compare(password, s.password_hash))) {
-      const cur = this.attempts.get(token) ?? { count: 0, blockedUntil: 0 };
-      cur.count++;
-      if (cur.count >= MAX_ATTEMPTS) cur.blockedUntil = Math.floor(Date.now() / 1000) + BLOCK_SECONDS;
-      this.attempts.set(token, cur);
+      await this.limits.failure(key, MAX_ATTEMPTS, BLOCK_SECONDS * 1000);
       throw AppError.status(401, '비밀번호가 올바르지 않습니다');
     }
-    this.attempts.delete(token);
+    await this.limits.clear(key);
   }
 
   private async detail(token: string, password: string | null) {

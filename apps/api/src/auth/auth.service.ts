@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { BCRYPT_ROUNDS } from '../member/member.service.js';
 import { MemberResponse, toMemberResponse } from '../member/member.mapper.js';
 import { JwtService } from './jwt.service.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 import { LoginAttemptLimiter } from './login-attempt-limiter.js';
 import { TokenStore } from './token-store.js';
 
@@ -29,7 +30,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly tokens: TokenStore,
-    private readonly limiter: LoginAttemptLimiter,
+    private readonly limits: SharedLimitService,
     private readonly audit: AuditService,
   ) {}
 
@@ -46,7 +47,7 @@ export class AuthService {
     const deviceId = resolveDevice(body.deviceId, deviceHeader);
     const email = body.email.trim().toLowerCase();
 
-    const lockedMs = this.limiter.remainingLockMs(email);
+    const lockedMs = await this.limits.lockedMs(`login:${email}`);
     if (lockedMs > 0) {
       const minutes = Math.max(1, Math.ceil(lockedMs / 60000));
       throw AppError.status(429, `로그인 시도가 너무 많습니다. ${minutes}분 뒤에 다시 시도해주세요.`);
@@ -57,11 +58,11 @@ export class AuthService {
     const hash = member?.password ?? (await this.getDummyHash());
     const matches = await bcrypt.compare(body.password ?? '', hash);
     if (!member || !member.password || !matches) {
-      this.limiter.recordFailure(email);
+      await this.limits.failure(`login:${email}`, LoginAttemptLimiter.MAX_FAILURES, LoginAttemptLimiter.LOCK_MS);
       this.audit.loginFailure(body.email, ip);
       throw AppError.of('LOGIN_FAILED');
     }
-    this.limiter.recordSuccess(email);
+    await this.limits.clear(`login:${email}`);
     if (member.status === 'SUSPENDED') throw AppError.of('ACCOUNT_LOCKED');
 
     const id = Number(member.id);

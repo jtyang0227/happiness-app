@@ -121,3 +121,4 @@ GitHub Actions › Smoke(수동 실행)에서도 같은 점검을 한다 — 클
 - CORS 허용 헤더·노출 헤더·maxAge를 Spring 목록과 같게.
 - **의도적 차이**: ① HSTS를 `X-Forwarded-Proto: https`일 때도 붙인다(Spring은 forward-headers 설정이 없어 Railway 프록시 뒤에선 안 붙었다). ② 인증이 필요한 경로의 무토큰 요청도 속도 제한에 센다(Spring은 Security 필터가 먼저 401을 내서 세지 않았다 — 무작위 대입에 더 안전).
 - 계약 테스트 `security.test.ts`(Spring·새 API 양쪽), 단위 `rate-limit.test.ts`.
+- **기능별 제한·잠금은 Redis 공유(2026-11-25)** — `common/shared-limit.service.ts`: 로그인 잠금(5회/15분), 계정 찾기·재설정, 신고, 예약 생성, 뉴스레터 구독, 챗봇, 납품 비밀번호를 `rl:*` 키로 세서 서버를 여러 대 띄워도 같이 센다(두 인스턴스에서 로그인 3+2회 실패 → 6번째 429 확인). REDIS_URL이 없거나 Redis가 실패하면 그 인스턴스 메모리로(지금까지와 같음). **전역 IP 제한·분석 조회 기록 제한은 메모리 그대로** — 매 요청마다 Redis를 부르면 Upstash 무료 한도(하루 1만 명령)를 넘는다. 스팟 생성·AI 추천 제한은 원래 DB 행 수로 센다. 어드민 로그인 잠금은 인메모리(어드민은 한 대).
