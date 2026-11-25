@@ -67,6 +67,9 @@ const GatheringAlbumPage = lazyPage(() => import('./pages/GatheringAlbumPage'));
 const GatheringCalendarPage = lazyPage(() => import('./pages/GatheringCalendarPage'));
 const IntegratedCalendarPage = lazyPage(() => import('./pages/IntegratedCalendarPage'));
 const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotificationsPage'));
+const OutingPollsPage = lazyPage(() => import('./pages/OutingPollsPage'));
+const OutingPollPage = lazyPage(() => import('./pages/OutingPollPage'));
+const OutingHolidaysPage = lazyPage(() => import('./pages/OutingHolidaysPage'));
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
 const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
@@ -189,6 +192,10 @@ function AppShell() {
 
           {/* Gatherings — list/detail/album public; new/edit/manage/notifications require auth */}
           <Route path="/gatherings" element={<GatheringsPage />} />
+          {/* SNAPDAY 월간 출사 투표 — 목록·달력 공개(응답은 로그인), 공휴일 관리는 관리자 */}
+          <Route path="/gatherings/polls" element={<OutingPollsPage />} />
+          <Route path="/gatherings/polls/holidays" element={<ProtectedRoute><OutingHolidaysPage /></ProtectedRoute>} />
+          <Route path="/gatherings/polls/:id" element={<OutingPollPage />} />
           <Route path="/gatherings/notifications" element={<ProtectedRoute><GatheringNotificationsPage /></ProtectedRoute>} />
           <Route path="/gatherings/new" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id" element={<GatheringDetailPage />} />
