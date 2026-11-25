@@ -1583,6 +1583,8 @@ Root Stack
       └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
 ```
 
+> **Expo SDK 58 업그레이드(2026-11-25, 작업 브랜치 — 실기기 확인 전 master 미반영)**: 아래 목록은 SDK 49 기준 기록이다. 현재 작업 브랜치는 expo 58.0.26·RN 0.88.1·React 19.3·React Navigation 7(expo-router 미도입)·expo-* 58.x·react-native-share 12·view-shot 6·AsyncStorage 2, `babel.config.js` 삭제. 결과·차이는 `DESIGN_PROMPTS/planning/PLANNING_expo-sdk-upgrade.md`.
+
 **주요 의존성 (mobile/package.json):**
 ```
 expo: ~49.0.14
@@ -2793,6 +2795,8 @@ Root Stack
       ├── Meets       — 약속 목록 (Stack, ProfileScreen "메뉴" 섹션에서 진입)
       └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
 ```
+
+> **Expo SDK 58 업그레이드(2026-11-25, 작업 브랜치 — 실기기 확인 전 master 미반영)**: 아래 목록은 SDK 49 기준 기록이다. 현재 작업 브랜치는 expo 58.0.26·RN 0.88.1·React 19.3·React Navigation 7(expo-router 미도입)·expo-* 58.x·react-native-share 12·view-shot 6·AsyncStorage 2, `babel.config.js` 삭제. 결과·차이는 `DESIGN_PROMPTS/planning/PLANNING_expo-sdk-upgrade.md`.
 
 **주요 의존성 (mobile/package.json):**
 ```

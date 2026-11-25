@@ -183,7 +183,7 @@
 | 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
 | 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
 | 6 | ✅ | Expo SDK 49 → 58 업그레이드 계획 — `expo-upgrade` 스킬 | `PLANNING_expo-sdk-upgrade.md`. 실행은 ⏸ — 1~3단계는 요청 시 클라우드에서 가능, 4단계부터 Expo 계정·실기기 필요 |
-| 7 | ⏳ | Expo SDK 58 업그레이드 1~3단계 실행 (`PLANNING_expo-sdk-upgrade.md` 4절) — 의존성·코드모드·`uploadImage`·`app.json` → 웹 export·웹 번들 화면 확인 | **작업 브랜치에만 `wip:` push, master에는 실기기 확인 전까지 올리지 않음**. 4단계(EAS 빌드)부터는 사용자 |
+| 7 | ✅ | Expo SDK 58 업그레이드 1~3단계 실행 (`PLANNING_expo-sdk-upgrade.md` 4절) — 의존성·코드모드·`uploadImage`·`app.json` → 웹 export·웹 번들 화면 확인 | (이번 커밋) expo 58.0.26·RN 0.88.1·React 19.3, `expo install --fix`는 Expo API 차단이라 `EXPO_OFFLINE=1`(패키지 안 기준표). 내비게이션은 expo-router 대신 **React Navigation 7 그대로**(native-stack 대응 없음 — 파일 라우팅 전면 개편은 범위 밖, 피어 의존성 충족), 네비게이터 `id`, v7 `navigate`가 되돌아가지 않아 "로그인으로" 2곳 `popTo`. `expo-file-system/legacy`, image-picker `mediaTypes:['images']`, `absoluteFill`, react-native-share 12(새 아키텍처), view-shot 타입 경로, babel.config·babel-preset-expo·@babel/core 제거, app.json `sdkVersion`·`privacy`·Sdk 34 고정 삭제. **발견·수정**: 업로드 MIME에 `asset.type`("image")을 보내 서버 MIME 검사에 걸리던 것 → `asset.mimeType`. 확인: tsc 0, 웹·Android export 성공, `--dev` 웹 번들 + 로컬 API로 로그인·탭 5개·통합 일정·예약 관리·popTo 페이지 오류 0, 권한 introspect(차단 5개 유지, VIBRATE 추가). **4단계(EAS 빌드)부터 사용자** — master엔 실기기 확인 전까지 올리지 않음 |
 
 ## 이전 묶음 — Behance 분석 후속 (완료)
 

@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+// SDK 54부터 uploadAsync·FileSystemUploadType은 legacy 진입점으로 옮겨졌다(동작 같음)
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { API_ORIGIN as API_URL } from '../constants/config';
 
@@ -24,7 +25,7 @@ export async function pickImage() {
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     quality: 0.85,
   });
@@ -63,7 +64,8 @@ export async function uploadImageAsset(asset, accessToken, folder = 'photos', on
   if (!asset?.uri) throw new Error('유효하지 않은 이미지입니다.');
 
   const filename = asset.fileName ?? asset.uri.split('/').pop();
-  const mimeType = asset.type ?? 'image/jpeg';
+  // asset.type은 'image'·'video' 같은 종류라 MIME이 아니다 — 서버가 MIME(image/jpeg 등)을 검사하므로 mimeType을 쓴다
+  const mimeType = asset.mimeType ?? 'image/jpeg';
 
   const uploadResult = await FileSystem.uploadAsync(
     `${API_URL}/api/upload/image?folder=${folder}`,

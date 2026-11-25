@@ -73,6 +73,7 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
+      id="MainTabs"
       screenOptions={{
         ...HEADER,
         tabBarStyle: {
@@ -136,7 +137,7 @@ function MainTabs() {
 // ── Auth Stack ──────────────────────────────────────────────────────
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="AuthStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login"  component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="FindAccount" component={FindAccountScreen} />
@@ -149,7 +150,7 @@ function AuthStack() {
 // ── Main Stack (tabs + modal screens) ──────────────────────────────
 function MainStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="MainStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main"        component={MainTabs}         options={{ headerShown: false }} />
       <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhotoForm"   component={PhotoFormScreen}
@@ -187,7 +188,7 @@ export default function AppNavigator() {
   if (!isInitialized) {
     return (
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator id="RootStack" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Splash" component={SplashScreen} />
         </Stack.Navigator>
       </NavigationContainer>

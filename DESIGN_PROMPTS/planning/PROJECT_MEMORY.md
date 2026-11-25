@@ -18,7 +18,7 @@
 | 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — Spring 경로 전부 옮김(프록시는 컷오버 전 안전망), 배치는 `BATCH_ENABLED`·`scripts/run-batch.mjs`. 어드민은 별도 진입점 `dist/admin-main.js`(8091, 스키마 `admin`) | `apps/api/` (`PLANNING_typescript-migration.md`) |
 | 어드민 웹(전환 중) | Next.js 16 + TS(happiness-admin CRA 이관, webpack 빌드) | `apps/admin/` |
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
-| 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
+| 모바일 | React Native 0.88 + **Expo SDK 58**(작업 브랜치, 실기기 확인 전 — master는 SDK 49) + React Navigation 7, 전 파일 TS | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.tsx`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
@@ -26,7 +26,7 @@
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
-- 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
+- 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles"(SDK 58부터는 "Exported:"). 의존성 맞추기는 Expo API가 막혀 있어 `EXPO_OFFLINE=1 npx expo install --fix -- --legacy-peer-deps`. 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
 - 클라우드 세션은 egress 정책상 `*.happiness.io.kr`·`*.vercel.app`에 못 붙는다 → 운영 상태는 `gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`·`/deployments`로만 본다.
 
@@ -84,7 +84,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-25 | (이번 커밋) | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
+| 11-25 | (이번 커밋) | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
+| 11-25 | 5fa7d08 | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
 | 11-24 | dcdc2fd | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-24 | b2c07c0 | TS 전환 11a 컷오버 준비 — render.yaml 새 서비스 2개, 웹 전환 스위치 `WEB_APP_DIR`, `apps/web/vercel.json`, 스모크(`scripts/smoke.mjs`·Actions Smoke). 발견·수정: `dotenv` devDependency라 운영 설치에서 API 시작 실패. 발견: Spring 작업 탐색 PG 500 | `PROMPT_ts-cutover.md` |
 | 11-24 | f44dd80~d3303d2 | TS 전환 9단계 — 어드민 이관(API 115경로 `src/admin`, 계약 48개 Spring 어드민·Nest 양쪽, 웹 `apps/admin` CRA와 62장 동일). 발견: 어드민은 별도 스키마 `admin`, Spring 어드민 prod 로그인 500(lazy-init) | `apps/api/README.md` 어드민 진입점, PLANNING 4-1·5-1 |

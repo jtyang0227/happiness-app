@@ -32,7 +32,7 @@ export default function FindAccountScreen({ navigation, route }: { navigation?: 
             ))}
           </View>
           {tab === 'email'
-            ? <FindEmail onLogin={() => navigation.navigate('Login')} onGoPassword={() => setTab('password')} />
+            ? <FindEmail onLogin={() => navigation.popTo('Login')} onGoPassword={() => setTab('password')} />
             : <ResetRequest />}
         </View>
       </ScrollView>

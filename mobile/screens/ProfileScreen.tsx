@@ -61,7 +61,7 @@ export default function ProfileScreen({ navigation = {} }: { navigation?: Record
   const handleAvatarPick = async () => {
     if (!(await ensureLibraryAccess())) { Alert.alert('권한 필요', '사진 라이브러리 접근 권한이 필요합니다.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
     if (!result.canceled && result.assets?.length > 0) {
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   avatarFallback: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: '#fff', fontSize: 30, fontWeight: '800' },
-  avatarOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 44,
+  avatarOverlay: { ...StyleSheet.absoluteFill, borderRadius: 44,
     backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   avatarEditBadge: { position: 'absolute', bottom: 0, right: 0, width: 26, height: 26,
     borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
