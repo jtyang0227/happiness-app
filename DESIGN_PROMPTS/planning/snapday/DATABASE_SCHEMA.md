@@ -7,7 +7,7 @@
 | 지시서 | 이 앱 | 비고 |
 |---|---|---|
 | users / photo_preferences | `members`(name·avatar_url·bio·instagram_id·specialties·location) | 촬영 취향 = `specialties`(콤마 구분, 기존) |
-| monthly_polls | **`outing_polls`** (신규) | 월 1개(UNIQUE year+month) |
+| monthly_polls | **`outing_polls`** (신규) | 월 1개(UNIQUE poll_year+poll_month) |
 | poll_options | **`outing_poll_options`** (신규) | 날짜 후보 |
 | poll_votes | **`outing_poll_votes`** (신규) | 회원×날짜 1행(UNIQUE option+member), 행 없음 = 미응답 |
 | (공휴일) | **`public_holidays`** (신규) | 공공데이터포털 가져오기 또는 관리자 등록 — 코드에 박지 않음 |
@@ -26,8 +26,8 @@
 ```sql
 CREATE TABLE IF NOT EXISTS outing_polls (
   id                 BIGSERIAL PRIMARY KEY,
-  year               INTEGER NOT NULL,
-  month              INTEGER NOT NULL,          -- 1~12
+  poll_year          INTEGER NOT NULL,          -- year/month는 H2 예약어라 피함
+  poll_month         INTEGER NOT NULL,          -- 1~12
   title              VARCHAR(100) NOT NULL,
   description        TEXT,
   region             VARCHAR(50),               -- 예정 지역(선택, AI 추천 입력)
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS outing_polls (
   created_by         BIGINT NOT NULL,
   created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
-  CONSTRAINT uk_outing_polls_month UNIQUE (year, month)
+  CONSTRAINT uk_outing_polls_month UNIQUE (poll_year, poll_month)
 );
 CREATE TABLE IF NOT EXISTS outing_poll_options (
   id          BIGSERIAL PRIMARY KEY,

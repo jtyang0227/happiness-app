@@ -674,3 +674,94 @@ model testimonials {
 
   @@index([member_id], map: "idx_testimonials_member_id")
 }
+
+model gathering_ai_recommendations {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  gathering_id BigInt
+  member_id    BigInt
+  model        String?  @db.VarChar(60)
+  question     String?  @db.VarChar(500)
+  result_json  String
+  source       String   @db.VarChar(10)
+
+  @@index([gathering_id], map: "idx_gar_gathering")
+}
+
+model gathering_best_votes {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  gathering_id BigInt
+  member_id    BigInt
+  photo_id     BigInt
+
+  @@unique([photo_id, member_id], map: "uk_gathering_best_votes")
+  @@index([gathering_id, member_id], map: "idx_gbv_gathering_member")
+}
+
+model gathering_stories {
+  id                BigInt   @id @default(autoincrement())
+  caption           String?  @db.VarChar(300)
+  created_at        DateTime @db.Timestamp(6)
+  gathering_id      BigInt
+  image_url         String   @db.VarChar(500)
+  member_id         BigInt
+  tagged_member_ids String?  @db.VarChar(500)
+
+  @@index([gathering_id], map: "idx_gathering_stories_gathering")
+  @@index([member_id], map: "idx_gathering_stories_member")
+}
+
+model outing_poll_options {
+  id          BigInt   @id @default(autoincrement())
+  created_at  DateTime @db.Timestamp(6)
+  day_kind    String   @db.VarChar(10)
+  label       String?  @db.VarChar(50)
+  option_date DateTime @db.Date
+  poll_id     BigInt
+
+  @@unique([poll_id, option_date], map: "uk_outing_poll_options")
+}
+
+model outing_poll_votes {
+  id           BigInt   @id @default(autoincrement())
+  availability String   @db.VarChar(12)
+  member_id    BigInt
+  option_id    BigInt
+  poll_id      BigInt
+  updated_at   DateTime @db.Timestamp(6)
+
+  @@unique([option_id, member_id], map: "uk_outing_poll_votes")
+  @@index([poll_id, member_id], map: "idx_opv_poll_member")
+}
+
+model outing_polls {
+  id                  BigInt   @id @default(autoincrement())
+  closing_notified    Boolean?
+  confirmed_option_id BigInt?
+  created_at          DateTime @db.Timestamp(6)
+  created_by          BigInt
+  description         String?
+  ends_at             DateTime @db.Timestamp(6)
+  gathering_id        BigInt?
+  max_participants    Int?
+  min_participants    Int?
+  poll_month          Int
+  region              String?  @db.VarChar(50)
+  starts_at           DateTime @db.Timestamp(6)
+  status              String   @db.VarChar(20)
+  title               String   @db.VarChar(100)
+  updated_at          DateTime @db.Timestamp(6)
+  poll_year           Int
+
+  @@unique([poll_year, poll_month], map: "uk_outing_polls_month")
+}
+
+model public_holidays {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @db.Timestamp(6)
+  holiday_date DateTime @unique(map: "uk_public_holidays_date") @db.Date
+  name         String   @db.VarChar(50)
+  source       String   @db.VarChar(10)
+  substitute   Boolean?
+}

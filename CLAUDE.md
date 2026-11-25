@@ -1112,6 +1112,86 @@ CREATE TABLE IF NOT EXISTS gathering_place_votes (
   CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
 );
 CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
+-- SNAPDAY 출사 기능 병합 (2026-11-25, DESIGN_PROMPTS/planning/snapday) — 표 정의는 Spring 엔티티, API는 새 API(apps/api)
+CREATE TABLE IF NOT EXISTS outing_polls (
+  id                 BIGSERIAL PRIMARY KEY,
+  poll_year          INTEGER NOT NULL,          -- year/month는 H2 예약어라 피함
+  poll_month         INTEGER NOT NULL,          -- 1~12
+  title              VARCHAR(100) NOT NULL,
+  description        TEXT,
+  region             VARCHAR(50),               -- 예정 지역(선택, AI 추천 입력)
+  status             VARCHAR(20) NOT NULL,      -- OPEN | CLOSED | CONFIRMED
+  starts_at          TIMESTAMP NOT NULL,
+  ends_at            TIMESTAMP NOT NULL,
+  min_participants   INTEGER,
+  max_participants   INTEGER,
+  confirmed_option_id BIGINT,
+  gathering_id       BIGINT,
+  closing_notified   BOOLEAN,                   -- 마감 24시간 전 알림 보냈는지
+  created_by         BIGINT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_polls_month UNIQUE (poll_year, poll_month)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_options (
+  id          BIGSERIAL PRIMARY KEY,
+  poll_id     BIGINT NOT NULL,
+  option_date DATE NOT NULL,
+  day_kind    VARCHAR(10) NOT NULL,             -- SAT | SUN | HOLIDAY | WEEKDAY
+  label       VARCHAR(50),                      -- 공휴일 이름
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_options UNIQUE (poll_id, option_date)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  poll_id      BIGINT NOT NULL,
+  option_id    BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  availability VARCHAR(12) NOT NULL,            -- AVAILABLE | UNAVAILABLE
+  updated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_votes UNIQUE (option_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_opv_poll_member ON outing_poll_votes(poll_id, member_id);
+CREATE TABLE IF NOT EXISTS public_holidays (
+  id           BIGSERIAL PRIMARY KEY,
+  holiday_date DATE NOT NULL,
+  name         VARCHAR(50) NOT NULL,
+  substitute   BOOLEAN,                          -- 대체공휴일
+  source       VARCHAR(10) NOT NULL,             -- API | MANUAL
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_public_holidays_date UNIQUE (holiday_date)
+);
+CREATE TABLE IF NOT EXISTS gathering_ai_recommendations (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  source        VARCHAR(10) NOT NULL,            -- AI | SAMPLE
+  model         VARCHAR(60),
+  question      VARCHAR(500),                    -- 추가 질문(있으면)
+  result_json   TEXT NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gar_gathering ON gathering_ai_recommendations(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_best_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  photo_id     BIGINT NOT NULL,                  -- gathering_photos.id
+  member_id    BIGINT NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gathering_best_votes UNIQUE (photo_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gbv_gathering_member ON gathering_best_votes(gathering_id, member_id);
+CREATE TABLE IF NOT EXISTS gathering_stories (
+  id                BIGSERIAL PRIMARY KEY,
+  gathering_id      BIGINT NOT NULL,
+  member_id         BIGINT NOT NULL,
+  image_url         VARCHAR(500) NOT NULL,
+  caption           VARCHAR(300),
+  tagged_member_ids VARCHAR(500),
+  created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_gathering ON gathering_stories(gathering_id);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_member ON gathering_stories(member_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -2326,6 +2406,86 @@ CREATE TABLE IF NOT EXISTS gathering_place_votes (
   CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
 );
 CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
+-- SNAPDAY 출사 기능 병합 (2026-11-25, DESIGN_PROMPTS/planning/snapday) — 표 정의는 Spring 엔티티, API는 새 API(apps/api)
+CREATE TABLE IF NOT EXISTS outing_polls (
+  id                 BIGSERIAL PRIMARY KEY,
+  poll_year          INTEGER NOT NULL,          -- year/month는 H2 예약어라 피함
+  poll_month         INTEGER NOT NULL,          -- 1~12
+  title              VARCHAR(100) NOT NULL,
+  description        TEXT,
+  region             VARCHAR(50),               -- 예정 지역(선택, AI 추천 입력)
+  status             VARCHAR(20) NOT NULL,      -- OPEN | CLOSED | CONFIRMED
+  starts_at          TIMESTAMP NOT NULL,
+  ends_at            TIMESTAMP NOT NULL,
+  min_participants   INTEGER,
+  max_participants   INTEGER,
+  confirmed_option_id BIGINT,
+  gathering_id       BIGINT,
+  closing_notified   BOOLEAN,                   -- 마감 24시간 전 알림 보냈는지
+  created_by         BIGINT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_polls_month UNIQUE (poll_year, poll_month)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_options (
+  id          BIGSERIAL PRIMARY KEY,
+  poll_id     BIGINT NOT NULL,
+  option_date DATE NOT NULL,
+  day_kind    VARCHAR(10) NOT NULL,             -- SAT | SUN | HOLIDAY | WEEKDAY
+  label       VARCHAR(50),                      -- 공휴일 이름
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_options UNIQUE (poll_id, option_date)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  poll_id      BIGINT NOT NULL,
+  option_id    BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  availability VARCHAR(12) NOT NULL,            -- AVAILABLE | UNAVAILABLE
+  updated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_votes UNIQUE (option_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_opv_poll_member ON outing_poll_votes(poll_id, member_id);
+CREATE TABLE IF NOT EXISTS public_holidays (
+  id           BIGSERIAL PRIMARY KEY,
+  holiday_date DATE NOT NULL,
+  name         VARCHAR(50) NOT NULL,
+  substitute   BOOLEAN,                          -- 대체공휴일
+  source       VARCHAR(10) NOT NULL,             -- API | MANUAL
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_public_holidays_date UNIQUE (holiday_date)
+);
+CREATE TABLE IF NOT EXISTS gathering_ai_recommendations (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  source        VARCHAR(10) NOT NULL,            -- AI | SAMPLE
+  model         VARCHAR(60),
+  question      VARCHAR(500),                    -- 추가 질문(있으면)
+  result_json   TEXT NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gar_gathering ON gathering_ai_recommendations(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_best_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  photo_id     BIGINT NOT NULL,                  -- gathering_photos.id
+  member_id    BIGINT NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gathering_best_votes UNIQUE (photo_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gbv_gathering_member ON gathering_best_votes(gathering_id, member_id);
+CREATE TABLE IF NOT EXISTS gathering_stories (
+  id                BIGSERIAL PRIMARY KEY,
+  gathering_id      BIGINT NOT NULL,
+  member_id         BIGINT NOT NULL,
+  image_url         VARCHAR(500) NOT NULL,
+  caption           VARCHAR(300),
+  tagged_member_ids VARCHAR(500),
+  created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_gathering ON gathering_stories(gathering_id);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_member ON gathering_stories(member_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)

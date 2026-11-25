@@ -40,9 +40,9 @@
 
 | # | 상태 | 항목 | 메모 |
 |---|---|---|---|
-| 1 | 🔄 | 기획 문서(PROJECT_SPEC.html·DEVELOPMENT_PLAN·DATABASE_SCHEMA·API_SPEC·TODO·README) + 디자인 프롬프트 | |
-| 2 | ⏳ | DB — Spring 엔티티(표 정의) + `prisma db pull` + 운영 SQL 기록 | outing_polls·options·votes, public_holidays, gathering_ai_recommendations, gathering_best_votes, gathering_stories |
-| 3 | ⏳ | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | 하드코딩 금지 |
+| 1 | ✅ | 기획 문서(PROJECT_SPEC.html·DEVELOPMENT_PLAN·DATABASE_SCHEMA·API_SPEC·TODO·README) + 디자인 프롬프트 | 5ee568d — 루트 대신 `DESIGN_PROMPTS/planning/snapday/`(저장소 규칙), 디자인 `DESIGN_PROMPT_snapday-outing.md` |
+| 2 | ✅ | DB — Spring 엔티티(표 정의) + `prisma db pull` + 운영 SQL 기록 | (이번 커밋) 엔티티 7개(`outing/entity/*`, `gathering/entity/*`), 로컬 PG에 Hibernate가 표 생성 확인, pull은 모델 7개 추가뿐. `year/month`는 H2 예약어라 `poll_year/poll_month`. 백엔드 테스트 62 통과 |
+| 3 | 🔄 | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | 하드코딩 금지 |
 | 4 | ⏳ | 월간 출사 투표 API — 생성(주말·공휴일 자동, 평일 추가)·투표(가능/불가, 수정)·집계·마감·확정→모임 생성·알림·마감 임박/자동 마감 배치 | |
 | 5 | ⏳ | 월간 출사 투표 웹 — 2027 월 목록·달력 투표·집계·추천 날짜·관리자 도구 | |
 | 6 | ⏳ | 현장 모드 — 출사 시작/종료(만든 사람·관리자) API + 웹 | |
