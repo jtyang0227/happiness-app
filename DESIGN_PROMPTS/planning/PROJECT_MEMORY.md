@@ -8,6 +8,7 @@
 - **사진작가 포트폴리오 + 업무 앱.** "보여주기(포트폴리오·작업 노트) → 일 받기(문의·예약) → 일 처리하기(일정·약속·납품·수금)".
 - 운영 주소: 웹 `https://happiness.io.kr`(Vercel), API `https://api.happiness.io.kr`(Railway). 별도 저장소 **happiness-admin**(운영자용)과 DB를 공유한다.
 - 포트폴리오: 템플릿 4종 + **직접 구성(BLOCKS)** — 새 블록은 서버 `PortfolioLayoutValidator.BLOCK_PROPS` + 웹 `blocks/blockRegistry.js` 두 곳에 추가.
+- **SNAPDAY 출사(모임 안, 새 API·`apps/web`만 — 컷오버 후 운영)**: 월간 출사 투표(`/gatherings/polls`)→확정→모임, AI 계절 추천, 출사 시작/종료, 스토리 편집기, 베스트 포토. 문서 `planning/snapday/`.
 - 웹 메뉴 4개: **둘러보기**(`/explore`, 공개 — 사진|작업|스팟 탭) · **내 작업**(`/series`) · **업무**(`/workspace` 허브 + 문의·예약·일정·약속·납품 탭) · **모임**(`/gatherings`) + "＋ 올리기"(`/photo/new` = 이미지 에디터).
 - 모바일(Expo) 탭: 탐색 · 갤러리(내 사진) · 등록 · 피드 · 프로필(나머지 기능은 프로필 메뉴에서 진입).
 
@@ -72,6 +73,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **SNAPDAY 외부 키**: 새 API 서버에 `GEMINI_API_KEY`(AI 실제 추천)·`HOLIDAY_API_KEY`(공공데이터포털 특일 정보) — 없으면 샘플·수동 공휴일 등록.
 - **TS 전환 컷오버(11b)**: `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
 - **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 어드민은 7월 master(c35e964)라 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행(lazy-init 500은 운영에 없는 11월 브랜치 버그).
 - **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
@@ -84,7 +86,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-25 | (이번 커밋) | 새 API·웹 알려진 갭 — 시리즈 사진 작성자 정보, 웹 새로고침 후 access token 복구("…ByMe" false 경합, 느린 망 재현으로 전후 확인). 커버 N+1은 새 API에 이미 없음 | WORK_QUEUE "새 API·웹 알려진 갭" |
+| 11-25 | 5ee568d~(이번 커밋) | SNAPDAY 출사 기능 병합 — 월간 투표·공휴일·확정→모임·AI 추천(Gemini/샘플)·현장 모드·스토리 편집기·베스트 포토·출사 기록. 계약 새 API 95(SNAPDAY 4), Playwright 전 흐름 | `planning/snapday/TODO.md` |
+| 11-25 | beb5742 | 새 API·웹 알려진 갭 — 시리즈 사진 작성자 정보, 웹 새로고침 후 access token 복구("…ByMe" false 경합, 느린 망 재현으로 전후 확인). 커버 N+1은 새 API에 이미 없음 | WORK_QUEUE "새 API·웹 알려진 갭" |
 | 11-25 | c8dad10 | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
 | 11-25 | 5fa7d08 | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
 | 11-24 | dcdc2fd | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |

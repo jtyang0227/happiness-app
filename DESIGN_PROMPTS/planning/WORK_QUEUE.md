@@ -50,7 +50,7 @@
 | 8 | ✅ | 베스트 포토 — 1인 3표·집계·앨범 표시 API + 웹 | API c5a3abb + 웹 `BestPhotoSection`(앨범) — 내 표 n/3, 인기/최신, 회원 필터, 메달. Playwright: 투표 1/3·메달 |
 | 9 | ✅ | 스토리 편집기(웹, 9:16) — 사진·레이아웃·텍스트·스티커·멤버 태그·태그 복사·이미지 저장·공유 + 스토리 저장 API | API c5a3abb + 웹 `GatheringStoryPage`(/gatherings/:id/story, 다크 전체 화면)·`StoryStrip` — 1080×1920 캔버스, 레이아웃 1/2/3·배경·텍스트(드래그·크기·색)·날짜/위치/출사명 스티커·태그 선택·복사·이미지에 넣기, PNG 저장·Web Share·업로드 후 등록. Playwright: 드래그 이동, PNG 1080×1920 저장, 등록 후 스토리 1. **발견·수정**: 여러 장 동시 선택 시 레이아웃이 1장에 머물러 1장만 보이던 것 |
 | 10 | ✅ | 마이페이지 보강 — 출사 참여 이력·내 스토리 | API c5a3abb + 웹 프로필 "출사 기록" 탭 `MyOutingHistory` — 참여 횟수·내 스토리·참여한 출사(앨범 링크). Playwright 확인 |
-| 11 | 🔄 | 전체 검증(계약 테스트·빌드·Playwright 390/1280) + 문서 정리 | |
+| 11 | ✅ | 전체 검증(계약 테스트·빌드·Playwright 390/1280) + 문서 정리 | (이번 커밋) 계약 새 API 95·Spring 91(SNAPDAY 4 skip), 단위 5, 백엔드 62, 웹 typecheck·테스트 13·빌드, Playwright 전 흐름. `snapday/TODO.md`에 최종 보고(구현·미구현·외부 연동·환경 변수·실행·다음 우선순위), `.env.example`·`render.yaml`에 `HOLIDAY_API_KEY`, CLAUDE.md·PROJECT_MEMORY |
 
 ## 현재 묶음 — 새 API·웹 알려진 갭 (요청: 컷오버 대기 중 "새 API 알려진 갭 수정", 2026-11-25)
 
