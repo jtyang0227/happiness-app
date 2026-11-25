@@ -33,6 +33,13 @@
 | 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
+## 현재 묶음 — TS 전환 보안 누락 점검 (요청: "스프링부트 보안 처리가 ts 전환하면서 누락됐는지 확인, 필요하면 프롬프트 작성 후 작업", 2026-11-25)
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 점검 — Spring 앱·어드민 보안 처리 ↔ 새 API 대조표 | `PROMPT_ts-security-parity.md`. 이미 있음: JWT(블랙리스트·ACCESS만·회원 재조회·약한 키 차단·알고리즘 고정), 기본 거부·관리자 역할, 로그인 잠금, 기능별 속도 제한 10종, XSS, 업로드, 클라이언트 IP, 예외 은닉, 개인정보·IDOR. 빠짐: 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더(실측) |
+| 2 | ✅ | 보완 — `common/security.middleware.ts`(헤더·IP 차단·스캐너·토큰 버킷), CORS 목록, 어드민 헤더 | (이번 커밋) 계약 `security.test.ts` Spring 4/새 API 5 통과(HSTS는 새 API만), 단위 6, 앱 계약 새 API 100·Spring 94(+예약 1건 기존 불안정 — 단독 3/3 통과), 어드민 47 |
+
 ## 현재 묶음 — SNAPDAY 출사 기능 병합 (요청: "어플에서 전달하는 프롬프트의 기능을 병합", 2026-11-25)
 
 결정(사용자): **TS 전환본(`apps/api`·`apps/web`)에 구현**(표 정의만 Spring 엔티티 — 컷오버 전 스키마 주인), **Toss 디자인 유지**, **"모임" 안에 병합**(앱 이름·메뉴 유지).

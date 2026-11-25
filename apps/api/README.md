@@ -109,3 +109,14 @@ ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Sp
 node scripts/smoke.mjs --api https://api.happiness.io.kr --admin-api <어드민 API> --web https://happiness.io.kr --admin-web <어드민 웹>
 ```
 GitHub Actions › Smoke(수동 실행)에서도 같은 점검을 한다 — 클라우드 개발 세션은 운영 도메인에 접속할 수 없어서. 로컬 확인(2026-11-24): Nest 8090·8091 + `apps/web`·`apps/admin` 빌드 모두 통과, Spring 8080은 당시 작업 탐색 1건 실패(이후 Spring 수정으로 해소), Spring 어드민 8081 통과.
+
+## 요청 단위 보안 처리 (Spring 패리티, 2026-11-25)
+
+점검표·근거: `DESIGN_PROMPTS/planning/PROMPT_ts-security-parity.md`. `common/security.middleware.ts`를 `main.ts`에서 헤더 → IP 차단 → 스캐너 차단 → 전역 속도 제한 순으로 건다.
+- 보안 헤더: nosniff, X-XSS-Protection 0, `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`·Pragma·Expires, X-Frame-Options SAMEORIGIN, CSP·Referrer-Policy(앱만), `X-Powered-By` 끔. 어드민 진입점도 기본 헤더(CSP 없음 — Spring 어드민과 같음).
+- IP 차단: Redis `ipblock:{ip}`(운영자가 직접 넣는 키, 값 무관) → 403 B001, 10초 로컬 캐시, Redis 장애 시 통과.
+- 스캐너 차단: `/api/**`에서 User-Agent에 sqlmap·nikto·nmap·masscan·zgrab → 403 B001.
+- 전역 속도 제한: IP당 토큰 버킷 `RATE_LIMIT_CAPACITY`·`RATE_LIMIT_REFILL_TOKENS`·`RATE_LIMIT_REFILL_SECONDS`(기본 100·100·60) → 429 R001. 계약 테스트는 요청마다 다른 X-Forwarded-For라 걸리지 않는다.
+- CORS 허용 헤더·노출 헤더·maxAge를 Spring 목록과 같게.
+- **의도적 차이**: ① HSTS를 `X-Forwarded-Proto: https`일 때도 붙인다(Spring은 forward-headers 설정이 없어 Railway 프록시 뒤에선 안 붙었다). ② 인증이 필요한 경로의 무토큰 요청도 속도 제한에 센다(Spring은 Security 필터가 먼저 401을 내서 세지 않았다 — 무작위 대입에 더 안전).
+- 계약 테스트 `security.test.ts`(Spring·새 API 양쪽), 단위 `rate-limit.test.ts`.

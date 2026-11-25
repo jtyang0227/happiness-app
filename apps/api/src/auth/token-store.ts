@@ -65,6 +65,11 @@ export class TokenStore implements OnModuleDestroy {
     try { await (await this.redis())?.set(`bl:${jti}`, '1', { PX: ttlMs }); } catch { /* fail-open */ }
   }
 
+  /** Spring IpBlockFilter — 운영자가 Redis에 넣은 `ipblock:{ip}` 키(값 무관). Redis가 없거나 죽으면 통과 */
+  async isIpBlocked(ip: string): Promise<boolean> {
+    try { return ((await (await this.redis())?.exists(`ipblock:${ip}`)) ?? 0) > 0; } catch { return false; }
+  }
+
   async isBlacklisted(jti: string): Promise<boolean> {
     try { return ((await (await this.redis())?.exists(`bl:${jti}`)) ?? 0) > 0; } catch { return false; }
   }
