@@ -14,6 +14,12 @@ const TYPE_META = {
   NEW_COMMENT:             { icon: '💬', label: '새 댓글' },
   NEW_LIKE:                { icon: '♥',  label: '좋아요' },
   GATHERING_ENDED:         { icon: '🏁', label: '모임 종료' },
+  PLACE_DECIDED:           { icon: '📍', label: '장소 확정' },
+  SCHEDULE_CHANGED:        { icon: '🕒', label: '일정 변경' },
+  POLL_OPENED:             { icon: '🗳', label: '출사 투표 시작' },
+  POLL_CLOSING:            { icon: '⏰', label: '투표 마감 임박' },
+  POLL_REMIND:             { icon: '🔔', label: '투표 응답 요청' },
+  POLL_CONFIRMED:          { icon: '📅', label: '출사 날짜 확정' },
 };
 
 /* ── Shimmer Skeleton ─────────────────────────────────── */
@@ -177,6 +183,11 @@ export default function GatheringNotificationsPage() {
           prev.map(n => n.id === notif.id ? { ...n, isRead: false } : n)
         );
       });
+    }
+    // SNAPDAY 투표 알림은 모임이 아직 없어 gatheringId 0 + relatedPostId = 투표 id (확정 알림은 새 모임으로)
+    if (String(notif.type || '').startsWith('POLL_') && (!notif.gatheringId || notif.type !== 'POLL_CONFIRMED')) {
+      navigate(`/gatherings/polls/${notif.relatedPostId}`);
+      return;
     }
     navigate(`/gatherings/${notif.gatheringId}`);
   }, [navigate]);

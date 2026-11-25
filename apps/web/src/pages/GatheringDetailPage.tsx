@@ -6,6 +6,9 @@ import gatheringApi from '../services/gatheringApi';
 import useAuthStore from '../store/authStore';
 import GatheringFeed from '../components/gathering/GatheringFeed';
 import PlacePollCard from '../components/gathering/PlacePollCard';
+import FieldModeBar from '../components/gathering/FieldModeBar';
+import AiRecommendationCard from '../components/gathering/AiRecommendationCard';
+import StoryStrip from '../components/gathering/StoryStrip';
 import { kakaoDirectionsUrl } from '../utils/kakaoMap';
 
 /* ── 모달 등장 애니메이션 — 배경 페이드 + 카드 스케일업(scale(0)로 시작하지 않음) ── */
@@ -518,7 +521,12 @@ export default function GatheringDetailPage() {
           </div>
         )}
 
+        <FieldModeBar gathering={gathering} canManage={!!(isCreator || user?.authority === 'WM' || user?.authority === 'SA')} onChanged={load} />
+
         <PlacePollCard gatheringId={gathering.id} canVote={!!user} />
+
+        {/* SNAPDAY — AI 계절 추천(만든 사람·참가 신청자, 서버가 권한 검사) */}
+        <AiRecommendationCard gatheringId={gathering.id} canRequest={!!user} isCreator={!!isCreator} />
 
         {/* 소개글 */}
         {gathering.description && (
@@ -656,6 +664,7 @@ export default function GatheringDetailPage() {
         {/* ── 진행중 / 종료: 실제 피드 ─────────────────── */}
         {isActiveOrEnded && (
           <>
+            <StoryStrip gatheringId={gathering.id} user={user} canCreate={!!user} />
             <GatheringFeed
               gatheringId={id}
               status={gathering.status}

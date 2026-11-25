@@ -67,6 +67,11 @@ const GatheringAlbumPage = lazyPage(() => import('./pages/GatheringAlbumPage'));
 const GatheringCalendarPage = lazyPage(() => import('./pages/GatheringCalendarPage'));
 const IntegratedCalendarPage = lazyPage(() => import('./pages/IntegratedCalendarPage'));
 const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotificationsPage'));
+const OutingPollsPage = lazyPage(() => import('./pages/OutingPollsPage'));
+const OutingPollPage = lazyPage(() => import('./pages/OutingPollPage'));
+const OutingHolidaysPage = lazyPage(() => import('./pages/OutingHolidaysPage'));
+const BestRankingPage = lazyPage(() => import('./pages/BestRankingPage'));
+const GatheringStoryPage = lazyPage(() => import('./pages/GatheringStoryPage'));
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
 const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
@@ -110,7 +115,8 @@ function AppShell() {
     || location.pathname.startsWith('/admin')
     || /^\/portfolio\/[^/]+\/slideshow$/.test(location.pathname)
     || /^\/portfolio\/[^/]+\/work\/[^/]+$/.test(location.pathname)
-    || /^\/photo\/\d+\/edit$/.test(location.pathname);
+    || /^\/photo\/\d+\/edit$/.test(location.pathname)
+    || /^\/gatherings\/\d+\/story$/.test(location.pathname);   // SNAPDAY 스토리 편집기(다크 전체 화면)
 
   // Toss 플랫 디자인 — 로그인/회원가입 포함 전 화면 동일한 화이트 배경
   const bg = '#ffffff';
@@ -189,12 +195,18 @@ function AppShell() {
 
           {/* Gatherings — list/detail/album public; new/edit/manage/notifications require auth */}
           <Route path="/gatherings" element={<GatheringsPage />} />
+          {/* SNAPDAY 월간 출사 투표 — 목록·달력 공개(응답은 로그인), 공휴일 관리는 관리자 */}
+          <Route path="/gatherings/polls" element={<OutingPollsPage />} />
+          <Route path="/gatherings/polls/holidays" element={<ProtectedRoute><OutingHolidaysPage /></ProtectedRoute>} />
+          <Route path="/gatherings/polls/:id" element={<OutingPollPage />} />
+          <Route path="/gatherings/best" element={<BestRankingPage />} />
           <Route path="/gatherings/notifications" element={<ProtectedRoute><GatheringNotificationsPage /></ProtectedRoute>} />
           <Route path="/gatherings/new" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id" element={<GatheringDetailPage />} />
           <Route path="/gatherings/:id/edit" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id/manage" element={<ProtectedRoute><GatheringManagePage /></ProtectedRoute>} />
           <Route path="/gatherings/:id/album" element={<GatheringAlbumPage />} />
+          <Route path="/gatherings/:id/story" element={<ProtectedRoute><GatheringStoryPage /></ProtectedRoute>} />
           <Route path="/gatherings/calendar" element={<ProtectedRoute><GatheringCalendarPage /></ProtectedRoute>} />
 
           {/* Admin */}

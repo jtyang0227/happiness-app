@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SNAPDAY 출사 기능 기획서</title>
+<style>
+  :root { --primary:#3182F6; --primaryLight:#E8F3FF; --bg:#F2F4F6; --surface:#fff; --border:#E5E8EB; --text:#191F28; --text2:#4E5968; --muted:#8B95A1; --success:#007A45; --warn:#B45309; --danger:#F04452; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.7 -apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 16px 80px; }
+  header { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:20px; }
+  h1 { margin:0 0 6px; font-size:28px; letter-spacing:-.02em; }
+  h2 { font-size:20px; margin:0 0 12px; letter-spacing:-.01em; }
+  h3 { font-size:16px; margin:18px 0 6px; }
+  .sub { color:var(--text2); margin:0; }
+  .tag { display:inline-block; background:var(--primaryLight); color:var(--primary); font-weight:600; font-size:13px; border-radius:999px; padding:2px 10px; margin-right:6px; }
+  section { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; margin-bottom:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  nav ol { columns:2; margin:0; padding-left:20px; } nav a { color:var(--primary); text-decoration:none; }
+  table { width:100%; border-collapse:collapse; font-size:14px; } th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { background:var(--bg); color:var(--text2); font-weight:600; }
+  .ok { color:var(--success); font-weight:600; } .new { color:var(--primary); font-weight:600; } .prep { color:var(--warn); font-weight:600; }
+  .flow { display:flex; flex-wrap:wrap; gap:6px; align-items:center; } .flow span { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-size:13px; } .flow b { color:var(--muted); }
+  code { background:var(--bg); border-radius:6px; padding:1px 6px; font-size:13px; }
+  .note { background:#FFF8E6; border:1px solid #F5DEA8; border-radius:12px; padding:12px 14px; color:#6B4E00; font-size:14px; }
+  @media (max-width:640px){ nav ol { columns:1; } header,section { padding:18px; } h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="tag">기획서</span><span class="tag">2026-11-25</span>
+  <h1>SNAPDAY — 사진으로 연결되는 우리의 출사</h1>
+  <p class="sub">"SNAPDAY 통합 개발 지시서"를 Happiness 앱의 <b>모임(출사)</b> 기능에 병합한 기획. 새 앱을 만들지 않고 기존 회원·모임·사진·알림을 그대로 쓴다.</p>
+</header>
+
+<section>
+  <h2>결정 사항 (사용자 확인)</h2>
+  <table>
+    <tr><th>항목</th><th>결정</th><th>이유</th></tr>
+    <tr><td>구현 위치</td><td>TypeScript 전환본 — 새 API <code>apps/api</code>(NestJS·Prisma) + 웹 <code>apps/web</code>(Next.js)</td><td>곧 운영을 넘겨받는 코드에 한 번만 만든다. 표 정의는 컷오버 전 스키마 주인인 Spring 엔티티에 둔다.</td></tr>
+    <tr><td>디자인</td><td>기존 Toss 디자인 시스템 유지(블루 #3182F6, 회색 배경, 플랫)</td><td>앱 전체 일관성. 지시서의 그린·아이보리는 적용하지 않음.</td></tr>
+    <tr><td>제품 범위</td><td>앱 이름·메뉴 유지, "모임" 안에 SNAPDAY 흐름 병합</td><td>지시서 하단 메뉴(홈·출사 일정·AI 추천·갤러리·마이페이지)는 모임 화면의 탭·진입점으로 대응.</td></tr>
+    <tr><td>AI</td><td>Gemini(기존 <code>GEMINI_API_KEY</code>) — 지시서의 OpenAI 대신</td><td>이미 연동된 키·서버 경로 재사용, 클라이언트에 키 노출 없음.</td></tr>
+    <tr><td>모바일 앱</td><td>반응형 웹 먼저(지시서 PART 14 원칙). Expo 앱 반영은 다음 단계</td><td>Expo 58 업그레이드가 실기기 확인 대기 중.</td></tr>
+  </table>
+</section>
+
+<nav><section><h2>목차</h2><ol>
+  <li><a href="#overview">프로젝트 개요·목표</a></li><li><a href="#features">전체 기능(있음/신규/준비)</a></li>
+  <li><a href="#flow">사용자 흐름</a></li><li><a href="#screens">화면별 기획</a></li>
+  <li><a href="#design">디자인 시스템</a></li><li><a href="#poll">월간 출사 투표 규칙</a></li>
+  <li><a href="#ai">AI 출사 추천 규칙</a></li><li><a href="#event">출사 관리·현장 모드</a></li>
+  <li><a href="#photo">사진·앨범·베스트 포토</a></li><li><a href="#story">스토리 제작·인스타그램 공유</a></li>
+  <li><a href="#admin">관리자 기능</a></li><li><a href="#data">데이터 구조</a></li>
+  <li><a href="#api">API 연동</a></li><li><a href="#security">보안 정책</a></li>
+  <li><a href="#roadmap">개발 로드맵</a></li><li><a href="#tests">기능별 테스트 기준</a></li>
+</ol></section></nav>
+
+<section id="overview">
+  <h2>1. 프로젝트 개요·목표</h2>
+  <p>사진을 좋아하는 사람들이 매월 출사 날짜를 함께 정하고, AI가 계절에 맞는 장소·제철 음식을 제안하고, 출사 당일 사진과 스토리를 공유해 앨범으로 남긴다.</p>
+  <div class="flow"><span>회원가입</span><b>→</b><span>월간 출사 투표</span><b>→</b><span>날짜 확정(모임 생성)</span><b>→</b><span>AI 계절 추천</span><b>→</b><span>참가 신청</span><b>→</b><span>출사 시작</span><b>→</b><span>사진 공유</span><b>→</b><span>스토리 제작</span><b>→</b><span>인스타그램 공유</span><b>→</b><span>앨범·베스트 포토</span></div>
+  <h3>핵심 원칙</h3>
+  <ul><li>모든 버튼은 실제 API에 연결, 모든 입력은 DB에 저장, 회원별 데이터 분리.</li>
+  <li>투표는 서버에서 실제 집계 — 모든 회원에게 같은 결과.</li>
+  <li>외부 API 키가 없으면 "연결 준비" 상태와 개발용 샘플을 <b>표시로 구분</b>. 확인되지 않은 주소·영업시간·날씨·개화 상태를 사실처럼 보여 주지 않는다.</li></ul>
+</section>
+
+<section id="features">
+  <h2>2. 전체 기능 — 지시서 대비</h2>
+  <p><span class="ok">있음</span> 이미 운영 중 · <span class="new">신규</span> 이번에 구현 · <span class="prep">준비</span> 외부 키·계정이 있어야 동작(구조만)</p>
+  <table>
+    <tr><th>지시서 기능</th><th>상태</th><th>이 앱에서</th></tr>
+    <tr><td>이메일 가입·로그인·닉네임·프로필 사진·소개·인스타그램 ID·촬영 취향·지역</td><td class="ok">있음</td><td>회원가입·프로필 설정(<code>specialties</code>, <code>location</code>, <code>instagramId</code>)</td></tr>
+    <tr><td>카카오·구글·애플 로그인</td><td class="ok">있음</td><td>웹 OAuth 콜백(키는 환경 변수)</td></tr>
+    <tr><td>2027 월간 출사 투표(주말·공휴일·평일 추가·복수 선택·수정·집계·마감·운영자 확정)</td><td class="new">신규</td><td><code>/gatherings/polls</code></td></tr>
+    <tr><td>공휴일·대체공휴일(검증된 데이터)</td><td class="new">신규</td><td>공공데이터포털 특일정보 가져오기 <span class="prep">(키 필요)</span> + 관리자 수동 등록</td></tr>
+    <tr><td>투표 마감·결과·확정·일정 변경 알림, 미응답 리마인드</td><td class="new">신규</td><td>앱 내 알림(기존 모임 알림함). 푸시는 <span class="prep">준비</span></td></tr>
+    <tr><td>AI 계절별 장소·제철 음식·촬영 포인트·우천 대안</td><td class="new">신규</td><td>Gemini 구조화 결과, 키 없으면 샘플(표시)</td></tr>
+    <tr><td>날씨·일출일몰·실시간 개화</td><td class="prep">준비</td><td>기상청 API 키가 없어 "예상 정보" 문구로만 — 실제 값 표시 안 함</td></tr>
+    <tr><td>지도·교통·주차</td><td class="ok">있음/부분</td><td>카카오맵(스팟·길찾기 링크). AI 결과는 이름으로 카카오맵 검색 링크만</td></tr>
+    <tr><td>출사 상세·참가 신청/취소/대기·인원 제한·참가자 관리·공지</td><td class="ok">있음</td><td>모임 상세·관리 화면</td></tr>
+    <tr><td>출사 시작/종료(현장 모드)</td><td class="new">신규</td><td>만든 사람·관리자 버튼(기존 시간 기반 자동 전환은 유지)</td></tr>
+    <tr><td>현장 사진·실시간 피드·좋아요·댓글</td><td class="ok">있음</td><td>모임 피드(진행 중)</td></tr>
+    <tr><td>사진 위치 등록</td><td class="ok">있음</td><td>사진 ↔ 출사 스팟 연결(EXIF GPS는 저장 안 함)</td></tr>
+    <tr><td>스토리 편집기(9:16·여러 장·레이아웃·텍스트·스티커)</td><td class="new">신규</td><td>웹 캔버스 편집기</td></tr>
+    <tr><td>멤버 자동 태그·태그 전체 복사</td><td class="new">신규(웹)</td><td>참여자 인스타그램 ID → <code>@id</code> 목록·복사</td></tr>
+    <tr><td>인스타그램 공유</td><td class="new">신규(웹)</td><td>이미지 저장 + 운영체제 공유 시트(Web Share). 인스타그램 멘션 자동 등록은 공식 API로 불가 → 태그 문구 복사 후 사용자가 적용</td></tr>
+    <tr><td>출사별 앨범·회원별·최신/인기 필터</td><td class="ok">있음/부분</td><td>앨범 화면에 필터 추가</td></tr>
+    <tr><td>베스트 포토(1인 3표)</td><td class="new">신규</td><td>종료된 모임 앨범</td></tr>
+    <tr><td>마이페이지(참여 이력·내 스토리)</td><td class="new">신규(보강)</td><td>프로필의 출사 기록</td></tr>
+    <tr><td>신고·차단</td><td class="ok">있음</td><td>사진·댓글 신고, 사용자 차단(모바일)</td></tr>
+    <tr><td>월간·연말 베스트 포토</td><td class="prep">다음</td><td>베스트 포토 데이터로 집계 화면 추가 예정</td></tr>
+  </table>
+</section>
+
+<section id="flow">
+  <h2>3. 사용자 흐름</h2>
+  <ol>
+    <li><b>운영자</b>가 2027년 3월 투표를 만든다 → 그 달 토·일·공휴일이 후보로 자동 추가, 필요하면 평일 추가.</li>
+    <li><b>회원</b>은 달력에서 날짜마다 "가능/불가"를 고른다(여러 날짜, 언제든 수정). 응답 안 한 날짜는 미응답.</li>
+    <li>날짜마다 가능 인원이 집계되고 최다 날짜가 "추천"으로 표시된다(최소 인원 미달이면 추천 안 함).</li>
+    <li>마감 후 운영자가 날짜·시간·집합 장소를 정해 <b>확정</b> → 모임이 생성되고 가능 응답자에게 알림.</li>
+    <li>모임 상세에서 <b>AI 추천</b>을 받아 장소를 비교하고 장소 투표 후보로 등록.</li>
+    <li>회원은 <b>참가 신청</b>(투표의 "가능"과 별도 단계, 정원 초과 시 대기자).</li>
+    <li>당일 운영자가 <b>출사 시작</b> → 피드에 사진·글, 좋아요·댓글.</li>
+    <li>참여자는 <b>스토리</b>를 만들어 저장·공유하고 태그 문구를 복사.</li>
+    <li>운영자가 <b>출사 종료</b> → 앨범 공개, 참여자가 베스트 포토 3표.</li>
+  </ol>
+</section>
+
+<section id="screens">
+  <h2>4. 화면별 기획 (<code>apps/web</code>)</h2>
+  <table>
+    <tr><th>화면</th><th>경로</th><th>내용</th></tr>
+    <tr><td>모임 홈</td><td><code>/gatherings</code></td><td>상단 "이번 달 출사 투표" 카드(진행 중 투표·내 응답 여부) + 기존 모집 중 모임·내 모임</td></tr>
+    <tr><td>출사 투표 목록</td><td><code>/gatherings/polls</code></td><td>2027년 1~12월 카드(투표 없음·진행 중·마감·확정), 관리자: 투표 만들기·공휴일 관리</td></tr>
+    <tr><td>출사 투표 달력</td><td><code>/gatherings/polls/:id</code></td><td>월 달력(토 파랑·일/공휴일 빨강·평일 후보·내 선택·확정일), 날짜 탭 → 가능/불가/응답 지우기, 날짜별 인원 막대, 추천 날짜, 관리자 도구(평일 추가·마감·다시 열기·리마인드·확정)</td></tr>
+    <tr><td>공휴일 관리(관리자)</td><td><code>/gatherings/polls/holidays</code></td><td>연도별 목록, API 가져오기(키 없으면 안내), 수동 추가·삭제</td></tr>
+    <tr><td>모임 상세</td><td><code>/gatherings/:id</code></td><td>기존 + 출사 시작/종료 버튼, AI 추천 카드, 스토리 만들기 진입, 확정 투표 링크</td></tr>
+    <tr><td>AI 추천</td><td><code>/gatherings/:id</code> 내 섹션</td><td>추천 받기·다시 받기·추가 질문, 장소 카드(이유·시간·포인트·콘셉트·우천 대안·카카오맵 검색), 제철 음식, 교통·주차 안내, 출처 배지(AI/샘플), 장소 투표 후보로 등록(만든 사람)</td></tr>
+    <tr><td>스토리 편집기</td><td><code>/gatherings/:id/story</code></td><td>9:16 캔버스, 사진 고르기(모임 사진·내 기기), 레이아웃 1/2/3장, 배경색, 텍스트(추가·크기·끌어 옮기기), 날짜·위치·출사명 스티커, 멤버 태그 선택·전체 복사, 이미지 저장·공유·스토리 등록</td></tr>
+    <tr><td>앨범</td><td><code>/gatherings/:id/album</code></td><td>기존 + 정렬(최신·인기)·회원 필터, 베스트 포토 투표(종료 후 1인 3표)·순위, 스토리 모음</td></tr>
+    <tr><td>내 출사 기록</td><td>프로필 탭</td><td>참여 횟수, 참여한 출사, 내 스토리</td></tr>
+  </table>
+</section>
+
+<section id="design">
+  <h2>5. 디자인 시스템</h2>
+  <p>Toss 디자인 시스템(<code>DESIGN_PROMPT_toss-design-system.md</code>) 그대로: 단일 브랜드 블루, 배경 #F2F4F6, 흰 카드, 블러·그라디언트 금지, 회색 그림자만, 이모지 아이콘, 공통 <code>Button</code>·<code>FormField</code>, 스켈레톤·빈 상태 필수, WCAG AA. 사진이 주인공 — 큰 썸네일·둥근 모서리(12~16px)·넉넉한 여백. 달력 색: 토요일 텍스트 <code>primary</code>, 일요일·공휴일 <code>danger</code>, 확정일 블루 채움, 내 "가능" 초록 톤(<code>successText</code>), "불가" 회색. 상세는 <code>DESIGN_PROMPTS/design/DESIGN_PROMPT_snapday-outing.md</code>.</p>
+</section>
+
+<section id="poll">
+  <h2>6. 월간 출사 투표 규칙</h2>
+  <ul>
+    <li>월 1개(같은 달 중복 생성 불가). 2027년 1~12월 모두 생성 가능(다른 해도 가능).</li>
+    <li>후보: 그 달의 모든 토·일 + 등록된 공휴일(대체공휴일 포함). 평일은 운영자가 추가.</li>
+    <li>응답: 날짜마다 <b>가능 / 불가</b>, 응답 없으면 <b>미응답</b>. 선호도가 아닌 실제 참여 가능 여부.</li>
+    <li>투표 기간(시작~마감) 안, 상태 OPEN일 때만 저장·수정. 마감 시각이 지나면 배치가 CLOSED로.</li>
+    <li>집계: 날짜별 가능·불가 인원, 응답자 수. 추천 = 가능 인원 최다 날짜(동률 모두), 최소 인원이 있으면 그 이상인 날짜만.</li>
+    <li>자동 확정 없음 — 운영자가 확정. 확정 시 모임 생성(제목·장소·시간·정원), 이후 투표는 읽기 전용.</li>
+    <li>알림: 생성(대상자), 마감 24시간 전(미응답 대상자, 1회), 확정(가능 응답자), 리마인드(운영자 버튼). 대상자 = 최근 6개월 출사 참여자 ∪ 지난 투표 응답자.</li>
+    <li>공휴일은 코드에 박지 않는다: 공공데이터포털 특일정보 API(<code>HOLIDAY_API_KEY</code>)로 가져오거나 관리자가 등록.</li>
+  </ul>
+</section>
+
+<section id="ai">
+  <h2>7. AI 출사 추천 규칙</h2>
+  <ul>
+    <li>입력: 출사 날짜·요일·계절, 지역(모임 장소·투표 지역), 참여자 촬영 취향 분포, 추가 질문.</li>
+    <li>출력: 요약, 장소 2~4곳(지역·이유·추천 시간·촬영 포인트·콘셉트·우천 대안), 제철 음식, 맛집 찾기 팁, 교통·주차 일반 안내, 날씨·개화 관련 주의(예상임을 명시).</li>
+    <li><b>만들지 않는 것</b>: 주소·영업시간·전화번호·가격·확정 개화일·실제 날씨. 화면에 "AI 생성 정보 — 방문 전 확인" 고정 표시, 장소는 카카오맵 검색 링크.</li>
+    <li>키 없음 → <span class="prep">SAMPLE</span> 배지의 개발용 일반 안내(실제 장소 아님). AI 결과와 섞지 않음.</li>
+    <li>저장된 추천은 모임 단위로 누구나 열람, 다시 받기·추가 질문은 새 기록. 회원당 10분 5회.</li>
+  </ul>
+</section>
+
+<section id="event">
+  <h2>8. 출사 관리·현장 모드</h2>
+  <p>상태: RECRUITING(모집) → RECRUITMENT_CLOSED → SCHEDULED → <b>ONGOING(현장 모드)</b> → <b>ENDED(앨범)</b>. 기존 시간 기반 배치 전환은 그대로, 만든 사람·관리자가 "출사 시작"·"출사 종료"로 앞당길 수 있다. 시작하면 피드 작성·좋아요·댓글이 열리고, 종료하면 피드가 닫히고 앨범·베스트 포토 투표가 열린다. 참가 신청(정원·대기자 자동 승격)은 기존 규칙.</p>
+</section>
+
+<section id="photo">
+  <h2>9. 사진·앨범·베스트 포토</h2>
+  <ul><li>사진 업로드: 기존 업로드 API(형식·20MB 검사, UUID 파일명, 진행률).</li>
+  <li>앨범: 종료된 모임의 피드 사진 모음 — 최신/인기 정렬, 회원 필터, 스토리 모음.</li>
+  <li>베스트 포토: 종료 후 참여자만, 1인 최대 3표(사진당 1표), 득표순 순위·대표 배지. 월간·연말 베스트는 다음 단계.</li></ul>
+</section>
+
+<section id="story">
+  <h2>10. 스토리 제작·인스타그램 공유</h2>
+  <ul><li>1080×1920(9:16) 캔버스. 사진 1~3장 레이아웃, 배경색, 텍스트(추가·크기·드래그), 스티커(날짜·위치·출사명).</li>
+  <li>멤버 태그: 모임 참여자 중 인스타그램 ID 등록자를 불러와 선택 → <code>@a @b</code> 문구 생성·전체 복사.</li>
+  <li>저장: PNG 내려받기, 스토리 등록(업로드 후 모임 스토리에 표시), 공유: 운영체제 공유 시트(지원 브라우저) — 인스타그램 앱 선택은 사용자가.</li>
+  <li class="note">인스타그램 멘션 자동 등록·음악 자동 삽입은 공식 API로 불가 → 태그 문구를 복사해 사용자가 스토리에서 적용한다(화면에 안내).</li></ul>
+</section>
+
+<section id="admin">
+  <h2>11. 관리자 기능</h2>
+  <p>관리자 = 권한 WM/SA(기존). 출사 투표 생성·수정·마감·다시 열기·평일 추가·확정·리마인드, 공휴일 관리, AI 추천 열람, 참가자 관리·공지(기존 모임 관리), 신고·콘텐츠 삭제·회원 관리·통계(기존 어드민). 위험 동작(투표 삭제·확정·후보 삭제)은 이중 확인.</p>
+</section>
+
+<section id="data">
+  <h2>12. 데이터 구조</h2>
+  <p>신규 표 7개: <code>outing_polls</code>, <code>outing_poll_options</code>, <code>outing_poll_votes</code>, <code>public_holidays</code>, <code>gathering_ai_recommendations</code>, <code>gathering_best_votes</code>, <code>gathering_stories</code>. 나머지는 기존 표 재사용. 대응표·SQL: <code>DATABASE_SCHEMA.md</code>.</p>
+</section>
+
+<section id="api">
+  <h2>13. API 연동</h2>
+  <table>
+    <tr><th>연동</th><th>상태</th><th>환경 변수(서버)</th></tr>
+    <tr><td>Gemini(AI 추천)</td><td class="ok">구조 완료, 키 있으면 실제</td><td><code>GEMINI_API_KEY</code>, <code>GEMINI_MODEL</code></td></tr>
+    <tr><td>공공데이터포털 특일정보(공휴일)</td><td class="prep">키 필요</td><td><code>HOLIDAY_API_KEY</code></td></tr>
+    <tr><td>카카오맵</td><td class="ok">있음</td><td><code>REACT_APP_KAKAO_MAP_KEY</code>(웹)</td></tr>
+    <tr><td>기상청 단기예보</td><td class="prep">미연동</td><td>—</td></tr>
+    <tr><td>FCM 푸시</td><td class="prep">미연동(앱 내 알림 먼저)</td><td>—</td></tr>
+  </table>
+  <p>엔드포인트: <code>API_SPEC.md</code>.</p>
+</section>
+
+<section id="security">
+  <h2>14. 보안 정책</h2>
+  <ul><li>모든 쓰기는 토큰의 회원 기준(요청 본문의 회원 id를 믿지 않음), 관리자 기능은 서버에서 WM/SA 검사.</li>
+  <li>투표·베스트 표 중복은 DB 유니크 + 서비스 검사. AI·공휴일 키는 서버 환경 변수만.</li>
+  <li>인스타그램 ID는 같은 모임 참여자에게만 태그 후보로 노출(기존 규칙). 연락처는 응답에 넣지 않음.</li>
+  <li>회원 탈퇴 시 투표·베스트 표·스토리·AI 기록 삭제. 신고·차단 기존 기능. 사진 저작권·초상권은 약관(모임 인물 동의 안내 기존).</li>
+  <li>Supabase 공개 키 직접 접근 차단: <code>apps/api/db/supabase-lockdown.sql</code>(RLS + 권한 회수, 운영 실행 필요).</li></ul>
+</section>
+
+<section id="roadmap">
+  <h2>15. 개발 로드맵</h2>
+  <p>작업 큐 "SNAPDAY 출사 기능 병합" 1~11: 문서 → DB → 공휴일 → 투표 API → 투표 웹 → 현장 모드 → AI 추천 → 베스트 포토 → 스토리 편집기 → 마이페이지 → 검증. 다음: 모바일(Expo) 화면, FCM 푸시, 기상청 날씨, 월간·연말 베스트, 장소 비교 화면.</p>
+</section>
+
+<section id="tests">
+  <h2>16. 기능별 테스트 기준</h2>
+  <table>
+    <tr><th>기능</th><th>통과 기준(자동)</th></tr>
+    <tr><td>투표</td><td>생성 시 토·일·공휴일 후보, 같은 달 409, 평일 추가·중복 409, 비관리자 403, 가능/불가 저장·수정·삭제, 다른 회원에게 같은 집계, 마감 후 저장 400, 추천 날짜(최소 인원 반영), 확정 → 모임 생성·알림</td></tr>
+    <tr><td>공휴일</td><td>키 없음 503 안내, 수동 등록·중복 409·삭제, 가져오기는 응답 형식 단위 테스트</td></tr>
+    <tr><td>현장 모드</td><td>만든 사람만 시작·종료(타인 403), 상태 전환·알림, 종료 후 피드 작성 400·앨범 열림</td></tr>
+    <tr><td>AI</td><td>키 없음 → SAMPLE 저장·표시, 비참여자 403, 횟수 제한 429, 결과 형식 검증</td></tr>
+    <tr><td>베스트 포토</td><td>종료 전 400, 비참여자 403, 4번째 표 400, 다른 모임 사진 404, 득표순</td></tr>
+    <tr><td>스토리</td><td>등록·목록·태그 회원 표시, 비참여자 403, 작성자 외 삭제 403</td></tr>
+    <tr><td>화면</td><td>Playwright 390/1280px: 투표 달력·응답·집계·확정, AI 카드, 스토리 저장(PNG), 태그 복사, 가로 넘침 0, 페이지 오류 0</td></tr>
+  </table>
+</section>
+</div>
+</body>
+</html>

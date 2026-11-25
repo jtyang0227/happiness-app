@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop 이벤트마다 실행 — 화면 파일(웹: frontend/src/pages, 모바일: mobile/screens)이
+# Stop 이벤트마다 실행 — 화면 파일(웹: frontend/src/pages·apps/web/src/pages, 어드민 웹: apps/admin/src/pages, 모바일: mobile/screens)이
 # 바뀌었으면 Claude를 멈추지 않고 "스크린샷 찍고 Gmail로 보내라"는 지시를 다시 넣는다.
 #
 # 커밋 여부와 무관하게 "지금 워킹트리에 반영된 변경 내용"을 기준으로 판단한다 —
@@ -10,7 +10,7 @@ set -uo pipefail
 
 cd "$CLAUDE_PROJECT_DIR" || exit 0
 
-PAGE_PATHS=("frontend/src/pages" "mobile/screens")
+PAGE_PATHS=("frontend/src/pages" "apps/web/src/pages" "apps/admin/src/pages" "mobile/screens")
 MARKER_FILE="$CLAUDE_PROJECT_DIR/.claude/.page-change-notify-marker"
 RECIPIENT="jtyang0227@gmail.com"
 
@@ -18,7 +18,7 @@ RECIPIENT="jtyang0227@gmail.com"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
 changed_files=$(git status --porcelain -- "${PAGE_PATHS[@]}" 2>/dev/null \
-  | awk '{print $2}' | grep -E '\.(jsx|js|css)$' || true)
+  | awk '{print $2}' | grep -E '\.(jsx|js|tsx|ts|css)$' || true)
 
 # 변경된 화면 파일이 하나도 없으면 알림 없이 정상 종료 허용
 if [ -z "$changed_files" ]; then

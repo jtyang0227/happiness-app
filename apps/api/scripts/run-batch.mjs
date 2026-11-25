@@ -1,4 +1,4 @@
-// 배치 하나를 지금 바로 실행한다(운영 점검·테스트용). 사용: node scripts/run-batch.mjs <deliveries|bookings|meets|gatherings|all>
+// 배치 하나를 지금 바로 실행한다(운영 점검·테스트용). 사용: node scripts/run-batch.mjs <deliveries|bookings|meets|gatherings|outing-polls|all>
 // .env(DATABASE_URL 등)를 읽고, 실행하는 동안만 BATCH_ENABLED=true로 둔다. 먼저 npm run build 필요.
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
@@ -12,6 +12,7 @@ const jobs = {
   bookings: 'expireStaleBookings',
   meets: 'completeExpiredMeets',
   gatherings: 'transitionGatheringStatuses',
+  'outing-polls': 'runOutingPollBatch',
 };
 const name = process.argv[2];
 const selected = name === 'all' ? Object.values(jobs) : jobs[name] ? [jobs[name]] : null;

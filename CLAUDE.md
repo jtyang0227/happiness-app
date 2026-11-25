@@ -1112,6 +1112,86 @@ CREATE TABLE IF NOT EXISTS gathering_place_votes (
   CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
 );
 CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
+-- SNAPDAY 출사 기능 병합 (2026-11-25, DESIGN_PROMPTS/planning/snapday) — 표 정의는 Spring 엔티티, API는 새 API(apps/api)
+CREATE TABLE IF NOT EXISTS outing_polls (
+  id                 BIGSERIAL PRIMARY KEY,
+  poll_year          INTEGER NOT NULL,          -- year/month는 H2 예약어라 피함
+  poll_month         INTEGER NOT NULL,          -- 1~12
+  title              VARCHAR(100) NOT NULL,
+  description        TEXT,
+  region             VARCHAR(50),               -- 예정 지역(선택, AI 추천 입력)
+  status             VARCHAR(20) NOT NULL,      -- OPEN | CLOSED | CONFIRMED
+  starts_at          TIMESTAMP NOT NULL,
+  ends_at            TIMESTAMP NOT NULL,
+  min_participants   INTEGER,
+  max_participants   INTEGER,
+  confirmed_option_id BIGINT,
+  gathering_id       BIGINT,
+  closing_notified   BOOLEAN,                   -- 마감 24시간 전 알림 보냈는지
+  created_by         BIGINT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_polls_month UNIQUE (poll_year, poll_month)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_options (
+  id          BIGSERIAL PRIMARY KEY,
+  poll_id     BIGINT NOT NULL,
+  option_date DATE NOT NULL,
+  day_kind    VARCHAR(10) NOT NULL,             -- SAT | SUN | HOLIDAY | WEEKDAY
+  label       VARCHAR(50),                      -- 공휴일 이름
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_options UNIQUE (poll_id, option_date)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  poll_id      BIGINT NOT NULL,
+  option_id    BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  availability VARCHAR(12) NOT NULL,            -- AVAILABLE | UNAVAILABLE
+  updated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_votes UNIQUE (option_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_opv_poll_member ON outing_poll_votes(poll_id, member_id);
+CREATE TABLE IF NOT EXISTS public_holidays (
+  id           BIGSERIAL PRIMARY KEY,
+  holiday_date DATE NOT NULL,
+  name         VARCHAR(50) NOT NULL,
+  substitute   BOOLEAN,                          -- 대체공휴일
+  source       VARCHAR(10) NOT NULL,             -- API | MANUAL
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_public_holidays_date UNIQUE (holiday_date)
+);
+CREATE TABLE IF NOT EXISTS gathering_ai_recommendations (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  source        VARCHAR(10) NOT NULL,            -- AI | SAMPLE
+  model         VARCHAR(60),
+  question      VARCHAR(500),                    -- 추가 질문(있으면)
+  result_json   TEXT NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gar_gathering ON gathering_ai_recommendations(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_best_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  photo_id     BIGINT NOT NULL,                  -- gathering_photos.id
+  member_id    BIGINT NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gathering_best_votes UNIQUE (photo_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gbv_gathering_member ON gathering_best_votes(gathering_id, member_id);
+CREATE TABLE IF NOT EXISTS gathering_stories (
+  id                BIGSERIAL PRIMARY KEY,
+  gathering_id      BIGINT NOT NULL,
+  member_id         BIGINT NOT NULL,
+  image_url         VARCHAR(500) NOT NULL,
+  caption           VARCHAR(300),
+  tagged_member_ids VARCHAR(500),
+  created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_gathering ON gathering_stories(gathering_id);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_member ON gathering_stories(member_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -1582,6 +1662,8 @@ Root Stack
       ├── Meets       — 약속 목록 (Stack, ProfileScreen "메뉴" 섹션에서 진입)
       └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
 ```
+
+> **Expo SDK 58 업그레이드(2026-11-25, 작업 브랜치 — 실기기 확인 전 master 미반영)**: 아래 목록은 SDK 49 기준 기록이다. 현재 작업 브랜치는 expo 58.0.26·RN 0.88.1·React 19.3·React Navigation 7(expo-router 미도입)·expo-* 58.x·react-native-share 12·view-shot 6·AsyncStorage 2, `babel.config.js` 삭제. 결과·차이는 `DESIGN_PROMPTS/planning/PLANNING_expo-sdk-upgrade.md`.
 
 **주요 의존성 (mobile/package.json):**
 ```
@@ -2324,6 +2406,86 @@ CREATE TABLE IF NOT EXISTS gathering_place_votes (
   CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
 );
 CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
+-- SNAPDAY 출사 기능 병합 (2026-11-25, DESIGN_PROMPTS/planning/snapday) — 표 정의는 Spring 엔티티, API는 새 API(apps/api)
+CREATE TABLE IF NOT EXISTS outing_polls (
+  id                 BIGSERIAL PRIMARY KEY,
+  poll_year          INTEGER NOT NULL,          -- year/month는 H2 예약어라 피함
+  poll_month         INTEGER NOT NULL,          -- 1~12
+  title              VARCHAR(100) NOT NULL,
+  description        TEXT,
+  region             VARCHAR(50),               -- 예정 지역(선택, AI 추천 입력)
+  status             VARCHAR(20) NOT NULL,      -- OPEN | CLOSED | CONFIRMED
+  starts_at          TIMESTAMP NOT NULL,
+  ends_at            TIMESTAMP NOT NULL,
+  min_participants   INTEGER,
+  max_participants   INTEGER,
+  confirmed_option_id BIGINT,
+  gathering_id       BIGINT,
+  closing_notified   BOOLEAN,                   -- 마감 24시간 전 알림 보냈는지
+  created_by         BIGINT NOT NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_polls_month UNIQUE (poll_year, poll_month)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_options (
+  id          BIGSERIAL PRIMARY KEY,
+  poll_id     BIGINT NOT NULL,
+  option_date DATE NOT NULL,
+  day_kind    VARCHAR(10) NOT NULL,             -- SAT | SUN | HOLIDAY | WEEKDAY
+  label       VARCHAR(50),                      -- 공휴일 이름
+  created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_options UNIQUE (poll_id, option_date)
+);
+CREATE TABLE IF NOT EXISTS outing_poll_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  poll_id      BIGINT NOT NULL,
+  option_id    BIGINT NOT NULL,
+  member_id    BIGINT NOT NULL,
+  availability VARCHAR(12) NOT NULL,            -- AVAILABLE | UNAVAILABLE
+  updated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_outing_poll_votes UNIQUE (option_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_opv_poll_member ON outing_poll_votes(poll_id, member_id);
+CREATE TABLE IF NOT EXISTS public_holidays (
+  id           BIGSERIAL PRIMARY KEY,
+  holiday_date DATE NOT NULL,
+  name         VARCHAR(50) NOT NULL,
+  substitute   BOOLEAN,                          -- 대체공휴일
+  source       VARCHAR(10) NOT NULL,             -- API | MANUAL
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_public_holidays_date UNIQUE (holiday_date)
+);
+CREATE TABLE IF NOT EXISTS gathering_ai_recommendations (
+  id            BIGSERIAL PRIMARY KEY,
+  gathering_id  BIGINT NOT NULL,
+  member_id     BIGINT NOT NULL,
+  source        VARCHAR(10) NOT NULL,            -- AI | SAMPLE
+  model         VARCHAR(60),
+  question      VARCHAR(500),                    -- 추가 질문(있으면)
+  result_json   TEXT NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gar_gathering ON gathering_ai_recommendations(gathering_id);
+CREATE TABLE IF NOT EXISTS gathering_best_votes (
+  id           BIGSERIAL PRIMARY KEY,
+  gathering_id BIGINT NOT NULL,
+  photo_id     BIGINT NOT NULL,                  -- gathering_photos.id
+  member_id    BIGINT NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_gathering_best_votes UNIQUE (photo_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gbv_gathering_member ON gathering_best_votes(gathering_id, member_id);
+CREATE TABLE IF NOT EXISTS gathering_stories (
+  id                BIGSERIAL PRIMARY KEY,
+  gathering_id      BIGINT NOT NULL,
+  member_id         BIGINT NOT NULL,
+  image_url         VARCHAR(500) NOT NULL,
+  caption           VARCHAR(300),
+  tagged_member_ids VARCHAR(500),
+  created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_gathering ON gathering_stories(gathering_id);
+CREATE INDEX IF NOT EXISTS idx_gathering_stories_member ON gathering_stories(member_id);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -2794,6 +2956,8 @@ Root Stack
       └── MeetDetail  — 약속 상세 (Stack, headerShown:false — 커스텀 헤더)
 ```
 
+> **Expo SDK 58 업그레이드(2026-11-25, 작업 브랜치 — 실기기 확인 전 master 미반영)**: 아래 목록은 SDK 49 기준 기록이다. 현재 작업 브랜치는 expo 58.0.26·RN 0.88.1·React 19.3·React Navigation 7(expo-router 미도입)·expo-* 58.x·react-native-share 12·view-shot 6·AsyncStorage 2, `babel.config.js` 삭제. 결과·차이는 `DESIGN_PROMPTS/planning/PLANNING_expo-sdk-upgrade.md`.
+
 **주요 의존성 (mobile/package.json):**
 ```
 expo: ~49.0.14
@@ -2912,7 +3076,11 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - 1~7단계 완료(2026-11-24) — Spring 컨트롤러 194개 경로 전부 + 배치 4개(같은 cron, `LEGACY_API_URL`이 있으면 기본 꺼짐 → `BATCH_ENABLED`). 계약 테스트 92개, 준비용 DB 조작은 `test/contract/db.ts`, Spring 버그를 고친 의도적 차이는 `IS_SPRING`으로만 분기. 응답 `LocalDateTime`은 Jackson처럼 소수 끝 0 제거.
 - 8·10단계(2026-11-24): 웹 `apps/web`(Next.js 16 Pages Router·React 18·정적 내보내기, 전 파일 TS — `apps/web/README.md`), 모바일 `mobile/` 전 파일 TS(`npm run typecheck`). 둘 다 `strict: false`로 시작, 화면 회귀는 스크린샷 픽셀 비교로 0. 운영 웹 배포는 컷오버 전까지 `frontend/`.
 - 9단계(2026-11-24): **어드민 이관** — happiness-admin Spring 경로 115개 → `apps/api/src/admin/**`(별도 진입점 `dist/admin-main.js`, 포트 8091, 앱과 경로·오류 형식·JWT가 달라 프로세스 분리), 프론트 → `apps/admin`(Next.js 16, webpack 빌드 — Turbopack 인라인 스크립트가 CSP 위반, CSS는 CRA 순서로 `_app`). 계약 테스트 `test/contract-admin`(48개, Spring 어드민 8081·Nest 8091 양쪽), CRA와 화면 62장 픽셀 동일. **어드민은 별도 스키마 `admin`(DB_SCHEMA) — 앱 `public` 표를 보지 않는다**(합칠지·happiness-admin 저장소 처리는 사용자 결정, 11단계). 발견: Spring 어드민 prod lazy-init로 로그인 500, 예약 날짜 필터 PG 500, 배너·팝업·공지 `isActive`/`isPinned` 키 불일치(그대로 옮김) — `apps/api/README.md` "어드민 진입점".
-- 11단계 컷오버: 실행 프롬프트 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md`(A 저장소 준비 ✅ / B 사용자 대시보드 ⏸ / C 정리 ⏸). 준비물: `render.yaml`의 `happiness-api-ts`·`happiness-admin-api`(빌드는 `npm ci --include=dev` — Render는 빌드 때 NODE_ENV=production), 웹 전환 스위치 저장소 Variable `WEB_APP_DIR=apps/web`(없으면 지금처럼 `frontend`), `apps/web/vercel.json`, 스모크 `apps/api/scripts/smoke.mjs` + Actions › Smoke(수동). `dotenv`는 런타임 의존성(예전엔 dev라 운영 설치에서 API가 안 떴다).
+- 11단계 컷오버: 실행 프롬프트 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md`(A 저장소 준비 ✅ / B 사용자 대시보드 ⏸ / C 정리 — 운영 영향 없는 부분만 ✅: Prisma 기준선 `prisma/migrations/0_baseline`·`prisma/admin/migrations/0_baseline` + 운영 적용 `apps/api/scripts/prisma-baseline.sh`, `dev-env.sh` `NO_SPRING`, 삭제 체크리스트. **운영 DB엔 SNAPDAY 표 7개가 없어 B-1 전에 `prisma-baseline.sh app check→apply→resolve` 필요**). 준비물: `render.yaml`의 `happiness-api-ts`·`happiness-admin-api`(빌드는 `npm ci --include=dev` — Render는 빌드 때 NODE_ENV=production), 웹 전환 스위치 저장소 Variable `WEB_APP_DIR=apps/web`(없으면 지금처럼 `frontend`), `apps/web/vercel.json`, 스모크 `apps/api/scripts/smoke.mjs` + Actions › Smoke(수동). `dotenv`는 런타임 의존성(예전엔 dev라 운영 설치에서 API가 안 떴다).
+- 알려진 갭(2026-11-25, 새 API·`apps/web`만): 시리즈 상세 사진에 작성자 정보(Spring과 의도적 차이), `apps/web/src/api/apiClient.ts`가 새로고침 직후 refresh token으로 access token을 먼저 복구 — 공개 GET의 "…ByMe"가 false로 오던 경합 해소(실패 시 로그아웃 없이 토큰 없이 진행). 시리즈 커버 N+1은 새 API에 원래 없음.
+- **SNAPDAY 출사 기능 병합(2026-11-25, 새 API·`apps/web`만)** — 지시서를 "모임"에 병합(앱 이름·메뉴·Toss 디자인 유지). 기획 `DESIGN_PROMPTS/planning/snapday/`(PROJECT_SPEC.html·API_SPEC·DATABASE_SCHEMA·TODO), 디자인 `DESIGN_PROMPT_snapday-outing.md`. 표 7개는 Spring 엔티티(`outing/entity/*`, `gathering/entity/GatheringAiRecommendation·BestVote·Story`)로 정의 — 컷오버 전 스키마 주인은 Hibernate, `year/month`는 H2 예약어라 `poll_year/poll_month`. 새 API: `src/outing/*`(공휴일 — `HOLIDAY_API_KEY` 없으면 503·수동 등록, 월간 투표 — 주말·공휴일 후보·가능/불가 집계·확정→모임·알림, 배치 10분 `run-batch.mjs outing-polls`), `gathering-snapday.controller.ts`(시작/종료·베스트 포토 3표·스토리·내 기록), `gathering-ai.controller.ts`(Gemini JSON, 주소·영업시간·상호 생성 금지 지시, 키 없으면 SAMPLE, 10분 5회). 투표 알림은 `gathering_notifications`에 `gathering_id 0`·`related_post_id = 투표 id`·type `POLL_*`. 웹: `/gatherings/polls`·`/polls/:id`·`/polls/holidays`, `/gatherings/:id/story`(다크 전체 화면), 모임 상세 `FieldModeBar`·`AiRecommendationCard`·`StoryStrip`, 앨범 `BestPhotoSection`, 프로필 "출사 기록". 계약 테스트 `outing.test.ts`·`snapday-gathering.test.ts`(Spring에선 skip), 단위 `npm run test:unit`(CI).
+- **보안 누락 점검(2026-11-25)** — `PROMPT_ts-security-parity.md`: JWT·권한·IDOR·기능별 속도 제한·XSS·업로드·개인정보는 이미 옮겨져 있었고, **빠져 있던 4개**(전역 IP 속도 제한 100/60초, Redis `ipblock:` 차단, 스캐너 User-Agent 차단, 보안 응답 헤더 + `X-Powered-By` 노출)를 `apps/api/src/common/security.middleware.ts`로 보완(어드민 진입점도 헤더). 계약 `security.test.ts` 양쪽 통과. 양쪽 공통 한계: 업로드 MIME 내용 서명 미검사. 새 API는 이어서 기능별 제한·로그인 잠금을 Redis 공유(`common/shared-limit.service.ts`, 없으면 메모리)로 바꿨다 — 전역 IP 제한·조회 기록 제한은 Upstash 명령 한도 때문에 메모리 그대로.
+- **사용자 작업을 뺀 남은 개발(2026-11-25, 새 API·`apps/web`·모바일)** — 모임 일정·장소 변경 알림(`SCHEDULE_CHANGED`, 시작 시각·장소가 실제로 바뀐 끝나지 않은 모임의 참여자·대기자), 월간·연말 베스트 포토 순위(`GET /api/gatherings/best/ranking?year&month&size`, 웹 `/gatherings/best`), 기능별 속도 제한·로그인 잠금 Redis 공유(`common/shared-limit.service.ts`), 모바일 SNAPDAY(`OutingPollsScreen`·`OutingPollScreen`·`OutingHistoryScreen`, 모임 상세 베스트 포토), Supabase 잠금 SQL을 `apps/api/db/`로. 계약 `schedule-change.test.ts`·`best-ranking.test.ts`, 단위 `shared-limit.test.ts`.
 - Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
 ---
@@ -2950,7 +3118,7 @@ skills.sh 레지스트리에서 스택에 맞춰 고른 11개를 원본 저장�
 설치한 스킬로 네 영역을 훑고 고친 것. 스킬 권고 중 저장소 규칙과 어긋나는 것(Tailwind·Next.js 전용 등)은 적용하지 않았다.
 
 - **백엔드**(`springboot-security`·`java-springboot`, 9820fbe): 공개 문의 폼 → 작가 알림 메일(`InquiryEmailService.buildHtml`)이 보낸 사람 이름·메시지를 HTML에 그대로 넣던 것 → `HtmlUtils.htmlEscape`, 제목의 줄바꿈 제거, 로그 이메일 마스킹. 12곳에 복사돼 있던 `X-Forwarded-For` 첫 값 읽기를 `common/web/ClientIp.resolve()` 한 곳으로 — 환경 변수 `APP_CLIENT_IP_HEADER`(예: `CF-Connecting-IP`, `render.yaml`에 설정)가 있으면 그 헤더를 우선 신뢰(없으면 동작 그대로). 테스트 `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 → 전체 **57개**.
-- **DB**(`supabase-postgres-best-practices`·`supabase`): Hibernate가 만든 `public` 테이블은 RLS가 꺼져 있어, 웹 번들에 들어가는 Supabase anon 키로 PostgREST(`/rest/v1/members` 등)를 직접 읽고 쓸 수 있는 구조다(앱은 JDBC로만 접근). `backend/db/supabase-lockdown.sql` — 모든 테이블 RLS 켜기 + `anon`·`authenticated` 권한 회수 + 새 테이블 자동 RLS 이벤트 트리거, 멱등. 로컬 PostgreSQL 16에서 전(anon 조회 성공)·후(permission denied, 소유자 조회 정상) 확인. **운영에는 실행하지 않았다 — 사용자가 Supabase SQL Editor에서 실행**(happiness-admin이 anon/authenticated 키로 REST 조회를 한다면 먼저 확인).
+- **DB**(`supabase-postgres-best-practices`·`supabase`): Hibernate가 만든 `public` 테이블은 RLS가 꺼져 있어, 웹 번들에 들어가는 Supabase anon 키로 PostgREST(`/rest/v1/members` 등)를 직접 읽고 쓸 수 있는 구조다(앱은 JDBC로만 접근). `apps/api/db/supabase-lockdown.sql` — 모든 테이블 RLS 켜기 + `anon`·`authenticated` 권한 회수 + 새 테이블 자동 RLS 이벤트 트리거, 멱등. 로컬 PostgreSQL 16에서 전(anon 조회 성공)·후(permission denied, 소유자 조회 정상) 확인. **운영에는 실행하지 않았다 — 사용자가 Supabase SQL Editor에서 실행**(happiness-admin이 anon/authenticated 키로 REST 조회를 한다면 먼저 확인).
 - **웹**(`vercel-react-best-practices`·`accessibility`, e99a6bc): `App.jsx`가 46개 화면을 전부 첫 번들에 싣던 것 → 둘러보기·로그인만 바로, 나머지는 `lazyPage()`(React.lazy + 배포 직후 옛 chunk 실패 시 1회 새로고침) + `Suspense`(`RouteFallback`, 0.2초 뒤에만 보임). 첫 JS gzip **267.6 → 119.8 kB**. `.skip-link`("본문으로 건너뛰기" → `main#main-content`), `.sr-only`(global.css), `theme-color` 폐기 색 → 흰색. **새 화면을 추가할 때는 `lazyPage(() => import('./pages/…'))`로 등록한다.** 남긴 것: `PhotoFormPage.jsx`(어디에도 연결 안 된 파일, `setGenre` 미정의 lint 오류)는 import만 뺐고 파일은 그대로.
 - **모바일**(`vercel-react-native-skills`): `FeedScreen` — 더 불러오기가 실패하면 오래된 클로저의 빈 배열로 목록을 덮어써 **피드가 통째로 사라지던 것**, 페이지 사이에 새 사진이 올라오면 같은 id가 두 번 들어가던 것 수정, 행을 `memo(FeedCard)` + 안정된 콜백으로, `{mood && …}` → 삼항(빈 문자열 렌더 방지). Expo SDK 업그레이드(`expo-upgrade`)는 실기기 빌드 확인이 필요해 실행하지 않고 계획만 — `DESIGN_PROMPTS/planning/PLANNING_expo-sdk-upgrade.md`(49 → 58, 이 저장소에서 바뀌는 9곳·단계·되돌리기).
 

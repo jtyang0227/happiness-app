@@ -105,6 +105,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: npm run build
+      - name: Unit tests (DB 없이 도는 순수 함수)
+        run: npm run test:unit
 
   web-ci:
     name: Web (Next.js) CI

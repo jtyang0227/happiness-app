@@ -4,7 +4,8 @@ Spring Boot `backend/`를 기능 묶음 단위로 대체하는 TypeScript API. �
 
 - **옮긴 경로**는 여기서 처리하고, **안 옮긴 경로**는 `LEGACY_API_URL`(Spring)로 그대로 넘긴다 → 언제든 이 서버를 앞에 세워도 기능이 빠지지 않는다.
 - JWT(같은 `JWT_SECRET`, HS256/384/512는 jjwt처럼 키 길이로 선택)·BCrypt·Redis 키(`rt:*`, `bl:*`)가 Spring과 같아 로그인·토큰이 두 서버 사이에서 그대로 통한다.
-- DB 스키마의 주인은 아직 Hibernate. `prisma/schema.prisma`는 `prisma db pull`로 읽은 것이고 여기서 마이그레이션을 하지 않는다.
+- DB 스키마의 주인은 컷오버 전까지 Hibernate. `prisma/schema.prisma`는 `prisma db pull`로 읽은 것이다. 기준선 마이그레이션(`prisma/migrations/0_baseline`, 어드민 `prisma/admin/migrations/0_baseline`)은 준비돼 있고, 운영 DB를 기준선에 올리는 절차는 `scripts/prisma-baseline.sh`(check → apply → resolve, `PROMPT_ts-cutover.md` B-1). 그 뒤의 스키마 변경은 `npx prisma migrate dev --name …` → 커밋 → 운영 `npx prisma migrate deploy`. 기준선 전까지는 여기서 마이그레이션을 만들지 않는다.
+- 로컬: `scripts/dev-env.sh`는 `NO_SPRING=1`(또는 `backend/` 없음)이면 Spring 없이 기준선으로 DB를 만들고 Nest만 띄운다.
 
 ## 실행
 ```bash
@@ -71,6 +72,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 ## Spring과 의도적으로 다른 점
 - **WebP 사진 업로드**(`/api/photos/upload`): Spring은 허용 형식에 WebP를 넣었지만 ImageIO에 WebP 리더가 없어 항상 500 "이미지를 읽을 수 없습니다". 여기서는 sharp로 읽어 jpg로 저장한다.
 - **스팟 목록·작업 탐색**(`GET /api/spots`, `GET /api/series/discover`): Spring은 PostgreSQL에서 비어 있는 문자열 조건(`region`·`q`·`location`·`shootType`)을 `bytea`로 묶어 500(`text ~~ bytea`, `lower(bytea)`)을 냈다 — 2026-11-24 Spring 쪽 JPQL에 `CAST(:x AS String)`을 넣어 고쳤다(운영 배포 b2c07c0 이후 커밋). 이제 양쪽 같은 결과, 계약 테스트도 분기 없음. (확인 함정: `./gradlew bootRun`만 하면 dev 프로필 H2라 재현되지 않는다 — `dev-env.sh`의 PG 환경 변수로 띄울 것.)
+- **시리즈 상세 사진의 작성자 정보**(`GET /api/series/{id}`의 `photos[].memberName`·`memberAvatarUrl`·`memberProfileName`): Spring은 붙이지 않아(null) 화면에 "익명"으로 보였다. 여기서는 다른 사진 API처럼 붙인다(2026-11-25).
 - 사진 업로드의 리사이즈 결과 바이트·대표색은 Thumbnailator와 sharp가 달라 한두 단계 차이 날 수 있다(단색 이미지는 같음). EXIF 회전은 양쪽 모두 적용하지 않는다.
 - 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.
@@ -98,6 +100,7 @@ ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Sp
 - 신고 AI 분류(`POST /api/admin/reports/ai-triage/run`): 공식 SDK `@anthropic-ai/sdk`, Spring과 같은 요청(`claude-opus-5`, max_tokens 500, thinking disabled, effort low), 키 `ANTHROPIC_API_KEY`(없으면 건마다 실패로 센다).
 - **Spring 어드민과 의도적으로 다른 점**: ① prod 프로필 `lazy-initialization=true`라 Spring은 `FieldEncryptor`가 만들어지지 않아 회원을 읽는 모든 요청(로그인 포함)이 500 — 로컬 계약 테스트는 Spring을 `SPRING_MAIN_LAZY_INITIALIZATION=false`로 띄운다. ② 예약 목록 `date` 필터: Spring은 PostgreSQL에서 500(`could not determine data type of parameter`), 여기서는 정상(`IS_SPRING`으로 구분). ③ 시스템 상태의 `dbType`은 항상 PostgreSQL(Spring은 프로필로 짐작). ④ 프로필 콘텐츠 `type` 오류 문구의 종류 순서(Spring은 `Map.of` 순서라 실행마다 다름).
 - **그대로 옮긴 Spring 버그(기록)**: 배너·팝업·공지 요청 DTO의 Lombok `isActive`/`isPinned` → JSON 키 `active`/`pinned`라 어드민 화면이 보내는 `isActive`·`isPinned`는 무시되고(항상 비활성·고정 안 됨) 응답도 `active`/`pinned`라 화면 표시가 어긋난다. 피처드 등록자 id는 이메일을 Long으로 읽다 실패해 늘 null. 무드 별칭은 Spring `Map.ofEntries` 순서가 정해져 있지 않아 별칭이 둘 들어간 검색어만 결과가 갈릴 수 있다(여기서는 선언 순서).
+- **운영 스키마는 7월 버전이다(2026-11-25 확인)**: 운영 Spring 어드민 = happiness-admin master c35e964(07-03 배포), 여기 옮긴 코드 = 배포된 적 없는 11월 브랜치(cfecd55). 운영 `admin` 스키마(표 19개)를 이 진입점이 쓰는 형태(37개)로 맞추는 SQL: `prisma/admin/upgrade/2026-11-25_july-to-november.sql`(추가만·멱등). 만든 법·확인: 7월 jar로 스키마 생성 → `prisma migrate diff` → NOT NULL 열 기본값·CHECK 보강 → 행 있는 7월 스키마에 2회 적용 → 11월 스키마와 열·인덱스·CHECK 동일, 이 진입점을 그 스키마에 붙여 어드민 계약 테스트 47개 통과. 그래서 Spring 어드민의 lazy-init 로그인 500(11월 브랜치 버그)은 운영에 없다.
 - 로컬 Spring 어드민(계약 테스트용): happiness-admin `origin/claude/admin-planning-doc-120dha`를 `./gradlew bootJar` → `SPRING_PROFILES_ACTIVE=prod SERVER_PORT=8081 DB_URL=jdbc:postgresql://localhost:5432/happiness DB_USERNAME=happy DB_PASSWORD=happy DB_SCHEMA=admin JWT_SECRET=(ADMIN_JWT_SECRET과 같은 값) PRIVACY_ENCRYPTION_KEY=(같은 값) SPRING_MAIN_LAZY_INITIALIZATION=false java -jar app.jar`. prod 프로필엔 시드가 없어 테스트가 SQL로 관리자를 넣는다(`test/contract-admin/helpers.ts`).
 
 ## 컷오버 스모크 (`scripts/smoke.mjs`, `.github/workflows/smoke.yml`)
@@ -107,3 +110,15 @@ ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Sp
 node scripts/smoke.mjs --api https://api.happiness.io.kr --admin-api <어드민 API> --web https://happiness.io.kr --admin-web <어드민 웹>
 ```
 GitHub Actions › Smoke(수동 실행)에서도 같은 점검을 한다 — 클라우드 개발 세션은 운영 도메인에 접속할 수 없어서. 로컬 확인(2026-11-24): Nest 8090·8091 + `apps/web`·`apps/admin` 빌드 모두 통과, Spring 8080은 당시 작업 탐색 1건 실패(이후 Spring 수정으로 해소), Spring 어드민 8081 통과.
+
+## 요청 단위 보안 처리 (Spring 패리티, 2026-11-25)
+
+점검표·근거: `DESIGN_PROMPTS/planning/PROMPT_ts-security-parity.md`. `common/security.middleware.ts`를 `main.ts`에서 헤더 → IP 차단 → 스캐너 차단 → 전역 속도 제한 순으로 건다.
+- 보안 헤더: nosniff, X-XSS-Protection 0, `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`·Pragma·Expires, X-Frame-Options SAMEORIGIN, CSP·Referrer-Policy(앱만), `X-Powered-By` 끔. 어드민 진입점도 기본 헤더(CSP 없음 — Spring 어드민과 같음).
+- IP 차단: Redis `ipblock:{ip}`(운영자가 직접 넣는 키, 값 무관) → 403 B001, 10초 로컬 캐시, Redis 장애 시 통과.
+- 스캐너 차단: `/api/**`에서 User-Agent에 sqlmap·nikto·nmap·masscan·zgrab → 403 B001.
+- 전역 속도 제한: IP당 토큰 버킷 `RATE_LIMIT_CAPACITY`·`RATE_LIMIT_REFILL_TOKENS`·`RATE_LIMIT_REFILL_SECONDS`(기본 100·100·60) → 429 R001. 계약 테스트는 요청마다 다른 X-Forwarded-For라 걸리지 않는다.
+- CORS 허용 헤더·노출 헤더·maxAge를 Spring 목록과 같게.
+- **의도적 차이**: ① HSTS를 `X-Forwarded-Proto: https`일 때도 붙인다(Spring은 forward-headers 설정이 없어 Railway 프록시 뒤에선 안 붙었다). ② 인증이 필요한 경로의 무토큰 요청도 속도 제한에 센다(Spring은 Security 필터가 먼저 401을 내서 세지 않았다 — 무작위 대입에 더 안전).
+- 계약 테스트 `security.test.ts`(Spring·새 API 양쪽), 단위 `rate-limit.test.ts`.
+- **기능별 제한·잠금은 Redis 공유(2026-11-25)** — `common/shared-limit.service.ts`: 로그인 잠금(5회/15분), 계정 찾기·재설정, 신고, 예약 생성, 뉴스레터 구독, 챗봇, 납품 비밀번호를 `rl:*` 키로 세서 서버를 여러 대 띄워도 같이 센다(두 인스턴스에서 로그인 3+2회 실패 → 6번째 429 확인). REDIS_URL이 없거나 Redis가 실패하면 그 인스턴스 메모리로(지금까지와 같음). **전역 IP 제한·분석 조회 기록 제한은 메모리 그대로** — 매 요청마다 Redis를 부르면 Upstash 무료 한도(하루 1만 명령)를 넘는다. 스팟 생성·AI 추천 제한은 원래 DB 행 수로 센다. 어드민 로그인 잠금은 인메모리(어드민은 한 대).

@@ -37,7 +37,7 @@ export default function PhotoFormScreen({ navigation, route }: { navigation?: an
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.85,
     });
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
 
   previewWrap: { position: 'relative', borderRadius: RADIUS.card, overflow: 'hidden' },
   preview: { width: '100%', height: 220, backgroundColor: '#e0e0e0' },
-  uploadOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)',
+  uploadOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center', gap: 8 },
   uploadingText: { color: '#fff', fontWeight: '600' },
   uploadDone: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,200,0,0.8)',

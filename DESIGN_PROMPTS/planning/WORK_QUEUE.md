@@ -5,6 +5,19 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
+## 현재 묶음 — 사용자 작업을 뺀 남은 개발 (요청: "직접 진행하는 제외하고 할 수 있는 작업 해줘", 2026-11-25)
+
+대상은 새 API(`apps/api`)·새 웹(`apps/web`)·모바일. 운영 대시보드·외부 키(기상청·FCM·Gemini·공휴일)·컷오버 B/C 삭제는 제외.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 정리 — 오래된 보류 항목 갱신, `supabase-lockdown.sql`을 `backend/` 밖으로(C단계 삭제 대비) | `apps/api/db/supabase-lockdown.sql`, Expo·Railway 보류 행 갱신(0044e13) |
+| 2 | ✅ | 모임 일정·장소 변경 알림 — 만든 사람이 날짜·시간·장소를 바꾸면 참여자·대기자에게 알림 | 새 API `notifyScheduleChanged`(시작 시각·장소가 실제로 바뀌고 끝나지 않은 모임만, type `SCHEDULE_CHANGED`), 웹 알림 아이콘, 계약 `schedule-change.test.ts`(Spring skip), 모임 계약 11개 통과 |
+| 3 | ✅ | 월간·연말 베스트 포토 집계 — API + 웹 화면 | 새 API `GET /api/gatherings/best/ranking?year&month&size`(공개, 끝난 출사만, 동점 같은 순위), 웹 `/gatherings/best`(월간·연간·월 칩·메달·빈 상태, 모임 목록 "🏆 베스트"·앨범 링크), 계약 `best-ranking.test.ts`, Playwright 390/1280 넘침 0·오류 0 |
+| 4 | ✅ | 속도 제한·로그인 잠금을 Redis로 공유(새 API, Redis 장애 시 메모리로) | `common/shared-limit.service.ts`(고정 창 `allow`·실패 잠금 `failure/lockedMs/clear`, Lua로 INCR+만료) — 로그인·계정 찾기·신고·예약·뉴스레터·챗봇·납품 비밀번호. 전역 IP·조회 기록은 메모리(Upstash 하루 1만 명령). 두 인스턴스 3+2회 실패 → 429 확인, 단위 9, 계약 102 두 번 연속 통과 |
+| 5 | ✅ | 모바일 SNAPDAY — 월간 투표 목록·날짜 투표, 베스트 포토 투표, 출사 기록 | `OutingPollsScreen`·`OutingPollScreen`(가능/불가 칩, 바꾼 것만 "응답 저장(n)")·`OutingHistoryScreen`, 모임 상세 끝난 출사에 베스트 포토(차단 회원 숨김), 진입점(모임 목록 맨 위·프로필 메뉴). typecheck 0, expo export web·android, 웹 번들 Playwright 전 흐름(내 표 0→1/3, 응답 저장 후 집계 반영) 가로 넘침 0. 스토리·AI 추천·공휴일 관리는 웹 |
+| 6 | ✅ | 검증·문서·커밋 | 새 API 빌드, 단위 9, 계약 앱 102(두 번 연속)·어드민 47, 웹 typecheck·테스트 13·빌드, 모바일 typecheck·export web·android, Playwright(웹 베스트 순위·모바일 웹 번들 전 흐름). CLAUDE.md·PROJECT_MEMORY·snapday TODO 갱신 |
+
 ## 현재 묶음 — TypeScript 전면 전환 (요청: "스프링부트·리액트 안 써도 되니 최근 제일 많이 쓰는 언어로 전체 변경", 2026-11-24)
 
 계획: `PLANNING_typescript-migration.md` (사용자 선택: TypeScript 통일 + 단계별 전환). 각 단계는 계약 테스트가 Spring·Nest 양쪽에서 통과해야 ✅.
@@ -29,9 +42,43 @@
 | 10 | ✅ | 모바일 TypeScript | 전 파일 .ts/.tsx(73개, babel.config.js만 JS), TypeScript ~5.1(Expo 49 권장), tsc 0. expo export web·android 통과, 안드로이드 번들 크기 같음·.web.ts 스텁은 웹에만, 웹 번들 화면 3개 픽셀 동일. 커밋 190a06c |
 | 11 | 🔄 | 컷오버(배포 전환·Spring 종료) | 운영 배포·DNS 변경 — 사용자 확인 후. 어드민도 포함: 운영 `DB_SCHEMA` 확인·앱 데이터와 합칠지, happiness-admin 저장소를 README만 남길지(PLANNING 5-1) |
 | 11a | ✅ | 컷오버 A — 저장소 준비: render.yaml 새 서비스 2개, 웹 전환 스위치(`WEB_APP_DIR`), 스모크 스크립트·워크플로, 문서 | `render.yaml` happiness-api-ts·happiness-admin-api(빌드 `npm ci --include=dev`), deploy.yml `WEB_APP_DIR`(기본 frontend — 지금과 동일), `apps/web/vercel.json`(SPA 폴백 — 없으면 Vercel에서 깊은 링크 404), `_headers` `/_next/static/*`, 남은 CRA `public/index.html` 삭제, `scripts/smoke.mjs`·`smoke.yml`. **발견·수정**: `dotenv`가 devDependency라 운영 설치(`--omit=dev`)에서 API가 시작조차 못 함 → dependencies로(재현·확인). **발견**: Spring 작업 탐색 `location` 없으면 PG 500(`lower(bytea)`, 스모크가 잡음 — Nest 정상). 확인: 앱 계약 91·어드민 47 양쪽, 스모크 Nest 4대 통과 |
-| 11b | 🔄 | 컷오버 B — 사용자 대시보드 작업(새 서비스·도메인·Spring 중지·웹/어드민 전환·master 병합) | master 병합 ✅(사용자 승인, b2c07c0 fast-forward — 11-23 스팟 기능도 함께 운영 배포). 1~6(새 서비스·도메인·Spring 중지·웹/어드민 전환)은 사용자 — GitHub 기록상 아직. 각 단계 뒤 Actions › Smoke. 병합 배포 결과: Railway(Spring, 스팟 포함) `Success - api.happiness.io.kr`, Vercel Production b2c07c0 성공, Cloudflare Pages 성공. Web CI만 실패(빌드 전 typecheck에 `next-env.d.ts` 없음 → `src/globals.d.ts`에 `*.css` 선언으로 수정). 전환 대기 중 Spring 수정: 스팟 목록·작업 탐색 PG 500(`bytea`) → JPQL `CAST(:x AS String)`, PG로 띄운 로컬에서 수정 전 500·후 200 재현 확인, 계약 91 양쪽·백엔드 62 통과 |
-| 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
+| 11b | 🔄 | 컷오버 B — 사용자 대시보드 작업(새 서비스·도메인·Spring 중지·웹/어드민 전환·master 병합) | master 병합 ✅(사용자 승인, b2c07c0 fast-forward — 11-23 스팟 기능도 함께 운영 배포). 1~6(새 서비스·도메인·Spring 중지·웹/어드민 전환)은 사용자 — GitHub 기록상 아직. 각 단계 뒤 Actions › Smoke. 병합 배포 결과: Railway(Spring, 스팟 포함) `Success - api.happiness.io.kr`, Vercel Production b2c07c0 성공, Cloudflare Pages 성공. Web CI만 실패(빌드 전 typecheck에 `next-env.d.ts` 없음 → `src/globals.d.ts`에 `*.css` 선언으로 수정). 전환 대기 중 Spring 수정: 스팟 목록·작업 탐색 PG 500(`bytea`) → JPQL `CAST(:x AS String)`, PG로 띄운 로컬에서 수정 전 500·후 200 재현 확인, 계약 91 양쪽·백엔드 62 통과. **발견(11-25)**: 운영 어드민은 7월 master(표 19개) — 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행 필요(B 2단계에 추가, 로컬 검증 완료) |
+| 11c | 🔄 | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | **운영 영향 없는 부분 완료(사용자 선택 "안전한 부분만 지금")**: Prisma 기준선 앱·어드민(빈 DB 적용 → 스키마 차이 0), `scripts/prisma-baseline.sh`(check/apply/resolve/status — 운영 흉내 DB에서 전 과정·삭제 거부 확인), `dev-env.sh` `NO_SPRING` 모드(Spring 없이 계약 앱 100·어드민 47 통과), 훅이 apps/web·apps/admin도 감시, C-3 삭제 체크리스트(전수 검색). **발견**: 운영 DB에 SNAPDAY 표 7개 없음 → B-1 전에 `prisma-baseline.sh app check/apply/resolve`(문서 반영). 남은 것(B 완료 뒤): `backend/`·`frontend/` 삭제, CI·render.yaml·문서 정리, 레거시 프록시 제거 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
+
+## 현재 묶음 — TS 전환 보안 누락 점검 (요청: "스프링부트 보안 처리가 ts 전환하면서 누락됐는지 확인, 필요하면 프롬프트 작성 후 작업", 2026-11-25)
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 점검 — Spring 앱·어드민 보안 처리 ↔ 새 API 대조표 | `PROMPT_ts-security-parity.md`. 이미 있음: JWT(블랙리스트·ACCESS만·회원 재조회·약한 키 차단·알고리즘 고정), 기본 거부·관리자 역할, 로그인 잠금, 기능별 속도 제한 10종, XSS, 업로드, 클라이언트 IP, 예외 은닉, 개인정보·IDOR. 빠짐: 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더(실측) |
+| 2 | ✅ | 보완 — `common/security.middleware.ts`(헤더·IP 차단·스캐너·토큰 버킷), CORS 목록, 어드민 헤더 | (이번 커밋) 계약 `security.test.ts` Spring 4/새 API 5 통과(HSTS는 새 API만), 단위 6, 앱 계약 새 API 100·Spring 94(+예약 1건 기존 불안정 — 단독 3/3 통과), 어드민 47 |
+
+## 현재 묶음 — SNAPDAY 출사 기능 병합 (요청: "어플에서 전달하는 프롬프트의 기능을 병합", 2026-11-25)
+
+결정(사용자): **TS 전환본(`apps/api`·`apps/web`)에 구현**(표 정의만 Spring 엔티티 — 컷오버 전 스키마 주인), **Toss 디자인 유지**, **"모임" 안에 병합**(앱 이름·메뉴 유지).
+기획 문서: `DESIGN_PROMPTS/planning/snapday/` (PROJECT_SPEC.html 외). 이미 있는 것: 모임·참가·대기자·피드·앨범·달력·알림·스팟·장소 투표·인스타 태그 후보.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 기획 문서(PROJECT_SPEC.html·DEVELOPMENT_PLAN·DATABASE_SCHEMA·API_SPEC·TODO·README) + 디자인 프롬프트 | 5ee568d — 루트 대신 `DESIGN_PROMPTS/planning/snapday/`(저장소 규칙), 디자인 `DESIGN_PROMPT_snapday-outing.md` |
+| 2 | ✅ | DB — Spring 엔티티(표 정의) + `prisma db pull` + 운영 SQL 기록 | (이번 커밋) 엔티티 7개(`outing/entity/*`, `gathering/entity/*`), 로컬 PG에 Hibernate가 표 생성 확인, pull은 모델 7개 추가뿐. `year/month`는 H2 예약어라 `poll_year/poll_month`. 백엔드 테스트 62 통과 |
+| 3 | ✅ | 공휴일 — 공공데이터포털 특일정보 가져오기(키 없으면 안내) + 관리자 수동 등록 | (이번 커밋) `apps/api/src/outing/holiday.service.ts` — `HOLIDAY_API_KEY` 없으면 503 안내, 응답 파서 단위 테스트 3(`npm run test:unit`, CI 추가). 실제 API 호출은 이 세션 네트워크 차단으로 미확인 |
+| 4 | ✅ | 월간 출사 투표 API — 생성(주말·공휴일 자동, 평일 추가)·투표(가능/불가, 수정)·집계·마감·확정→모임 생성·알림·마감 임박/자동 마감 배치 | (이번 커밋) `outing-poll.service.ts`·`outing.controller.ts`, 배치 10분(`run-batch.mjs outing-polls`로 자동 마감·임박 알림 1회 확인), 탈퇴 시 SNAPDAY 기록 삭제. 계약 테스트 `outing.test.ts` 3(새 API만), 새 API 전체 94 통과 |
+| 5 | ✅ | 월간 출사 투표 웹 — 2027 월 목록·달력 투표·집계·추천 날짜·관리자 도구 | (이번 커밋) `OutingPollsPage`(/gatherings/polls)·`OutingPollPage`(/:id 달력·집계·운영 도구)·`OutingHolidaysPage`(관리자), 모임 홈 "🗳 출사 투표" 버튼·진행 중 배너, 알림함 POLL_* → 투표 화면. Playwright: 공휴일 등록→투표 생성→회원 가능/불가(새로고침 유지)→관리자에게 같은 집계→확정→모임 이동·회원 알림, 390/1280 가로 넘침 0·페이지 오류 0 |
+| 6 | ✅ | 현장 모드 — 출사 시작/종료(만든 사람·관리자) API + 웹 | API c5a3abb + 웹(이번 커밋) `FieldModeBar` — 진행 중 배너·시작/종료(이중 확인). Playwright: 관리자 시작 → 배너, 종료 → 앨범 |
+| 7 | ✅ | AI 계절 추천 — Gemini(기존 키) 구조화 결과·샘플 구분·저장·장소 후보 등록 + 웹 | API c5a3abb + 웹 `AiRecommendationCard` — 출처 배지(AI/샘플), 장소 카드·제철 음식·교통·주차·주의 문구, 추가 질문·다시 받기·이전 기록, 카카오맵 검색(AI일 때만), 만든 사람 "장소 투표 후보로". Playwright: SAMPLE 표시. 실제 Gemini는 키·네트워크 없어 미확인 |
+| 8 | ✅ | 베스트 포토 — 1인 3표·집계·앨범 표시 API + 웹 | API c5a3abb + 웹 `BestPhotoSection`(앨범) — 내 표 n/3, 인기/최신, 회원 필터, 메달. Playwright: 투표 1/3·메달 |
+| 9 | ✅ | 스토리 편집기(웹, 9:16) — 사진·레이아웃·텍스트·스티커·멤버 태그·태그 복사·이미지 저장·공유 + 스토리 저장 API | API c5a3abb + 웹 `GatheringStoryPage`(/gatherings/:id/story, 다크 전체 화면)·`StoryStrip` — 1080×1920 캔버스, 레이아웃 1/2/3·배경·텍스트(드래그·크기·색)·날짜/위치/출사명 스티커·태그 선택·복사·이미지에 넣기, PNG 저장·Web Share·업로드 후 등록. Playwright: 드래그 이동, PNG 1080×1920 저장, 등록 후 스토리 1. **발견·수정**: 여러 장 동시 선택 시 레이아웃이 1장에 머물러 1장만 보이던 것 |
+| 10 | ✅ | 마이페이지 보강 — 출사 참여 이력·내 스토리 | API c5a3abb + 웹 프로필 "출사 기록" 탭 `MyOutingHistory` — 참여 횟수·내 스토리·참여한 출사(앨범 링크). Playwright 확인 |
+| 11 | ✅ | 전체 검증(계약 테스트·빌드·Playwright 390/1280) + 문서 정리 | (이번 커밋) 계약 새 API 95·Spring 91(SNAPDAY 4 skip), 단위 5, 백엔드 62, 웹 typecheck·테스트 13·빌드, Playwright 전 흐름. `snapday/TODO.md`에 최종 보고(구현·미구현·외부 연동·환경 변수·실행·다음 우선순위), `.env.example`·`render.yaml`에 `HOLIDAY_API_KEY`, CLAUDE.md·PROJECT_MEMORY |
+
+## 현재 묶음 — 새 API·웹 알려진 갭 (요청: 컷오버 대기 중 "새 API 알려진 갭 수정", 2026-11-25)
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 시리즈 상세 사진에 작성자 정보 없음(화면 "익명") | `SeriesService.orderedPhotos`가 `attachMembers`로 한 번에 붙임 — Spring과 의도적 차이(계약 테스트 `IS_SPRING`), 양쪽 통과 |
+| 2 | ✅ | 시리즈 커버 조회 N+1 | 새 API에선 이미 해소돼 있었음(목록 커버·미리보기 일괄 조회) — Spring만의 갭, 컷오버로 사라짐 |
+| 3 | ✅ | 새로고침 후 "…ByMe"(모임 피드 좋아요 등)가 false | 원인은 서버가 아니라 웹: access token이 메모리에만 있어 새로고침 뒤 공개 GET에 토큰이 없음. 헤더의 로그인 전용 요청 401이 우연히 먼저 재발급해 주는 경합이라 평소엔 가려지고 느린 망·헤더 없는 화면(포트폴리오·작업 노트)에서 드러남. `apps/web` `apiClient` — refresh token이 있으면 요청 전에 한 번 복구(기존 재발급 큐 공유, 실패 시 로그아웃 없이 토큰 없이 진행). 헤더 요청을 6초 늦춘 Playwright: 이전 ♡(좋아요 1인데 안 누른 것처럼), 수정 후 ♥. 운영 웹(`frontend/`)은 컷오버 때 대체되므로 미적용 |
 
 ## 이전 묶음 — 출사 스팟 + 출사 모임 강화 (요청: "프롬프트 읽어서 작업 진행하고 에러 검증까지", 2026-11-23)
 
@@ -78,7 +125,7 @@
 | 3 | ✅ | 사진·댓글 신고 + 사용자 차단 (+ 댓글 작성자 위조·모바일 댓글 500/400 수정) | 모임 게시물 신고는 메일 |
 | 4 | ✅ | 약관·연락처, 권한 최소화, 아이콘·스플래시, ATS·암호화 키 | |
 | 5 | ✅ | 검증 + CLAUDE.md + push | gradle test 44/44, web build, expo export web·android — cfc8689 |
-| 6 | ⏸ | Expo SDK 49 → 최신 업그레이드 | 스토어 targetSdk·Xcode 요구 — 큰 별도 작업이라 사용자 결정 필요 |
+| 6 | 🔄 | Expo SDK 49 → 최신 업그레이드 | 2026-11-25 SDK 58 1~3단계 완료(c8dad10, 작업 브랜치) — EAS 빌드·실기기 확인은 사용자, 확인 후 master |
 | 7 | ⏸ | 콘솔 작업(데모 계정·개인정보 URL·App Privacy·데이터 안전·지원 메일함·Railway 재배포) | 사용자 작업 — 기획서 4절 |
 
 ## 이전 묶음 — "탐색"→"아카이브" + 개인정보 보호(어드민과 동일 기준) (2026-10-21)
@@ -133,7 +180,7 @@
 | # | 상태 | 항목 | 메모 |
 |---|---|---|---|
 | 1 | ✅ | 실제 배포 경로 파악 | Actions 배포 job은 시크릿 없어 항상 건너뜀. 실제 배포는 Vercel·Railway GitHub 앱 연동 |
-| 2 | ⏸ | Railway 백엔드 배포 복구 | b6dcdb9·e8fede9에 Railway 기록 없음(마지막 배포 256718e). Railway 대시보드 확인 필요 — 이 세션은 접근 불가 |
+| 2 | ✅ | Railway 백엔드 배포 복구 | 2026-11-24 master 병합 후 Railway가 다시 배포(dcdc2fd `Success - api.happiness.io.kr`) — 원인은 미확인 |
 
 ## 이전 묶음 — 탐색 사진 툴바 정리 (요청: 스크린샷 "여기도 다른 앱 대조해서 개선", 2026-10-20)
 
@@ -179,11 +226,11 @@
 |---|---|---|---|
 | 1 | ✅ | 플러그인 적용 — 공식 마켓플레이스 등록·활성화, hookify 규칙, 깨진 빌드 훅 수정 | 4개 project scope 활성화, 규칙 5개, 편집 훅을 파일 단위 ESLint로. Playwright는 `.mcp.json`에 이미 있어 플러그인 중복 등록 안 함 |
 | 2 | ✅ | 백엔드 점검·수정 — `springboot-security`·`java-springboot` 스킬 | 9820fbe — 문의 알림 메일 HTML 이스케이프, `common/web/ClientIp`(12곳 통합, `APP_CLIENT_IP_HEADER`), 로그 이메일 마스킹. 테스트 57개 |
-| 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `backend/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
+| 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `apps/api/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
 | 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
 | 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
 | 6 | ✅ | Expo SDK 49 → 58 업그레이드 계획 — `expo-upgrade` 스킬 | `PLANNING_expo-sdk-upgrade.md`. 실행은 ⏸ — 1~3단계는 요청 시 클라우드에서 가능, 4단계부터 Expo 계정·실기기 필요 |
-| 7 | ⏳ | Expo SDK 58 업그레이드 1~3단계 실행 (`PLANNING_expo-sdk-upgrade.md` 4절) — 의존성·코드모드·`uploadImage`·`app.json` → 웹 export·웹 번들 화면 확인 | **작업 브랜치에만 `wip:` push, master에는 실기기 확인 전까지 올리지 않음**. 4단계(EAS 빌드)부터는 사용자 |
+| 7 | ✅ | Expo SDK 58 업그레이드 1~3단계 실행 (`PLANNING_expo-sdk-upgrade.md` 4절) — 의존성·코드모드·`uploadImage`·`app.json` → 웹 export·웹 번들 화면 확인 | (이번 커밋) expo 58.0.26·RN 0.88.1·React 19.3, `expo install --fix`는 Expo API 차단이라 `EXPO_OFFLINE=1`(패키지 안 기준표). 내비게이션은 expo-router 대신 **React Navigation 7 그대로**(native-stack 대응 없음 — 파일 라우팅 전면 개편은 범위 밖, 피어 의존성 충족), 네비게이터 `id`, v7 `navigate`가 되돌아가지 않아 "로그인으로" 2곳 `popTo`. `expo-file-system/legacy`, image-picker `mediaTypes:['images']`, `absoluteFill`, react-native-share 12(새 아키텍처), view-shot 타입 경로, babel.config·babel-preset-expo·@babel/core 제거, app.json `sdkVersion`·`privacy`·Sdk 34 고정 삭제. **발견·수정**: 업로드 MIME에 `asset.type`("image")을 보내 서버 MIME 검사에 걸리던 것 → `asset.mimeType`. 확인: tsc 0, 웹·Android export 성공, `--dev` 웹 번들 + 로컬 API로 로그인·탭 5개·통합 일정·예약 관리·popTo 페이지 오류 0, 권한 introspect(차단 5개 유지, VIBRATE 추가). **4단계(EAS 빌드)부터 사용자** — master엔 실기기 확인 전까지 올리지 않음 |
 
 ## 이전 묶음 — Behance 분석 후속 (완료)
 

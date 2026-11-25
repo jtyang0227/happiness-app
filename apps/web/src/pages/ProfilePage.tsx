@@ -1,3 +1,4 @@
+import MyOutingHistory from '../components/gathering/MyOutingHistory';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,13 +28,14 @@ const TABS = [
   { key: 'series',    label: '시리즈' },
   { key: 'analytics', label: '분석' },
   { key: 'bookings',  label: '예약' },
+  { key: 'outings',   label: '출사 기록' },
   { key: 'reports',   label: '신고내역' },
   { key: 'settings',  label: '설정' },
 ];
 
 const TAB_ICONS = {
   photos: '🖼️', saved: '🔖', series: '📚',
-  analytics: '📊', bookings: '📅', reports: '🚨', settings: '⚙️',
+  analytics: '📊', bookings: '📅', outings: '📷', reports: '🚨', settings: '⚙️',
 };
 
 /* ── 태블릿(768~1023px)/데스크탑(≥1024px) 2컬럼 레이아웃 ──────────────
@@ -608,6 +610,9 @@ export default function ProfilePage() {
                 <AnalyticsDashboard memberId={user?.id} />
               </div>
             )}
+
+            {/* ── SNAPDAY 출사 기록 ── */}
+            {activeTab === 'outings' && <MyOutingHistory />}
 
             {/* ── 예약 ── */}
             {activeTab === 'bookings' && (

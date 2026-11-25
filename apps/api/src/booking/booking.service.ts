@@ -4,6 +4,7 @@ import { isBlank, javaTrim } from '../common/json-body.js';
 import { localDate, localDateTime, now, today } from '../common/time.js';
 import type { booking_availability, bookings } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 
 export interface BookingRequest {
   shootDate: Date | null; shootTime: string | null; shootType: string | null; clientName: string | null;
@@ -69,8 +70,7 @@ const isoWeekday = (d: Date) => ((d.getUTCDay() + 6) % 7) + 1;
 @Injectable()
 export class BookingService {
   private readonly log = new Logger('BookingService');
-  private readonly rate = new Map<string, { count: number; start: number }>();
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly limits: SharedLimitService) {}
 
   private async artist(profileName: string) {
     const m = await this.prisma.members.findFirst({ where: { profile_name: profileName }, select: { id: true } });
@@ -111,16 +111,12 @@ export class BookingService {
     return { availableDates, bookedSlots: Object.fromEntries(booked), timeSlots: slots, bookingNote };
   }
 
-  private checkRate(ip: string) {
-    const nowSec = Math.floor(Date.now() / 1000);
-    const s = this.rate.get(ip);
-    const state = !s || nowSec - s.start > 60 ? { count: 1, start: nowSec } : { count: s.count + 1, start: s.start };
-    this.rate.set(ip, state);
-    if (state.count > RATE_LIMIT) throw AppError.status(429, '너무 많은 예약 시도입니다. 잠시 후 다시 시도해주세요.');
+  private async checkRate(ip: string) {
+    if (!(await this.limits.allow(`booking:${ip}`, RATE_LIMIT, 60))) throw AppError.status(429, '너무 많은 예약 시도입니다. 잠시 후 다시 시도해주세요.');
   }
 
   async create(profileName: string, req: BookingRequest, ip: string) {
-    this.checkRate(ip);
+    await this.checkRate(ip);
     const memberId = await this.artist(profileName);
     if (req.shootDate == null || req.shootDate.getTime() <= today().getTime()) throw AppError.status(400, '촬영일은 오늘 이후 날짜여야 합니다');
     // findByMemberIdAndShootDateAndShootTime — 상태와 무관, 시간 null이면 IS NULL, 둘 이상이면 Optional 조회가 실패(500)

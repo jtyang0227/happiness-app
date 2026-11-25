@@ -5,7 +5,7 @@ import { AuthController } from './auth/auth.controller.js';
 import { AuthGuard } from './auth/auth.guard.js';
 import { AuthService } from './auth/auth.service.js';
 import { JwtService } from './auth/jwt.service.js';
-import { LoginAttemptLimiter } from './auth/login-attempt-limiter.js';
+import { SharedLimitService } from './common/shared-limit.service.js';
 import { TokenStore } from './auth/token-store.js';
 import { AllExceptionsFilter } from './common/exception.filter.js';
 import { HealthController } from './health.controller.js';
@@ -35,6 +35,8 @@ import { MeetController } from './meet/meet.controller.js';
 import { AnalyticsController } from './analytics/analytics.controller.js';
 import { GatheringController, GatheringNotificationController, GatheringPlacePollController } from './gathering/gathering.controller.js';
 import { GatheringPostController } from './gathering/gathering-post.controller.js';
+import { GatheringSnapdayController } from './gathering/gathering-snapday.controller.js';
+import { GatheringAiController } from './gathering/gathering-ai.controller.js';
 import { GatheringNotificationService } from './gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
 import { GatheringService } from './gathering/gathering.service.js';
@@ -52,15 +54,18 @@ import { SeriesService } from './series/series.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
+import { HolidayController, OutingPollController } from './outing/outing.controller.js';
+import { HolidayService } from './outing/holiday.service.js';
+import { OutingPollService } from './outing/outing-poll.service.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringSnapdayController, GatheringAiController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, HolidayController, OutingPollController],
   providers: [
     PrismaService,
     JwtService,
     TokenStore,
-    LoginAttemptLimiter,
+    SharedLimitService,
     AuditService,
     MemberService,
     AuthService,
@@ -78,6 +83,8 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     BookingService,
     GatheringNotificationService,
     GatheringPlacePollService,
+    HolidayService,
+    OutingPollService,
     GatheringService,
     BatchService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },

@@ -5,6 +5,7 @@ import { mq } from '../constants/breakpoints';
 import gatheringApi from '../services/gatheringApi';
 import useAuthStore from '../store/authStore';
 import DotEmptyState from '../components/common/DotEmptyState';
+import outingApi from '../services/outingApi';
 
 /* ── 상태 레이블·색상 ───────────────────────────────────── */
 const STATUS_META = {
@@ -307,13 +308,15 @@ export default function GatheringsPage() {
               사진작가·모델이 함께하는 촬영 모임에 참여해보세요
             </p>
           </div>
-          {user && (
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <CalendarButton onClick={() => navigate('/gatherings/calendar')} />
-              <NewButton onClick={() => navigate('/gatherings/new')} />
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+            <PollButton onClick={() => navigate('/gatherings/polls')} />
+            <PollButton onClick={() => navigate('/gatherings/best')}>🏆 베스트</PollButton>
+            {user && <CalendarButton onClick={() => navigate('/gatherings/calendar')} />}
+            {user && <NewButton onClick={() => navigate('/gatherings/new')} />}
+          </div>
         </div>
+
+        <OpenPollBanner />
 
         {/* 에러 */}
         {error && (
@@ -393,6 +396,55 @@ export default function GatheringsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/* SNAPDAY — 진행 중인 월간 출사 투표가 있으면 상단에 안내 */
+function OpenPollBanner() {
+  const navigate = useNavigate();
+  const [poll, setPoll] = useState<any>(null);
+  useEffect(() => {
+    const y = new Date().getFullYear();
+    Promise.allSettled([outingApi.listPolls(y), outingApi.listPolls(y + 1)]).then((rs) => {
+      const all = rs.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+      setPoll(all.find((p: any) => p.votingOpen) ?? null);
+    });
+  }, []);
+  if (!poll) return null;
+  return (
+    <button onClick={() => navigate(`/gatherings/polls/${poll.id}`)} style={{
+      width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer', marginBottom: 24,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+      padding: '16px 18px', borderRadius: 16, background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+    }}>
+      <span>
+        <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.primary }}>🗳 출사 투표 진행 중 · 응답 {poll.voterCount}명</span>
+        <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>{poll.title}</span>
+      </span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.primary, whiteSpace: 'nowrap' }}>날짜 고르기 →</span>
+    </button>
+  );
+}
+
+function PollButton({ onClick, children = '🗳 출사 투표' }: { onClick?: (...args: any[]) => any; children?: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '9px 16px', borderRadius: 10,
+        background: hovered ? COLORS.surfaceDim : COLORS.surface,
+        color: COLORS.textSecondary, border: `1px solid ${COLORS.border}`,
+        cursor: 'pointer', fontSize: 14, fontWeight: 600,
+        transition: 'all 0.15s ease',
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

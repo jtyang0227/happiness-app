@@ -97,6 +97,25 @@ export const gatheringApi = {
   // Auth — mark all notifications read for current user
   markAllNotificationsRead: () =>
     apiClient.post(`${BASE}/notifications/read-all`).then(r => r.data),
+
+  // ── SNAPDAY (새 API 전용) ── 출사 시작·종료, AI 추천, 베스트 포토, 스토리, 내 기록
+  startOuting: (id) => apiClient.post(`${BASE}/${id}/start`).then(r => r.data),
+  endOuting: (id) => apiClient.post(`${BASE}/${id}/end`).then(r => r.data),
+  getAiRecommendations: (id) => apiClient.get(`${BASE}/${id}/ai-recommendations`).then(r => r.data),
+  requestAiRecommendation: (id, question?: string) =>
+    apiClient.post(`${BASE}/${id}/ai-recommendations`, { question: question || undefined }, { timeout: 45000 }).then(r => r.data),
+  getBest: (id) => apiClient.get(`${BASE}/${id}/best`).then(r => r.data),
+  getBestRanking: (params: { year: number; month?: number; size?: number }) =>
+    apiClient.get(`${BASE}/best/ranking`, { params }).then(r => r.data),
+  voteBest: (id, photoId) => apiClient.post(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
+  unvoteBest: (id, photoId) => apiClient.delete(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
+  getStories: (id) => apiClient.get(`${BASE}/${id}/stories`).then(r => r.data),
+  createStory: (id, body: { imageUrl: string; caption?: string; taggedMemberIds?: number[] }) =>
+    apiClient.post(`${BASE}/${id}/stories`, body).then(r => r.data),
+  deleteStory: (storyId) => apiClient.delete(`${BASE}/stories/${storyId}`),
+  getMyStories: () => apiClient.get(`${BASE}/stories/mine`).then(r => r.data),
+  getMyHistory: () => apiClient.get(`${BASE}/my/history`).then(r => r.data),
+  getInstagramCandidates: (id) => apiClient.get(`${BASE}/${id}/instagram-candidates`).then(r => r.data),
 };
 
 export default gatheringApi;

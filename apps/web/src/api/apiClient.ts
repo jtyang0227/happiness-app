@@ -69,11 +69,40 @@ async function doRefreshToken(refreshToken, deviceId) {
   return res.data.data; // { accessToken, refreshToken, ... }
 }
 
+// ── 새로고침 직후 access token 복구 ───────────────────────────────────
+// access token은 메모리에만 있어 새로고침하면 사라진다. 공개 GET(모임 피드·작업 상세 등)은 토큰이 없어도 401이 아니라서
+// 아래 401 재발급이 돌지 않고, 서버가 "…ByMe"(내가 좋아요·감상했는지)를 항상 false로 돌려줬다(알려진 갭).
+// refresh token이 있는데 access token이 없으면 요청 전에 한 번 재발급한다. 실패하면 로그아웃하지 않고(공개 화면에서 튕기지 않게)
+// 이 페이지에서는 다시 시도하지 않은 채 토큰 없이 보낸다 — 진짜 만료 처리는 기존 401 흐름이 맡는다.
+let restoreFailed = false;
+
+async function restoreAccessToken(store) {
+  if (store.accessToken || !store.refreshToken || restoreFailed) return store.accessToken;
+  if (isRefreshing) {
+    try { return await subscribeToRefresh(); } catch { return null; }
+  }
+  isRefreshing = true;
+  try {
+    const tokenData = await doRefreshToken(store.refreshToken, getDeviceId());
+    store.setTokens(tokenData.accessToken, tokenData.refreshToken);
+    onRefreshed(tokenData.accessToken);
+    return tokenData.accessToken;
+  } catch (e) {
+    restoreFailed = true;
+    onRefreshFailed(e);
+    return null;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+const AUTH_REQUEST = /\/auth\/(login|signup|refresh|oauth|find-email|password-reset)/;
+
 // ── Request Interceptor ─────────────────────────────────────────────
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const store = getAuthStore();
-    const accessToken = store.accessToken;
+    const accessToken = AUTH_REQUEST.test(config.url || '') ? store.accessToken : await restoreAccessToken(store);
     if (accessToken) {
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
@@ -92,7 +121,7 @@ apiClient.interceptors.response.use(
 
     // 로그인·회원가입 같은 인증 요청의 401은 "자격 증명이 틀림"이지 "토큰 만료"가 아니다.
     // 예전엔 여기서도 재발급→실패→logout()이 돌아 /login을 새로 불러와, 틀린 비밀번호를 넣으면 안내 없이 화면만 새로고침됐다.
-    const isAuthRequest = /\/auth\/(login|signup|refresh|oauth|find-email|password-reset)/.test(originalRequest?.url || '');
+    const isAuthRequest = AUTH_REQUEST.test(originalRequest?.url || '');
 
     // 401 + 재시도 아닌 경우에만 재발급 시도
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {

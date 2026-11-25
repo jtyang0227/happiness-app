@@ -5,7 +5,7 @@ event: file
 conditions:
   - field: file_path
     operator: regex_match
-    pattern: frontend/src/.*\.(jsx|js|css)$
+    pattern: (frontend|apps/web|apps/admin)/src/.*\.(jsx|js|tsx|ts|css)$
   - field: content
     operator: regex_match
     pattern: backdrop-?[Ff]ilter

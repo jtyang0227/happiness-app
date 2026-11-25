@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb, makeAdmin } from './db.js';
-import { LOCAL_DATE_TIME, call, createPhoto, signupAndLogin, uniq } from './helpers.js';
+import { IS_SPRING, LOCAL_DATE_TIME, call, createPhoto, signupAndLogin, uniq } from './helpers.js';
 
 afterAll(closeDb);
 
@@ -32,6 +32,9 @@ describe('시리즈(작업 노트)', () => {
     expect(d.status).toBe(200);
     expect(d.body).toMatchObject({ photoCount: 1, coverImageUrl: 'https://x/a.jpg', appreciationCount: 0, viewCount: 0, appreciatedByMe: false, previewPhotos: null });
     expect(d.body.photos.map((p: any) => p.id)).toEqual([p1]);
+    // 의도적 차이: Spring은 시리즈 사진에 작성자 정보를 붙이지 않는다(null) — 새 API는 다른 사진 API처럼 붙인다
+    if (IS_SPRING) expect(d.body.photos[0].memberName).toBeNull();
+    else expect(d.body.photos[0]).toMatchObject({ memberName: expect.any(String), memberProfileName: expect.any(String) });
     expect(d.body.credits).toEqual([{ role: '헤어', name: '박', profileName: collab.profileName, linked: true }, { role: '메이크업', name: '최', profileName: 'nobody_x', linked: false }]);
 
     const list = await call('GET', `/api/series?memberId=${u.id}`);

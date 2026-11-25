@@ -157,6 +157,11 @@ export default function GatheringsScreen({ navigation }: { navigation?: any }) {
       )}
       ListHeaderComponent={
         <>
+          <TouchableOpacity style={styles.pollEntry} activeOpacity={0.85} onPress={() => navigation.navigate('OutingPolls')}
+            accessibilityRole="button" accessibilityLabel="월간 출사 투표">
+            <Text style={styles.pollEntryText}>🗳 월간 출사 투표</Text>
+            <Text style={styles.pollEntrySub}>함께 갈 날짜 고르기 ›</Text>
+          </TouchableOpacity>
           {user && myList.length > 0 && (
             <>
               <SectionHeader title="내 모임" />
@@ -185,6 +190,9 @@ export default function GatheringsScreen({ navigation }: { navigation?: any }) {
 }
 
 const styles = StyleSheet.create({
+  pollEntry: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.card, borderRadius: RADIUS.card, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, marginBottom: SPACING.md },
+  pollEntryText: { fontSize: FONT.base, fontWeight: '700', color: COLORS.textPrimary },
+  pollEntrySub: { fontSize: FONT.sm, color: COLORS.primary, fontWeight: '600' },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,

@@ -10,6 +10,7 @@ export const ErrorCode = {
   LOGIN_FAILED: { status: 401, code: 'A005', message: '이메일 또는 비밀번호가 올바르지 않습니다.' },
   ACCOUNT_LOCKED: { status: 423, code: 'A006', message: '계정이 잠겼습니다. 잠시 후 다시 시도해주세요.' },
   FORBIDDEN: { status: 403, code: 'B001', message: '접근 권한이 없습니다.' },
+  TOO_MANY_REQUESTS: { status: 429, code: 'R001', message: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
   MEMBER_NOT_FOUND: { status: 404, code: 'M001', message: '사용자를 찾을 수 없습니다.' },
   FILE_SIZE_EXCEEDED: { status: 400, code: 'F002', message: '파일 크기가 초과되었습니다.' },
 } as const;

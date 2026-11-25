@@ -8,6 +8,7 @@
 - **사진작가 포트폴리오 + 업무 앱.** "보여주기(포트폴리오·작업 노트) → 일 받기(문의·예약) → 일 처리하기(일정·약속·납품·수금)".
 - 운영 주소: 웹 `https://happiness.io.kr`(Vercel), API `https://api.happiness.io.kr`(Railway). 별도 저장소 **happiness-admin**(운영자용)과 DB를 공유한다.
 - 포트폴리오: 템플릿 4종 + **직접 구성(BLOCKS)** — 새 블록은 서버 `PortfolioLayoutValidator.BLOCK_PROPS` + 웹 `blocks/blockRegistry.js` 두 곳에 추가.
+- **SNAPDAY 출사(모임 안, 새 API·`apps/web`만 — 컷오버 후 운영)**: 월간 출사 투표(`/gatherings/polls`)→확정→모임, AI 계절 추천, 출사 시작/종료, 스토리 편집기, 베스트 포토. 문서 `planning/snapday/`.
 - 웹 메뉴 4개: **둘러보기**(`/explore`, 공개 — 사진|작업|스팟 탭) · **내 작업**(`/series`) · **업무**(`/workspace` 허브 + 문의·예약·일정·약속·납품 탭) · **모임**(`/gatherings`) + "＋ 올리기"(`/photo/new` = 이미지 에디터).
 - 모바일(Expo) 탭: 탐색 · 갤러리(내 사진) · 등록 · 피드 · 프로필(나머지 기능은 프로필 메뉴에서 진입).
 
@@ -18,7 +19,7 @@
 | 백엔드(전환 중) | **NestJS 12 + Prisma 7 (TypeScript)** — Spring 경로 전부 옮김(프록시는 컷오버 전 안전망), 배치는 `BATCH_ENABLED`·`scripts/run-batch.mjs`. 어드민은 별도 진입점 `dist/admin-main.js`(8091, 스키마 `admin`) | `apps/api/` (`PLANNING_typescript-migration.md`) |
 | 어드민 웹(전환 중) | Next.js 16 + TS(happiness-admin CRA 이관, webpack 빌드) | `apps/admin/` |
 | 웹 | React 18 CRA, React Router v6, **inline style만**, Context(Redux 없음) | `frontend/src/` |
-| 모바일 | React Native 0.72 + **Expo SDK 49** | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.js`) |
+| 모바일 | React Native 0.88 + **Expo SDK 58**(작업 브랜치, 실기기 확인 전 — master는 SDK 49) + React Navigation 7, 전 파일 TS | `mobile/` (실제 네비게이터는 `src/navigation/AppNavigator.tsx`) |
 | DB | dev H2(create-drop) / prod Supabase PostgreSQL(**ddl-auto: update**, 풀러 때문에 `prepareThreshold: 0`) | |
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
@@ -26,7 +27,7 @@
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
-- 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
+- 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles"(SDK 58부터는 "Exported:"). 의존성 맞추기는 Expo API가 막혀 있어 `EXPO_OFFLINE=1 npx expo install --fix -- --legacy-peer-deps`. 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
 - 클라우드 세션은 egress 정책상 `*.happiness.io.kr`·`*.vercel.app`에 못 붙는다 → 운영 상태는 `gh api repos/jtyang0227/happiness-app/commits/<sha>/statuses`·`/deployments`로만 본다.
 
@@ -72,9 +73,10 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
-- **TS 전환 컷오버(11b)**: `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
-- **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 Spring 어드민은 prod 프로필에서 로그인부터 500일 가능성(lazy-init) — 작업 카드 있음.
-- **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
+- **SNAPDAY 외부 키**: 새 API 서버에 `GEMINI_API_KEY`(AI 실제 추천)·`HOLIDAY_API_KEY`(공공데이터포털 특일 정보) — 없으면 샘플·수동 공휴일 등록.
+- **TS 전환 컷오버(11b)**: **먼저 운영 DB에 SNAPDAY 표 추가 + Prisma 기준선 기록**(`apps/api/scripts/prisma-baseline.sh app check→apply→resolve`, 어드민도 — B-1 "먼저"). 그다음 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
+- **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 어드민은 7월 master(c35e964)라 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행(lazy-init 500은 운영에 없는 11월 브랜치 버그).
+- **Supabase 잠금**: `apps/api/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
 - 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.
@@ -84,7 +86,13 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
+| 11-25 | 56b53f3~e8fccb3 | 사용자 작업을 뺀 남은 개발 — 모임 일정·장소 변경 알림, 월간·연말 베스트 포토 순위(API·웹), 기능별 속도 제한·로그인 잠금 Redis 공유, 모바일 SNAPDAY(투표·베스트 포토·출사 기록), Prisma 기준선·`prisma-baseline.sh`(운영 DB엔 SNAPDAY 표 없음 발견) | WORK_QUEUE 최상단 묶음, `PROMPT_ts-cutover.md` |
+| 11-25 | c423ae8 | TS 전환 보안 누락 점검 — 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더를 새 API에 보완(나머지는 이미 패리티). 계약 `security.test.ts` Spring·새 API 양쪽 | `PROMPT_ts-security-parity.md` |
+| 11-25 | 5ee568d~5ad112b | SNAPDAY 출사 기능 병합 — 월간 투표·공휴일·확정→모임·AI 추천(Gemini/샘플)·현장 모드·스토리 편집기·베스트 포토·출사 기록. 계약 새 API 95(SNAPDAY 4), Playwright 전 흐름 | `planning/snapday/TODO.md` |
+| 11-25 | beb5742 | 새 API·웹 알려진 갭 — 시리즈 사진 작성자 정보, 웹 새로고침 후 access token 복구("…ByMe" false 경합, 느린 망 재현으로 전후 확인). 커버 N+1은 새 API에 이미 없음 | WORK_QUEUE "새 API·웹 알려진 갭" |
+| 11-25 | c8dad10 | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
+| 11-25 | 5fa7d08 | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
+| 11-24 | dcdc2fd | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-24 | b2c07c0 | TS 전환 11a 컷오버 준비 — render.yaml 새 서비스 2개, 웹 전환 스위치 `WEB_APP_DIR`, `apps/web/vercel.json`, 스모크(`scripts/smoke.mjs`·Actions Smoke). 발견·수정: `dotenv` devDependency라 운영 설치에서 API 시작 실패. 발견: Spring 작업 탐색 PG 500 | `PROMPT_ts-cutover.md` |
 | 11-24 | f44dd80~d3303d2 | TS 전환 9단계 — 어드민 이관(API 115경로 `src/admin`, 계약 48개 Spring 어드민·Nest 양쪽, 웹 `apps/admin` CRA와 62장 동일). 발견: 어드민은 별도 스키마 `admin`, Spring 어드민 prod 로그인 500(lazy-init) | `apps/api/README.md` 어드민 진입점, PLANNING 4-1·5-1 |
 | 11-24 | b85ca30 | TypeScript 전환 1~7단계 — `apps/api`(NestJS+Prisma)가 Spring 194개 경로 전부 + 배치 4개, 계약 테스트 92개(Spring·Nest·프록시 없는 Nest 모두 통과). 발견: Spring 스팟 목록 PG 500. Photoshop·Lightroom MCP 연결 | `planning/PLANNING_typescript-migration.md`, `PROMPT_ts-app-admin-adobe-mcp.md`, `docs/ADOBE_MCP.md` |
@@ -105,6 +113,6 @@
 | 10-20 | — | 메뉴 4개 통합, 작업 노트·작업 탐색·감상·초안·크레딧·에디터 추천, 무드보드·공유, 비슷한 사진, 캐러셀 내보내기 | `planning/WORK_QUEUE.md`, `PLANNING_nav-consolidation.md` 등 |
 
 ## 10. 알려진 갭 (손대지 않은 것)
-- 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
-- rate limit·로그인 잠금이 전부 인메모리(인스턴스 여러 개면 따로 셈), access token은 비밀번호 변경 후에도 30분 유효.
-- `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 모임 피드 `likedByMe` 새로고침 문제, `AdminTagsPage`는 mock.
+- 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), SNAPDAY AI 추천·스토리 편집기(투표·베스트 포토·출사 기록은 있음), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
+- (Spring·운영) rate limit·로그인 잠금 인메모리 — 새 API는 2026-11-25 기능별 제한·로그인 잠금을 Redis 공유로(`shared-limit.service.ts`), 전역 IP 제한·조회 기록 제한만 인메모리(Upstash 명령 한도). access token은 비밀번호 변경 후에도 30분 유효.
+- (Spring·운영 `frontend/`만) `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 새로고침 후 "…ByMe" false — 새 API·`apps/web`에선 2026-11-25 해소(컷오버로 사라짐). `AdminTagsPage`는 mock.

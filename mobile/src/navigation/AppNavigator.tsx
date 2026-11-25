@@ -31,6 +31,9 @@ import DeliveryScreen    from '../../screens/DeliveryScreen';
 import AvailabilitySettingsScreen from '../../screens/AvailabilitySettingsScreen';
 import ScheduleScreen from '../../screens/ScheduleScreen';
 import BlockedUsersScreen from '../../screens/BlockedUsersScreen';
+import OutingPollsScreen from '../../screens/OutingPollsScreen';
+import OutingPollScreen from '../../screens/OutingPollScreen';
+import OutingHistoryScreen from '../../screens/OutingHistoryScreen';
 import GatheringNotifBadge from '../../components/GatheringNotifBadge';
 import { StatusBar } from 'expo-status-bar';
 
@@ -73,6 +76,7 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
+      id="MainTabs"
       screenOptions={{
         ...HEADER,
         tabBarStyle: {
@@ -136,7 +140,7 @@ function MainTabs() {
 // ── Auth Stack ──────────────────────────────────────────────────────
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="AuthStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login"  component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="FindAccount" component={FindAccountScreen} />
@@ -149,7 +153,7 @@ function AuthStack() {
 // ── Main Stack (tabs + modal screens) ──────────────────────────────
 function MainStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="MainStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main"        component={MainTabs}         options={{ headerShown: false }} />
       <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhotoForm"   component={PhotoFormScreen}
@@ -169,6 +173,12 @@ function MainStack() {
           headerRight: () => <GatheringNotifBadge /> }} />
       <Stack.Screen name="GatheringDetail" component={GatheringDetailScreen}
         options={{ ...HEADER, title: '모임 상세' }} />
+      <Stack.Screen name="OutingPolls" component={OutingPollsScreen}
+        options={{ ...HEADER, title: '월간 출사 투표' }} />
+      <Stack.Screen name="OutingPoll" component={OutingPollScreen}
+        options={{ ...HEADER, title: '출사 투표' }} />
+      <Stack.Screen name="OutingHistory" component={OutingHistoryScreen}
+        options={{ ...HEADER, title: '출사 기록' }} />
       <Stack.Screen name="GatheringInstagramShare" component={GatheringInstagramShareScreen}
         options={{ ...HEADER, title: 'Instagram Story 공유' }} />
       <Stack.Screen name="Legal"       component={LegalScreen}
@@ -187,7 +197,7 @@ export default function AppNavigator() {
   if (!isInitialized) {
     return (
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator id="RootStack" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Splash" component={SplashScreen} />
         </Stack.Navigator>
       </NavigationContainer>

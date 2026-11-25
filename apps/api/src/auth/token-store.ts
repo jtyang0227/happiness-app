@@ -14,7 +14,8 @@ export class TokenStore implements OnModuleDestroy {
 
   constructor(private readonly jwt: JwtService) {}
 
-  private async redis(): Promise<RedisClientType | null> {
+  /** 연결된 Redis 클라이언트(없거나 실패하면 null) — SharedLimitService도 쓴다 */
+  async redis(): Promise<RedisClientType | null> {
     if (this.client?.isReady) return this.client;
     const url = process.env.REDIS_URL;
     if (!url) return null;
@@ -63,6 +64,11 @@ export class TokenStore implements OnModuleDestroy {
   async blacklist(jti: string, ttlMs: number) {
     if (ttlMs <= 0) return;
     try { await (await this.redis())?.set(`bl:${jti}`, '1', { PX: ttlMs }); } catch { /* fail-open */ }
+  }
+
+  /** Spring IpBlockFilter — 운영자가 Redis에 넣은 `ipblock:{ip}` 키(값 무관). Redis가 없거나 죽으면 통과 */
+  async isIpBlocked(ip: string): Promise<boolean> {
+    try { return ((await (await this.redis())?.exists(`ipblock:${ip}`)) ?? 0) > 0; } catch { return false; }
   }
 
   async isBlacklisted(jti: string): Promise<boolean> {

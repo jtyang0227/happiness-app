@@ -4,6 +4,7 @@ import { AuthUser, CurrentUser, Public } from '../auth/auth.guard.js';
 import { clientIp } from '../common/client-ip.js';
 import { isBlank, jsonString } from '../common/json-body.js';
 import { RawBodyError } from '../common/raw-body-error.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 
 const MAX_HISTORY_TURNS = 20;
 const MAX_MESSAGE_LENGTH = 2000;
@@ -44,29 +45,20 @@ class AssistantError extends Error {}
 @Controller('api/assistant')
 export class AssistantController {
   private readonly log = new Logger('GeminiClient');
-  private readonly ipRate = new Map<string, { count: number; start: number }>();
-  private readonly memberRate = new Map<number, { count: number; start: number }>();
-
-  private allow<K>(map: Map<K, { count: number; start: number }>, key: K, limit: number) {
-    const t = Date.now();
-    const s = map.get(key);
-    const st = !s || t - s.start > 60_000 ? { count: 1, start: t } : { count: s.count + 1, start: s.start };
-    map.set(key, st);
-    return st.count <= limit;
-  }
+  constructor(private readonly limits: SharedLimitService) {}
 
   @Public()
   @Post('chat')
   @HttpCode(200)
-  chatPublic(@Body() body: Record<string, unknown> | undefined, @Req() req: Request) {
-    if (!this.allow(this.ipRate, clientIp(req), 10)) throw new RawBodyError(429, { error: '잠시 후 다시 시도해주세요.' });
+  async chatPublic(@Body() body: Record<string, unknown> | undefined, @Req() req: Request) {
+    if (!(await this.limits.allow(`assistant-ip:${clientIp(req)}`, 10, 60))) throw new RawBodyError(429, { error: '잠시 후 다시 시도해주세요.' });
     return this.reply(PORTFOLIO_SYSTEM_PROMPT, body ?? {});
   }
 
   @Post('chat/workspace')
   @HttpCode(200)
-  chatWorkspace(@Body() body: Record<string, unknown> | undefined, @CurrentUser() user: AuthUser) {
-    if (!this.allow(this.memberRate, user.id, 20)) throw new RawBodyError(429, { error: '잠시 후 다시 시도해주세요.' });
+  async chatWorkspace(@Body() body: Record<string, unknown> | undefined, @CurrentUser() user: AuthUser) {
+    if (!(await this.limits.allow(`assistant-member:${user.id}`, 20, 60))) throw new RawBodyError(429, { error: '잠시 후 다시 시도해주세요.' });
     return this.reply(WORKSPACE_SYSTEM_PROMPT, body ?? {});
   }
 

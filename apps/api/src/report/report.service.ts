@@ -3,7 +3,7 @@ import { AppError } from '../common/app-error.js';
 import { pageRequest, springPage } from '../common/page.js';
 import { localDateTime, now } from '../common/time.js';
 import type { reports } from '../generated/prisma/client.js';
-import { FixedWindowLimiter } from '../recovery/fixed-window-limiter.js';
+import { SharedLimitService } from '../common/shared-limit.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const VALID_REASONS = new Set(['COPYRIGHT', 'INAPPROPRIATE', 'PRIVACY', 'SPAM', 'OTHER']);
@@ -23,20 +23,19 @@ const toResponse = (r: reports) => ({
   resolvedAt: localDateTime(r.resolved_at),
 });
 
-/** Spring ReportService 1:1 — 신고 rate limit은 회원당 10분 5건(사진·댓글 공유, 인메모리) */
+/** Spring ReportService 1:1 — 신고 rate limit은 회원당 10분 5건(사진·댓글 공유, Redis 공유 — 없으면 인메모리) */
 @Injectable()
 export class ReportService {
   private readonly log = new Logger('ReportService');
-  private readonly limiter = new FixedWindowLimiter();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly limits: SharedLimitService) {}
 
   async createPhotoReport(photoId: number, reporterId: number, req: ReportRequest) {
     const reason = validReason(req);
     if (!(await this.prisma.photos.findUnique({ where: { id: BigInt(photoId) }, select: { id: true } }))) {
       throw AppError.status(404, '사진을 찾을 수 없습니다.');
     }
-    this.checkRate(reporterId);
+    await this.checkRate(reporterId);
     const saved = await this.prisma.reports.create({
       data: { photo_id: BigInt(photoId), reporter_id: BigInt(reporterId), reason, detail: req.detail ?? null, evidence_url: req.evidenceUrl ?? null, status: 'PENDING', reporter_seen: false, created_at: now() },
     });
@@ -49,7 +48,7 @@ export class ReportService {
     const c = await this.prisma.comments.findUnique({ where: { id: BigInt(commentId) } });
     if (!c) throw AppError.status(404, '댓글을 찾을 수 없습니다.');
     if (Number(c.member_id) === reporterId) throw AppError.status(400, '본인 댓글은 신고할 수 없습니다.');
-    this.checkRate(reporterId);
+    await this.checkRate(reporterId);
     // 댓글 신고는 evidenceUrl을 저장하지 않는다(Spring과 같음)
     const saved = await this.prisma.reports.create({
       data: { photo_id: c.photo_id, comment_id: c.id, reporter_id: BigInt(reporterId), reason, detail: req.detail ?? null, status: 'PENDING', reporter_seen: false, created_at: now() },
@@ -123,8 +122,8 @@ export class ReportService {
     });
   }
 
-  private checkRate(memberId: number) {
-    if (!this.limiter.allow(`report:${memberId}`, 5, 600)) throw AppError.status(429, '너무 많은 신고를 제출했습니다. 10분 후에 다시 시도해주세요.');
+  private async checkRate(memberId: number) {
+    if (!(await this.limits.allow(`report:${memberId}`, 5, 600))) throw AppError.status(429, '너무 많은 신고를 제출했습니다. 10분 후에 다시 시도해주세요.');
   }
 }
 
