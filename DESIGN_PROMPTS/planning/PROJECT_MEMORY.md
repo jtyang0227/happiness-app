@@ -86,7 +86,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-25 | (이번 커밋) | TS 전환 보안 누락 점검 — 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더를 새 API에 보완(나머지는 이미 패리티). 계약 `security.test.ts` Spring·새 API 양쪽 | `PROMPT_ts-security-parity.md` |
+| 11-25 | 56b53f3~e8fccb3 | 사용자 작업을 뺀 남은 개발 — 모임 일정·장소 변경 알림, 월간·연말 베스트 포토 순위(API·웹), 기능별 속도 제한·로그인 잠금 Redis 공유, 모바일 SNAPDAY(투표·베스트 포토·출사 기록), Prisma 기준선·`prisma-baseline.sh`(운영 DB엔 SNAPDAY 표 없음 발견) | WORK_QUEUE 최상단 묶음, `PROMPT_ts-cutover.md` |
+| 11-25 | c423ae8 | TS 전환 보안 누락 점검 — 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더를 새 API에 보완(나머지는 이미 패리티). 계약 `security.test.ts` Spring·새 API 양쪽 | `PROMPT_ts-security-parity.md` |
 | 11-25 | 5ee568d~5ad112b | SNAPDAY 출사 기능 병합 — 월간 투표·공휴일·확정→모임·AI 추천(Gemini/샘플)·현장 모드·스토리 편집기·베스트 포토·출사 기록. 계약 새 API 95(SNAPDAY 4), Playwright 전 흐름 | `planning/snapday/TODO.md` |
 | 11-25 | beb5742 | 새 API·웹 알려진 갭 — 시리즈 사진 작성자 정보, 웹 새로고침 후 access token 복구("…ByMe" false 경합, 느린 망 재현으로 전후 확인). 커버 N+1은 새 API에 이미 없음 | WORK_QUEUE "새 API·웹 알려진 갭" |
 | 11-25 | c8dad10 | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
@@ -112,6 +113,6 @@
 | 10-20 | — | 메뉴 4개 통합, 작업 노트·작업 탐색·감상·초안·크레딧·에디터 추천, 무드보드·공유, 비슷한 사진, 캐러셀 내보내기 | `planning/WORK_QUEUE.md`, `PLANNING_nav-consolidation.md` 등 |
 
 ## 10. 알려진 갭 (손대지 않은 것)
-- 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
+- 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), SNAPDAY AI 추천·스토리 편집기(투표·베스트 포토·출사 기록은 있음), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
 - (Spring·운영) rate limit·로그인 잠금 인메모리 — 새 API는 2026-11-25 기능별 제한·로그인 잠금을 Redis 공유로(`shared-limit.service.ts`), 전역 IP 제한·조회 기록 제한만 인메모리(Upstash 명령 한도). access token은 비밀번호 변경 후에도 30분 유효.
 - (Spring·운영 `frontend/`만) `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 새로고침 후 "…ByMe" false — 새 API·`apps/web`에선 2026-11-25 해소(컷오버로 사라짐). `AdminTagsPage`는 mock.
