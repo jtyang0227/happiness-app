@@ -106,6 +106,6 @@ CREATE INDEX IF NOT EXISTS idx_gathering_stories_member ON gathering_stories(mem
 ```
 
 ## 권한·무결성
-- 이 앱은 Supabase를 JDBC로만 쓴다(PostgREST 미사용). 권한은 서버(새 API)에서 검사하고, 공개 anon 키 직접 접근은 `backend/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수)로 막는다 — 새 표도 이 SQL의 이벤트 트리거로 RLS가 자동으로 켜진다.
+- 이 앱은 Supabase를 JDBC로만 쓴다(PostgREST 미사용). 권한은 서버(새 API)에서 검사하고, 공개 anon 키 직접 접근은 `apps/api/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수)로 막는다 — 새 표도 이 SQL의 이벤트 트리거로 RLS가 자동으로 켜진다.
 - 중복 방지: 월 1투표(UNIQUE), 날짜 중복(UNIQUE), 회원×날짜 1표(UNIQUE, 다시 고르면 갱신), 베스트 포토 회원×사진 1표(UNIQUE) + 모임당 3표(서비스).
 - 회원 탈퇴: 투표·베스트 표·스토리·AI 기록 삭제(새 API 탈퇴 연쇄에 추가).

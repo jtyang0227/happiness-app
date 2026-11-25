@@ -205,7 +205,7 @@
   <li>투표·베스트 표 중복은 DB 유니크 + 서비스 검사. AI·공휴일 키는 서버 환경 변수만.</li>
   <li>인스타그램 ID는 같은 모임 참여자에게만 태그 후보로 노출(기존 규칙). 연락처는 응답에 넣지 않음.</li>
   <li>회원 탈퇴 시 투표·베스트 표·스토리·AI 기록 삭제. 신고·차단 기존 기능. 사진 저작권·초상권은 약관(모임 인물 동의 안내 기존).</li>
-  <li>Supabase 공개 키 직접 접근 차단: <code>backend/db/supabase-lockdown.sql</code>(RLS + 권한 회수, 운영 실행 필요).</li></ul>
+  <li>Supabase 공개 키 직접 접근 차단: <code>apps/api/db/supabase-lockdown.sql</code>(RLS + 권한 회수, 운영 실행 필요).</li></ul>
 </section>
 
 <section id="roadmap">

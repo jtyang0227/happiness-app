@@ -76,7 +76,7 @@
 - **SNAPDAY 외부 키**: 새 API 서버에 `GEMINI_API_KEY`(AI 실제 추천)·`HOLIDAY_API_KEY`(공공데이터포털 특일 정보) — 없으면 샘플·수동 공휴일 등록.
 - **TS 전환 컷오버(11b)**: **먼저 운영 DB에 SNAPDAY 표 추가 + Prisma 기준선 기록**(`apps/api/scripts/prisma-baseline.sh app check→apply→resolve`, 어드민도 — B-1 "먼저"). 그다음 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
 - **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 어드민은 7월 master(c35e964)라 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행(lazy-init 500은 운영에 없는 11월 브랜치 버그).
-- **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
+- **Supabase 잠금**: `apps/api/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.
 - 무료 전환: Render Blueprint 연결·값 입력 → `KEEPALIVE_URL` → `api` DNS 전환·Railway 중지 → Cloudflare 토큰 2개 등록 → 웹 도메인 전환·Vercel 해제(`PLANNING_free-hosting.md`).
 - Firebase: 웹 앱 만들고 Vercel에 `REACT_APP_FIREBASE_*` 5개 → 재배포, GA4 향상된 측정의 "브라우저 기록 기반 페이지 변경" 끄기.
 - GitHub Secret `RAILWAY_TOKEN`(Railway 프로젝트 토큰) 등록 → 백엔드 자동 배포 개통, 서비스 이름이 happiness-app이 아니면 Variable `RAILWAY_SERVICE`.

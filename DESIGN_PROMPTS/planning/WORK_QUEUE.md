@@ -11,7 +11,7 @@
 
 | # | 상태 | 항목 | 메모 |
 |---|---|---|---|
-| 1 | ⏳ | 정리 — 오래된 보류 항목 갱신, `backend/db/supabase-lockdown.sql`을 `backend/` 밖으로(C단계 삭제 대비) | |
+| 1 | ✅ | 정리 — 오래된 보류 항목 갱신, `supabase-lockdown.sql`을 `backend/` 밖으로(C단계 삭제 대비) | `apps/api/db/supabase-lockdown.sql`, Expo·Railway 보류 행 갱신(0044e13) |
 | 2 | ⏳ | 모임 일정·장소 변경 알림 — 만든 사람이 날짜·시간·장소를 바꾸면 참여자·대기자에게 알림 | SNAPDAY TODO "일정 변경 알림" |
 | 3 | ⏳ | 월간·연말 베스트 포토 집계 — API + 웹 화면 | SNAPDAY TODO |
 | 4 | ⏳ | 속도 제한·로그인 잠금을 Redis로 공유(새 API, Redis 장애 시 메모리로) | 보안 점검 "인메모리" 한계 |
@@ -226,7 +226,7 @@
 |---|---|---|---|
 | 1 | ✅ | 플러그인 적용 — 공식 마켓플레이스 등록·활성화, hookify 규칙, 깨진 빌드 훅 수정 | 4개 project scope 활성화, 규칙 5개, 편집 훅을 파일 단위 ESLint로. Playwright는 `.mcp.json`에 이미 있어 플러그인 중복 등록 안 함 |
 | 2 | ✅ | 백엔드 점검·수정 — `springboot-security`·`java-springboot` 스킬 | 9820fbe — 문의 알림 메일 HTML 이스케이프, `common/web/ClientIp`(12곳 통합, `APP_CLIENT_IP_HEADER`), 로그 이메일 마스킹. 테스트 57개 |
-| 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `backend/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
+| 3 | ✅ | DB 점검·수정 — `supabase-postgres-best-practices` 스킬 | 9820fbe — `apps/api/db/supabase-lockdown.sql`(RLS 켜기 + anon/authenticated 권한 회수, 로컬 PG16 검증). **운영 실행은 사용자 몫** |
 | 4 | ✅ | 웹 점검·수정 — `vercel-react-best-practices`·`accessibility` 스킬 | e99a6bc — 화면별 코드 분할(첫 번들 268→120kB gzip), 건너뛰기 링크, theme-color |
 | 5 | ✅ | 모바일 점검·수정 — `vercel-react-native-skills` 스킬 (`expo-upgrade`는 SDK 업그레이드 계획만) | 피드: 더 불러오기 실패 시 목록 사라짐·중복 key 수정, 행 memo. SDK 업그레이드는 실기기 빌드가 필요해 미실행(사용자 몫 유지) |
 | 6 | ✅ | Expo SDK 49 → 58 업그레이드 계획 — `expo-upgrade` 스킬 | `PLANNING_expo-sdk-upgrade.md`. 실행은 ⏸ — 1~3단계는 요청 시 클라우드에서 가능, 4단계부터 Expo 계정·실기기 필요 |
