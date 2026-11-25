@@ -4,7 +4,7 @@ import { AppError } from '../common/app-error.js';
 import { EmptyResponseError, RawBodyError } from '../common/raw-body-error.js';
 import { localDateTime, now } from '../common/time.js';
 import { AuthUser, isAdmin } from '../auth/auth.guard.js';
-import { PhotoResponse, toPhotoResponse } from '../photo/photo.mapper.js';
+import { PhotoResponse, attachMembers, toPhotoResponse } from '../photo/photo.mapper.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /** 문의 폼 SHOOT_TYPES와 같은 어휘 — 웹 constants/shootTypes.js와 일치해야 프리필이 동작 */
@@ -64,7 +64,9 @@ export class SeriesService {
     const sps = await this.prisma.series_photos.findMany({ where: { series_id: seriesId }, orderBy: [{ display_order: 'asc' }, { id: 'asc' }] });
     const photos = await this.prisma.photos.findMany({ where: { id: { in: sps.map((x) => x.photo_id) } } });
     const byId = new Map(photos.map((p) => [p.id, p]));
-    return sps.flatMap((sp) => (byId.has(sp.photo_id) ? [toPhotoResponse(byId.get(sp.photo_id)!)] : []));
+    const list = sps.flatMap((sp) => (byId.has(sp.photo_id) ? [toPhotoResponse(byId.get(sp.photo_id)!)] : []));
+    // 의도적 차이: Spring SeriesController는 작성자 이름·아바타를 붙이지 않아 화면에 "익명"으로 보였다(알려진 갭) — 다른 사진 API처럼 한 번에 붙인다
+    return attachMembers(this.prisma, list);
   }
 
   private detailBody(s: series, photos: PhotoResponse[]) {

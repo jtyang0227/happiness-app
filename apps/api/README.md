@@ -71,6 +71,7 @@ API_BASE_URL=http://localhost:8090 OTHER_API_BASE_URL=http://localhost:8080 npm 
 ## Spring과 의도적으로 다른 점
 - **WebP 사진 업로드**(`/api/photos/upload`): Spring은 허용 형식에 WebP를 넣었지만 ImageIO에 WebP 리더가 없어 항상 500 "이미지를 읽을 수 없습니다". 여기서는 sharp로 읽어 jpg로 저장한다.
 - **스팟 목록·작업 탐색**(`GET /api/spots`, `GET /api/series/discover`): Spring은 PostgreSQL에서 비어 있는 문자열 조건(`region`·`q`·`location`·`shootType`)을 `bytea`로 묶어 500(`text ~~ bytea`, `lower(bytea)`)을 냈다 — 2026-11-24 Spring 쪽 JPQL에 `CAST(:x AS String)`을 넣어 고쳤다(운영 배포 b2c07c0 이후 커밋). 이제 양쪽 같은 결과, 계약 테스트도 분기 없음. (확인 함정: `./gradlew bootRun`만 하면 dev 프로필 H2라 재현되지 않는다 — `dev-env.sh`의 PG 환경 변수로 띄울 것.)
+- **시리즈 상세 사진의 작성자 정보**(`GET /api/series/{id}`의 `photos[].memberName`·`memberAvatarUrl`·`memberProfileName`): Spring은 붙이지 않아(null) 화면에 "익명"으로 보였다. 여기서는 다른 사진 API처럼 붙인다(2026-11-25).
 - 사진 업로드의 리사이즈 결과 바이트·대표색은 Thumbnailator와 sharp가 달라 한두 단계 차이 날 수 있다(단색 이미지는 같음). EXIF 회전은 양쪽 모두 적용하지 않는다.
 - 정렬 동점 순서: Spring은 정렬 컬럼만 주고 DB에 맡겨 동점(예: displayOrder 모두 null) 순서가 일정하지 않다. 여기서는 같은 방향의 id를 2차 정렬로 붙여 고정.
 - 깨진 JSON 본문·숫자가 아닌 경로 변수: Spring은 처리 못 한 예외로 500, 여기서는 400 C002.

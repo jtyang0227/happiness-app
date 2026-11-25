@@ -84,7 +84,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-25 | (이번 커밋) | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
+| 11-25 | (이번 커밋) | 새 API·웹 알려진 갭 — 시리즈 사진 작성자 정보, 웹 새로고침 후 access token 복구("…ByMe" false 경합, 느린 망 재현으로 전후 확인). 커버 N+1은 새 API에 이미 없음 | WORK_QUEUE "새 API·웹 알려진 갭" |
+| 11-25 | c8dad10 | Expo SDK 49 → 58 1~3단계(RN 0.88·React 19·React Navigation 7, 업로드 MIME 버그 수정) — 웹·Android export, 웹 번들 화면 오류 0. EAS 빌드·실기기는 사용자, master 미반영 | `PLANNING_expo-sdk-upgrade.md` |
 | 11-25 | 5fa7d08 | 운영 어드민이 7월 버전(표 19개)임을 확인 → 새 어드민 API용 스키마 업그레이드 SQL(추가만·멱등, 7월 스키마+행에 적용해 계약 47개 통과) | `apps/api/prisma/admin/upgrade/`, `PROMPT_ts-cutover.md` B-2 |
 | 11-24 | dcdc2fd | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-24 | b2c07c0 | TS 전환 11a 컷오버 준비 — render.yaml 새 서비스 2개, 웹 전환 스위치 `WEB_APP_DIR`, `apps/web/vercel.json`, 스모크(`scripts/smoke.mjs`·Actions Smoke). 발견·수정: `dotenv` devDependency라 운영 설치에서 API 시작 실패. 발견: Spring 작업 탐색 PG 500 | `PROMPT_ts-cutover.md` |
@@ -109,4 +110,4 @@
 ## 10. 알려진 갭 (손대지 않은 것)
 - 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
 - rate limit·로그인 잠금이 전부 인메모리(인스턴스 여러 개면 따로 셈), access token은 비밀번호 변경 후에도 30분 유효.
-- `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 모임 피드 `likedByMe` 새로고침 문제, `AdminTagsPage`는 mock.
+- (Spring·운영 `frontend/`만) `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 새로고침 후 "…ByMe" false — 새 API·`apps/web`에선 2026-11-25 해소(컷오버로 사라짐). `AdminTagsPage`는 mock.

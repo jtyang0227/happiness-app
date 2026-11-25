@@ -33,6 +33,14 @@
 | 11c | ⏸ | 컷오버 C — 정리(Prisma 기준선·`backend/`·`frontend/` 삭제·CI 정리·happiness-admin 보관 안내) | 11b 완료 확인 뒤 |
 | 12 | ✅ | Photoshop·Lightroom Classic MCP 연결(`.mcp.json` + `docs/ADOBE_MCP.md`) | 사용자 요청 "앱 → 어드민 → 포토샵·라이트룸 MCP"(실행 프롬프트 `PROMPT_ts-app-admin-adobe-mcp.md`). 앱·어드민과 독립이라 먼저 처리. 데스크톱 전용이라 클라우드에서 실행 확인 불가 |
 
+## 현재 묶음 — 새 API·웹 알려진 갭 (요청: 컷오버 대기 중 "새 API 알려진 갭 수정", 2026-11-25)
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 시리즈 상세 사진에 작성자 정보 없음(화면 "익명") | `SeriesService.orderedPhotos`가 `attachMembers`로 한 번에 붙임 — Spring과 의도적 차이(계약 테스트 `IS_SPRING`), 양쪽 통과 |
+| 2 | ✅ | 시리즈 커버 조회 N+1 | 새 API에선 이미 해소돼 있었음(목록 커버·미리보기 일괄 조회) — Spring만의 갭, 컷오버로 사라짐 |
+| 3 | ✅ | 새로고침 후 "…ByMe"(모임 피드 좋아요 등)가 false | 원인은 서버가 아니라 웹: access token이 메모리에만 있어 새로고침 뒤 공개 GET에 토큰이 없음. 헤더의 로그인 전용 요청 401이 우연히 먼저 재발급해 주는 경합이라 평소엔 가려지고 느린 망·헤더 없는 화면(포트폴리오·작업 노트)에서 드러남. `apps/web` `apiClient` — refresh token이 있으면 요청 전에 한 번 복구(기존 재발급 큐 공유, 실패 시 로그아웃 없이 토큰 없이 진행). 헤더 요청을 6초 늦춘 Playwright: 이전 ♡(좋아요 1인데 안 누른 것처럼), 수정 후 ♥. 운영 웹(`frontend/`)은 컷오버 때 대체되므로 미적용 |
+
 ## 이전 묶음 — 출사 스팟 + 출사 모임 강화 (요청: "프롬프트 읽어서 작업 진행하고 에러 검증까지", 2026-11-23)
 
 분석: `ANALYSIS_chulsa-app-public-features.md`, 프롬프트: `DESIGN_PROMPT_chulsa-spots.md`.
