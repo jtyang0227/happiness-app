@@ -105,6 +105,8 @@ export const gatheringApi = {
   requestAiRecommendation: (id, question?: string) =>
     apiClient.post(`${BASE}/${id}/ai-recommendations`, { question: question || undefined }, { timeout: 45000 }).then(r => r.data),
   getBest: (id) => apiClient.get(`${BASE}/${id}/best`).then(r => r.data),
+  getBestRanking: (params: { year: number; month?: number; size?: number }) =>
+    apiClient.get(`${BASE}/best/ranking`, { params }).then(r => r.data),
   voteBest: (id, photoId) => apiClient.post(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
   unvoteBest: (id, photoId) => apiClient.delete(`${BASE}/${id}/best/${photoId}`).then(r => r.data),
   getStories: (id) => apiClient.get(`${BASE}/${id}/stories`).then(r => r.data),

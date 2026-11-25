@@ -70,6 +70,7 @@ const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotif
 const OutingPollsPage = lazyPage(() => import('./pages/OutingPollsPage'));
 const OutingPollPage = lazyPage(() => import('./pages/OutingPollPage'));
 const OutingHolidaysPage = lazyPage(() => import('./pages/OutingHolidaysPage'));
+const BestRankingPage = lazyPage(() => import('./pages/BestRankingPage'));
 const GatheringStoryPage = lazyPage(() => import('./pages/GatheringStoryPage'));
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
@@ -198,6 +199,7 @@ function AppShell() {
           <Route path="/gatherings/polls" element={<OutingPollsPage />} />
           <Route path="/gatherings/polls/holidays" element={<ProtectedRoute><OutingHolidaysPage /></ProtectedRoute>} />
           <Route path="/gatherings/polls/:id" element={<OutingPollPage />} />
+          <Route path="/gatherings/best" element={<BestRankingPage />} />
           <Route path="/gatherings/notifications" element={<ProtectedRoute><GatheringNotificationsPage /></ProtectedRoute>} />
           <Route path="/gatherings/new" element={<ProtectedRoute><GatheringFormPage /></ProtectedRoute>} />
           <Route path="/gatherings/:id" element={<GatheringDetailPage />} />

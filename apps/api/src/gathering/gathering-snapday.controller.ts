@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Logger, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Logger, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { AuthUser, CurrentUser, Public, isAdmin } from '../auth/auth.guard.js';
 import { AppError } from '../common/app-error.js';
 import { jsonString } from '../common/json-body.js';
@@ -69,6 +69,54 @@ export class GatheringSnapdayController {
     const byPost = new Map(posts.map((p) => [p.id, p]));
     const photos = posts.length ? await this.prisma.gathering_photos.findMany({ where: { gathering_post_id: { in: posts.map((p) => p.id) } }, orderBy: [{ created_at: 'asc' }, { id: 'asc' }] }) : [];
     return photos.map((ph) => ({ ph, post: byPost.get(ph.gathering_post_id)! }));
+  }
+
+  /**
+   * 월간·연말 베스트 포토 — 그 기간에 시작한 끝난 출사들의 베스트 포토 표를 모아 순위. month가 없으면 연간.
+   * 경로가 `:id/best`와 겹치지 않게 두 칸(`best/ranking`)으로 둔다.
+   */
+  @Public()
+  @Get('best/ranking')
+  async ranking(@Query('year') yearQ?: string, @Query('month') monthQ?: string, @Query('size') sizeQ?: string) {
+    const year = yearQ ? Number(yearQ) : now().getUTCFullYear();
+    const month = monthQ ? Number(monthQ) : null;
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) throw AppError.status(400, '연도가 올바르지 않습니다.');
+    if (month != null && (!Number.isInteger(month) || month < 1 || month > 12)) throw AppError.status(400, '월은 1~12 사이여야 합니다.');
+    const size = Math.min(Math.max(Number(sizeQ) || 12, 1), 50);
+    const from = new Date(Date.UTC(year, month ? month - 1 : 0, 1));
+    const to = month ? new Date(Date.UTC(year, month, 1)) : new Date(Date.UTC(year + 1, 0, 1));
+    const gs = await this.prisma.gatherings.findMany({
+      where: { status: 'ENDED', start_date_time: { gte: from, lt: to } }, select: { id: true, title: true, start_date_time: true },
+    });
+    const empty = { year, month, items: [] as unknown[] };
+    if (!gs.length) return empty;
+    const votes = await this.prisma.gathering_best_votes.groupBy({ by: ['photo_id'], where: { gathering_id: { in: gs.map((g) => g.id) } }, _count: { _all: true } });
+    const top = votes.map((v) => ({ photoId: v.photo_id, votes: v._count._all }))
+      .sort((a, b) => b.votes - a.votes || Number(a.photoId - b.photoId)).slice(0, size);
+    if (!top.length) return empty;
+    const photos = await this.prisma.gathering_photos.findMany({ where: { id: { in: top.map((t) => t.photoId) } } });
+    const posts = await this.prisma.gathering_posts.findMany({
+      where: { id: { in: [...new Set(photos.map((p) => p.gathering_post_id))] } },
+      select: { id: true, gathering_id: true, member_id: true, member_name: true, member_avatar_url: true },
+    });
+    const photoBy = new Map(photos.map((p) => [p.id, p]));
+    const postBy = new Map(posts.map((p) => [p.id, p]));
+    const gBy = new Map(gs.map((g) => [g.id, g]));
+    let rank = 0;
+    let prev = -1;
+    const items = top.flatMap((t, i) => {
+      const ph = photoBy.get(t.photoId);
+      const post = ph && postBy.get(ph.gathering_post_id);
+      const g = post && gBy.get(post.gathering_id);
+      if (!ph || !post || !g) return [];
+      if (t.votes !== prev) { rank = i + 1; prev = t.votes; }
+      return [{
+        rank, photoId: Number(ph.id), imageUrl: ph.image_url, caption: ph.caption, votes: t.votes,
+        gatheringId: Number(g.id), gatheringTitle: g.title, gatheringStartDateTime: localDateTime(g.start_date_time),
+        memberId: Number(post.member_id), memberName: post.member_name, memberAvatarUrl: post.member_avatar_url,
+      }];
+    });
+    return { year, month, items };
   }
 
   @Public()

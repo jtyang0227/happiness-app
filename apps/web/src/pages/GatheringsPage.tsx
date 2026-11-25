@@ -310,6 +310,7 @@ export default function GatheringsPage() {
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
             <PollButton onClick={() => navigate('/gatherings/polls')} />
+            <PollButton onClick={() => navigate('/gatherings/best')}>🏆 베스트</PollButton>
             {user && <CalendarButton onClick={() => navigate('/gatherings/calendar')} />}
             {user && <NewButton onClick={() => navigate('/gatherings/new')} />}
           </div>
@@ -426,7 +427,7 @@ function OpenPollBanner() {
   );
 }
 
-function PollButton({ onClick }: { onClick?: (...args: any[]) => any }) {
+function PollButton({ onClick, children = '🗳 출사 투표' }: { onClick?: (...args: any[]) => any; children?: React.ReactNode }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -442,7 +443,7 @@ function PollButton({ onClick }: { onClick?: (...args: any[]) => any }) {
         transition: 'all 0.15s ease',
       }}
     >
-      🗳 출사 투표
+      {children}
     </button>
   );
 }

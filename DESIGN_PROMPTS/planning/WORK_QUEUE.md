@@ -13,7 +13,7 @@
 |---|---|---|---|
 | 1 | ✅ | 정리 — 오래된 보류 항목 갱신, `supabase-lockdown.sql`을 `backend/` 밖으로(C단계 삭제 대비) | `apps/api/db/supabase-lockdown.sql`, Expo·Railway 보류 행 갱신(0044e13) |
 | 2 | ✅ | 모임 일정·장소 변경 알림 — 만든 사람이 날짜·시간·장소를 바꾸면 참여자·대기자에게 알림 | 새 API `notifyScheduleChanged`(시작 시각·장소가 실제로 바뀌고 끝나지 않은 모임만, type `SCHEDULE_CHANGED`), 웹 알림 아이콘, 계약 `schedule-change.test.ts`(Spring skip), 모임 계약 11개 통과 |
-| 3 | ⏳ | 월간·연말 베스트 포토 집계 — API + 웹 화면 | SNAPDAY TODO |
+| 3 | ✅ | 월간·연말 베스트 포토 집계 — API + 웹 화면 | 새 API `GET /api/gatherings/best/ranking?year&month&size`(공개, 끝난 출사만, 동점 같은 순위), 웹 `/gatherings/best`(월간·연간·월 칩·메달·빈 상태, 모임 목록 "🏆 베스트"·앨범 링크), 계약 `best-ranking.test.ts`, Playwright 390/1280 넘침 0·오류 0 |
 | 4 | ⏳ | 속도 제한·로그인 잠금을 Redis로 공유(새 API, Redis 장애 시 메모리로) | 보안 점검 "인메모리" 한계 |
 | 5 | ⏳ | 모바일 SNAPDAY — 월간 투표 목록·날짜 투표, 베스트 포토 투표, 출사 기록 | 웹만 있던 기능 |
 | 6 | ⏳ | 검증·문서·커밋 | 계약·단위·웹 빌드·모바일 export |

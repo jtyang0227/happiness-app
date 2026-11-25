@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { COLORS } from '../../constants/colors';
 import gatheringApi from '../../services/gatheringApi';
 
@@ -80,6 +81,9 @@ export default function BestPhotoSection({ gatheringId }: { gatheringId: any }) 
           </figure>
         ))}
       </div>
+      <Link to="/gatherings/best" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, fontWeight: 600, color: COLORS.primary, textDecoration: 'none' }}>
+        다른 출사까지 모은 베스트 순위 보기 →
+      </Link>
     </section>
   );
 }
