@@ -95,6 +95,6 @@ describe('출사 스팟', () => {
     expect(r2.body.map((x: any) => x.id)).toEqual([a.id, b.id]);
     expect(r2.body[1].distanceM).toBe(133);
     expect((await call('GET', `/api/spots/nearby-duplicate?lat=95&lng=${lng}`)).body).toMatchObject({ code: '400', message: '위도 좌표가 범위를 벗어났습니다.' });
-    expect((await call('GET', `/api/spots/nearby-duplicate?lat=${lat}`)).status).toBe(500);
+    expect((await call('GET', `/api/spots/nearby-duplicate?lat=${lat}`)).status).toBe(400);
   });
 });

@@ -23,10 +23,12 @@ export class StorageService {
     if (!file || file.size === 0) throw new StorageError('파일이 비어있습니다.');
     if (file.size > MAX_FILE_SIZE) throw new StorageError('파일 크기는 20MB를 초과할 수 없습니다.');
     if (!ALLOWED_TYPES.has(file.mimetype)) throw new StorageError('허용되지 않는 파일 형식입니다. (JPEG, PNG, WebP, GIF만 허용)');
-    const name = file.originalname;
-    const ext = name && name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : 'jpg';
-    const shrunk = await shrinkUpload(file.buffer, file.mimetype, ext);
-    return this.uploadBytes(shrunk.bytes, `${folder}/${randomUUID()}.${shrunk.ext}`, file.mimetype);
+    // 선언한 형식·파일 이름이 아니라 실제 내용(매직 바이트)으로 형식을 정한다 — 이미지가 아닌 파일을 image/png로 속여
+    // 우리 버킷 주소로 배포하는 것을 막고, 저장 키 확장자도 형식에서 정한다(Spring ImageSignature와 같은 규칙)
+    const actual = detectImageType(file.buffer);
+    if (!actual) throw new StorageError('이미지 파일이 아닙니다. (JPEG, PNG, WebP, GIF만 허용)');
+    const shrunk = await shrinkUpload(file.buffer, actual, imageExtension(actual));
+    return this.uploadBytes(shrunk.bytes, `${folder}/${randomUUID()}.${shrunk.ext}`, actual);
   }
 
   async uploadBytes(bytes: Buffer, objectKey: string, contentType: string): Promise<string> {
@@ -63,6 +65,19 @@ export class StorageService {
       try { await this.deleteImage(key); } catch (e) { this.log.warn(`사진 변형 삭제 실패(무시하고 계속): ${key} - ${(e as Error).message}`); }
     }
   }
+}
+
+/** Spring common/util/ImageSignature — 매직 바이트로 JPEG·PNG·GIF·WebP 판별, 그 밖은 null */
+export function detectImageType(b: Buffer): string | null {
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (b.length >= 6 && /^GIF8[79]a$/.test(b.subarray(0, 6).toString('latin1'))) return 'image/gif';
+  if (b.length >= 12 && b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  return null;
+}
+
+export function imageExtension(contentType: string): string {
+  return contentType === 'image/png' ? 'png' : contentType === 'image/gif' ? 'gif' : contentType === 'image/webp' ? 'webp' : 'jpg';
 }
 
 /**

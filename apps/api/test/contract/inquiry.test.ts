@@ -64,6 +64,6 @@ describe('문의', () => {
       expect(r.body).toEqual({ message: msg });
     }
     expect((await call('GET', `/api/inquiry/inbox?memberId=${a.id}`)).status).toBe(401);
-    expect((await call('GET', '/api/inquiry/inbox', { token: a.token })).status).toBe(500);
+    expect((await call('GET', '/api/inquiry/inbox', { token: a.token })).status).toBe(400);
   });
 });

@@ -54,7 +54,7 @@ describe('사진 쓰기', () => {
     p = (await call('GET', `/api/photos/${id}`)).body.data;
     expect(p).toMatchObject({ likesCount: 0, savesCount: 0, sharesCount: 1 });
     expect((await call('POST', `/api/photos/999999999/likes?memberId=${fan.id}`, { token: fan.token })).status).toBe(404);
-    expect((await call('POST', `/api/photos/${id}/shares?memberId=${fan.id}`, { token: fan.token })).status).toBe(500);
+    expect((await call('POST', `/api/photos/${id}/shares?memberId=${fan.id}`, { token: fan.token })).status).toBe(400);
   });
 
   it('태그 — 사진 주인만 추가(이름은 서버가), 중복 400, 태그된 본인이 삭제, 다른 사진 태그 404', async () => {

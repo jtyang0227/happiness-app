@@ -77,13 +77,13 @@ describe('팔로우', () => {
     expect((await call('GET', `/api/follows/check?followerId=${a.id}&followingId=${b.id}`, { token: a.token })).body.data.following).toBe(false);
   });
 
-  it('남 대신 팔로우 403 "403", 파라미터 누락 500, 비로그인 401', async () => {
+  it('남 대신 팔로우 403 "403", 파라미터 누락 400, 비로그인 401', async () => {
     const a = await signupAndLogin();
     const b = await signupAndLogin();
     const r = await call('POST', `/api/follows?followerId=${b.id}&followingId=${a.id}`, { token: a.token });
     expect(r.status).toBe(403);
     expect(r.body).toMatchObject({ success: false, code: '403', message: '본인 계정으로만 할 수 있습니다.' });
-    expect((await call('GET', '/api/follows/count', { token: a.token })).status).toBe(500);
+    expect((await call('GET', '/api/follows/count', { token: a.token })).status).toBe(400);
     expect((await call('GET', `/api/follows/count?memberId=${a.id}`)).status).toBe(401);
   });
 });

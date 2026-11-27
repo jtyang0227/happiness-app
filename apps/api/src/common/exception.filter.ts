@@ -9,6 +9,9 @@ import { forwardToLegacy } from './legacy-proxy.js';
  * Spring GlobalExceptionHandler와 같은 응답. 처리 못 한 예외는 500 C001 + `[ERROR] Unhandled exception` 로그.
  * 어떤 핸들러에도 걸리지 않은 경로(req.route 없음)는 Spring으로 넘긴다.
  */
+/** Spring MissingServletRequestParameter·MethodArgumentTypeMismatch·HttpMessageNotReadable을 흉내 낸 오류 메시지(common/params.ts 등) */
+const CLIENT_FORMAT_ERROR = /^(Required request parameter|Failed to convert|Cannot deserialize|Required request body)/;
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly log = new Logger('Exception');
@@ -49,6 +52,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
         return;
       }
       res.status(status).json(fail(String(status), exception.message));
+      return;
+    }
+    if (exception instanceof Error && CLIENT_FORMAT_ERROR.test(exception.message)) {
+      // Spring GlobalExceptionHandler.handleBadRequest(095e0f0)와 같게 — 필수 파라미터 누락·타입 변환 실패·본문 역직렬화 실패는 400 C002
+      res.status(400).json(fail(ErrorCode.INVALID_INPUT.code, ErrorCode.INVALID_INPUT.message));
       return;
     }
     this.log.error('[ERROR] Unhandled exception', exception instanceof Error ? exception.stack : String(exception));

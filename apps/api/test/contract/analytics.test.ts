@@ -69,7 +69,7 @@ describe('분석', () => {
       expect(f.body, p).toMatchObject({ code: '403', message: '접근 권한이 없습니다' });
     }
     expect((await call('GET', `/api/analytics/summary?memberId=${u.id}`)).status).toBe(401);
-    expect((await call('GET', '/api/analytics/summary', { token: u.token })).status).toBe(500);
+    expect((await call('GET', '/api/analytics/summary', { token: u.token })).status).toBe(400);
   });
 
   it('track rate limit — 같은 visitorToken 분당 60회 초과 429', async () => {

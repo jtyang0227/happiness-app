@@ -1,5 +1,6 @@
 package com.happiness.app.storage;
 
+import com.happiness.app.common.util.ImageSignature;
 import com.happiness.app.common.util.UploadImageShrinker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,9 +54,16 @@ public class SupabaseStorageService {
             throw new StorageException("파일 읽기 실패", e);
         }
 
+        // 선언한 Content-Type·파일 이름이 아니라 실제 내용으로 형식을 정한다 — 이미지가 아닌 파일(HTML 등)을
+        // image/png로 속여 올려 우리 버킷 주소로 배포하는 것을 막고, 저장 키 확장자도 형식에서 정한다
+        String actualType = ImageSignature.detect(bytes);
+        if (actualType == null) {
+            throw new StorageException("이미지 파일이 아닙니다. (JPEG, PNG, WebP, GIF만 허용)");
+        }
+
         // 긴 변 2048px·JPEG 품질 0.85로 줄여 무료 Storage 용량을 아낀다
         UploadImageShrinker.Result shrunk = UploadImageShrinker.shrink(
-                bytes, file.getContentType(), extractExtension(file.getOriginalFilename()));
+                bytes, actualType, ImageSignature.extension(actualType));
         String objectKey = folder + "/" + UUID.randomUUID() + "." + shrunk.ext();
 
         return doUpload(shrunk.bytes(), objectKey, shrunk.contentType());
@@ -160,8 +168,4 @@ public class SupabaseStorageService {
         }
     }
 
-    private String extractExtension(String filename) {
-        if (filename == null || !filename.contains(".")) return "jpg";
-        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
-    }
 }

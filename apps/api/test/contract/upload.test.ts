@@ -31,8 +31,11 @@ describe('이미지 업로드 (/api/upload/image, 가짜 Supabase)', () => {
     expect(log[0]).toMatchObject({ method: 'POST', contentType: 'image/png', auth: 'Bearer test-service-key', upsert: 'true', size: PNG.length });
     // Spring WebClient가 키의 `/`를 %2F로 인코딩해 보낸다(양쪽 같음)
     expect(log[0].url).toMatch(/^\/storage\/v1\/object\/images\/avatars%2F[0-9a-f-]{36}\.png$/);
+    // 확장자는 파일 이름이 아니라 실제 형식에서(2026-11-27 보안 강화 — 이전엔 이름에 확장자가 없으면 jpg, 있으면 그 확장자)
     const def = await upload(u.token, { data: PNG, type: 'image/png', name: 'noext' });
-    expect(def.body.url).toMatch(/\/images\/photos\/[0-9a-f-]{36}\.jpg$/);
+    expect(def.body.url).toMatch(/\/images\/photos\/[0-9a-f-]{36}\.png$/);
+    const renamed = await upload(u.token, { data: PNG, type: 'image/png', name: 'evil.html' });
+    expect(renamed.body.url).toMatch(/\/images\/photos\/[0-9a-f-]{36}\.png$/);
   });
 
   it('잘못된 folder 400 {error}, 허용 안 되는 형식 500 C001(Spring StorageException 미처리), 비로그인 401, 20MB 초과 400 F002', async () => {
@@ -45,6 +48,10 @@ describe('이미지 업로드 (/api/upload/image, 가짜 Supabase)', () => {
     const txt = await upload(u.token, { data: Buffer.from('hello'), type: 'text/plain', name: 'a.txt' });
     expect(txt.status).toBe(500);
     expect(txt.body).toMatchObject({ success: false, code: 'C001' });
+    // 이미지라고 선언했지만 내용은 HTML — 실제 형식 검사로 거절(같은 StorageException 경로)
+    const fake = await upload(u.token, { data: Buffer.from('<html><script>alert(1)</script></html>'), type: 'image/png', name: 'x.png' });
+    expect(fake.status).toBe(500);
+    expect(fake.body).toMatchObject({ success: false, code: 'C001' });
     expect((await upload(null, { data: PNG, type: 'image/png', name: 'a.png' })).status).toBe(401);
     const big = await upload(u.token, { data: Buffer.alloc(21 * 1024 * 1024, 1), type: 'image/png', name: 'big.png' });
     expect(big.status).toBe(400);
