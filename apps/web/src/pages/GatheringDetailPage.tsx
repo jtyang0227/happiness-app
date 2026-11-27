@@ -9,6 +9,7 @@ import PlacePollCard from '../components/gathering/PlacePollCard';
 import FieldModeBar from '../components/gathering/FieldModeBar';
 import AiRecommendationCard from '../components/gathering/AiRecommendationCard';
 import StoryStrip from '../components/gathering/StoryStrip';
+import CapacityBar from '../components/gathering/CapacityBar';
 import { kakaoDirectionsUrl } from '../utils/kakaoMap';
 
 /* ── 모달 등장 애니메이션 — 배경 페이드 + 카드 스케일업(scale(0)로 시작하지 않음) ── */
@@ -488,10 +489,7 @@ export default function GatheringDetailPage() {
               )}
             </InfoRow>
             <InfoRow icon="👥" label="참여 인원">
-              <strong>{gathering.participantCount}</strong> / {gathering.maxParticipants}명
-              {gathering.waitingCount > 0 && (
-                <span style={{ color: COLORS.textMuted, marginLeft: 6 }}>대기 {gathering.waitingCount}명</span>
-              )}
+              <CapacityBar count={gathering.participantCount} max={gathering.maxParticipants} min={gathering.minParticipants} waiting={gathering.waitingCount} />
             </InfoRow>
             {isRecruiting && (
               <InfoRow icon="⏰" label="모집 마감">

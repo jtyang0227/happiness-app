@@ -145,6 +145,7 @@ export default function GatheringFormPage() {
     endDateTime: '',
     recruitmentEndDateTime: '',
     maxParticipants: '8',
+    minParticipants: '',
     fee: '',
     shootTheme: '',
     preparationNote: '',
@@ -169,6 +170,7 @@ export default function GatheringFormPage() {
           endDateTime: toInputValue(g.endDateTime),
           recruitmentEndDateTime: toInputValue(g.recruitmentEndDateTime),
           maxParticipants: String(g.maxParticipants || '8'),
+          minParticipants: g.minParticipants ? String(g.minParticipants) : '',
           fee: g.fee || '',
           shootTheme: g.shootTheme || '',
           preparationNote: g.preparationNote || '',
@@ -228,6 +230,11 @@ export default function GatheringFormPage() {
     if (!form.maxParticipants || isNaN(maxP) || maxP < 1) {
       errs.maxParticipants = '최대 참여 인원은 1명 이상이어야 합니다.';
     }
+    if (form.minParticipants !== '') {
+      const minP = parseInt(form.minParticipants, 10);
+      if (isNaN(minP) || minP < 1) errs.minParticipants = '최소 인원은 1명 이상이어야 합니다.';
+      else if (!isNaN(maxP) && minP > maxP) errs.minParticipants = '최소 인원은 최대 참여 인원보다 클 수 없어요.';
+    }
     if (!form.startDateTime) errs.startDateTime = '시작 일시를 입력해주세요.';
     if (!form.endDateTime) errs.endDateTime = '종료 일시를 입력해주세요.';
     if (!form.recruitmentEndDateTime) errs.recruitmentEndDateTime = '모집 마감 일시를 입력해주세요.';
@@ -267,6 +274,8 @@ export default function GatheringFormPage() {
       endDateTime: toApiValue(form.endDateTime),
       recruitmentEndDateTime: toApiValue(form.recruitmentEndDateTime),
       maxParticipants: parseInt(form.maxParticipants, 10),
+      // 비워 두면 제한 없음 — 수정에서 0 = 최소 인원 해제
+      minParticipants: form.minParticipants !== '' ? parseInt(form.minParticipants, 10) : (isEdit ? 0 : undefined),
       fee: form.fee.trim() || undefined,
       shootTheme: form.shootTheme.trim() || undefined,
       preparationNote: form.preparationNote.trim() || undefined,
@@ -446,6 +455,16 @@ export default function GatheringFormPage() {
                 <Field label="최대 참여 인원" required error={errors.maxParticipants}>
                   <NumberInput value={form.maxParticipants} onChange={setField('maxParticipants')} min={1} max={500} />
                 </Field>
+                <Field label="최소 인원 (선택)" error={errors.minParticipants}>
+                  <NumberInput value={form.minParticipants} onChange={setField('minParticipants')} min={1} max={parseInt(form.maxParticipants, 10) || 500} />
+                  <span style={{ fontSize: 12, color: COLORS.textMuted }}>모집이 끝났을 때 이보다 적으면 알려드려요. 비워 두면 제한 없음</span>
+                </Field>
+                <div style={{ background: COLORS.bg, borderRadius: 12, padding: '12px 14px', fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.7 }}>
+                  <div style={{ fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>🔔 자동으로 보내는 알림</div>
+                  <div>· 나에게: 정원이 다 찼을 때, 모집 마감 24시간 전(현재 인원), 마감 때 최소 인원 미달</div>
+                  <div>· 참여자에게: 시작 전날과 2시간 전에 시간·장소·준비물</div>
+                  <div>· 나를 팔로우한 사람에게: 모임을 열었을 때</div>
+                </div>
                 <Field label="참가비">
                   <TextInput value={form.fee} onChange={setField('fee')} placeholder="예: 무료, 5,000원" />
                 </Field>

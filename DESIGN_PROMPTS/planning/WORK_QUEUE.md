@@ -13,7 +13,7 @@
 |---|---|---|---|
 | 1 | ✅ | 점검·기획·디자인 프롬프트·Gemini 초안 | 위 문서 3개 |
 | 2 | ✅ | 새 API — 최소 인원, 정원 마감·최소 인원 미달·새 모임(팔로워) 알림, 리마인더 배치(마감 임박·전날·곧 시작), 이번 달 모집 소식, 벽시계 시간대 수정 | `gathering-reminder.service.ts`, `wallClockNow()`, 계약 `gathering-reminders.test.ts` 5개, 앱 계약 107 통과 |
-| 3 | 🔄 | 새 웹 — 최소 인원 입력·자동 알림 안내, 인원 막대, 알림 아이콘 | |
+| 3 | ✅ | 새 웹 — 최소 인원 입력·자동 알림 안내, 인원 막대, 알림 아이콘 | `components/gathering/CapacityBar.tsx`, `GatheringFormPage`·`GatheringDetailPage`·`GatheringNotificationsPage`(새 종류 7개, 모집 소식 → /gatherings). typecheck·테스트 13·빌드, Playwright 390/1280 넘침 0·오류 0 |
 | 4 | ⏳ | 검증(Spring 빌드·계약 양쪽, 웹 빌드·화면)·문서 | |
 
 ## 현재 묶음 — 사용자 작업을 뺀 남은 개발 (요청: "직접 진행하는 제외하고 할 수 있는 작업 해줘", 2026-11-25)

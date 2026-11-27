@@ -20,6 +20,14 @@ const TYPE_META = {
   POLL_CLOSING:            { icon: '⏰', label: '투표 마감 임박' },
   POLL_REMIND:             { icon: '🔔', label: '투표 응답 요청' },
   POLL_CONFIRMED:          { icon: '📅', label: '출사 날짜 확정' },
+  // 모임 일정 알림 (PLANNING_gathering-schedule-reminders.md)
+  RECRUITMENT_CLOSING:     { icon: '⏳', label: '모집 마감 임박' },
+  GATHERING_FULL:          { icon: '🎉', label: '정원 마감' },
+  MIN_NOT_MET:             { icon: '⚠️', label: '최소 인원 미달' },
+  GATHERING_REMINDER_DAY:  { icon: '🗓', label: '내일 출사' },
+  GATHERING_REMINDER_SOON: { icon: '🚶', label: '곧 시작' },
+  NEW_GATHERING:           { icon: '✨', label: '새 모임' },
+  MONTHLY_DIGEST:          { icon: '📣', label: '이번 달 출사 모집' },
 };
 
 /* ── Shimmer Skeleton ─────────────────────────────────── */
@@ -187,6 +195,11 @@ export default function GatheringNotificationsPage() {
     // SNAPDAY 투표 알림은 모임이 아직 없어 gatheringId 0 + relatedPostId = 투표 id (확정 알림은 새 모임으로)
     if (String(notif.type || '').startsWith('POLL_') && (!notif.gatheringId || notif.type !== 'POLL_CONFIRMED')) {
       navigate(`/gatherings/polls/${notif.relatedPostId}`);
+      return;
+    }
+    // 이번 달 모집 소식은 모임 하나가 아니라 목록으로
+    if (notif.type === 'MONTHLY_DIGEST' || !notif.gatheringId) {
+      navigate('/gatherings');
       return;
     }
     navigate(`/gatherings/${notif.gatheringId}`);
