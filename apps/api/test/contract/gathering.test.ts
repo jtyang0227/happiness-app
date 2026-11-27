@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb } from './db.js';
-import { LOCAL_DATE_TIME, User, call, signupAndLogin } from './helpers.js';
+import { IS_SPRING, LOCAL_DATE_TIME, User, call, signupAndLogin } from './helpers.js';
 
 afterAll(closeDb);
 
@@ -23,7 +23,8 @@ describe('모임', () => {
     const c = await signupAndLogin();
     const g = await create(host, { beginnerFriendly: true, portraitConsentRule: false, hashtags: '#야경' });
     expect(g.status).toBe(201);
-    expect(Object.keys(g.body).sort()).toEqual(KEYS);
+    // minParticipants(최소 인원)는 새 API에만 있다(PLANNING_gathering-schedule-reminders.md)
+    expect(Object.keys(g.body).sort()).toEqual(IS_SPRING ? KEYS : [...KEYS, 'minParticipants'].sort());
     expect(g.body).toMatchObject({ title: '한강 야경 출사', location: '여의도', status: 'RECRUITING', createdBy: host.id, maxParticipants: 2,
       startDateTime: `${Y}-06-01T19:00:00`, endDateTime: `${Y}-06-01T22:00:00`, recruitmentEndDateTime: `${Y}-05-30T23:59:59.5`,
       beginnerFriendly: true, portraitConsentRule: false, spotId: null, participantCount: 0, waitingCount: 0 });

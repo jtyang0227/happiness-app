@@ -237,10 +237,12 @@ export class OutingPollService {
     const dayBefore = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - 1, 18, 0));
     const recruitmentEnd = dayBefore > now() ? dayBefore : start;
     const available = await this.prisma.outing_poll_votes.findMany({ where: { option_id: o.id, availability: 'AVAILABLE' }, select: { member_id: true } });
+    const maxParticipants = req.maxParticipants ?? p.max_participants ?? Math.max(available.length, 10);
     const g = await this.gatherings.create(adminId, {
       title: strip(req.title) ?? p.title, description: strip(req.description) ?? p.description, detailDescription: null,
       location: req.location, startDateTime: start, endDateTime: end,
-      maxParticipants: req.maxParticipants ?? p.max_participants ?? Math.max(available.length, 10), recruitmentEndDateTime: recruitmentEnd,
+      maxParticipants, minParticipants: p.min_participants != null && p.min_participants <= maxParticipants ? p.min_participants : null,
+      recruitmentEndDateTime: recruitmentEnd,
       thumbnailUrl: null, preparationNote: null, fee: null, shootTheme: null, locationIntro: null, referenceImageUrl: null,
       hashtags: null, spotId: null, beginnerFriendly: null, portraitConsentRule: null,
     });

@@ -7,13 +7,14 @@ import type { gathering_participants, gatherings, Prisma } from '../generated/pr
 import { PrismaService } from '../prisma/prisma.service.js';
 import { GatheringNotificationService } from './gathering-notification.service.js';
 import { GatheringPlacePollService } from './gathering-place-poll.service.js';
+import { GatheringReminderService } from './gathering-reminder.service.js';
 
 const bad = (m: string) => AppError.status(400, m);
 const sanitize = (s: string | null) => (s == null ? null : javaTrim(s.replace(/<[^>]*>/g, '')));
 
 export interface GatheringRequest {
   title: string | null; description: string | null; detailDescription: string | null; location: string | null;
-  startDateTime: Date | null; endDateTime: Date | null; maxParticipants: number | null; recruitmentEndDateTime: Date | null;
+  startDateTime: Date | null; endDateTime: Date | null; maxParticipants: number | null; minParticipants: number | null; recruitmentEndDateTime: Date | null;
   thumbnailUrl: string | null; preparationNote: string | null; fee: string | null; shootTheme: string | null; locationIntro: string | null;
   referenceImageUrl: string | null; hashtags: string | null; spotId: number | null; beginnerFriendly: boolean | null; portraitConsentRule: boolean | null;
 }
@@ -23,7 +24,7 @@ export function readGatheringRequest(b: Record<string, unknown>): GatheringReque
   return {
     title: s('title'), description: s('description'), detailDescription: s('detailDescription'), location: s('location'),
     startDateTime: jsonLocalDateTime(b.startDateTime, 'startDateTime'), endDateTime: jsonLocalDateTime(b.endDateTime, 'endDateTime'),
-    maxParticipants: jsonInt(b.maxParticipants, 'maxParticipants'), recruitmentEndDateTime: jsonLocalDateTime(b.recruitmentEndDateTime, 'recruitmentEndDateTime'),
+    maxParticipants: jsonInt(b.maxParticipants, 'maxParticipants'), minParticipants: jsonInt(b.minParticipants, 'minParticipants'), recruitmentEndDateTime: jsonLocalDateTime(b.recruitmentEndDateTime, 'recruitmentEndDateTime'),
     thumbnailUrl: s('thumbnailUrl'), preparationNote: s('preparationNote'), fee: s('fee'), shootTheme: s('shootTheme'), locationIntro: s('locationIntro'),
     referenceImageUrl: s('referenceImageUrl'), hashtags: s('hashtags'), spotId: jsonLong(b.spotId, 'spotId'),
     beginnerFriendly: jsonBool(b.beginnerFriendly, 'beginnerFriendly'), portraitConsentRule: jsonBool(b.portraitConsentRule, 'portraitConsentRule'),
@@ -39,7 +40,7 @@ const participantBody = (p: gathering_participants) => ({
 export class GatheringService {
   private readonly log = new Logger('GatheringService');
   constructor(private readonly prisma: PrismaService, private readonly notifications: GatheringNotificationService,
-    private readonly polls: GatheringPlacePollService) {}
+    private readonly polls: GatheringPlacePollService, private readonly reminders: GatheringReminderService) {}
 
   async toResponses(list: gatherings[]) {
     const spotIds = [...new Set(list.flatMap((g) => (g.spot_id == null ? [] : [g.spot_id])))];
@@ -55,6 +56,7 @@ export class GatheringService {
       return {
         id: Number(g.id), title: g.title, description: g.description, detailDescription: g.detail_description, location: g.location,
         startDateTime: localDateTime(g.start_date_time), endDateTime: localDateTime(g.end_date_time), maxParticipants: g.max_participants,
+        minParticipants: g.min_participants ?? null,
         recruitmentEndDateTime: localDateTime(g.recruitment_end_date_time), status: g.status, thumbnailUrl: g.thumbnail_url,
         preparationNote: g.preparation_note, fee: g.fee, shootTheme: g.shoot_theme, locationIntro: g.location_intro,
         referenceImageUrl: g.reference_image_url, hashtags: g.hashtags, createdBy: Number(g.created_by), createdAt: localDateTime(g.created_at),
@@ -80,6 +82,7 @@ export class GatheringService {
     if (req.title == null || isBlank(req.title)) throw bad('모임 제목은 필수입니다.');
     if (req.location == null || isBlank(req.location)) throw bad('모임 장소는 필수입니다.');
     if (req.maxParticipants == null || req.maxParticipants <= 0) throw bad('최대 참여 인원은 1명 이상이어야 합니다.');
+    const minParticipants = checkMin(req.minParticipants, req.maxParticipants);
     if (req.startDateTime == null || req.endDateTime == null) throw bad('모임 시작/종료 시간은 필수입니다.');
     if (!(req.startDateTime < req.endDateTime)) throw bad('모임 시작 시간은 종료 시간보다 이전이어야 합니다.');
     if (req.recruitmentEndDateTime == null) throw bad('모집 마감 시간은 필수입니다.');
@@ -87,13 +90,14 @@ export class GatheringService {
     const spotId = await this.resolveSpot(req.spotId);
     const g = await this.prisma.gatherings.create({ data: {
       title: sanitize(req.title)!, description: sanitize(req.description), detail_description: sanitize(req.detailDescription), location: sanitize(req.location)!,
-      start_date_time: req.startDateTime, end_date_time: req.endDateTime, max_participants: req.maxParticipants, recruitment_end_date_time: req.recruitmentEndDateTime,
+      start_date_time: req.startDateTime, end_date_time: req.endDateTime, max_participants: req.maxParticipants, min_participants: minParticipants, recruitment_end_date_time: req.recruitmentEndDateTime,
       status: 'RECRUITING', thumbnail_url: sanitize(req.thumbnailUrl), preparation_note: sanitize(req.preparationNote), fee: sanitize(req.fee),
       shoot_theme: sanitize(req.shootTheme), location_intro: sanitize(req.locationIntro), reference_image_url: sanitize(req.referenceImageUrl),
       hashtags: sanitize(req.hashtags), created_by: BigInt(memberId), spot_id: spotId,
       beginner_friendly: req.beginnerFriendly === true ? true : null, portrait_consent_rule: req.portraitConsentRule === true ? true : null, created_at: now(),
     } });
     this.log.log(`[GATHERING] 모임 생성: id=${g.id}, createdBy=${memberId}`);
+    await this.reminders.notifyFollowersOfNew(g);
     return this.toResponse(g);
   }
 
@@ -118,6 +122,12 @@ export class GatheringService {
     if (req.maxParticipants != null) {
       if (req.maxParticipants <= 0) throw bad('최대 참여 인원은 1명 이상이어야 합니다.');
       d.max_participants = req.maxParticipants;
+    }
+    if (req.minParticipants != null || req.maxParticipants != null) {
+      // 최소 인원: 0이면 해제, 최대 인원만 바뀌어도 기존 최소 인원과 다시 비교한다
+      const max = req.maxParticipants ?? g.max_participants;
+      const min = req.minParticipants != null ? req.minParticipants : g.min_participants;
+      d.min_participants = min == null || min === 0 ? null : checkMin(min, max);
     }
     if (req.recruitmentEndDateTime != null) {
       if (req.recruitmentEndDateTime > start) throw bad('모집 마감 시간은 모임 시작 시간 이전이어야 합니다.');
@@ -208,6 +218,7 @@ export class GatheringService {
         : await this.prisma.gathering_participants.update({ where: { id: existing.id }, data: { status: resolved, reason: newReason } }))
       : await this.prisma.gathering_participants.create({ data: { gathering_id: g.id, member_id: BigInt(memberId), status: resolved, reason: newReason, joined_at: now() } });
     this.log.log(`[GATHERING] 참여 응답: gatheringId=${gatheringId}, memberId=${memberId}, status=${resolved}`);
+    if (resolved === 'PARTICIPATING' && existing?.status !== 'PARTICIPATING') await this.reminders.notifyIfFull(g);
     return participantBody(p);
   }
 
@@ -239,6 +250,7 @@ export class GatheringService {
     const saved = await this.prisma.gatherings.update({ where: { id: g.id }, data: { status: 'RECRUITMENT_CLOSED', ...(place ?? {}) } });
     this.log.log(`[GATHERING] 모집 마감: id=${gatheringId}, closedBy=${memberId}`);
     await this.notifyClosed(saved);
+    await this.reminders.notifyIfMinNotMet(saved);
     return this.toResponse(saved);
   }
 
@@ -262,8 +274,16 @@ export class GatheringService {
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 /** "3월 27일(토) 10:00" — 저장된 LocalDateTime(UTC로 읽힘)을 그대로 표시 */
-function scheduleLabel(d: Date) {
+export function scheduleLabel(d: Date) {
   const hh = String(d.getUTCHours()).padStart(2, '0');
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${WEEKDAYS[d.getUTCDay()]}) ${hh}:${mm}`;
+}
+
+/** 최소 인원(선택) — 1 이상, 최대 인원 이하. null이면 제한 없음 */
+function checkMin(min: number | null, max: number) {
+  if (min == null || min === 0) return null;
+  if (min < 1) throw bad('최소 인원은 1명 이상이어야 합니다.');
+  if (min > max) throw bad('최소 인원은 최대 참여 인원보다 클 수 없습니다.');
+  return min;
 }

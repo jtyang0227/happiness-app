@@ -26,3 +26,14 @@ export function today(): Date {
   const n = new Date();
   return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
 }
+
+/**
+ * 사용자가 입력한 "벽시계" 시각(모임 시작·모집 마감 등, 시간대 없이 한국 시간 그대로 저장)과 비교할 지금 시각.
+ * 서버는 TZ=UTC라 now()와 그대로 비교하면 9시간 어긋난다(시작 10:00 모임이 19:00에 ONGOING이 되던 문제).
+ * APP_WALL_CLOCK_OFFSET_MINUTES로 바꿀 수 있고 기본은 한국 시간(+540분).
+ */
+export function wallClockNow(): Date {
+  const raw = process.env.APP_WALL_CLOCK_OFFSET_MINUTES;
+  const offset = raw != null && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : 540;
+  return new Date(Date.now() + offset * 60000);
+}

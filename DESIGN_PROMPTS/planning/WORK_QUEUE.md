@@ -5,6 +5,17 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
+## 현재 묶음 — 모임 일정·인원·알림 보강 (요청: "모임 일정 정할 때 인원/시작/알림, 이번 달 출사 모집 푸시 … 기획 → 제미나이 프롬프트 → 바로 작업", 2026-11-27)
+
+기획 `PLANNING_gathering-schedule-reminders.md`, 디자인 `design/DESIGN_PROMPT_gathering-reminders.md`, 구현 프롬프트 `PROMPT_gathering-reminders.md`(Gemini 초안 + 수정). 대상 새 API·새 웹, 브랜치 `claude/project-thread-b043ta`(SNAPDAY 위). 스키마 1개·FCM은 사용자 확인 전 운영 미반영.
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| 1 | ✅ | 점검·기획·디자인 프롬프트·Gemini 초안 | 위 문서 3개 |
+| 2 | ✅ | 새 API — 최소 인원, 정원 마감·최소 인원 미달·새 모임(팔로워) 알림, 리마인더 배치(마감 임박·전날·곧 시작), 이번 달 모집 소식, 벽시계 시간대 수정 | `gathering-reminder.service.ts`, `wallClockNow()`, 계약 `gathering-reminders.test.ts` 5개, 앱 계약 107 통과 |
+| 3 | 🔄 | 새 웹 — 최소 인원 입력·자동 알림 안내, 인원 막대, 알림 아이콘 | |
+| 4 | ⏳ | 검증(Spring 빌드·계약 양쪽, 웹 빌드·화면)·문서 | |
+
 ## 현재 묶음 — 사용자 작업을 뺀 남은 개발 (요청: "직접 진행하는 제외하고 할 수 있는 작업 해줘", 2026-11-25)
 
 대상은 새 API(`apps/api`)·새 웹(`apps/web`)·모바일. 운영 대시보드·외부 키(기상청·FCM·Gemini·공휴일)·컷오버 B/C 삭제는 제외.

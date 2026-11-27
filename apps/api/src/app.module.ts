@@ -40,6 +40,7 @@ import { GatheringAiController } from './gathering/gathering-ai.controller.js';
 import { GatheringNotificationService } from './gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from './gathering/gathering-place-poll.service.js';
 import { GatheringService } from './gathering/gathering.service.js';
+import { GatheringReminderService } from './gathering/gathering-reminder.service.js';
 import { SpotController } from './spot/spot.controller.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BatchService } from './batch/batch.service.js';
@@ -85,6 +86,7 @@ import { OutingPollService } from './outing/outing-poll.service.js';
     GatheringPlacePollService,
     HolidayService,
     OutingPollService,
+    GatheringReminderService,
     GatheringService,
     BatchService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },

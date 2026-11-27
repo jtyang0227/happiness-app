@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { now, today } from '../common/time.js';
+import { now, today, wallClockNow } from '../common/time.js';
 import { GatheringNotificationService } from '../gathering/gathering-notification.service.js';
 import { GatheringPlacePollService } from '../gathering/gathering-place-poll.service.js';
+import { GatheringReminderService } from '../gathering/gathering-reminder.service.js';
 import { OutingPollService } from '../outing/outing-poll.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -15,7 +16,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class BatchService {
   private readonly log = new Logger('BatchService');
   constructor(private readonly prisma: PrismaService, private readonly notifications: GatheringNotificationService,
-    private readonly polls: GatheringPlacePollService, private readonly outingPolls: OutingPollService) {}
+    private readonly polls: GatheringPlacePollService, private readonly outingPolls: OutingPollService,
+    private readonly reminders: GatheringReminderService) {}
 
   get enabled() {
     const v = process.env.BATCH_ENABLED;
@@ -57,12 +59,15 @@ export class BatchService {
     }
   }
 
-  /** GatheringBatchService — 5분마다 모집 마감 → 예정 → 시작 → 종료 + 알림, 모집 마감 때 장소 투표 확정 */
+  /**
+   * GatheringBatchService — 5분마다 모집 마감 → 예정 → 시작 → 종료 + 알림, 모집 마감 때 장소 투표 확정.
+   * 모임 시각은 한국 시간 벽시계로 저장되므로 wallClockNow()와 비교한다(Spring은 UTC now()와 비교해 9시간 늦게 전환됐다).
+   */
   @Cron('0 */5 * * * *')
   async transitionGatheringStatuses() {
     if (!this.enabled) return;
     try {
-      const t = now();
+      const t = wallClockNow();
       const toClose = (await this.prisma.gatherings.findMany({ where: { status: 'RECRUITING', recruitment_end_date_time: { lt: t } }, select: { id: true } })).map((g) => g.id);
       const closed = await this.prisma.gatherings.updateMany({ where: { status: 'RECRUITING', recruitment_end_date_time: { lt: t } }, data: { status: 'RECRUITMENT_CLOSED' } });
       for (const id of toClose) {
@@ -71,6 +76,7 @@ export class BatchService {
           if (!g) continue;
           const place = await this.polls.applyWinner(g);
           if (place) await this.prisma.gatherings.update({ where: { id }, data: place });
+          await this.reminders.notifyIfMinNotMet(g);
         } catch (e) {
           this.log.error(`[GATHERING] 장소 투표 확정 실패: gatheringId=${id}: ${(e as Error).message}`);
         }
@@ -104,6 +110,28 @@ export class BatchService {
       }
     } catch (e) {
       this.log.error(`[GATHERING_NOTIFICATION] 배치 알림 루프 실패: type=${type}: ${(e as Error).message}`);
+    }
+  }
+
+  /** 모임 리마인더 — 5분마다 모집 마감 임박·전날·곧 시작(PLANNING_gathering-schedule-reminders.md) */
+  @Cron('30 */5 * * * *')
+  async sendGatheringReminders() {
+    if (!this.enabled) return;
+    try {
+      await this.reminders.sendReminders();
+    } catch (e) {
+      this.log.error(`Gathering reminder batch 실행 중 오류 — 다음 실행에서 재시도됩니다: ${(e as Error).message}`);
+    }
+  }
+
+  /** 이번 달 출사 모집 소식 — 매월 1일 01:00 UTC = 10:00 한국 시간 */
+  @Cron('0 0 1 1 * *')
+  async sendMonthlyGatheringDigest() {
+    if (!this.enabled) return;
+    try {
+      await this.reminders.sendMonthlyDigest();
+    } catch (e) {
+      this.log.error(`Monthly gathering digest 실행 중 오류: ${(e as Error).message}`);
     }
   }
 

@@ -53,6 +53,9 @@ public class Gathering {
     @Column(nullable = false)
     private Integer maxParticipants;
 
+    /** 최소 인원(선택, null = 제한 없음) — 새 API(apps/api)가 모집 마감 때 미달 알림에 쓴다. Spring은 저장·조회하지 않는다. */
+    private Integer minParticipants;
+
     @Column(nullable = false)
     private LocalDateTime recruitmentEndDateTime;
 

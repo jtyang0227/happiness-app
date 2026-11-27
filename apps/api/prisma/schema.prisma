@@ -278,6 +278,7 @@ model gatherings {
   location                  String   @db.VarChar(300)
   location_intro            String?
   max_participants          Int
+  min_participants          Int?
   portrait_consent_rule     Boolean?
   preparation_note          String?
   recruitment_end_date_time DateTime @db.Timestamp(6)
