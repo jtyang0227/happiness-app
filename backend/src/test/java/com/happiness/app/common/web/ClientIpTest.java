@@ -32,4 +32,14 @@ class ClientIpTest {
     void 신뢰_헤더가_요청에_없으면_기본_방식으로_돌아간다() {
         assertThat(ClientIp.resolve(request("203.0.113.7"), "CF-Connecting-IP")).isEqualTo("203.0.113.7");
     }
+
+    @Test
+    void 신뢰_프록시_홉을_주면_오른쪽에서_N번째_값을_쓴다() {
+        // 클라이언트가 "1.2.3.4"를 써 보내고 Render 프록시가 실제 주소를 덧붙인 경우
+        assertThat(ClientIp.resolve(request("1.2.3.4, 203.0.113.7"), null, 1)).isEqualTo("203.0.113.7");
+        assertThat(ClientIp.resolve(request("1.2.3.4, 203.0.113.7, 10.1.1.1"), null, 2)).isEqualTo("203.0.113.7");
+        assertThat(ClientIp.resolve(request("203.0.113.7"), null, 3)).isEqualTo("203.0.113.7");
+        assertThat(ClientIp.parseHops("abc")).isZero();
+        assertThat(ClientIp.parseHops(" 1 ")).isEqualTo(1);
+    }
 }

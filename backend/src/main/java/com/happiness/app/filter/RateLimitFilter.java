@@ -29,6 +29,7 @@ public class RateLimitFilter implements Filter {
 
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private static final int MAX_BUCKETS = 50_000;
 
     @Value("${security.rate-limit.capacity:100}")
     private int capacity;
@@ -53,6 +54,8 @@ public class RateLimitFilter implements Filter {
         }
 
         String key = resolveKey(req);
+        // IP마다 버킷이 쌓여 메모리가 끝없이 늘지 않게 — 상한을 넘으면 비운다(IpBlockFilter allowCache와 같은 방식)
+        if (buckets.size() >= MAX_BUCKETS && !buckets.containsKey(key)) buckets.clear();
         Bucket bucket = buckets.computeIfAbsent(key, k -> createBucket());
 
         if (bucket.tryConsume(1)) {
