@@ -20,6 +20,10 @@ export class AdminJwtService {
       // Spring prod: jwt.secret=${JWT_SECRET} — 없으면 기동 실패
       throw new Error('ADMIN_JWT_SECRET이 설정되지 않았습니다 — 운영에서는 필수입니다.');
     }
+    if (configured === ADMIN_DEV_SECRET && (process.env.NODE_ENV ?? '') === 'production') {
+      // 저장소에 공개된 개발 기본값으로 서명하면 누구나 관리자 토큰을 만들 수 있다 — 운영에서는 기동하지 않는다
+      throw new Error('ADMIN_JWT_SECRET이 공개된 개발 기본값입니다 — 운영에서는 새 난수 값을 설정하세요.');
+    }
     const secret = configured || ADMIN_DEV_SECRET; // 빈 문자열(.env 예시 그대로)도 개발 기본값
     this.key = Buffer.from(secret, 'utf8');
     if (this.key.length < 32) throw new Error('JWT secret must be at least 32 characters');
