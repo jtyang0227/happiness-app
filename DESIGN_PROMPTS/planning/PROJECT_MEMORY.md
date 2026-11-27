@@ -23,7 +23,7 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **66개** 통과: `CoreFlowIntegrationTest` 56 + `ClientIpTest` 3 + `UploadImageShrinkerTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **70개** 통과 — `CoreFlowIntegrationTest`·`ClientIpTest`·`ImageSignatureTest`·`UploadImageShrinkerTest`·`InquiryEmailServiceTest`·`JwtTokenProviderTest`).
 - TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
@@ -73,6 +73,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **보안(11-27)**: 채팅에 노출됐던 Supabase service_role 키 재발급 → Render 교체, 새 DB에 `supabase-lockdown.sql`, Render에 `APP_TRUSTED_PROXY_HOPS=1`(승인 대기, `SECURITY_AUDIT_2026-11-27.md` 5절).
 - **새 배포 마무리(11-27)**: Render 비밀값 4개 → health UP → Vercel 배포 → 웹↔API 주소·CORS 연결 → `KEEPALIVE_URL` → Actions › Smoke → (선택) 도메인 → 마지막에 Railway·예전 Render 정리. Vercel Hobby는 상업적 사용 불가(수익 생기면 Cloudflare Pages).
 - **TS 전환 컷오버(11b)**: `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
 - **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 Spring 어드민은 prod 프로필에서 로그인부터 500일 가능성(lazy-init) — 작업 카드 있음.
@@ -86,7 +87,8 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
-| 11-27 | (이번 커밋) | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
+| 11-27 | (이번 커밋) | 보안 강화 — 업로드 매직 바이트, IP 위조 대응 옵션 `APP_TRUSTED_PROXY_HOPS`, Nest 보안 헤더·전역 속도 제한, 의존성(sharp·axios·Spring Boot 3.4.13), 어드민 JWT 기본값 거부 | `planning/SECURITY_AUDIT_2026-11-27.md` |
+| 11-27 | — | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
 | 11-27 | b88626b | Cloudflare Code Mode MCP(`cloudflare-api`, search 허용·execute 확인) 개발 도구로 추가 — Pages·DNS 조회용 | `docs/CLOUDFLARE_CODE_MODE_MCP.md` |
 | 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-24 | b2c07c0 | TS 전환 11a 컷오버 준비 — render.yaml 새 서비스 2개, 웹 전환 스위치 `WEB_APP_DIR`, `apps/web/vercel.json`, 스모크(`scripts/smoke.mjs`·Actions Smoke). 발견·수정: `dotenv` devDependency라 운영 설치에서 API 시작 실패. 발견: Spring 작업 탐색 PG 500 | `PROMPT_ts-cutover.md` |

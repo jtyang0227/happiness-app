@@ -14,11 +14,11 @@
 | S1 | ✅ | 프롬프트 작성 + 큐 등록 | |
 | S2 | ✅ | 비밀값 노출(추적 파일·이력·번들 env·기본 비밀값) | 추적 파일·git 이력 전체에 키 모양 문자열 0건, 번들 env는 자리표시자만. 수정: Nest 어드민이 운영에서 공개 개발 기본 JWT 비밀로도 기동하던 것 → 기동 거부 |
 | S3 | ✅ | 의존성 취약점(npm audit 6곳, Gradle) | sharp 0.34.5→0.35.5(업로드 이미지 처리 libvips·libheif·librsvg CVE), effect override 3.22.5(prisma CLI ReDoS), axios 1.7.2→1.21.1(웹·새 웹·모바일), frontend `npm audit fix`(치명 3→0, 59→36 — 남은 것은 react-scripts·firebase 메이저 필요, 빌드 도구·미사용 firestore), Spring Boot 3.4.5→3.4.13. 앱 API·어드민 웹 0건 |
-| S4 | ⏳ | 보안 헤더·CORS (Spring·Nest·정적 호스팅) | |
-| S5 | ⏳ | 레이트리밋·잠금·인메모리 맵 증가 | |
-| S6 | ⏳ | 입력·업로드 검증·SSRF·원시 SQL | |
-| S7 | ⏳ | 로그 민감정보 | |
-| S8 | ⏳ | 보고서·문서·전체 빌드 | |
+| S4 | ✅ | 보안 헤더·CORS (Spring·Nest·정적 호스팅) | Nest `security-headers.ts`(Spring과 같은 값)·X-Powered-By 끔·CORS 헤더 목록, 웹 `_headers`/`vercel.json` Referrer·Permissions-Policy |
+| S5 | ✅ | 레이트리밋·잠금·인메모리 맵 증가 | Nest 전역 100회/분, `APP_TRUSTED_PROXY_HOPS`(기본 그대로 — Render 설정은 제안 P2), 버킷 맵 5만 상한 |
+| S6 | ✅ | 입력·업로드 검증·SSRF·원시 SQL | 업로드 매직 바이트(HTML 위장 차단), 파라미터 누락 400을 Nest도 같게(095e0f0과 맞춤), SSRF·원시 SQL 문제 없음 |
+| S7 | ✅ | 로그 민감정보 | 비밀번호·토큰 로그 0건, 이메일 마스킹 — 변경 없음 |
+| S8 | ✅ | 보고서·문서·전체 빌드 | `SECURITY_AUDIT_2026-11-27.md`, Spring 70·계약 92 양쪽 통과 |
 
 ## 현재 묶음 — TypeScript 전면 전환 (요청: "스프링부트·리액트 안 써도 되니 최근 제일 많이 쓰는 언어로 전체 변경", 2026-11-24)
 
