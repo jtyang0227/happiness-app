@@ -1626,6 +1626,7 @@ Claude Code는 `.env`를 자동으로 읽지 않으므로 `set -a && source .env
   `trigger_build`(빌드 실행 — `.claude/settings.json`의 `permissions.ask`로 **항상 확인**). 패키지는 `JENKINS_USE_API_TOKEN`을 읽지 않고
   `JENKINS_PASSWORD`에 API 토큰을 넣으면 그대로 동작한다.
 - **playwright** — `npx -y @playwright/mcp@latest`(키 불필요).
+- **cloudflare-api** — Cloudflare 공식 Code Mode 원격 서버 `https://mcp.cloudflare.com/mcp`(OAuth, 키 불필요). 도구 `search`(OpenAPI 검색, 허용)·`execute`(API 호출 JS, `permissions.ask`로 항상 확인) 2개로 Cloudflare API 전체. Pages·DNS 조회용, 변경은 사용자 확인 후. 로컬 전용(클라우드 세션 접속 불가) — `docs/CLOUDFLARE_CODE_MODE_MCP.md`.
 
 **검증**: `claude mcp list` — 3개 모두 등록, 새 project 서버라 "Pending approval"(대화형 `claude`에서 한 번 승인), 환경변수 미설정 경고.
 Playwright `--version` 0.0.83, jenkins-mcp는 MCP `tools/list`로 도구 3개 응답 확인. GitHub 원격 서버는 클라우드 세션 네트워크 정책상 접속 불가(HTTP 000)라 미확인.

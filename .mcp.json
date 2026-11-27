@@ -44,6 +44,10 @@
         "-y",
         "@mskalski/lightroom-mcp@0.27.0"
       ]
+    },
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp"
     }
   }
 }

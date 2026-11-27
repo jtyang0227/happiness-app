@@ -10,10 +10,12 @@
       "mcp__claude_ai_Google_Drive__*",
       "mcp__Gmail__*",
       "mcp__jenkins__list_jobs",
-      "mcp__jenkins__get_build_status"
+      "mcp__jenkins__get_build_status",
+      "mcp__cloudflare-api__search"
     ],
     "ask": [
-      "mcp__jenkins__trigger_build"
+      "mcp__jenkins__trigger_build",
+      "mcp__cloudflare-api__execute"
     ],
     "defaultMode": "acceptEdits"
   },
