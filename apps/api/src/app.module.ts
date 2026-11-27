@@ -30,6 +30,7 @@ import { StorageController } from './storage/storage.controller.js';
 import { StorageService } from './storage/storage.service.js';
 import { BookingController } from './booking/booking.controller.js';
 import { BookingService } from './booking/booking.service.js';
+import { NotionSyncService } from './ops/notion-sync.service.js';
 import { DeliveryController } from './delivery/delivery.controller.js';
 import { MeetController } from './meet/meet.controller.js';
 import { AnalyticsController } from './analytics/analytics.controller.js';
@@ -76,6 +77,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     AutoTagService,
     SeriesService,
     BookingService,
+    NotionSyncService,
     GatheringNotificationService,
     GatheringPlacePollService,
     GatheringService,

@@ -3,6 +3,7 @@ import { AppError } from '../common/app-error.js';
 import { isBlank, javaTrim } from '../common/json-body.js';
 import { localDate, localDateTime, now, today } from '../common/time.js';
 import type { booking_availability, bookings } from '../generated/prisma/client.js';
+import { NotionSyncService } from '../ops/notion-sync.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export interface BookingRequest {
@@ -70,7 +71,7 @@ const isoWeekday = (d: Date) => ((d.getUTCDay() + 6) % 7) + 1;
 export class BookingService {
   private readonly log = new Logger('BookingService');
   private readonly rate = new Map<string, { count: number; start: number }>();
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly notion: NotionSyncService) {}
 
   private async artist(profileName: string) {
     const m = await this.prisma.members.findFirst({ where: { profile_name: profileName }, select: { id: true } });
@@ -134,6 +135,7 @@ export class BookingService {
       deposit_status: 'PENDING', balance_status: 'PENDING', created_at: now(),
     } });
     this.log.log(`New booking created: id=${b.id}, memberId=${memberId}, date=${localDate(req.shootDate)}`);
+    this.notion.bookingChanged(b);
     return toBookingResponse(b);
   }
 
@@ -158,6 +160,7 @@ export class BookingService {
       return cur instanceof Date || v instanceof Date ? (cur as Date | null)?.getTime() !== (v as Date | null)?.getTime() : cur !== v;
     });
     const saved = changed ? await this.prisma.bookings.update({ where: { id: b.id }, data }) : b;
+    if (changed) this.notion.bookingChanged(saved);
     return toBookingResponse(saved);
   }
 
