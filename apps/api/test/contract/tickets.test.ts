@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { closeDb, makeAdmin } from './db.js';
-import { IS_SPRING, PASSWORD, call, signupAndLogin, type User } from './helpers.js';
+import { closeDb, insertDeadJob, makeAdmin } from './db.js';
+import { BASE, IS_SPRING, PASSWORD, call, signupAndLogin, type User } from './helpers.js';
 
 /**
  * 예매 일정·알림·오픈 상태 (PROMPT_server-time-booking-module.md B·E·F·G·H) — Nest에만 있는 기능이라 Spring(8080)에서는 건너뛴다.
@@ -137,5 +137,48 @@ describe.skipIf(IS_SPRING)('tickets — 예매 일정 모듈', () => {
     const h = await call('GET', `/api/admin/tickets/phases/${past.phase.id}/history`, { token: admin.token });
     expect(h.body.data.statusLogs.map((l: any) => l.to)).toEqual(['CLOSED_CONFIRMED', 'OPEN_CONFIRMED', 'OPEN_CHECK_PENDING']);
     expect(h.body.data.verifications).toHaveLength(3);
+  }, 60_000);
+  it('v2 — 안 읽은 수·모두 읽음·켠 알림 목록·.ics·실패 작업 다시 시도', async () => {
+    const admin = await adminUser();
+    const fan = await signupAndLogin();
+    const sid = (await call('POST', '/api/admin/tickets/sessions', { token: admin.token, body: { title: '캘린더, 테스트; 공연', venue: '서울' } })).body.data.id;
+    const phase = (await call('POST', `/api/admin/tickets/sessions/${sid}/phases`, { token: admin.token, body: { name: '1차 예매', scheduledAt: at(3 * 86400_000) } })).body.data.phase;
+
+    expect((await call('GET', '/api/tickets/notifications/unread-count')).status).toBe(401);
+    expect((await call('GET', '/api/tickets/me/alerts', { token: fan.token })).body.data).toEqual([]);
+    await call('PUT', `/api/tickets/phases/${phase.id}/notification`, { token: fan.token, body: { offsets: ['24h', '10m'] } });
+    const alerts = (await call('GET', '/api/tickets/me/alerts', { token: fan.token })).body.data;
+    expect(alerts).toEqual([expect.objectContaining({ phaseId: phase.id, sessionId: sid, sessionTitle: '캘린더, 테스트; 공연', phaseName: '1차 예매', offsets: ['24h', '10m'] })]);
+
+    // 일정 변경 → 변경 고지 1건 → 안 읽은 수 1 → 모두 읽음 → 0
+    await call('PUT', `/api/admin/tickets/phases/${phase.id}/schedule`, { token: admin.token, body: { scheduledAt: at(4 * 86400_000), expectedRevision: 1, reason: '장소 사정' } });
+    await until(async () => (await call('GET', '/api/tickets/notifications/unread-count', { token: fan.token })).body.data.count >= 1);
+    const all = await call('POST', '/api/tickets/notifications/read-all', { token: fan.token });
+    expect(all.body.data.updated).toBeGreaterThanOrEqual(1);
+    expect((await call('GET', '/api/tickets/notifications/unread-count', { token: fan.token })).body.data.count).toBe(0);
+
+    // .ics — 공개, SEQUENCE는 revision, 쉼표·세미콜론 이스케이프, CRLF
+    const ics = await fetch(`${BASE}/api/tickets/phases/${phase.id}/calendar.ics`);
+    expect(ics.status).toBe(200);
+    expect(ics.headers.get('content-type')).toContain('text/calendar');
+    const txt = await ics.text();
+    expect(txt).toContain(`UID:ticket-phase-${phase.id}@happiness.io.kr`);
+    expect(txt).toContain('SEQUENCE:2');
+    expect(txt).toContain('캘린더\\, 테스트\\; 공연');
+    expect(txt.split('\r\n')[0]).toBe('BEGIN:VCALENDAR');
+    expect((await fetch(`${BASE}/api/tickets/phases/999999999/calendar.ics`)).status).toBe(404);
+
+    // 실패 작업 — 목록·다시 시도(DEAD만), 일반 회원 403
+    const jobId = await insertDeadJob(phase.id, 2);
+    expect((await call('GET', '/api/admin/tickets/jobs?status=DEAD', { token: fan.token })).status).toBe(403);
+    const dead = await call('GET', '/api/admin/tickets/jobs?status=DEAD', { token: admin.token });
+    expect(dead.body.data.find((j: any) => j.id === jobId)).toMatchObject({ status: 'DEAD', lastError: 'test: db down' });
+    expect((await call('GET', '/api/admin/tickets/jobs?status=WHAT', { token: admin.token })).status).toBe(400);
+    const retried = await call('POST', `/api/admin/tickets/jobs/${jobId}/retry`, { token: admin.token });
+    expect(retried.body.data).toEqual({ id: jobId, status: 'PENDING' });
+    const again = await call('POST', `/api/admin/tickets/jobs/${jobId}/retry`, { token: admin.token });
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe('JOB_NOT_DEAD');
+    expect((await call('POST', '/api/admin/tickets/jobs/999999999/retry', { token: admin.token })).status).toBe(404);
   }, 60_000);
 });

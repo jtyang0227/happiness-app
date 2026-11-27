@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { isoUtc } from '../time/time-sync.js';
 import { TimeSyncService } from '../time/time.controller.js';
 import { countdownBody } from './countdown.js';
+import { buildIcs } from './ics.js';
 import { applyVerification, OpenStatus, recalc, SCHEDULE_STATUSES, ScheduleStatus, TIME_SOURCES, timeBasedStatus } from './open-status.js';
 import { cancelMemberNotifies, enqueue, NewJob, reviveUnsubscribed } from './ticket-jobs.js';
 import { DEFAULT_OFFSETS, isValidTimezone, keys, OFFSETS, OffsetKey, parseOffsets, reminderMessage } from './ticket-time.js';
@@ -382,6 +383,68 @@ export class TicketService {
   async markRead(id: number, user: AuthUser) {
     const r = await this.prisma.ticket_notifications.updateMany({ where: { id, member_id: BigInt(user.id) }, data: { is_read: true } });
     if (!r.count) throw AppError.of('NOT_FOUND');
+  }
+
+  async unreadCount(user: AuthUser) {
+    return { count: await this.prisma.ticket_notifications.count({ where: { member_id: BigInt(user.id), is_read: false } }) };
+  }
+
+  async markAllRead(user: AuthUser) {
+    const r = await this.prisma.ticket_notifications.updateMany({ where: { member_id: BigInt(user.id), is_read: false }, data: { is_read: true } });
+    return { updated: r.count };
+  }
+
+  /** 내가 켠 알림 — 지난 지 24시간 넘은 단계는 뺀다 */
+  async myAlerts(user: AuthUser) {
+    const prefs = await this.prisma.ticket_notification_preferences.findMany({ where: { member_id: BigInt(user.id), enabled: true } });
+    if (!prefs.length) return [];
+    const since = new Date(Date.now() - 86400_000);
+    const phases = await this.prisma.booking_phases.findMany({ where: { id: { in: prefs.map((x) => x.booking_phase_id) }, scheduled_at: { gt: since } }, orderBy: { scheduled_at: 'asc' } });
+    const titles = new Map((await this.prisma.ticket_sessions.findMany({ where: { id: { in: phases.map((p) => p.session_id) } }, select: { id: true, title: true } })).map((x) => [x.id, x.title]));
+    const offsetsBy = new Map(prefs.map((x) => [x.booking_phase_id, x.offsets]));
+    return phases.map((p) => ({
+      phaseId: Number(p.id), sessionId: Number(p.session_id), sessionTitle: titles.get(p.session_id) ?? null, phaseName: p.name,
+      scheduledAt: iso(p.scheduled_at), scheduleStatus: p.schedule_status, openStatus: p.open_status,
+      offsets: (() => { try { return parseOffsets(offsetsBy.get(p.id) ?? ''); } catch { return []; } })(),
+    }));
+  }
+
+  /** 단계 하나를 .ics로 — 공개 정보만 담는다 */
+  async calendarIcs(phaseId: number) {
+    const p = await this.phaseOr404(phaseId);
+    const s = await this.prisma.ticket_sessions.findUniqueOrThrow({ where: { id: p.session_id } });
+    const base = (process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://happiness.io.kr' : 'http://localhost:3000')).replace(/\/+$/, '');
+    return buildIcs({
+      id: Number(p.id), name: p.name, scheduledAt: p.scheduled_at, revision: p.schedule_revision, scheduleStatus: p.schedule_status,
+      sessionTitle: s.title, venue: s.venue, url: `${base}/tickets/${Number(s.id)}`, updatedAt: p.updated_at,
+    }, new Date());
+  }
+
+  // ───────────── 관리자: 작업 큐 ─────────────
+
+  async listJobs(status: string, limit: number) {
+    if (!['DEAD', 'PENDING', 'CLAIMED', 'SKIPPED'].includes(status)) throw AppError.badInput('status는 DEAD·PENDING·CLAIMED·SKIPPED 중 하나입니다.');
+    const rows = await this.prisma.ticket_scheduled_jobs.findMany({ where: { status }, orderBy: { updated_at: 'desc' }, take: Math.min(Math.max(limit, 1), 100) });
+    return rows.map((j) => ({
+      id: Number(j.id), jobType: j.job_type, dedupeKey: j.dedupe_key, phaseId: j.booking_phase_id ? Number(j.booking_phase_id) : null,
+      revision: j.schedule_revision, runAt: iso(j.run_at), status: j.status, attempts: j.attempts, maxAttempts: j.max_attempts,
+      timeSensitive: j.time_sensitive, lastError: j.last_error, updatedAt: iso(j.updated_at),
+    }));
+  }
+
+  /** DEAD 작업만 다시 대기열로. 늦은 알림은 처리기가 유예 시간 검사로 SKIPPED 처리하므로 늦게 나가지 않는다 */
+  async retryJob(id: number) {
+    const now = new Date();
+    const r = await this.prisma.ticket_scheduled_jobs.updateMany({
+      where: { id, status: 'DEAD' },
+      data: { status: 'PENDING', attempts: 0, run_at: now, claimed_by: null, lease_until: null, finished_at: null, updated_at: now },
+    });
+    if (!r.count) {
+      const exists = await this.prisma.ticket_scheduled_jobs.findUnique({ where: { id }, select: { status: true } });
+      if (!exists) throw err(404, 'JOB_NOT_FOUND', '작업을 찾을 수 없습니다.');
+      throw err(409, 'JOB_NOT_DEAD', `실패(DEAD) 상태인 작업만 다시 시도할 수 있습니다(지금: ${exists.status}).`);
+    }
+    return { id, status: 'PENDING' };
   }
 
   /** 관리자 본인에게 4가지 문구 미리보기를 보낸다(다른 사람에게는 안 감) */

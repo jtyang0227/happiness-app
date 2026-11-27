@@ -116,6 +116,7 @@ export default function AdminTicketsPage() {
                         <td style={{ ...td, whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                             <Button size="sm" variant="secondary" onClick={() => setModal({ type: 'change', phase: p })}>변경</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setModal({ type: 'create', session: { id: p.sessionId, title: p.sessionTitle } })}>＋ 단계</Button>
                             <Button size="sm" variant="ghost" onClick={async () => { try { await adminTicketApi.verifySchedule(p.id); flash('공식 일정 재확인 시각을 기록했습니다.'); load(); } catch (e) { flash(apiError(e)); } }}>재확인</Button>
                             <Button size="sm" variant="ghost" onClick={() => setModal({ type: 'verify', phase: p })}>오픈 확정</Button>
                             <Button size="sm" variant="ghost" onClick={async () => { try { setHistory(await adminTicketApi.history(p.id)); } catch (e) { flash(apiError(e)); } }}>이력</Button>
@@ -159,6 +160,7 @@ export default function AdminTicketsPage() {
               {data.unknownDeliveries ? ` · 발송 여부 불명 ${data.unknownDeliveries}` : ''}
             </p>
           )}
+          {data?.queue?.dead > 0 && <DeadJobs onDone={(m) => { flash(m); load(); }} />}
           {!data?.workers?.length ? <p style={{ color: COLORS.textMuted, fontSize: 14 }}>하트비트가 없습니다. 처리기가 꺼져 있을 수 있습니다(TICKET_WORKER_ENABLED).</p> : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
@@ -191,7 +193,7 @@ export default function AdminTicketsPage() {
         </section>
       </div>
 
-      {modal?.type === 'create' && <CreateModal onClose={() => setModal(null)} onDone={(m) => { setModal(null); flash(m); load(); }} />}
+      {modal?.type === 'create' && <CreateModal session={modal.session} onClose={() => setModal(null)} onDone={(m) => { setModal(null); flash(m); load(); }} />}
       {modal?.type === 'change' && <ChangeModal phase={modal.phase} onClose={() => setModal(null)} onDone={(m) => { setModal(null); flash(m); load(); }} />}
       {modal?.type === 'verify' && <VerifyModal phase={modal.phase} onClose={() => setModal(null)} onDone={(m) => { setModal(null); flash(m); load(); }} />}
     </AdminLayout>
@@ -222,8 +224,8 @@ function Field({ label, children, hint }: { label: string; children?: React.Reac
   );
 }
 
-function CreateModal({ onClose, onDone }) {
-  const [f, setF] = useState({ title: '', venue: '', name: '일반예매', when: '', timeSource: 'OFFICIAL_NOTICE', sourceUrl: '' });
+function CreateModal({ session, onClose, onDone }: { session?: { id: number; title: string }; onClose: () => void; onDone: (m: string) => void }) {
+  const [f, setF] = useState({ title: '', venue: '', name: session ? '' : '일반예매', when: '', timeSource: 'OFFICIAL_NOTICE', sourceUrl: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
@@ -232,10 +234,11 @@ function CreateModal({ onClose, onDone }) {
     setBusy(true);
     setErr('');
     try {
-      const s = await adminTicketApi.createSession({ title: f.title, venue: f.venue });
+      // 기존 공연에 단계를 더할 때는 공연을 새로 만들지 않는다
+      const s = session ?? await adminTicketApi.createSession({ title: f.title, venue: f.venue });
       const iso = kstInputToIso(f.when);
       const r = await adminTicketApi.createPhase(s.id, { name: f.name, announcedAt: iso, scheduledAt: iso, timeSource: f.timeSource, sourceUrl: f.sourceUrl || undefined, timezone: 'Asia/Seoul' });
-      onDone(`일정을 등록했습니다.${r.warnings?.length ? ` (주의: ${r.warnings.join(' / ')})` : ''}`);
+      onDone(`${session ? '단계를 추가했습니다.' : '일정을 등록했습니다.'}${r.warnings?.length ? ` (주의: ${r.warnings.join(' / ')})` : ''}`);
     } catch (e2) {
       setErr(apiError(e2, '등록하지 못했습니다.'));
     } finally {
@@ -243,10 +246,12 @@ function CreateModal({ onClose, onDone }) {
     }
   };
   return (
-    <Modal title="새 예매 일정" onClose={onClose}>
+    <Modal title={session ? `단계 추가 — ${session.title}` : '새 예매 일정'} onClose={onClose}>
       <form onSubmit={submit}>
-        <Field label="공연·행사 이름"><input style={input} required maxLength={200} value={f.title} onChange={set('title')} /></Field>
-        <Field label="장소"><input style={input} maxLength={200} value={f.venue} onChange={set('venue')} /></Field>
+        {!session && <>
+          <Field label="공연·행사 이름"><input style={input} required maxLength={200} value={f.title} onChange={set('title')} /></Field>
+          <Field label="장소"><input style={input} maxLength={200} value={f.venue} onChange={set('venue')} /></Field>
+        </>}
         <Field label="예매 단계"><input style={input} required maxLength={50} value={f.name} onChange={set('name')} /></Field>
         <Field label="예매 시작 (KST)" hint="공지에 적힌 시각. KST로 입력하면 UTC로 저장합니다."><input type="datetime-local" step={1} style={input} required value={f.when} onChange={set('when')} /></Field>
         <Field label="출처"><select style={input} value={f.timeSource} onChange={set('timeSource')}>{Object.entries(TIME_SOURCE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
@@ -359,5 +364,67 @@ function HistoryPanel({ history, onClose }) {
         </ul>
       )}
     </section>
+  );
+}
+
+/** 실패(DEAD) 작업 — 원인을 보고 다시 시도(이중 확인). 늦은 알림은 처리기가 유예 시간을 검사해 보내지 않는다 */
+function DeadJobs({ onDone }: { onDone: (m: string) => void }) {
+  const [jobs, setJobs] = useState<any[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const load = () => adminTicketApi.jobs('DEAD').then(setJobs).catch((e) => setErr(apiError(e, '목록을 불러오지 못했습니다.')));
+  const retry = async (id: number) => {
+    setBusy(true);
+    setErr('');
+    try {
+      await adminTicketApi.retryJob(id);
+      setConfirmId(null);
+      await load();
+      onDone(`작업 #${id}을 다시 대기열에 넣었습니다.`);
+    } catch (e) {
+      setErr(apiError(e, '다시 시도하지 못했습니다.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ border: `1px solid ${COLORS.dangerTonal}`, borderRadius: 12, padding: 12, margin: '0 0 12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <b style={{ fontSize: 14, color: COLORS.dangerDark }}>실패한 작업</b>
+        <Button size="sm" variant="secondary" onClick={() => { const next = !open; setOpen(next); if (next) load(); }}>{open ? '접기' : '보기'}</Button>
+      </div>
+      {open && (
+        <>
+          <p style={{ fontSize: 12, color: COLORS.textMuted, margin: '8px 0' }}>다시 시도하면 즉시 대기열로 돌아갑니다. 알림 작업이 이미 늦었으면 보내지 않고 건너뜁니다.</p>
+          {err && <p role="alert" style={{ color: COLORS.dangerDark, fontSize: 13 }}>{err}</p>}
+          {jobs === null ? <div style={{ height: 48, background: COLORS.bg, borderRadius: 8 }} /> : jobs.length === 0 ? <p style={{ fontSize: 13, color: COLORS.textMuted }}>없습니다.</p> : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+                <thead><tr>{['#', '종류', '단계 · r', '시도', '마지막 오류', '시각', ''].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {jobs.map((j) => (
+                    <tr key={j.id}>
+                      <td style={td}>{j.id}</td>
+                      <td style={td}>{j.jobType === 'NOTIFY' ? '알림' : '알림 재계산'}</td>
+                      <td style={td}>{j.phaseId ?? '—'} · r{j.revision ?? '—'}</td>
+                      <td style={td}>{j.attempts}/{j.maxAttempts}</td>
+                      <td style={{ ...td, color: COLORS.dangerDark, maxWidth: 260, overflowWrap: 'anywhere' }}>{j.lastError ?? '—'}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>{formatKst(Date.parse(j.updatedAt))}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                        {confirmId === j.id
+                          ? <span style={{ display: 'inline-flex', gap: 4 }}><Button size="sm" variant="danger" loading={busy} onClick={() => retry(j.id)}>{busy ? '처리 중' : '확정'}</Button><Button size="sm" variant="ghost" onClick={() => setConfirmId(null)}>취소</Button></span>
+                          : <Button size="sm" variant="secondary" onClick={() => setConfirmId(j.id)}>다시 시도</Button>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

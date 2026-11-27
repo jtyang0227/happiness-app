@@ -150,3 +150,43 @@ describe('D — 카운트다운 응답', () => {
     expect(countdownBody(phase, before(1000), 'UNKNOWN', null).accuracy.level).toBe('WARN');
   });
 });
+
+describe('v2 — iCalendar(.ics)', async () => {
+  const { buildIcs, foldLine, icsDate, icsText } = await import('../../src/ticket/ics.js');
+  const base = { id: 7, name: '1차 예매', scheduledAt: T0, revision: 3, scheduleStatus: 'CHANGED', sessionTitle: '사진전, 서울; 앙코르', venue: '서울', url: 'http://localhost:3000/tickets/2', updatedAt: T0 };
+
+  it('UTC 시각·고정 UID·SEQUENCE=revision·CRLF', () => {
+    const s = buildIcs(base, T0);
+    expect(icsDate(T0)).toBe('20261201T110000Z');
+    expect(s).toContain('DTSTART:20261201T110000Z');
+    expect(s).toContain('UID:ticket-phase-7@happiness.io.kr');
+    expect(s).toContain('SEQUENCE:3');
+    expect(s).toContain('STATUS:CONFIRMED');
+    expect(s).toContain('TRIGGER:-PT10M');
+    expect(s.endsWith('\r\n')).toBe(true);
+    expect(s.replace(/\r\n/g, '')).not.toMatch(/\n/);
+  });
+
+  it('텍스트 이스케이프', () => {
+    expect(icsText('a,b;c\\d\ne')).toBe('a\\,b\\;c\\\\d\\ne');
+    expect(buildIcs(base, T0)).toContain('사진전\\, 서울\\; 앙코르');
+  });
+
+  it('75바이트 접기 — 한글을 가르지 않고 이어지는 줄은 공백으로 시작', () => {
+    const long = 'SUMMARY:' + '가'.repeat(60);
+    const folded = foldLine(long).split('\r\n');
+    expect(folded.length).toBeGreaterThan(1);
+    for (const [i, l] of folded.entries()) {
+      expect(Buffer.byteLength(l, 'utf8')).toBeLessThanOrEqual(75);
+      if (i > 0) expect(l.startsWith(' ')).toBe(true);
+    }
+    expect(folded.map((l, i) => (i ? l.slice(1) : l)).join('')).toBe(long);
+  });
+
+  it('취소는 STATUS:CANCELLED, 알림 없음 / 미확정은 TENTATIVE', () => {
+    const c = buildIcs({ ...base, scheduleStatus: 'CANCELLED' }, T0);
+    expect(c).toContain('STATUS:CANCELLED');
+    expect(c).not.toContain('VALARM');
+    expect(buildIcs({ ...base, scheduleStatus: 'TENTATIVE' }, T0)).toContain('STATUS:TENTATIVE');
+  });
+});

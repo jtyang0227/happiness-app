@@ -71,6 +71,8 @@ const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
 const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
 const TicketCountdownPage = lazyPage(() => import('./pages/TicketCountdownPage'));
+const TicketListPage = lazyPage(() => import('./pages/TicketListPage'));
+const TicketAlertsPage = lazyPage(() => import('./pages/TicketAlertsPage'));
 const AdminTicketsPage = lazyPage(() => import('./pages/admin/AdminTicketsPage'));
 const WorkspacePage = lazyPage(() => import('./pages/WorkspacePage'));
 const PortfolioBuilderPage = lazyPage(() => import('./pages/PortfolioBuilderPage'));
@@ -153,6 +155,8 @@ function AppShell() {
           {/* 탐색 — 의뢰인이 로그인 없이 작가·작업을 찾을 수 있게 공개 (PLANNING_work-discovery.md) */}
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/spots/:id" element={<SpotDetailPage />} />
+          <Route path="/tickets" element={<TicketListPage />} />
+          <Route path="/tickets/alerts" element={<ProtectedRoute><TicketAlertsPage /></ProtectedRoute>} />
           <Route path="/tickets/:id" element={<TicketCountdownPage />} />
 
           {/* Protected */}

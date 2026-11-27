@@ -85,6 +85,10 @@ export default function TicketCountdownPage() {
 
   return (
     <Shell>
+      <nav aria-label="예매 일정 이동" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontSize: 14 }}>
+        <Link to="/tickets" style={{ color: COLORS.textSecondary, textDecoration: 'none', fontWeight: 600 }}>← 전체 일정</Link>
+        {user && <Link to="/tickets/alerts" style={{ color: COLORS.primary, textDecoration: 'none', fontWeight: 700 }}>🔔 내 알림</Link>}
+      </nav>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: COLORS.text, margin: '0 0 4px' }}>{session.title}</h1>
       {session.venue && <p style={{ margin: 0, color: COLORS.textSecondary, fontSize: 14 }}>📍 {session.venue}</p>}
 
@@ -131,6 +135,15 @@ export default function TicketCountdownPage() {
       </section>
 
       {!stopped && <AlertCard phaseId={cd.phaseId} loggedIn={!!user} />}
+      {!stopped && (
+        <section style={{ background: COLORS.surface, borderRadius: 20, padding: 20, marginTop: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <a href={ticketApi.icsUrl(cd.phaseId)} download={`ticket-${cd.phaseId}.ics`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 12, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontWeight: 700, fontSize: 14, textDecoration: 'none', background: COLORS.surface }}>
+            📅 캘린더에 추가
+          </a>
+          <span style={{ fontSize: 12, color: COLORS.textMuted, flex: '1 1 200px' }}>휴대폰·PC 캘린더에 10분 전 알림과 함께 넣어요. 일정이 바뀌면 다시 받아 주세요.</span>
+        </section>
+      )}
     </Shell>
   );
 }

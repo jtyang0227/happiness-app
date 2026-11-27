@@ -10,6 +10,13 @@ export const ticketApi = {
   getAlert:      (phaseId)          => apiClient.get(`/tickets/phases/${phaseId}/notification`).then(d),
   saveAlert:     (phaseId, offsets) => apiClient.put(`/tickets/phases/${phaseId}/notification`, { offsets, enabled: offsets.length > 0 }).then(d),
   removeAlert:   (phaseId)          => apiClient.delete(`/tickets/phases/${phaseId}/notification`),
+  myAlerts:      ()                 => apiClient.get('/tickets/me/alerts').then(d),
+  notifications: (page = 0)         => apiClient.get('/tickets/notifications', { params: { page, size: 20 } }).then(d),
+  unreadCount:   ()                 => apiClient.get('/tickets/notifications/unread-count').then(d),
+  markRead:      (id)               => apiClient.put(`/tickets/notifications/${id}/read`),
+  readAll:       ()                 => apiClient.post('/tickets/notifications/read-all').then(d),
+  /** .ics 파일 주소 — 공개라 토큰 없이 브라우저가 바로 내려받는다 */
+  icsUrl:        (phaseId)          => `${String(apiClient.defaults.baseURL ?? '').replace(/\/$/, '')}/tickets/phases/${phaseId}/calendar.ics`,
   timeNow:       ()                 => apiClient.get('/time/now', { params: { client_sent_at: Date.now() } }).then(d),
   timeStatus:    ()                 => apiClient.get('/time/status').then(d),
 };
@@ -24,6 +31,8 @@ export const adminTicketApi = {
   history:        (pid)           => apiClient.get(`/admin/tickets/phases/${pid}/history`).then(d),
   testAlert:      (pid)           => apiClient.post(`/admin/tickets/phases/${pid}/test-notification`).then(d),
   diagnostics:    ()              => apiClient.post('/admin/tickets/diagnostics').then(d),
+  jobs:           (status = 'DEAD') => apiClient.get('/admin/tickets/jobs', { params: { status } }).then(d),
+  retryJob:       (id)            => apiClient.post(`/admin/tickets/jobs/${id}/retry`).then(d),
 };
 
 /** 서버 사유가 있으면 그것을, 없으면 기본 문구 */

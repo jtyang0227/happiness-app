@@ -17,6 +17,7 @@
 | T4 | ✅ | API 공개·회원·관리자 + 단위 테스트 | |
 | T5 | ✅ | D 카운트다운(apps/web `/tickets/:id`) + H 관리자 화면(`/admin/tickets`) | |
 | T6 | ✅ | 로컬 PG 검증(db pull 대조·흐름), 문서 | |
+| T7 | ✅ | v2 고도화 — 알림함·켠 알림·.ics·`/tickets` 목록·어드민 단계 추가·DEAD 재시도 (`PLANNING_ticket-module-v2.md`) | 계약 95/95, 단위 44 |
 
 ## 현재 묶음 — TypeScript 전면 전환 (요청: "스프링부트·리액트 안 써도 되니 최근 제일 많이 쓰는 언어로 전체 변경", 2026-11-24)
 

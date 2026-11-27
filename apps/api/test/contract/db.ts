@@ -38,3 +38,13 @@ export async function newsletterToken(memberId: number, email: string): Promise<
   const r = await pool.query('SELECT token FROM newsletter_subscribers WHERE member_id = $1 AND email = $2', [memberId, email]);
   return r.rows[0].token;
 }
+
+/** 예매 모듈 — 실패(DEAD)로 끝난 재계산 작업 하나(처리기가 만들 상황을 흉내) */
+export async function insertDeadJob(phaseId: number, revision: number): Promise<number> {
+  const r = await pool.query(
+    `INSERT INTO ticket_scheduled_jobs (job_type, dedupe_key, payload, booking_phase_id, schedule_revision, run_at, status, time_sensitive, attempts, max_attempts, last_error, finished_at, created_at, updated_at)
+     VALUES ('RECALC_NOTIFICATIONS', $1, $2, $3, $4, NOW(), 'DEAD', false, 5, 5, 'test: db down', NOW(), NOW(), NOW()) RETURNING id`,
+    [`test-dead:${phaseId}:${Date.now()}:${Math.random()}`, JSON.stringify({ phaseId, revision }), phaseId, revision],
+  );
+  return Number(r.rows[0].id);
+}

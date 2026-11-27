@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseIntPipe, Post, Put, Query, Res } from '@nestjs/common';
 import { AuthUser, CurrentUser, Public, Roles } from '../auth/auth.guard.js';
 import { ok } from '../common/api-response.js';
 import { optionalInt } from '../common/params.js';
@@ -43,6 +43,33 @@ export class TicketController {
   async deletePreference(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     await this.tickets.deletePreference(id, user);
     return ok();
+  }
+
+  @Get('notifications/unread-count')
+  async unreadCount(@CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.unreadCount(user));
+  }
+
+  @Post('notifications/read-all')
+  @HttpCode(200)
+  async readAll(@CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.markAllRead(user));
+  }
+
+  @Get('me/alerts')
+  async myAlerts(@CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.myAlerts(user));
+  }
+
+  /** 기기 캘린더로 가져가기(RFC 5545). 래퍼 없이 파일 자체를 돌려준다 */
+  @Public()
+  @Get('phases/:id/calendar.ics')
+  async ics(@Param('id', ParseIntPipe) id: number, @Res() res: any) {
+    const body = await this.tickets.calendarIcs(id);
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="ticket-${id}.ics"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(body);
   }
 
   @Get('notifications')
@@ -125,6 +152,17 @@ export class AdminTicketController {
   @HttpCode(200)
   async test(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     return ok(await this.tickets.testNotification(id, user));
+  }
+
+  @Get('jobs')
+  async jobs(@Query('status') status?: string, @Query('limit') limit?: string) {
+    return ok(await this.tickets.listJobs(status ?? 'DEAD', optionalInt(limit, 'limit', 50)));
+  }
+
+  @Post('jobs/:id/retry')
+  @HttpCode(200)
+  async retry(@Param('id', ParseIntPipe) id: number) {
+    return ok(await this.tickets.retryJob(id));
   }
 
   /** 진단 — 시계 재측정 + 큐·처리기 점검 결과 */

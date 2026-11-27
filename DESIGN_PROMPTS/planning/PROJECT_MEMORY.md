@@ -84,6 +84,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-27 | (PR #10) | 예매 모듈 v2 — `/tickets` 목록·`/tickets/alerts` 알림함·.ics 캘린더 추가·어드민 단계 추가·DEAD 작업 재시도 | `planning/PLANNING_ticket-module-v2.md` |
 | 11-27 | (PR #10) | 예매 일정·알림·오픈 상태 모듈 — Nest `src/ticket`(일정 이력·DB 작업 큐·시간 가드·인앱 알림 24h/1h/10m/1m·오픈 상태 전이) + 웹 `/tickets/:id`·`/admin/tickets`. 테이블 10개는 Spring 엔티티로. 자동 예매 없음 | CLAUDE.md TS 절, `planning/PLANNING_server-time.md` |
 | 11-27 | (PR #10) | 서버 시간 표준화 — Nest `/api/time/now`·`status`(UTC·KST ISO 8601, SNTP 오차 등급) + 어드민 시간 동기화 카드·진단. | `planning/PLANNING_server-time.md` |
 | 11-27 | (이번 커밋) | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
@@ -109,7 +110,7 @@
 | 10-20 | — | 메뉴 4개 통합, 작업 노트·작업 탐색·감상·초안·크레딧·에디터 추천, 무드보드·공유, 비슷한 사진, 캐러셀 내보내기 | `planning/WORK_QUEUE.md`, `PLANNING_nav-consolidation.md` 등 |
 
 ## 10. 알려진 갭 (손대지 않은 것)
-- 예매 일정 모듈: 알림은 인앱만(이메일·푸시 없음), 예매처 자동 확인 없음(관리자 확인 기록), Nest에만 있어 컷오버 전 운영엔 없음.
+- 예매 일정 모듈: 알림은 인앱 + .ics 파일(이메일·푸시·구독형 캘린더 없음, 웹 헤더 배지 없음), 예매처 자동 확인 없음(관리자 확인 기록), Nest에만 있어 컷오버 전 운영엔 없음.
 - 모바일 미구현: 출사 스팟 탐색·상세·사진 연결(모임 상세의 투표·배지만), 보드 목록·공유, 크레딧 편집, 추천사 연결, 모임 생성·관리, 웹 "미수금" 탭, AI 챗봇. 웹에는 차단 UI 없음.
 - rate limit·로그인 잠금이 전부 인메모리(인스턴스 여러 개면 따로 셈), access token은 비밀번호 변경 후에도 30분 유효.
 - `SeriesController` 사진 목록에 작성자 정보 미첨부, 시리즈 커버 조회 N+1, 모임 피드 `likedByMe` 새로고침 문제, `AdminTagsPage`는 mock.
