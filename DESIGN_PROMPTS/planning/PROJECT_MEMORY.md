@@ -73,6 +73,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **모임 알림 보강 확인**: `gatherings.min_participants` 컬럼 추가(운영 반영) 승인, 진짜 푸시(FCM) 도입 여부 — `PLANNING_gathering-schedule-reminders.md` "사용자 확인".
 - **SNAPDAY 외부 키**: 새 API 서버에 `GEMINI_API_KEY`(AI 실제 추천)·`HOLIDAY_API_KEY`(공공데이터포털 특일 정보) — 없으면 샘플·수동 공휴일 등록.
 - **TS 전환 컷오버(11b)**: **먼저 운영 DB에 SNAPDAY 표 추가 + Prisma 기준선 기록**(`apps/api/scripts/prisma-baseline.sh app check→apply→resolve`, 어드민도 — B-1 "먼저"). 그다음 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
 - **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 어드민은 7월 master(c35e964)라 새 어드민 API 전에 `apps/api/prisma/admin/upgrade/2026-11-25_july-to-november.sql` 실행(lazy-init 500은 운영에 없는 11월 브랜치 버그).
@@ -86,6 +87,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-27 | 774730e·76fce3f | 모임 일정·인원·알림 — 최소 인원, 리마인더(마감 임박·전날·곧 시작), 정원·미달·새 모임·이번 달 모집 소식 알림, 모임 시간대(9시간 늦은 전환) 수정. 새 API·웹만, 브랜치 project-thread-b043ta | `planning/PLANNING_gathering-schedule-reminders.md` |
 | 11-27 | (이번 커밋) | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
 | 11-27 | b88626b | Cloudflare Code Mode MCP(`cloudflare-api`, search 허용·execute 확인) 개발 도구로 추가 — Pages·DNS 조회용 | `docs/CLOUDFLARE_CODE_MODE_MCP.md` |
 | 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
