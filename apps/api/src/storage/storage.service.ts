@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -24,7 +25,8 @@ export class StorageService {
     if (!ALLOWED_TYPES.has(file.mimetype)) throw new StorageError('허용되지 않는 파일 형식입니다. (JPEG, PNG, WebP, GIF만 허용)');
     const name = file.originalname;
     const ext = name && name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : 'jpg';
-    return this.uploadBytes(file.buffer, `${folder}/${randomUUID()}.${ext}`, file.mimetype);
+    const shrunk = await shrinkUpload(file.buffer, file.mimetype, ext);
+    return this.uploadBytes(shrunk.bytes, `${folder}/${randomUUID()}.${shrunk.ext}`, file.mimetype);
   }
 
   async uploadBytes(bytes: Buffer, objectKey: string, contentType: string): Promise<string> {
@@ -60,5 +62,28 @@ export class StorageService {
       const key = key1024.replace('_1024.', `_${size}.`);
       try { await this.deleteImage(key); } catch (e) { this.log.warn(`사진 변형 삭제 실패(무시하고 계속): ${key} - ${(e as Error).message}`); }
     }
+  }
+}
+
+/**
+ * Spring UploadImageShrinker 1:1 — JPEG·PNG만, 긴 변 2048px 안으로·JPEG 품질 85로 다시 인코딩.
+ * PNG는 기준 안이면 그대로, 결과가 원본보다 크거나 읽을 수 없으면 원본. GIF·WebP는 손대지 않는다.
+ */
+export async function shrinkUpload(original: Buffer, contentType: string, ext: string): Promise<{ bytes: Buffer; ext: string }> {
+  const MAX_EDGE = 2048;
+  if (contentType !== 'image/jpeg' && contentType !== 'image/png') return { bytes: original, ext };
+  try {
+    const meta = await sharp(original).metadata();
+    if (!meta.width || !meta.height) return { bytes: original, ext };
+    const tooBig = Math.max(meta.width, meta.height) > MAX_EDGE;
+    const jpeg = contentType === 'image/jpeg';
+    if (!tooBig && !jpeg) return { bytes: original, ext };
+    let img = sharp(original).rotate();
+    if (tooBig) img = img.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' });
+    const out = await (jpeg ? img.jpeg({ quality: 85 }) : img.png()).toBuffer();
+    if (out.length >= original.length) return { bytes: original, ext };
+    return { bytes: out, ext: jpeg ? 'jpg' : 'png' };
+  } catch {
+    return { bytes: original, ext };
   }
 }

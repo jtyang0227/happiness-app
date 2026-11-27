@@ -1702,4 +1702,14 @@ class CoreFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].wantsFeedback").value(true));
     }
+
+    @Test
+    void malformed_requests_return_4xx_not_500() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{bad"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("C002"));
+        mvc.perform(get("/api/photos/abc")).andExpect(status().isBadRequest());
+        User u = signupAndLogin();
+        mvc.perform(post("/api/series/1/photos/2").header("Authorization", bearer(u)))
+                .andExpect(status().isMethodNotAllowed()).andExpect(jsonPath("$.code").value("C003"));
+    }
 }

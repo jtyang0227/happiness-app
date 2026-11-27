@@ -23,7 +23,7 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **65개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `UploadImageShrinkerTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **66개** 통과: `CoreFlowIntegrationTest` 56 + `ClientIpTest` 3 + `UploadImageShrinkerTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).

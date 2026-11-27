@@ -23,7 +23,7 @@ export class JwtService {
   readonly refreshTtlMs = Number(process.env.JWT_REFRESH_TOKEN_EXPIRY_MS ?? 604_800_000);
 
   constructor() {
-    let secret = process.env.JWT_SECRET ?? DEV_DEFAULT_SECRET;
+    let secret = process.env.JWT_SECRET || DEV_DEFAULT_SECRET; // 빈 문자열(.env 예시 그대로)도 기본값 — Spring ${JWT_SECRET:기본값}과 같은 동작
     const prod = (process.env.NODE_ENV ?? '') === 'production';
     const weak = secret === DEV_DEFAULT_SECRET || Buffer.byteLength(secret, 'utf8') < 32;
     if (prod && weak) {

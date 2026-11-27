@@ -20,7 +20,7 @@ export class AdminJwtService {
       // Spring prod: jwt.secret=${JWT_SECRET} — 없으면 기동 실패
       throw new Error('ADMIN_JWT_SECRET이 설정되지 않았습니다 — 운영에서는 필수입니다.');
     }
-    const secret = configured ?? ADMIN_DEV_SECRET;
+    const secret = configured || ADMIN_DEV_SECRET; // 빈 문자열(.env 예시 그대로)도 개발 기본값
     this.key = Buffer.from(secret, 'utf8');
     if (this.key.length < 32) throw new Error('JWT secret must be at least 32 characters');
     // jjwt Keys.hmacShaKeyFor + signWith(key): 키 길이로 알고리즘 선택
