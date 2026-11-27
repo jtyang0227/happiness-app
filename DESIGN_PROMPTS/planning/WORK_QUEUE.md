@@ -13,7 +13,7 @@
 |---|---|---|---|
 | S1 | ✅ | 프롬프트 작성 + 큐 등록 | |
 | S2 | ✅ | 비밀값 노출(추적 파일·이력·번들 env·기본 비밀값) | 추적 파일·git 이력 전체에 키 모양 문자열 0건, 번들 env는 자리표시자만. 수정: Nest 어드민이 운영에서 공개 개발 기본 JWT 비밀로도 기동하던 것 → 기동 거부 |
-| S3 | ⏳ | 의존성 취약점(npm audit 6곳, Gradle) | |
+| S3 | ✅ | 의존성 취약점(npm audit 6곳, Gradle) | sharp 0.34.5→0.35.5(업로드 이미지 처리 libvips·libheif·librsvg CVE), effect override 3.22.5(prisma CLI ReDoS), axios 1.7.2→1.21.1(웹·새 웹·모바일), frontend `npm audit fix`(치명 3→0, 59→36 — 남은 것은 react-scripts·firebase 메이저 필요, 빌드 도구·미사용 firestore), Spring Boot 3.4.5→3.4.13. 앱 API·어드민 웹 0건 |
 | S4 | ⏳ | 보안 헤더·CORS (Spring·Nest·정적 호스팅) | |
 | S5 | ⏳ | 레이트리밋·잠금·인메모리 맵 증가 | |
 | S6 | ⏳ | 입력·업로드 검증·SSRF·원시 SQL | |
