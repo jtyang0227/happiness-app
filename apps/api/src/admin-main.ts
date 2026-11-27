@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NextFunction, Request, Response } from 'express';
 import { AdminAppModule } from './admin/admin-app.module.js';
 import { captureRoutes } from './admin/common/admin-routes.js';
+import { securityHeaders } from './common/security-headers.js';
 
 /**
  * 어드민 API 진입점 — happiness-admin backend(Spring Boot, 8081)를 대체한다. 앱 API(main.ts)와 별도 프로세스·포트.
@@ -56,6 +57,8 @@ async function bootstrap() {
   // Spring 어드민 prod 기본값은 '*'(경고 로그) — 운영에서는 어드민 프론트 도메인만
   const patterns = (process.env.ADMIN_CORS_ALLOWED_ORIGINS ?? 'http://localhost:3001').split(',').map((s) => s.trim()).filter(Boolean);
   if (patterns.includes('*')) console.warn("[SECURITY] ADMIN_CORS_ALLOWED_ORIGINS='*' — 운영에서는 어드민 프론트 도메인만 지정하세요.");
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
+  app.use(securityHeaders());
   app.use(cors(originMatcher(patterns)));
   app.enableShutdownHooks();
   await app.init();
