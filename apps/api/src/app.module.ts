@@ -53,10 +53,14 @@ import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
 import { TimeController, TimeSyncService } from './time/time.controller.js';
+import { AdminTicketController, NextBookingController, TicketController } from './ticket/ticket.controller.js';
+import { TicketMonitorService } from './ticket/ticket-monitor.service.js';
+import { TicketWorkerService } from './ticket/ticket-worker.service.js';
+import { TicketService } from './ticket/ticket.service.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, TimeController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, TimeController, NextBookingController, TicketController, AdminTicketController],
   providers: [
     PrismaService,
     JwtService,
@@ -82,6 +86,9 @@ import { TimeController, TimeSyncService } from './time/time.controller.js';
     GatheringService,
     BatchService,
     TimeSyncService,
+    TicketService,
+    TicketWorkerService,
+    TicketMonitorService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

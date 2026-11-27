@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/admin/tags',          label: '🔖 태그 관리' },
   { to: '/admin/moderation',    label: '🚨 신고 관리' },
   { to: '/admin/curation',      label: '✦ 작업 큐레이션' },
+  { to: '/admin/tickets',       label: '🎫 예매 일정' },
 ];
 
 const SIDEBAR_W = 220;

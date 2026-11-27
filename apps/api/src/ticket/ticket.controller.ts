@@ -1,0 +1,136 @@
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { AuthUser, CurrentUser, Public, Roles } from '../auth/auth.guard.js';
+import { ok } from '../common/api-response.js';
+import { optionalInt } from '../common/params.js';
+import { TicketMonitorService } from './ticket-monitor.service.js';
+import { TicketService } from './ticket.service.js';
+
+/** 공개 — 예매 일정·카운트다운. 시각은 모두 서버 UTC 기준(no-store: 캐시된 과거 시각을 막는다) */
+@Controller('api/tickets')
+export class TicketController {
+  constructor(private readonly tickets: TicketService) {}
+
+  @Public()
+  @Get('sessions')
+  async sessions(@Query('includePast') includePast?: string) {
+    return ok(await this.tickets.listSessions(includePast === 'true'));
+  }
+
+  @Public()
+  @Get('sessions/:id')
+  async session(@Param('id', ParseIntPipe) id: number) {
+    return ok(await this.tickets.getSession(id));
+  }
+
+  @Public()
+  @Get('sessions/:id/countdown')
+  @Header('Cache-Control', 'no-store')
+  async countdown(@Param('id', ParseIntPipe) id: number, @Query('phaseId') phaseId?: string) {
+    return ok(await this.tickets.countdown(id, phaseId ? optionalInt(phaseId, 'phaseId', 0) : undefined));
+  }
+
+  @Get('phases/:id/notification')
+  async getPreference(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.getPreference(id, user));
+  }
+
+  @Put('phases/:id/notification')
+  async putPreference(@Param('id', ParseIntPipe) id: number, @Body() body: any, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.putPreference(id, body ?? {}, user));
+  }
+
+  @Delete('phases/:id/notification')
+  async deletePreference(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    await this.tickets.deletePreference(id, user);
+    return ok();
+  }
+
+  @Get('notifications')
+  async notifications(@CurrentUser() user: AuthUser, @Query('page') page?: string, @Query('size') size?: string) {
+    return ok(await this.tickets.notifications(user, Math.max(0, optionalInt(page, 'page', 0)), Math.min(Math.max(optionalInt(size, 'size', 20), 1), 50)));
+  }
+
+  @Put('notifications/:id/read')
+  async read(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    await this.tickets.markRead(id, user);
+    return ok();
+  }
+}
+
+/** 다음 예매 일정 — /api/time 아래(PROMPT 3.4). scope=mine은 로그인 필요 */
+@Controller('api/time')
+export class NextBookingController {
+  constructor(private readonly tickets: TicketService) {}
+
+  @Public()
+  @Get('next-booking')
+  @Header('Cache-Control', 'no-store')
+  async next(@Query('limit') limit?: string, @Query('sessionId') sessionId?: string, @Query('scope') scope?: string, @CurrentUser() user?: AuthUser) {
+    return ok(await this.tickets.nextBooking(optionalInt(limit, 'limit', 5), sessionId ? optionalInt(sessionId, 'sessionId', 0) : undefined, scope === 'mine' ? 'mine' : 'all', user));
+  }
+}
+
+/** 관리자 — 일정 등록·변경(사유 필수)·오픈 확인·모니터링. 모든 쓰기는 감사 로그(AdminAuditInterceptor) */
+@Controller('api/admin/tickets')
+@Roles('WM', 'SA')
+export class AdminTicketController {
+  constructor(private readonly tickets: TicketService, private readonly monitor: TicketMonitorService) {}
+
+  @Get('monitor')
+  @Header('Cache-Control', 'no-store')
+  async status() {
+    return ok(await this.monitor.overview());
+  }
+
+  @Post('sessions')
+  @HttpCode(201)
+  async createSession(@Body() body: any, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.createSession(body ?? {}, user));
+  }
+
+  @Put('sessions/:id')
+  async updateSession(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    return ok(await this.tickets.updateSession(id, body ?? {}));
+  }
+
+  @Post('sessions/:id/phases')
+  @HttpCode(201)
+  async createPhase(@Param('id', ParseIntPipe) id: number, @Body() body: any, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.createPhase(id, body ?? {}, user));
+  }
+
+  @Put('phases/:id/schedule')
+  async changeSchedule(@Param('id', ParseIntPipe) id: number, @Body() body: any, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.changeSchedule(id, body ?? {}, user));
+  }
+
+  @Post('phases/:id/verify-schedule')
+  @HttpCode(200)
+  async verifySchedule(@Param('id', ParseIntPipe) id: number) {
+    return ok(await this.tickets.verifySchedule(id));
+  }
+
+  @Post('phases/:id/verifications')
+  @HttpCode(201)
+  async verification(@Param('id', ParseIntPipe) id: number, @Body() body: any, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.recordVerification(id, body ?? {}, user));
+  }
+
+  @Get('phases/:id/history')
+  async history(@Param('id', ParseIntPipe) id: number) {
+    return ok(await this.tickets.history(id));
+  }
+
+  @Post('phases/:id/test-notification')
+  @HttpCode(200)
+  async test(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.testNotification(id, user));
+  }
+
+  /** 진단 — 시계 재측정 + 큐·처리기 점검 결과 */
+  @Post('diagnostics')
+  @HttpCode(200)
+  async diagnostics() {
+    return ok(await this.monitor.diagnostics());
+  }
+}

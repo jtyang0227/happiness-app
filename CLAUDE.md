@@ -1112,6 +1112,74 @@ CREATE TABLE IF NOT EXISTS gathering_place_votes (
   CONSTRAINT uk_gpv_gathering_member UNIQUE (gathering_id, member_id)
 );
 CREATE INDEX IF NOT EXISTS idx_gpv_option ON gathering_place_votes(option_id);
+-- 예매 일정·알림·오픈 상태 모듈 (2026-11-27, PROMPT_server-time-booking-module.md B·E·F·G) — 시각은 전부 timestamptz(UTC 저장)
+CREATE TABLE IF NOT EXISTS ticket_sessions (
+  id BIGSERIAL PRIMARY KEY, title VARCHAR(200) NOT NULL, venue VARCHAR(200), description TEXT,
+  created_by BIGINT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS booking_phases (
+  id BIGSERIAL PRIMARY KEY, session_id BIGINT NOT NULL, name VARCHAR(50) NOT NULL,
+  announced_at TIMESTAMPTZ, scheduled_at TIMESTAMPTZ NOT NULL, timezone VARCHAR(50) NOT NULL,
+  time_source VARCHAR(20) NOT NULL, source_url VARCHAR(500), verified_at TIMESTAMPTZ, last_time_sync_at TIMESTAMPTZ,
+  schedule_status VARCHAR(20) NOT NULL, schedule_revision INTEGER NOT NULL,
+  open_status VARCHAR(30) NOT NULL, open_status_before_error VARCHAR(30), open_check_attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_booking_phases_session      ON booking_phases(session_id);
+CREATE INDEX IF NOT EXISTS idx_booking_phases_scheduled_at ON booking_phases(scheduled_at);
+CREATE TABLE IF NOT EXISTS booking_phase_schedule_revisions (   -- 추가만, 수정·삭제 없음
+  id BIGSERIAL PRIMARY KEY, booking_phase_id BIGINT NOT NULL, revision INTEGER NOT NULL,
+  prev_announced_at TIMESTAMPTZ, new_announced_at TIMESTAMPTZ, prev_scheduled_at TIMESTAMPTZ, new_scheduled_at TIMESTAMPTZ,
+  prev_timezone VARCHAR(50), new_timezone VARCHAR(50), prev_schedule_status VARCHAR(20), new_schedule_status VARCHAR(20),
+  time_source VARCHAR(20), source_url VARCHAR(500), reason TEXT NOT NULL, changed_by VARCHAR(50) NOT NULL,
+  changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_bpsr_phase_revision UNIQUE (booking_phase_id, revision)
+);
+CREATE TABLE IF NOT EXISTS booking_phase_status_logs (
+  id BIGSERIAL PRIMARY KEY, booking_phase_id BIGINT NOT NULL, from_status VARCHAR(30), to_status VARCHAR(30) NOT NULL,
+  reason VARCHAR(300), actor VARCHAR(50) NOT NULL, revision INTEGER NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_bpsl_phase ON booking_phase_status_logs(booking_phase_id);
+CREATE TABLE IF NOT EXISTS booking_open_verifications (
+  id BIGSERIAL PRIMARY KEY, booking_phase_id BIGINT NOT NULL, schedule_revision INTEGER NOT NULL,
+  checked_at TIMESTAMPTZ NOT NULL, observed_open_at TIMESTAMPTZ, result VARCHAR(20) NOT NULL, method VARCHAR(20) NOT NULL,
+  site VARCHAR(50), evidence VARCHAR(500), checked_by VARCHAR(50) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bov_phase ON booking_open_verifications(booking_phase_id);
+CREATE TABLE IF NOT EXISTS ticket_scheduled_jobs (
+  id BIGSERIAL PRIMARY KEY, job_type VARCHAR(30) NOT NULL, dedupe_key VARCHAR(200) NOT NULL, payload TEXT,
+  booking_phase_id BIGINT, schedule_revision INTEGER, run_at TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL,
+  time_sensitive BOOLEAN NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL,
+  claimed_by VARCHAR(100), lease_until TIMESTAMPTZ, last_error VARCHAR(500), finished_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_tsj_dedupe_key UNIQUE (dedupe_key)
+);
+CREATE INDEX IF NOT EXISTS idx_tsj_status_run_at ON ticket_scheduled_jobs(status, run_at);
+CREATE INDEX IF NOT EXISTS idx_tsj_phase         ON ticket_scheduled_jobs(booking_phase_id);
+CREATE TABLE IF NOT EXISTS ticket_notification_preferences (
+  id BIGSERIAL PRIMARY KEY, member_id BIGINT NOT NULL, booking_phase_id BIGINT NOT NULL, offsets VARCHAR(50) NOT NULL,
+  enabled BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_tnp_member_phase UNIQUE (member_id, booking_phase_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tnp_phase ON ticket_notification_preferences(booking_phase_id);
+CREATE TABLE IF NOT EXISTS ticket_notifications (
+  id BIGSERIAL PRIMARY KEY, member_id BIGINT NOT NULL, booking_phase_id BIGINT, kind VARCHAR(30) NOT NULL,
+  message VARCHAR(500) NOT NULL, dedupe_key VARCHAR(200) NOT NULL, status VARCHAR(20) NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_tn_dedupe_key UNIQUE (dedupe_key)
+);
+CREATE INDEX IF NOT EXISTS idx_tn_member_read ON ticket_notifications(member_id, is_read);
+CREATE TABLE IF NOT EXISTS ticket_worker_heartbeats (
+  id BIGSERIAL PRIMARY KEY, worker_id VARCHAR(100) NOT NULL, host VARCHAR(100), started_at TIMESTAMPTZ NOT NULL,
+  checked_at TIMESTAMPTZ NOT NULL, grade VARCHAR(20) NOT NULL, offset_ms DOUBLE PRECISION, db_skew_ms DOUBLE PRECISION,
+  queue_lag_ms BIGINT, paused BOOLEAN NOT NULL, leader BOOLEAN NOT NULL,
+  recovered_count INTEGER NOT NULL DEFAULT 0, skipped_count INTEGER NOT NULL DEFAULT 0,
+  CONSTRAINT uk_twh_worker_id UNIQUE (worker_id)
+);
+CREATE TABLE IF NOT EXISTS ticket_time_incidents (
+  id BIGSERIAL PRIMARY KEY, started_at TIMESTAMPTZ NOT NULL, ended_at TIMESTAMPTZ, reason VARCHAR(300) NOT NULL,
+  last_alert_at TIMESTAMPTZ NOT NULL
+);
 ```
 
 #### 인덱스 성능 점검 (전체 Repository 순회 후 추가)
@@ -1680,6 +1748,7 @@ from Docker Image(GHCR)"인지로 확정 가능 — 후자라면 반대로 `rail
 - 8·10단계(2026-11-24): 웹 `apps/web`(Next.js 16 Pages Router·React 18·정적 내보내기, 전 파일 TS — `apps/web/README.md`), 모바일 `mobile/` 전 파일 TS(`npm run typecheck`). 둘 다 `strict: false`로 시작, 화면 회귀는 스크린샷 픽셀 비교로 0. 운영 웹 배포는 컷오버 전까지 `frontend/`.
 - 9단계(2026-11-24): **어드민 이관** — happiness-admin Spring 경로 115개 → `apps/api/src/admin/**`(별도 진입점 `dist/admin-main.js`, 포트 8091, 앱과 경로·오류 형식·JWT가 달라 프로세스 분리), 프론트 → `apps/admin`(Next.js 16, webpack 빌드 — Turbopack 인라인 스크립트가 CSP 위반, CSS는 CRA 순서로 `_app`). 계약 테스트 `test/contract-admin`(48개, Spring 어드민 8081·Nest 8091 양쪽), CRA와 화면 62장 픽셀 동일. **어드민은 별도 스키마 `admin`(DB_SCHEMA) — 앱 `public` 표를 보지 않는다**(합칠지·happiness-admin 저장소 처리는 사용자 결정, 11단계). 발견: Spring 어드민 prod lazy-init로 로그인 500, 예약 날짜 필터 PG 500, 배너·팝업·공지 `isActive`/`isPinned` 키 불일치(그대로 옮김) — `apps/api/README.md` "어드민 진입점".
 - **서버 시간 표준화(2026-11-27)** — `apps/api/src/time/`(SNTP로 이 프로세스 시계 오차 측정·등급, `GET /api/time/now|status` 공개 + 어드민 `GET /api/admin/time/status`·`POST …/diagnostics`), 어드민 웹 시스템 설정 "서버 시간 동기화" 카드(`components/common/TimeSyncPanel.tsx`, 서버 기준 시계 `utils/serverTime.ts`). 단위 테스트 `npm run test:unit`(신규 `vitest.unit.config.ts`). Nest에만 있음(Spring 없음). 기획·범위 `DESIGN_PROMPTS/planning/PLANNING_server-time.md`.
+- **예매 일정·알림·오픈 상태 모듈(2026-11-27)** — 원본 명세 `DESIGN_PROMPTS/planning/PROMPT_server-time-booking-module.md` B·D·E·F·G·H·I. **Nest에만 있음**(`apps/api/src/ticket/`, Spring 없음 — 컷오버 후 동작), 테이블 10개는 스키마 주인 규칙대로 Spring 엔티티(`backend/.../ticket/`, 시각 `Instant`=timestamptz)로 만들고 Prisma는 db pull. 일정 변경은 한 트랜잭션에 이력 행 추가 + `expectedRevision` 낙관적 잠금(충돌 409 `SCHEDULE_REVISION_CONFLICT`, 사유 필수) + 알림 재계산 작업 등록(outbox). 작업 큐 `ticket_scheduled_jobs`: `FOR UPDATE SKIP LOCKED` 선점·60초 임대·시작 시 만료 임대 복구·`dedupe_key` UNIQUE·백오프 후 DEAD+관리자 알림, 리더는 `pg_try_advisory_xact_lock`. 시간 가드: NTP 비정상 또는 DB 시계 차이 500ms 초과면 시간 민감 작업 중단 + 단계 `TIME_SYNC_ERROR`(이전 상태 보관)·장애 기록·관리자 알림, 정상 3회 연속이면 복구(UNKNOWN·DEGRADED는 멈추지 않음, `FORCE_SYNC_STATUS`는 production에서 무시). 오픈 상태: 예정 시각 도달은 `OPEN_CHECK_PENDING`까지만, `OPEN_CONFIRMED`는 확인 기록(관리자 근거 필수)으로만. 알림은 인앱만(`ticket_notifications`, 24h/1h/10m/1m, 늦으면 유예 안에서만·예정 시각 이후엔 안 보냄, 보내기 직전 revision 재확인). API: 공개 `GET /api/tickets/sessions[/:id[/countdown]]`·`GET /api/time/next-booking`, 회원 알림 설정·알림함, 관리자 `/api/admin/tickets/**`(`TICKET_WORKER_ENABLED`·`TICKET_WORKER_TICK_MS`). 웹(`apps/web`만, `frontend/` 없음): `/tickets/:id` 카운트다운(`hooks/useServerClock` — RTT 최소 샘플 + `performance.now()`, 기기 시계 무시), `/admin/tickets` 모니터링. 디자인 `DESIGN_PROMPT_ticket-countdown.md`. 테스트: 단위 18(`test/unit/ticket.test.ts`), 계약 2(`test/contract/tickets.test.ts`, Spring은 건너뜀), 웹 `serverClock.test.ts`. **자동 예매·대기열 우회 기능은 없다(의도적).** 수정: `JwtService`가 `.env`의 `JWT_SECRET=""`를 빈 키로 써(`??`) 로컬에서 Spring과 토큰이 안 통하던 것 → `||`.
 - 11단계 컷오버: 실행 프롬프트 `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md`(A 저장소 준비 ✅ / B 사용자 대시보드 ⏸ / C 정리 ⏸). 준비물: `render.yaml`의 `happiness-api-ts`·`happiness-admin-api`(빌드는 `npm ci --include=dev` — Render는 빌드 때 NODE_ENV=production), 웹 전환 스위치 저장소 Variable `WEB_APP_DIR=apps/web`(없으면 지금처럼 `frontend`), `apps/web/vercel.json`, 스모크 `apps/api/scripts/smoke.mjs` + Actions › Smoke(수동). `dotenv`는 런타임 의존성(예전엔 dev라 운영 설치에서 API가 안 떴다).
 - Photoshop·Lightroom Classic MCP(`.mcp.json`, 버전 고정, 데스크톱 전용) — `docs/ADOBE_MCP.md`. 앱 → 어드민 → MCP 실행 프롬프트: `DESIGN_PROMPTS/planning/PROMPT_ts-app-admin-adobe-mcp.md`.
 
