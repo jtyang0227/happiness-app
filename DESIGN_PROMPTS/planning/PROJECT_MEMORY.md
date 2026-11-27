@@ -23,7 +23,7 @@
 | 기타 | Supabase Storage, Upstash Redis(장애 시 통과), Firebase Analytics(웹, `utils/analytics.js`, env 없으면 꺼짐), Gemini 챗봇, 읽기 전용 MCP 서버(`mcp-server/`) | |
 
 ## 3. 검증 명령 (이것만 쓴다)
-- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
+- 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **65개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `UploadImageShrinkerTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
 - TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
@@ -65,6 +65,7 @@
 9. **Spring `XssProtectionFilter`가 쿼리·폼 파라미터·헤더를 HTML 이스케이프**한다(JSON 본문 제외) — `&`·`"` 같은 문자가 든 검색어는 `&amp;`로 비교된다. TS 전환에서도 같은 표로 재현(`apps/api/src/common/escape-html4.ts`).
 
 ## 7. 운영·배포 현황
+- **2026-11-27 새 배포로 교체 중**: 예전 Railway·Render·Supabase는 버리고 Spring `backend/`를 새 Supabase(서울, Session pooler)·Upstash·Render `happiness-api`(`https://happiness-api-tkvi.onrender.com`, Free·싱가포르, **push 자동 배포 없음 → Manual Deploy**)·Vercel `frontend`로. 무료 한도표·순서·되돌리기는 `PLANNING_free-hosting.md` "2026-11-27 갱신". 아래 Railway 줄은 예전 기록.
 - Vercel: GitHub 앱 연동으로 master push마다 Production — 정상.
 - Railway: GitHub 앱 연동, `backend/` 변경 시에만 배포. **2026-10-20 13:49(256718e) 이후 배포가 멈춰 있음(⏸ 사용자 대시보드 확인 필요)** — 그 뒤 백엔드 수정(비슷한 사진, 보드 공유, 계정 찾기, 개인정보, 신고·차단, 보안 점검)은 운영 API에 미반영. 재배포 관례: `backend/railway.toml`의 `# redeploy-trigger-N` 숫자 올리기.
 - GitHub Actions: 백엔드는 `deploy-backend`가 테스트 통과 후 `backend/` 변경 시 `railway up --ci` + health 확인(2026-10-28). **Secret `RAILWAY_TOKEN` 없으면 건너뜀** — 등록 필요. 수동 배포는 Actions › CI/CD — Deploy › Run workflow.
@@ -72,6 +73,7 @@
 - 운영 DB 새 컬럼·테이블 SQL은 CLAUDE.md "운영 DB 수동 마이그레이션" 블록에 `IF NOT EXISTS`로 기록(ddl-auto update라 대개 자동 반영되지만 기록은 유지).
 
 ## 8. 사용자에게 남은 일 (코드로 못 하는 것)
+- **새 배포 마무리(11-27)**: Render 비밀값 4개 → health UP → Vercel 배포 → 웹↔API 주소·CORS 연결 → `KEEPALIVE_URL` → Actions › Smoke → (선택) 도메인 → 마지막에 Railway·예전 Render 정리. Vercel Hobby는 상업적 사용 불가(수익 생기면 Cloudflare Pages).
 - **TS 전환 컷오버(11b)**: `DESIGN_PROMPTS/planning/PROMPT_ts-cutover.md` "B 상세" 순서대로(새 서비스 2개 → 어드민 API → 도메인 → Spring 중지+배치 → 웹 `WEB_APP_DIR` → 어드민 웹 → master 병합 승인). 각 단계 뒤 Actions › Smoke. 끝나면 "B 끝났어" → Claude가 C(정리).
 - **어드민 이관 결정(TS 전환 11단계 전)**: 운영 Spring 어드민의 `DB_SCHEMA`(기본 `admin` — 앱 데이터가 아니라 자기 스키마만 봄)를 그대로 둘지 앱 데이터와 합칠지, happiness-admin 저장소를 README만 남기고 보관할지. 운영 Spring 어드민은 prod 프로필에서 로그인부터 500일 가능성(lazy-init) — 작업 카드 있음.
 - **Supabase 잠금**: `backend/db/supabase-lockdown.sql`을 SQL Editor에서 실행(공개 anon 키로 테이블 직접 접근 차단). happiness-admin이 REST(anon 키)로 DB를 읽는지 먼저 확인.

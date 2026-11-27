@@ -1,5 +1,6 @@
 package com.happiness.app.storage;
 
+import com.happiness.app.common.util.UploadImageShrinker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,9 +46,6 @@ public class SupabaseStorageService {
     public String uploadImage(MultipartFile file, String folder) {
         validateFile(file);
 
-        String ext       = extractExtension(file.getOriginalFilename());
-        String objectKey = folder + "/" + UUID.randomUUID() + "." + ext;
-
         byte[] bytes;
         try {
             bytes = file.getBytes();
@@ -55,7 +53,12 @@ public class SupabaseStorageService {
             throw new StorageException("파일 읽기 실패", e);
         }
 
-        return doUpload(bytes, objectKey, file.getContentType());
+        // 긴 변 2048px·JPEG 품질 0.85로 줄여 무료 Storage 용량을 아낀다
+        UploadImageShrinker.Result shrunk = UploadImageShrinker.shrink(
+                bytes, file.getContentType(), extractExtension(file.getOriginalFilename()));
+        String objectKey = folder + "/" + UUID.randomUUID() + "." + shrunk.ext();
+
+        return doUpload(shrunk.bytes(), objectKey, shrunk.contentType());
     }
 
     /**

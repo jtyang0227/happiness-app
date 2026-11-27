@@ -32,6 +32,11 @@ public class IpBlockFilter implements Filter {
     // 메모리 캐시 (Redis 부하 분산: 10초 캐시)
     private final ConcurrentHashMap<String, Long> localCache = new ConcurrentHashMap<>();
     private static final long CACHE_TTL_MS = 10_000;
+    // 차단 안 된 IP도 잠깐 기억한다 — 무료 Redis(Upstash) 명령 수를 아끼려는 것.
+    // 이전엔 모든 요청마다 hasKey를 불렀다(차단된 IP만 캐시). 차단 반영이 최대 60초 늦어진다.
+    private final ConcurrentHashMap<String, Long> allowCache = new ConcurrentHashMap<>();
+    private static final long ALLOW_TTL_MS = 60_000;
+    private static final int ALLOW_CACHE_MAX = 10_000;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -69,13 +74,21 @@ public class IpBlockFilter implements Filter {
             }
             localCache.remove(ip);
         }
+        long now = System.currentTimeMillis();
+        Long allowedUntil = allowCache.get(ip);
+        if (allowedUntil != null && now < allowedUntil) {
+            return false;
+        }
         // Redis 조회 — Redis 미연결 시 허용 통과 (개발/Redis 없는 환경 대응)
         try {
             Boolean blocked = redisTemplate.hasKey(BLOCK_KEY_PREFIX + ip);
             if (Boolean.TRUE.equals(blocked)) {
                 localCache.put(ip, System.currentTimeMillis() + CACHE_TTL_MS);
+                allowCache.remove(ip);
                 return true;
             }
+            if (allowCache.size() >= ALLOW_CACHE_MAX) allowCache.clear();
+            allowCache.put(ip, now + ALLOW_TTL_MS);
         } catch (Exception e) {
             log.debug("[IP_BLOCK] Redis 연결 실패, IP 차단 검사 스킵: {}", e.getMessage());
         }
