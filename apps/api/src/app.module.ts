@@ -52,10 +52,11 @@ import { SeriesService } from './series/series.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AccountRecoveryController } from './recovery/account-recovery.controller.js';
 import { AccountRecoveryService } from './recovery/account-recovery.service.js';
+import { TimeController, TimeSyncService } from './time/time.controller.js';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController],
+  controllers: [HealthController, AuthController, AccountRecoveryController, OAuthController, CommentController, FollowController, BlockController, ReportController, PhotoController, FeedController, StorageController, MoodboardController, SeriesController, AdminSeriesController, PortfolioController, InquiryController, BookingController, DeliveryController, MeetController, AnalyticsController, GatheringNotificationController, GatheringPlacePollController, GatheringPostController, GatheringController, SpotController, TestimonialController, PressController, PricingController, ClientBrandController, NewsletterController, AssistantController, TimeController],
   providers: [
     PrismaService,
     JwtService,
@@ -80,6 +81,7 @@ import { AccountRecoveryService } from './recovery/account-recovery.service.js';
     GatheringPlacePollService,
     GatheringService,
     BatchService,
+    TimeSyncService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

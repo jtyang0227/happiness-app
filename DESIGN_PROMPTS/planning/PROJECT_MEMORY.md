@@ -24,7 +24,7 @@
 
 ## 3. 검증 명령 (이것만 쓴다)
 - 백엔드: `cd backend && ./gradlew clean build -x test` + `./gradlew test` → 결과는 `build/test-results/test/*.xml`의 `tests= failures=`로 확인 (현재 **62개** 통과: `CoreFlowIntegrationTest` 55 + `ClientIpTest` 3 + `InquiryEmailServiceTest` 2 + `JwtTokenProviderTest` 2).
-- TS API: `cd apps/api && npm run build` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
+- TS API: `cd apps/api && npm run build` + 단위 `npm run test:unit` + 계약 테스트 `API_BASE_URL=http://localhost:8080|8090 npm run test:contract`(두 서버 모두 통과해야 단계 완료, 로컬 PG·Redis·Spring 필요 — `apps/api/README.md`). 어드민: `ADMIN_API_BASE_URL=http://localhost:8081|8091 npm run test:contract-admin`(Spring 어드민 띄우는 법은 README "어드민 진입점"). 어드민 웹: `cd apps/admin && npm run typecheck && npm test && npm run build`.
 - 웹: `cd frontend && CI=true npm run build` → "Compiled successfully." (새 화면은 `App.jsx`에 `lazyPage()`로 등록)
 - 모바일: `cd mobile && npx expo export --platform web` → "Finished saving JS Bundles". 로그인 후 화면은 `--dev` 번들 + 로컬 bootRun으로 확인 가능(`secureStorage.web.js`).
 - 로컬 서버 종료는 포트로: `fuser -k 8080/tcp 3000/tcp` (`pkill -f`는 내 셸까지 죽인다).
@@ -84,6 +84,7 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-27 | (이번 커밋) | 서버 시간 표준화 — Nest `/api/time/now`·`status`(UTC·KST ISO 8601, SNTP 오차 등급) + 어드민 시간 동기화 카드·진단. 티켓 예매 모듈(B·E·F·G)은 코드 위치 확인 대기 | `planning/PLANNING_server-time.md` |
 | 11-27 | (이번 커밋) | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
 | 11-27 | b88626b | Cloudflare Code Mode MCP(`cloudflare-api`, search 허용·execute 확인) 개발 도구로 추가 — Pages·DNS 조회용 | `docs/CLOUDFLARE_CODE_MODE_MCP.md` |
 | 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
