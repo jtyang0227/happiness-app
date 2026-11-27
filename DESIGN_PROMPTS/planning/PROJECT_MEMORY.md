@@ -86,6 +86,9 @@
 ## 9. 최근 큰 작업 (최신순, 자세한 건 커밋·문서)
 | 날짜 | 커밋 | 내용 | 문서 |
 |---|---|---|---|
+| 11-27 | (이번 커밋) | 하네스 — ECC(GitHub 별 1위, MIT)에서 `/verify`·`strategic-compact` 스킬, `block-no-verify` 가드만 가져옴 + CLAUDE.md 1,234줄 중복 삭제(3,304→2,070) | CLAUDE.md "하네스 엔지니어링" 절 |
+| 11-27 | b88626b | Cloudflare Code Mode MCP(`cloudflare-api`, search 허용·execute 확인) 개발 도구로 추가 — Pages·DNS 조회용 | `docs/CLOUDFLARE_CODE_MODE_MCP.md` |
+| 11-24 | (이번 커밋) | Spring 스팟 목록·작업 탐색 PostgreSQL 500 수정(`CAST(:x AS String)`) — 11-24 병합으로 운영에 나간 스팟 기능의 실사용 버그. 로컬 재현은 `dev-env.sh`의 PG 환경으로(그냥 bootRun은 H2) | `apps/api/README.md` |
 | 11-25 | 56b53f3~e8fccb3 | 사용자 작업을 뺀 남은 개발 — 모임 일정·장소 변경 알림, 월간·연말 베스트 포토 순위(API·웹), 기능별 속도 제한·로그인 잠금 Redis 공유, 모바일 SNAPDAY(투표·베스트 포토·출사 기록), Prisma 기준선·`prisma-baseline.sh`(운영 DB엔 SNAPDAY 표 없음 발견) | WORK_QUEUE 최상단 묶음, `PROMPT_ts-cutover.md` |
 | 11-25 | c423ae8 | TS 전환 보안 누락 점검 — 전역 속도 제한·IP 차단·스캐너 차단·보안 헤더를 새 API에 보완(나머지는 이미 패리티). 계약 `security.test.ts` Spring·새 API 양쪽 | `PROMPT_ts-security-parity.md` |
 | 11-25 | 5ee568d~5ad112b | SNAPDAY 출사 기능 병합 — 월간 투표·공휴일·확정→모임·AI 추천(Gemini/샘플)·현장 모드·스토리 편집기·베스트 포토·출사 기록. 계약 새 API 95(SNAPDAY 4), Playwright 전 흐름 | `planning/snapday/TODO.md` |
