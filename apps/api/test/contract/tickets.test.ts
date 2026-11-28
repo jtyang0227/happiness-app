@@ -181,4 +181,54 @@ describe.skipIf(IS_SPRING)('tickets — 예매 일정 모듈', () => {
     expect(again.body.code).toBe('JOB_NOT_DEAD');
     expect((await call('POST', '/api/admin/tickets/jobs/999999999/retry', { token: admin.token })).status).toBe(404);
   }, 60_000);
+  it('v3 — 구독 캘린더(발급·재발급·끄기)·메일로도 받기 설정', async () => {
+    const admin = await adminUser();
+    const fan = await signupAndLogin();
+    const other = await signupAndLogin();
+    const sid = (await call('POST', '/api/admin/tickets/sessions', { token: admin.token, body: { title: '구독 테스트 공연', venue: '부산' } })).body.data.id;
+    const p1 = (await call('POST', `/api/admin/tickets/sessions/${sid}/phases`, { token: admin.token, body: { name: '1차', scheduledAt: at(2 * 86400_000) } })).body.data.phase;
+    const p2 = (await call('POST', `/api/admin/tickets/sessions/${sid}/phases`, { token: admin.token, body: { name: '2차', scheduledAt: at(5 * 86400_000) } })).body.data.phase;
+
+    // 메일 설정 — 기본 꺼짐, 켜고 끄기, 시점만 바꿀 땐 그대로 유지, 잘못된 값 400
+    const g0 = (await call('GET', `/api/tickets/phases/${p1.id}/notification`, { token: fan.token })).body.data;
+    expect(g0).toMatchObject({ email: false, mailAvailable: expect.any(Boolean) });
+    expect((await call('PUT', `/api/tickets/phases/${p1.id}/notification`, { token: fan.token, body: { email: 'yes' } })).status).toBe(400);
+    expect((await call('PUT', `/api/tickets/phases/${p1.id}/notification`, { token: fan.token, body: { offsets: ['1h'], email: true } })).body.data).toMatchObject({ email: true, offsets: ['1h'] });
+    expect((await call('PUT', `/api/tickets/phases/${p1.id}/notification`, { token: fan.token, body: { offsets: ['24h', '1h'] } })).body.data.email).toBe(true);
+    await call('PUT', `/api/tickets/phases/${p2.id}/notification`, { token: fan.token, body: {} });
+    const alerts = (await call('GET', '/api/tickets/me/alerts', { token: fan.token })).body.data;
+    expect(alerts.find((a: any) => a.phaseId === p1.id).email).toBe(true);
+    expect(alerts.find((a: any) => a.phaseId === p2.id).email).toBe(false);
+
+    // 구독 링크 — 처음엔 없음, 발급, 피드에 두 단계, 남의 피드와 섞이지 않음
+    expect((await call('GET', '/api/tickets/me/calendar-feed')).status).toBe(401);
+    expect((await call('GET', '/api/tickets/me/calendar-feed', { token: fan.token })).body.data).toMatchObject({ active: false });
+    const issued = (await call('POST', '/api/tickets/me/calendar-feed', { token: fan.token })).body.data;
+    expect(issued.url).toMatch(/\/api\/tickets\/calendar\/[A-Za-z0-9_-]{43}\.ics$/);
+    expect(issued.webcalUrl.startsWith('webcal:')).toBe(true);
+    const path = new URL(issued.url).pathname;
+    const feed = await fetch(`${BASE}${path}`);
+    expect(feed.status).toBe(200);
+    expect(feed.headers.get('content-type')).toContain('text/calendar');
+    const txt = await feed.text();
+    expect(txt).toContain(`UID:ticket-phase-${p1.id}@happiness.io.kr`);
+    expect(txt).toContain(`UID:ticket-phase-${p2.id}@happiness.io.kr`);
+    expect(txt.match(/BEGIN:VEVENT/g)?.length).toBe(2);
+    expect(txt).toContain('X-PUBLISHED-TTL:PT1H');
+    expect(txt).not.toContain(fan.email);
+    const status = (await call('GET', '/api/tickets/me/calendar-feed', { token: fan.token })).body.data;
+    expect(status).toMatchObject({ active: true, lastAccessedAt: expect.any(String) });
+    expect(JSON.stringify(status)).not.toContain(path.split('/').pop()!.replace('.ics', ''));
+    const otherIssued = (await call('POST', '/api/tickets/me/calendar-feed', { token: other.token })).body.data;
+    expect(await (await fetch(`${BASE}${new URL(otherIssued.url).pathname}`)).text()).not.toContain('BEGIN:VEVENT');
+
+    // 재발급 → 옛 링크 404, 끄기 → 새 링크도 404, 모양이 틀린 토큰 404
+    const reissued = (await call('POST', '/api/tickets/me/calendar-feed', { token: fan.token })).body.data;
+    expect(reissued.url).not.toBe(issued.url);
+    expect((await fetch(`${BASE}${path}`)).status).toBe(404);
+    expect((await fetch(`${BASE}${new URL(reissued.url).pathname}`)).status).toBe(200);
+    expect((await call('DELETE', '/api/tickets/me/calendar-feed', { token: fan.token })).status).toBe(200);
+    expect((await fetch(`${BASE}${new URL(reissued.url).pathname}`)).status).toBe(404);
+    expect((await fetch(`${BASE}/api/tickets/calendar/nope.ics`)).status).toBe(404);
+  }, 60_000);
 });

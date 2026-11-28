@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
+import { useTicketUnread } from '../../hooks/useTicketUnread';
 import { COLORS } from '../../constants/colors';
 import { SPRING } from '../../constants/animations';
 import { BP, mq } from '../../constants/breakpoints';
@@ -98,6 +99,7 @@ export default function Header() {
   const [pendingMeets, setPendingMeets] = useState(0);
   const [gatheringNotifCount, setGatheringNotifCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const ticketUnread = useTicketUnread(user?.id);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -149,6 +151,10 @@ export default function Header() {
         .upload-btn:focus-visible, .login-btn:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
         .login-btn:hover { background: ${COLORS.surfaceDim}; }
         .avatar-btn:hover { transform: scale(1.08); }
+        .bell-btn { transition: background 0.15s ease, transform 0.12s ease; }
+        .bell-btn:hover { background: ${COLORS.surfaceDim}; }
+        .bell-btn:active { transform: scale(0.94); }
+        .bell-btn:focus-visible { outline: 2px solid ${COLORS.primary}; outline-offset: 2px; }
       `}</style>
 
       {/* ── PC Header — Cosmos 화이트 에디토리얼 ──────────── */}
@@ -216,7 +222,21 @@ export default function Header() {
               border: `1px solid ${COLORS.border}`, color: COLORS.text, fontSize: 13, fontWeight: 700, textDecoration: 'none',
             }}>로그인</NavLink>
           ) : (
-          /* Avatar dropdown */
+          <>
+          {/* 예매 알림 — 읽지 않은 수 배지 (v3) */}
+          <NavLink to="/tickets/alerts" className="bell-btn" title="예매 알림"
+            aria-label={ticketUnread > 0 ? `예매 알림, 새 알림 ${ticketUnread}건` : '예매 알림'}
+            style={{ position: 'relative', width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', fontSize: 17 }}>
+            <span aria-hidden="true">🔔</span>
+            {ticketUnread > 0 && (
+              <span aria-hidden="true" style={{
+                position: 'absolute', top: -2, right: -4, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 99, boxSizing: 'border-box',
+                background: COLORS.danger, color: '#fff', fontSize: 10, fontWeight: 800, border: `2px solid ${COLORS.surface}`,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+              }}>{ticketUnread > 99 ? '99+' : ticketUnread}</span>
+            )}
+          </NavLink>
+          {/* Avatar dropdown */}
           <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
             <button
               className="avatar-btn"
@@ -308,6 +328,7 @@ export default function Header() {
               </div>
             )}
           </div>
+          </>
           )}
         </div>
       </header>
@@ -315,7 +336,7 @@ export default function Header() {
       {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
       <BottomNav
         items={visibleItems(BOTTOM_NAV_ITEMS, !!user?.id)}
-        badges={{ workspace: unreadCount + pendingMeets, gatherings: gatheringNotifCount }}
+        badges={{ workspace: unreadCount + pendingMeets, gatherings: gatheringNotifCount, tickets: ticketUnread }}
         pathname={pathname}
         user={user}
       />

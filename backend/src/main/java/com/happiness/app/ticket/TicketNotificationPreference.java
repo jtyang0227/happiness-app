@@ -32,6 +32,10 @@ public class TicketNotificationPreference {
     @Column(name = "enabled", nullable = false)
     private boolean enabled;
 
+    /** 메일로도 받기 (v3, null = 꺼짐 — 기존 행 호환) */
+    @Column(name = "email_enabled")
+    private Boolean emailEnabled;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

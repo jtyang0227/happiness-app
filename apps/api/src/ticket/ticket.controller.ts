@@ -72,6 +72,35 @@ export class TicketController {
     res.send(body);
   }
 
+  // ───── 구독 캘린더(webcal) ─────
+  @Get('me/calendar-feed')
+  async getFeed(@CurrentUser() user: AuthUser) {
+    return ok(await this.tickets.getFeed(user));
+  }
+
+  /** 새 비밀 링크 — 응답에서만 보인다. 링크 주소는 Host 헤더가 아니라 설정값으로 만든다(주입 방지) */
+  @Post('me/calendar-feed')
+  @HttpCode(200)
+  async issueFeed(@CurrentUser() user: AuthUser) {
+    const base = process.env.API_PUBLIC_URL || (process.env.NODE_ENV === 'production' ? 'https://api.happiness.io.kr' : `http://localhost:${process.env.PORT || 8090}`);
+    return ok(await this.tickets.issueFeed(user, base));
+  }
+
+  @Delete('me/calendar-feed')
+  async deleteFeed(@CurrentUser() user: AuthUser) {
+    await this.tickets.deleteFeed(user);
+    return ok();
+  }
+
+  @Public()
+  @Get('calendar/:file')
+  async feed(@Param('file') file: string, @Res() res: any) {
+    const body = await this.tickets.feedIcs(String(file).replace(/\.ics$/, ''));
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(body);
+  }
+
   @Get('notifications')
   async notifications(@CurrentUser() user: AuthUser, @Query('page') page?: string, @Query('size') size?: string) {
     return ok(await this.tickets.notifications(user, Math.max(0, optionalInt(page, 'page', 0)), Math.min(Math.max(optionalInt(size, 'size', 20), 1), 50)));

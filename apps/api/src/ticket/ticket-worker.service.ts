@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { hostname } from 'node:os';
 import { randomBytes } from 'node:crypto';
+import { htmlEscape } from '../common/json-body.js';
+import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { TimeSyncService } from '../time/time.controller.js';
 import { canTransition, OpenStatus, restoreAfterSyncError, ScheduleStatus, tick } from './open-status.js';
@@ -42,7 +44,7 @@ export class TicketWorkerService implements OnApplicationBootstrap, OnModuleDest
   private skipped = 0;
   private readonly startedAt = new Date();
 
-  constructor(private readonly prisma: PrismaService, private readonly sync: TimeSyncService) {}
+  constructor(private readonly prisma: PrismaService, private readonly sync: TimeSyncService, private readonly mail: MailService) {}
 
   get enabled() {
     return process.env.TICKET_WORKER_ENABLED !== 'false';
@@ -188,12 +190,16 @@ export class TicketWorkerService implements OnApplicationBootstrap, OnModuleDest
     if (!pref?.enabled || !parseOffsets(pref.offsets).includes(pl.offset)) return { status: 'CANCELLED', note: 'UNSUBSCRIBED' };
     if (!withinGrace(job.run_at, pl.offset, p.scheduled_at, now)) return { status: 'SKIPPED', note: 'MISSED_WINDOW' };
     const s = await this.prisma.ticket_sessions.findUnique({ where: { id: p.session_id }, select: { title: true } });
+    const message = reminderMessage(p.name, s?.title ?? '예매', pl.offset, p.scheduled_at);
     // 발송 기록을 같은 dedupe_key로 선점 — 이미 있으면 보내지 않는다(중복 발송 방지)
     const r = await this.prisma.ticket_notifications.createMany({
-      data: [{ dedupe_key: job.dedupe_key, member_id: BigInt(pl.memberId), booking_phase_id: p.id, kind: 'REMINDER', message: reminderMessage(p.name, s?.title ?? '예매', pl.offset, p.scheduled_at), status: 'SENT', is_read: false, created_at: now }],
+      data: [{ dedupe_key: job.dedupe_key, member_id: BigInt(pl.memberId), booking_phase_id: p.id, kind: 'REMINDER', message, status: 'SENT', is_read: false, created_at: now }],
       skipDuplicates: true,
     });
-    return r.count ? { status: 'SUCCEEDED' } : { status: 'SKIPPED', note: 'ALREADY_SENT' };
+    if (!r.count) return { status: 'SKIPPED', note: 'ALREADY_SENT' };
+    // 인앱 알림을 새로 만든 경우에만 메일 1통 — 같은 알림이 메일로 두 번 가지 않는다
+    if (pref.email_enabled) await this.emailMembers([BigInt(pl.memberId)], message, Number(p.session_id));
+    return { status: 'SUCCEEDED' };
   }
 
   /** 일정 변경 후 — 변경 고지 1회, 이전 revision 대기 알림 취소, 새 revision 기준 재생성 */
@@ -213,16 +219,40 @@ export class TicketWorkerService implements OnApplicationBootstrap, OnModuleDest
     if (rev && (timeChanged || statusStopped)) {
       const message = stopped ? cancelMessage(p.name, session?.title ?? '예매', p.schedule_status as 'CANCELLED', rev.reason)
         : changeMessage(p.name, session?.title ?? '예매', rev.prev_scheduled_at, p.scheduled_at, rev.reason);
+      const keyOf = (m: bigint) => `notify_change:${m}:${p.id}:${p.schedule_revision}`;
+      const existing = new Set((await this.prisma.ticket_notifications.findMany({ where: { dedupe_key: { in: prefs.map((x) => keyOf(x.member_id)) } }, select: { dedupe_key: true } })).map((x) => x.dedupe_key));
       await this.prisma.ticket_notifications.createMany({
-        data: prefs.map((x) => ({ dedupe_key: `notify_change:${x.member_id}:${p.id}:${p.schedule_revision}`, member_id: x.member_id, booking_phase_id: p.id, kind: stopped ? 'CANCEL' : 'CHANGE', message, status: 'SENT', is_read: false, created_at: now })),
+        data: prefs.map((x) => ({ dedupe_key: keyOf(x.member_id), member_id: x.member_id, booking_phase_id: p.id, kind: stopped ? 'CANCEL' : 'CHANGE', message, status: 'SENT', is_read: false, created_at: now })),
         skipDuplicates: true,
       });
+      // 이번에 처음 고지한 사람 중 메일을 켠 사람만
+      await this.emailMembers(prefs.filter((x) => x.email_enabled && !existing.has(keyOf(x.member_id))).map((x) => x.member_id), message, Number(p.session_id));
     }
     let created = 0;
     if (!stopped) {
       for (const x of prefs) created += await enqueue(this.prisma, notifyJobs(x.member_id, p, parseOffsets(x.offsets), now), now);
     }
     return { status: 'SUCCEEDED', note: `취소 ${cancelled}·새로 ${created}` };
+  }
+
+  /** 메일 — 회원 본인 주소로만, 회원 전체 메일 수신(email_notifications)을 끈 사람은 건너뜀. 실패·미설정은 작업을 실패시키지 않는다 */
+  private async emailMembers(memberIds: bigint[], message: string, sessionId: number) {
+    if (!memberIds.length || !process.env.MAIL_HOST) return;
+    const members = await this.prisma.members.findMany({ where: { id: { in: memberIds }, email_notifications: true }, select: { id: true, email: true } });
+    const base = (process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://happiness.io.kr' : 'http://localhost:3000')).replace(/\/+$/, '');
+    const link = `${base}/tickets/${sessionId}`;
+    const html = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#191F28">`
+      + `<p>${htmlEscape(message)}</p>`
+      + `<p><a href="${htmlEscape(link)}" style="color:#3182F6">예매 일정 보기</a></p>`
+      + `<p style="font-size:12px;color:#8B95A1">Happiness에서 켠 예매 알림입니다. 알림함 › 켠 알림에서 메일 받기를 끌 수 있어요.</p></div>`;
+    const subject = `[Happiness] ${message.replace(/[\r\n]+/g, ' ').slice(0, 80)}`;
+    for (const m of members) {
+      const sent = await Promise.race([
+        this.mail.send(m.email, subject, html, 'ticket-alert'),
+        new Promise<boolean>((r) => setTimeout(() => r(false), 10_000)),
+      ]);
+      if (!sent) this.log.warn(`예매 알림 메일을 보내지 못했습니다(회원 ${m.id}).`);
+    }
   }
 
   private async alertAdmins(db: Pick<PrismaService, 'members' | 'ticket_notifications'>, key: string, message: string, now: Date) {

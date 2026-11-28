@@ -18,6 +18,7 @@
 | T5 | ✅ | D 카운트다운(apps/web `/tickets/:id`) + H 관리자 화면(`/admin/tickets`) | |
 | T6 | ✅ | 로컬 PG 검증(db pull 대조·흐름), 문서 | |
 | T7 | ✅ | v2 고도화 — 알림함·켠 알림·.ics·`/tickets` 목록·어드민 단계 추가·DEAD 재시도 (`PLANNING_ticket-module-v2.md`) | 계약 95/95, 단위 44 |
+| T8 | ✅ | v3 — 웹 알림 배지(헤더 🔔·프로필 탭)·구독 캘린더(webcal 비밀 링크)·메일로도 받기 (`PLANNING_ticket-module-v3.md`) | 계약 Nest 95·Spring 91, 단위 46, 백엔드 62, 메일 실제 발송 확인 |
 
 ## 현재 묶음 — TypeScript 전면 전환 (요청: "스프링부트·리액트 안 써도 되니 최근 제일 많이 쓰는 언어로 전체 변경", 2026-11-24)
 

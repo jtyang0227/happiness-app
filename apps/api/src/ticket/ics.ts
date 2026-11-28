@@ -45,14 +45,11 @@ export function foldLine(line: string): string {
   return out.join('\r\n ');
 }
 
-export function buildIcs(p: IcsPhase, now: Date): string {
+const HEADER = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Happiness//Ticket Schedule//KO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+
+function vevent(p: IcsPhase, now: Date, hint: string): string[] {
   const cancelled = p.scheduleStatus === 'CANCELLED';
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Happiness//Ticket Schedule//KO',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
+  return [
     'BEGIN:VEVENT',
     `UID:ticket-phase-${p.id}@happiness.io.kr`,
     `SEQUENCE:${p.revision}`,
@@ -62,12 +59,31 @@ export function buildIcs(p: IcsPhase, now: Date): string {
     `DTEND:${icsDate(new Date(p.scheduledAt.getTime() + 30 * 60_000))}`,
     `SUMMARY:${icsText(`[${p.name}] ${p.sessionTitle} 예매 오픈`)}`,
     ...(p.venue ? [`LOCATION:${icsText(p.venue)}`] : []),
-    `DESCRIPTION:${icsText(`예매 오픈 예정 시각입니다. 일정이 바뀌면 파일을 다시 받아 주세요.\n${p.url}`)}`,
+    `DESCRIPTION:${icsText(`예매 오픈 예정 시각입니다. ${hint}\n${p.url}`)}`,
     `URL:${p.url}`,
     `STATUS:${cancelled ? 'CANCELLED' : p.scheduleStatus === 'TENTATIVE' ? 'TENTATIVE' : 'CONFIRMED'}`,
     ...(cancelled ? [] : ['BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(`10분 후 ${p.sessionTitle} 예매 오픈`)}`, 'TRIGGER:-PT10M', 'END:VALARM']),
     'END:VEVENT',
-    'END:VCALENDAR',
   ];
+}
+
+function serialize(lines: string[]): string {
   return lines.map(foldLine).join('\r\n') + '\r\n';
+}
+
+export function buildIcs(p: IcsPhase, now: Date): string {
+  return serialize([...HEADER, ...vevent(p, now, '일정이 바뀌면 파일을 다시 받아 주세요.'), 'END:VCALENDAR']);
+}
+
+/** 구독 캘린더(webcal) — 켠 알림 단계 전부. 캘린더 앱이 주기적으로 다시 가져가므로 같은 UID·SEQUENCE로 갱신된다 */
+export function buildFeed(phases: IcsPhase[], now: Date): string {
+  return serialize([
+    ...HEADER,
+    `X-WR-CALNAME:${icsText('Happiness 예매 일정')}`,
+    'X-WR-TIMEZONE:Asia/Seoul',
+    'X-PUBLISHED-TTL:PT1H',
+    'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
+    ...phases.flatMap((p) => vevent(p, now, '일정이 바뀌면 캘린더가 자동으로 갱신합니다.')),
+    'END:VCALENDAR',
+  ]);
 }

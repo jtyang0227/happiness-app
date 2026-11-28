@@ -190,3 +190,25 @@ describe('v2 — iCalendar(.ics)', async () => {
     expect(buildIcs({ ...base, scheduleStatus: 'TENTATIVE' }, T0)).toContain('STATUS:TENTATIVE');
   });
 });
+
+describe('v3 — 구독 캘린더 피드', async () => {
+  const { buildFeed } = await import('../../src/ticket/ics.js');
+  const base = { id: 7, name: '1차 예매', scheduledAt: T0, revision: 1, scheduleStatus: 'CONFIRMED', sessionTitle: '사진전', venue: null, url: 'http://localhost:3000/tickets/2', updatedAt: T0 };
+
+  it('VCALENDAR 하나에 VEVENT 여러 개 · 이름·TTL', () => {
+    const s = buildFeed([base, { ...base, id: 8, scheduleStatus: 'CANCELLED' }], T0);
+    expect(s.match(/BEGIN:VCALENDAR/g)?.length).toBe(1);
+    expect(s.match(/BEGIN:VEVENT/g)?.length).toBe(2);
+    expect(s).toContain('UID:ticket-phase-8@happiness.io.kr');
+    expect(s).toContain('X-WR-CALNAME:Happiness 예매 일정');
+    expect(s).toContain('REFRESH-INTERVAL;VALUE=DURATION:PT1H');
+    expect(s.match(/BEGIN:VALARM/g)?.length).toBe(1); // 취소된 단계엔 알림 없음
+    expect(s.trimEnd().endsWith('END:VCALENDAR')).toBe(true);
+  });
+
+  it('켠 알림이 없으면 빈 캘린더', () => {
+    const s = buildFeed([], T0);
+    expect(s).not.toContain('VEVENT');
+    expect(s).toContain('BEGIN:VCALENDAR');
+  });
+});

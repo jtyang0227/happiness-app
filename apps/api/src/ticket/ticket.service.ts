@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
 import { AuthUser } from '../auth/auth.guard.js';
 import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { isoUtc } from '../time/time-sync.js';
 import { TimeSyncService } from '../time/time.controller.js';
 import { countdownBody } from './countdown.js';
-import { buildIcs } from './ics.js';
+import { buildFeed, buildIcs, IcsPhase } from './ics.js';
 import { applyVerification, OpenStatus, recalc, SCHEDULE_STATUSES, ScheduleStatus, TIME_SOURCES, timeBasedStatus } from './open-status.js';
 import { cancelMemberNotifies, enqueue, NewJob, reviveUnsubscribed } from './ticket-jobs.js';
 import { DEFAULT_OFFSETS, isValidTimezone, keys, OFFSETS, OffsetKey, parseOffsets, reminderMessage } from './ticket-time.js';
@@ -327,7 +328,10 @@ export class TicketService {
   async getPreference(phaseId: number, user: AuthUser) {
     await this.phaseOr404(phaseId);
     const pref = await this.prisma.ticket_notification_preferences.findUnique({ where: { member_id_booking_phase_id: { member_id: BigInt(user.id), booking_phase_id: BigInt(phaseId) } } });
-    return { phaseId, enabled: pref?.enabled ?? false, offsets: pref ? parseOffsets(pref.offsets) : DEFAULT_OFFSETS, available: Object.keys(OFFSETS) };
+    return {
+      phaseId, enabled: pref?.enabled ?? false, offsets: pref ? parseOffsets(pref.offsets) : DEFAULT_OFFSETS, available: Object.keys(OFFSETS),
+      email: pref?.email_enabled ?? false, mailAvailable: mailAvailable(),
+    };
   }
 
   /** 알림 켜기·시점 바꾸기 — 이미 지난 시점은 만들지 않는다(30분 전에 켜면 10분·1분 전만) */
@@ -341,6 +345,8 @@ export class TicketService {
       throw AppError.badInput((e as Error).message);
     }
     const enabled = body?.enabled !== false;
+    if (body?.email !== undefined && typeof body.email !== 'boolean') throw AppError.badInput('email은 true 또는 false입니다.');
+    const email: boolean | undefined = body?.email;
     if (enabled && !offsets.length) throw AppError.badInput('알림 시점을 하나 이상 골라 주세요.');
     const now = new Date();
     const member = BigInt(user.id);
@@ -348,8 +354,8 @@ export class TicketService {
     await this.prisma.$transaction(async (tx) => {
       await tx.ticket_notification_preferences.upsert({
         where: { member_id_booking_phase_id: { member_id: member, booking_phase_id: p.id } },
-        create: { member_id: member, booking_phase_id: p.id, offsets: offsets.join(','), enabled, created_at: now, updated_at: now },
-        update: { offsets: offsets.join(','), enabled, updated_at: now },
+        create: { member_id: member, booking_phase_id: p.id, offsets: offsets.join(','), enabled, email_enabled: email ?? false, created_at: now, updated_at: now },
+        update: { offsets: offsets.join(','), enabled, ...(email === undefined ? {} : { email_enabled: email }), updated_at: now },
       });
       await cancelMemberNotifies(tx, member, p.id, now);
       if (enabled && ACTIVE_SCHEDULE.includes(p.schedule_status as ScheduleStatus)) {
@@ -359,7 +365,8 @@ export class TicketService {
         created = jobs.length;
       }
     });
-    return { phaseId, enabled, offsets, scheduledReminders: created };
+    const saved = await this.prisma.ticket_notification_preferences.findUnique({ where: { member_id_booking_phase_id: { member_id: member, booking_phase_id: p.id } }, select: { email_enabled: true } });
+    return { phaseId, enabled, offsets, scheduledReminders: created, email: saved?.email_enabled ?? false, mailAvailable: mailAvailable() };
   }
 
   async deletePreference(phaseId: number, user: AuthUser) {
@@ -402,10 +409,12 @@ export class TicketService {
     const phases = await this.prisma.booking_phases.findMany({ where: { id: { in: prefs.map((x) => x.booking_phase_id) }, scheduled_at: { gt: since } }, orderBy: { scheduled_at: 'asc' } });
     const titles = new Map((await this.prisma.ticket_sessions.findMany({ where: { id: { in: phases.map((p) => p.session_id) } }, select: { id: true, title: true } })).map((x) => [x.id, x.title]));
     const offsetsBy = new Map(prefs.map((x) => [x.booking_phase_id, x.offsets]));
+    const emailBy = new Map(prefs.map((x) => [x.booking_phase_id, x.email_enabled ?? false]));
     return phases.map((p) => ({
       phaseId: Number(p.id), sessionId: Number(p.session_id), sessionTitle: titles.get(p.session_id) ?? null, phaseName: p.name,
       scheduledAt: iso(p.scheduled_at), scheduleStatus: p.schedule_status, openStatus: p.open_status,
       offsets: (() => { try { return parseOffsets(offsetsBy.get(p.id) ?? ''); } catch { return []; } })(),
+      email: emailBy.get(p.id) ?? false, mailAvailable: mailAvailable(),
     }));
   }
 
@@ -413,11 +422,49 @@ export class TicketService {
   async calendarIcs(phaseId: number) {
     const p = await this.phaseOr404(phaseId);
     const s = await this.prisma.ticket_sessions.findUniqueOrThrow({ where: { id: p.session_id } });
-    const base = (process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://happiness.io.kr' : 'http://localhost:3000')).replace(/\/+$/, '');
-    return buildIcs({
-      id: Number(p.id), name: p.name, scheduledAt: p.scheduled_at, revision: p.schedule_revision, scheduleStatus: p.schedule_status,
-      sessionTitle: s.title, venue: s.venue, url: `${base}/tickets/${Number(s.id)}`, updatedAt: p.updated_at,
-    }, new Date());
+    return buildIcs(icsPhase(p, s), new Date());
+  }
+
+  // ───────────── 구독 캘린더(webcal) — 링크 원문은 발급 응답에만, DB엔 SHA-256 해시 ─────────────
+
+  async getFeed(user: AuthUser) {
+    const f = await this.prisma.ticket_calendar_feeds.findUnique({ where: { member_id: BigInt(user.id) } });
+    return { active: !!f, createdAt: f ? iso(f.created_at) : null, lastAccessedAt: f?.last_accessed_at ? iso(f.last_accessed_at) : null };
+  }
+
+  /** 새 링크 발급 — 이전 링크는 같은 행의 해시가 바뀌어 즉시 404 */
+  async issueFeed(user: AuthUser, apiBase: string) {
+    const token = randomBytes(32).toString('base64url');
+    const now = new Date();
+    await this.prisma.ticket_calendar_feeds.upsert({
+      where: { member_id: BigInt(user.id) },
+      create: { member_id: BigInt(user.id), token_hash: sha256(token), created_at: now },
+      update: { token_hash: sha256(token), created_at: now, last_accessed_at: null },
+    });
+    const url = `${apiBase.replace(/\/+$/, '')}/api/tickets/calendar/${token}.ics`;
+    return { url, webcalUrl: url.replace(/^https?:/, 'webcal:'), createdAt: iso(now) };
+  }
+
+  async deleteFeed(user: AuthUser) {
+    await this.prisma.ticket_calendar_feeds.deleteMany({ where: { member_id: BigInt(user.id) } });
+  }
+
+  /** 공개 피드 — 켠 알림 단계 전부(지난 지 7일 넘은 것 제외, 최대 200개). 회원 정보는 담지 않는다 */
+  async feedIcs(token: string) {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw AppError.of('NOT_FOUND');
+    const f = await this.prisma.ticket_calendar_feeds.findUnique({ where: { token_hash: sha256(token) } });
+    if (!f) throw AppError.of('NOT_FOUND');
+    const now = new Date();
+    if (!f.last_accessed_at || now.getTime() - f.last_accessed_at.getTime() > 5 * 60_000) {
+      await this.prisma.ticket_calendar_feeds.update({ where: { id: f.id }, data: { last_accessed_at: now } });
+    }
+    const prefs = await this.prisma.ticket_notification_preferences.findMany({ where: { member_id: f.member_id, enabled: true }, select: { booking_phase_id: true } });
+    const phases = prefs.length ? await this.prisma.booking_phases.findMany({
+      where: { id: { in: prefs.map((x) => x.booking_phase_id) }, scheduled_at: { gt: new Date(now.getTime() - 7 * 86400_000) } },
+      orderBy: { scheduled_at: 'asc' }, take: 200,
+    }) : [];
+    const sessions = new Map((await this.prisma.ticket_sessions.findMany({ where: { id: { in: phases.map((p) => p.session_id) } } })).map((x) => [x.id, x]));
+    return buildFeed(phases.filter((p) => sessions.has(p.session_id)).map((p) => icsPhase(p, sessions.get(p.session_id)!)), now);
   }
 
   // ───────────── 관리자: 작업 큐 ─────────────
@@ -470,4 +517,24 @@ export function notifyJobs(memberId: bigint, p: Pick<Phase, 'id' | 'scheduled_at
       jobType: 'NOTIFY' as const, dedupeKey: keys.notify(memberId, p.id, o, p.schedule_revision), runAt: at, timeSensitive: true,
       payload: { memberId: Number(memberId), phaseId: Number(p.id), offset: o, revision: p.schedule_revision }, phaseId: p.id, revision: p.schedule_revision,
     }));
+}
+
+function frontendBase(): string {
+  return (process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://happiness.io.kr' : 'http://localhost:3000')).replace(/\/+$/, '');
+}
+
+function icsPhase(p: { id: bigint; name: string; scheduled_at: Date; schedule_revision: number; schedule_status: string; updated_at: Date }, s: { id: bigint; title: string; venue: string | null }): IcsPhase {
+  return {
+    id: Number(p.id), name: p.name, scheduledAt: p.scheduled_at, revision: p.schedule_revision, scheduleStatus: p.schedule_status,
+    sessionTitle: s.title, venue: s.venue, url: `${frontendBase()}/tickets/${Number(s.id)}`, updatedAt: p.updated_at,
+  };
+}
+
+function sha256(s: string): string {
+  return createHash('sha256').update(s).digest('hex');
+}
+
+/** 서버에 메일 설정이 있는지 — MailService와 같은 기준(MAIL_HOST) */
+export function mailAvailable(): boolean {
+  return !!process.env.MAIL_HOST;
 }

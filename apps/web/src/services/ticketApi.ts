@@ -10,6 +10,11 @@ export const ticketApi = {
   getAlert:      (phaseId)          => apiClient.get(`/tickets/phases/${phaseId}/notification`).then(d),
   saveAlert:     (phaseId, offsets) => apiClient.put(`/tickets/phases/${phaseId}/notification`, { offsets, enabled: offsets.length > 0 }).then(d),
   removeAlert:   (phaseId)          => apiClient.delete(`/tickets/phases/${phaseId}/notification`),
+  /** 메일로도 받기 — 시점은 그대로 다시 보낸다(서버는 email만 바꾸고 알림을 다시 예약) */
+  setEmail:      (phaseId, offsets, email) => apiClient.put(`/tickets/phases/${phaseId}/notification`, { offsets, enabled: true, email }).then(d),
+  feed:          ()                 => apiClient.get('/tickets/me/calendar-feed').then(d),
+  issueFeed:     ()                 => apiClient.post('/tickets/me/calendar-feed').then(d),
+  deleteFeed:    ()                 => apiClient.delete('/tickets/me/calendar-feed'),
   myAlerts:      ()                 => apiClient.get('/tickets/me/alerts').then(d),
   notifications: (page = 0)         => apiClient.get('/tickets/notifications', { params: { page, size: 20 } }).then(d),
   unreadCount:   ()                 => apiClient.get('/tickets/notifications/unread-count').then(d),
