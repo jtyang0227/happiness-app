@@ -6,6 +6,7 @@ import { EmptyResponseError, RawBodyError } from '../common/raw-body-error.js';
 import { localDateTime, now } from '../common/time.js';
 import type { inquiries } from '../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
+import { NotionSyncService } from '../ops/notion-sync.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { maskEmail } from '../member/member.mapper.js';
 
@@ -73,7 +74,7 @@ export function buildInquiryHtml(r: InquiryRequest): string {
 @Controller('api/inquiry')
 export class InquiryController {
   private readonly log = new Logger('InquiryController');
-  constructor(private readonly prisma: PrismaService, private readonly mail: MailService) {}
+  constructor(private readonly prisma: PrismaService, private readonly mail: MailService, private readonly notion: NotionSyncService) {}
 
   @Public()
   @Post()
@@ -114,6 +115,8 @@ export class InquiryController {
     } catch (e) {
       this.log.warn(`[Analytics] INQUIRY_SENT 기록 실패 (문의는 저장됨): ${(e as Error).message}`);
     }
+
+    this.notion.inquiryCreated(saved);
 
     const artist = await this.prisma.members.findUnique({ where: { id: receiver }, select: { email: true } });
     if (artist) await this.notify(artist.email, req);

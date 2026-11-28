@@ -100,6 +100,19 @@ ADMIN_API_BASE_URL=http://localhost:8091 npm run test:contract-admin   # 8081(Sp
 - **그대로 옮긴 Spring 버그(기록)**: 배너·팝업·공지 요청 DTO의 Lombok `isActive`/`isPinned` → JSON 키 `active`/`pinned`라 어드민 화면이 보내는 `isActive`·`isPinned`는 무시되고(항상 비활성·고정 안 됨) 응답도 `active`/`pinned`라 화면 표시가 어긋난다. 피처드 등록자 id는 이메일을 Long으로 읽다 실패해 늘 null. 무드 별칭은 Spring `Map.ofEntries` 순서가 정해져 있지 않아 별칭이 둘 들어간 검색어만 결과가 갈릴 수 있다(여기서는 선언 순서).
 - 로컬 Spring 어드민(계약 테스트용): happiness-admin `origin/claude/admin-planning-doc-120dha`를 `./gradlew bootJar` → `SPRING_PROFILES_ACTIVE=prod SERVER_PORT=8081 DB_URL=jdbc:postgresql://localhost:5432/happiness DB_USERNAME=happy DB_PASSWORD=happy DB_SCHEMA=admin JWT_SECRET=(ADMIN_JWT_SECRET과 같은 값) PRIVACY_ENCRYPTION_KEY=(같은 값) SPRING_MAIN_LAZY_INITIALIZATION=false java -jar app.jar`. prod 프로필엔 시드가 없어 테스트가 SQL로 관리자를 넣는다(`test/contract-admin/helpers.ts`).
 
+## 운영 연동 — 노션 동기화 (`src/ops/`)
+
+예약 생성·상태 변경, 앱 문의 접수를 운영자 노션 「해피니스 운영 센터」 DB로 보낸다(단방향). 환경변수가 없으면 꺼져 있고, 노션 오류는 경고 로그만 남기며 요청을 막지 않는다.
+
+| 변수 | 설명 |
+|---|---|
+| `NOTION_TOKEN` | 노션 내부 통합 토큰(배포 환경변수에만, 커밋 금지) |
+| `NOTION_BOOKING_DB_ID` | 「예약」 DB ID |
+| `NOTION_INQUIRY_DB_ID` | 「문의」 DB ID |
+| `OPS_NOTION_INCLUDE_CONTACT` | `true`일 때만 고객 전화·이메일을 보낸다(기본: 이름 마스킹, 연락처 제외) |
+
+테스트: `npx vitest run --config vitest.ops.config.ts`. 노션 속성 표와 정기 실행 프롬프트는 `DESIGN_PROMPTS/planning/PROMPT_ops-notion-google.md`.
+
 ## 컷오버 스모크 (`scripts/smoke.mjs`, `.github/workflows/smoke.yml`)
 
 운영에 돌려도 안전한 읽기 위주 점검(쓰기는 없는 계정의 로그인 실패 1번). 주소를 준 대상만 본다.
