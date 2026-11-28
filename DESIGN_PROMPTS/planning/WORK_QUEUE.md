@@ -5,6 +5,21 @@
 >
 > 상태: ⏳ 대기 · 🔄 진행 중 · ✅ 완료 · ⏸ 보류(사유 필수)
 
+## 현재 묶음 — 예매 일정·알림·오픈 상태 모듈 (요청: "이어서 작업 다 해줘", 2026-11-27)
+
+프롬프트: `PROMPT_server-time-booking-module.md`, 공통 시간 기능은 PR #10(`claude/server-time-sync`). 백엔드는 Nest(`apps/api/src/ticket`)만 — 컷오버 뒤 동작. 테이블은 Spring 엔티티(`backend/.../ticket`)로 Hibernate가 만든다(스키마 주인 규칙).
+
+| # | 상태 | 항목 | 메모 |
+|---|---|---|---|
+| T1 | ✅ | B 일정·이력 테이블 + G 상태 전이 규칙 | |
+| T2 | ✅ | E 작업 큐(SKIP LOCKED·임대·복구·dedupe)·시간 가드·하트비트 | |
+| T3 | ✅ | F 사용자 알림(구독·재계산·인앱 발송) | |
+| T4 | ✅ | API 공개·회원·관리자 + 단위 테스트 | |
+| T5 | ✅ | D 카운트다운(apps/web `/tickets/:id`) + H 관리자 화면(`/admin/tickets`) | |
+| T6 | ✅ | 로컬 PG 검증(db pull 대조·흐름), 문서 | |
+| T7 | ✅ | v2 고도화 — 알림함·켠 알림·.ics·`/tickets` 목록·어드민 단계 추가·DEAD 재시도 (`PLANNING_ticket-module-v2.md`) | 계약 95/95, 단위 44 |
+| T8 | ✅ | v3 — 웹 알림 배지(헤더 🔔·프로필 탭)·구독 캘린더(webcal 비밀 링크)·메일로도 받기 (`PLANNING_ticket-module-v3.md`) | 계약 Nest 95·Spring 91, 단위 46, 백엔드 62, 메일 실제 발송 확인 |
+
 ## 현재 묶음 — TypeScript 전면 전환 (요청: "스프링부트·리액트 안 써도 되니 최근 제일 많이 쓰는 언어로 전체 변경", 2026-11-24)
 
 계획: `PLANNING_typescript-migration.md` (사용자 선택: TypeScript 통일 + 단계별 전환). 각 단계는 계약 테스트가 Spring·Nest 양쪽에서 통과해야 ✅.

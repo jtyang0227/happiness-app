@@ -26,6 +26,7 @@ import { AdminFeaturedController } from './content/admin-featured.controller.js'
 import { AdminProfileContentController } from './content/admin-profile-content.controller.js';
 import { AdminBannerController, AdminNoticeController, AdminPopupController, PopupApiController } from './content/admin-notice-banner-popup.controllers.js';
 import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
+import { AdminTimeController, TimeSyncService } from '../time/time.controller.js';
 
 /**
  * happiness-admin(Spring Boot) 이관 — 앱(AppModule)과 별도 진입점(admin-main.ts).
@@ -36,8 +37,8 @@ import { PrivacyAccessRecorder } from './privacy/privacy-access-recorder.js';
     AdminPhotoController, AdminCategoryController, AdminSeriesController, AdminPortfolioController, AdminSortController, AdminCommentController,
     AdminFeaturedController, AdminProfileContentController, AdminBannerController, AdminPopupController, PopupApiController, AdminNoticeController,
     AdminInquiryController, AdminBookingController, AdminTransactionController, AdminGatheringController, AdminNewsletterController, AdminVerificationController,
-    AdminReportController, AdminStatsController, AdminSystemController, AdminContentPolicyController],
-  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, ReportAiTriageService, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
+    AdminReportController, AdminStatsController, AdminSystemController, AdminContentPolicyController, AdminTimeController],
+  providers: [AdminPrismaService, AdminJwtService, LoginAttemptLimiter, FieldEncryptor, PrivacyAccessRecorder, AdminActivityRecorder, AdminMemberService, MemberSuspensionScheduler, ReportAiTriageService, TimeSyncService, { provide: APP_FILTER, useClass: AdminExceptionFilter }],
 })
 export class AdminAppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

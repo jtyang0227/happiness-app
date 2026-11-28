@@ -23,7 +23,7 @@ export class JwtService {
   readonly refreshTtlMs = Number(process.env.JWT_REFRESH_TOKEN_EXPIRY_MS ?? 604_800_000);
 
   constructor() {
-    let secret = process.env.JWT_SECRET ?? DEV_DEFAULT_SECRET;
+    let secret = process.env.JWT_SECRET || DEV_DEFAULT_SECRET; // .env의 JWT_SECRET="" 도 기본값으로(?? 는 빈 문자열을 그대로 써 빈 키로 서명했다)
     const prod = (process.env.NODE_ENV ?? '') === 'production';
     const weak = secret === DEV_DEFAULT_SECRET || Buffer.byteLength(secret, 'utf8') < 32;
     if (prod && weak) {

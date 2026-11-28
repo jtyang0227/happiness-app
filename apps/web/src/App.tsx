@@ -70,6 +70,10 @@ const GatheringNotificationsPage = lazyPage(() => import('./pages/GatheringNotif
 const MoodboardPage = lazyPage(() => import('./pages/MoodboardPage'));
 const SharedBoardPage = lazyPage(() => import('./pages/SharedBoardPage'));
 const SpotDetailPage = lazyPage(() => import('./pages/SpotDetailPage'));
+const TicketCountdownPage = lazyPage(() => import('./pages/TicketCountdownPage'));
+const TicketListPage = lazyPage(() => import('./pages/TicketListPage'));
+const TicketAlertsPage = lazyPage(() => import('./pages/TicketAlertsPage'));
+const AdminTicketsPage = lazyPage(() => import('./pages/admin/AdminTicketsPage'));
 const WorkspacePage = lazyPage(() => import('./pages/WorkspacePage'));
 const PortfolioBuilderPage = lazyPage(() => import('./pages/PortfolioBuilderPage'));
 
@@ -151,6 +155,9 @@ function AppShell() {
           {/* 탐색 — 의뢰인이 로그인 없이 작가·작업을 찾을 수 있게 공개 (PLANNING_work-discovery.md) */}
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/spots/:id" element={<SpotDetailPage />} />
+          <Route path="/tickets" element={<TicketListPage />} />
+          <Route path="/tickets/alerts" element={<ProtectedRoute><TicketAlertsPage /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<TicketCountdownPage />} />
 
           {/* Protected */}
           {/* 예전 갤러리(/)·목록(/list)은 탐색 사진 탭으로 합쳤다 — 북마크·외부 링크 보존용 리다이렉트 */}
@@ -205,6 +212,7 @@ function AppShell() {
           <Route path="/admin/categories" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCategoryPage /></ProtectedRoute>} />
           <Route path="/admin/tags" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminTagsPage /></ProtectedRoute>} />
           <Route path="/admin/moderation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminModerationPage /></ProtectedRoute>} />
+          <Route path="/admin/tickets" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminTicketsPage /></ProtectedRoute>} />
           <Route path="/admin/curation" element={<ProtectedRoute requiredRoles={['ADMIN']}><AdminCurationPage /></ProtectedRoute>} />
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} />

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApi, postApi } from '../utils/api';
+import TimeSyncPanel from '../components/common/TimeSyncPanel';
 const StatusCard = ({ title, items }: { title?: any; items?: any }) => (
   <div className="system-card">
     <h2 className="system-card-title">{title}</h2>
@@ -144,6 +145,8 @@ const SystemPage = () => {
           { label: '설정 상태', value: status?.geminiConfigured ? '✅ 설정됨' : '⚠️ 미설정', status: status?.geminiConfigured ? 'ok' : 'warn' },
         ]} />
       </div>
+
+      <TimeSyncPanel />
 
       <div className="system-card" style={{ marginTop: 20 }}>
         <h2 className="system-card-title">Gemini 연동 테스트</h2>

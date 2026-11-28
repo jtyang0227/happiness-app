@@ -22,7 +22,7 @@ export const BOTTOM_NAV_ITEMS = [
   { to: '/gatherings', label: '모임',     icon: 'gatherings', badge: 'gatherings', guestOnly: true },
   { to: '/photo/new',  label: '사진 올리기', icon: 'plus', isCenter: true, auth: true },
   { to: '/workspace',  label: '업무',     icon: 'workspace', match: WORKSPACE_PATHS, badge: 'workspace', auth: true },
-  { to: '/profile',    label: '프로필',   icon: 'profile', avatar: true, auth: true },
+  { to: '/profile',    label: '프로필',   icon: 'profile', avatar: true, badge: 'tickets', auth: true },
   { to: '/login',      label: '로그인',   icon: 'login', guestOnly: true },
 ];
 

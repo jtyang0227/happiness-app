@@ -22,6 +22,7 @@
 .system-value { font-weight: 500; color: var(--color-text-primary); }
 .system-value.warn { color: var(--color-warning); }
 .system-value.ok { color: var(--color-success); }
+.system-value.bad { color: var(--color-danger); }
 
 .heatmap-wrap { display: flex; flex-direction: column; gap: 12px; }
 .heatmap-grid { display: flex; gap: 4px; }

@@ -8,6 +8,7 @@ import PortfolioLayoutPicker from '../components/portfolio/PortfolioLayoutPicker
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
 import BoardList from '../components/moodboard/BoardList';
 import apiClient from '../api/apiClient';
+import { useTicketUnread } from '../hooks/useTicketUnread';
 
 /* ── 포트폴리오 템플릿 목록 ────────────────── */
 const PORTFOLIO_TEMPLATES = [
@@ -199,6 +200,7 @@ function Toggle({ value, onChange }: { value?: any; onChange?: (...args: any[]) 
 export default function ProfilePage() {
   const { user, updateProfile, logout } = useAuth();
   const navigate = useNavigate();
+  const ticketUnread = useTicketUnread(user?.id);
 
   const [activeTab, setActiveTab] = useState('photos');
   const [stats, setStats] = useState(null);
@@ -519,6 +521,16 @@ export default function ProfilePage() {
           </div>
         ))}
       </div>
+
+      {/* 읽지 않은 예매 알림 — 모바일엔 헤더 🔔가 없어 여기서 알린다 (v3) */}
+      {ticketUnread > 0 && (
+        <button type="button" onClick={() => navigate('/tickets/alerts')} className="ticket-unread-row"
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 32px)', margin: '12px 16px 0', padding: '12px 14px', borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.surface, cursor: 'pointer', textAlign: 'left', fontSize: 14, color: COLORS.text }}>
+          <span aria-hidden="true">🔔</span>
+          <span style={{ flex: 1, fontWeight: 600 }}>읽지 않은 예매 알림 <b style={{ color: COLORS.primary }}>{ticketUnread > 99 ? '99+' : ticketUnread}건</b></span>
+          <span aria-hidden="true" style={{ color: COLORS.textMuted }}>›</span>
+        </button>
+      )}
 
       {/* Tabs */}
       <div className="profile-tabs">

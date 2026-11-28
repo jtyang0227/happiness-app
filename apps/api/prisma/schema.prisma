@@ -674,3 +674,168 @@ model testimonials {
 
   @@index([member_id], map: "idx_testimonials_member_id")
 }
+
+model booking_open_verifications {
+  id                BigInt    @id @default(autoincrement())
+  booking_phase_id  BigInt
+  checked_at        DateTime  @db.Timestamptz(6)
+  checked_by        String    @db.VarChar(50)
+  evidence          String?   @db.VarChar(500)
+  method            String    @db.VarChar(20)
+  observed_open_at  DateTime? @db.Timestamptz(6)
+  result            String    @db.VarChar(20)
+  schedule_revision Int
+  site              String?   @db.VarChar(50)
+
+  @@index([booking_phase_id], map: "idx_bov_phase")
+}
+
+model booking_phase_schedule_revisions {
+  id                   BigInt    @id @default(autoincrement())
+  booking_phase_id     BigInt
+  changed_at           DateTime  @db.Timestamptz(6)
+  changed_by           String    @db.VarChar(50)
+  new_announced_at     DateTime? @db.Timestamptz(6)
+  new_schedule_status  String?   @db.VarChar(20)
+  new_scheduled_at     DateTime? @db.Timestamptz(6)
+  new_timezone         String?   @db.VarChar(50)
+  prev_announced_at    DateTime? @db.Timestamptz(6)
+  prev_schedule_status String?   @db.VarChar(20)
+  prev_scheduled_at    DateTime? @db.Timestamptz(6)
+  prev_timezone        String?   @db.VarChar(50)
+  reason               String
+  revision             Int
+  source_url           String?   @db.VarChar(500)
+  time_source          String?   @db.VarChar(20)
+
+  @@unique([booking_phase_id, revision], map: "uk_bpsr_phase_revision")
+}
+
+model booking_phase_status_logs {
+  id               BigInt   @id @default(autoincrement())
+  actor            String   @db.VarChar(50)
+  booking_phase_id BigInt
+  created_at       DateTime @db.Timestamptz(6)
+  from_status      String?  @db.VarChar(30)
+  reason           String?  @db.VarChar(300)
+  revision         Int
+  to_status        String   @db.VarChar(30)
+
+  @@index([booking_phase_id], map: "idx_bpsl_phase")
+}
+
+model booking_phases {
+  id                       BigInt    @id @default(autoincrement())
+  announced_at             DateTime? @db.Timestamptz(6)
+  created_at               DateTime  @db.Timestamptz(6)
+  last_time_sync_at        DateTime? @db.Timestamptz(6)
+  name                     String    @db.VarChar(50)
+  open_check_attempts      Int
+  open_status              String    @db.VarChar(30)
+  open_status_before_error String?   @db.VarChar(30)
+  schedule_revision        Int
+  schedule_status          String    @db.VarChar(20)
+  scheduled_at             DateTime  @db.Timestamptz(6)
+  session_id               BigInt
+  source_url               String?   @db.VarChar(500)
+  time_source              String    @db.VarChar(20)
+  timezone                 String    @db.VarChar(50)
+  updated_at               DateTime  @db.Timestamptz(6)
+  verified_at              DateTime? @db.Timestamptz(6)
+
+  @@index([scheduled_at], map: "idx_booking_phases_scheduled_at")
+  @@index([session_id], map: "idx_booking_phases_session")
+}
+
+model ticket_notification_preferences {
+  id               BigInt   @id @default(autoincrement())
+  booking_phase_id BigInt
+  created_at       DateTime @db.Timestamptz(6)
+  enabled          Boolean
+  member_id        BigInt
+  offsets          String   @db.VarChar(50)
+  updated_at       DateTime @db.Timestamptz(6)
+  email_enabled    Boolean?
+
+  @@unique([member_id, booking_phase_id], map: "uk_tnp_member_phase")
+  @@index([booking_phase_id], map: "idx_tnp_phase")
+}
+
+model ticket_notifications {
+  id               BigInt   @id @default(autoincrement())
+  booking_phase_id BigInt?
+  created_at       DateTime @db.Timestamptz(6)
+  dedupe_key       String   @unique(map: "uk_tn_dedupe_key") @db.VarChar(200)
+  kind             String   @db.VarChar(30)
+  member_id        BigInt
+  message          String   @db.VarChar(500)
+  is_read          Boolean
+  status           String   @db.VarChar(20)
+
+  @@index([member_id, is_read], map: "idx_tn_member_read")
+}
+
+model ticket_scheduled_jobs {
+  id                BigInt    @id @default(autoincrement())
+  attempts          Int
+  booking_phase_id  BigInt?
+  claimed_by        String?   @db.VarChar(100)
+  created_at        DateTime  @db.Timestamptz(6)
+  dedupe_key        String    @unique(map: "uk_tsj_dedupe_key") @db.VarChar(200)
+  finished_at       DateTime? @db.Timestamptz(6)
+  job_type          String    @db.VarChar(30)
+  last_error        String?   @db.VarChar(500)
+  lease_until       DateTime? @db.Timestamptz(6)
+  max_attempts      Int
+  payload           String?
+  run_at            DateTime  @db.Timestamptz(6)
+  schedule_revision Int?
+  status            String    @db.VarChar(20)
+  time_sensitive    Boolean
+  updated_at        DateTime  @db.Timestamptz(6)
+
+  @@index([booking_phase_id], map: "idx_tsj_phase")
+  @@index([status, run_at], map: "idx_tsj_status_run_at")
+}
+
+model ticket_sessions {
+  id          BigInt   @id @default(autoincrement())
+  created_at  DateTime @db.Timestamptz(6)
+  created_by  BigInt
+  description String?
+  title       String   @db.VarChar(200)
+  updated_at  DateTime @db.Timestamptz(6)
+  venue       String?  @db.VarChar(200)
+}
+
+model ticket_time_incidents {
+  id            BigInt    @id @default(autoincrement())
+  ended_at      DateTime? @db.Timestamptz(6)
+  last_alert_at DateTime  @db.Timestamptz(6)
+  reason        String    @db.VarChar(300)
+  started_at    DateTime  @db.Timestamptz(6)
+}
+
+model ticket_worker_heartbeats {
+  id              BigInt   @id @default(autoincrement())
+  checked_at      DateTime @db.Timestamptz(6)
+  db_skew_ms      Float?
+  grade           String   @db.VarChar(20)
+  host            String?  @db.VarChar(100)
+  leader          Boolean
+  offset_ms       Float?
+  paused          Boolean
+  queue_lag_ms    BigInt?
+  recovered_count Int
+  skipped_count   Int
+  started_at      DateTime @db.Timestamptz(6)
+  worker_id       String   @unique(map: "uk_twh_worker_id") @db.VarChar(100)
+}
+
+model ticket_calendar_feeds {
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime  @db.Timestamptz(6)
+  last_accessed_at DateTime? @db.Timestamptz(6)
+  member_id        BigInt    @unique(map: "uk_tcf_member")
+  token_hash       String    @unique(map: "uk_tcf_token_hash") @db.VarChar(64)
+}
